@@ -5,6 +5,7 @@ module Jacinda.Backend.Normalize ( eNorm
 
 import           Control.Recursion (cata, embed)
 import qualified Data.ByteString   as BS
+import qualified Data.IntMap       as IM
 import           Jacinda.AST
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
@@ -15,6 +16,11 @@ compileR :: E (T K)
 compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
+
+desugar :: a
+desugar = error "Should have been desugared by this stage."
+
+type LetCtx = IM.IntMap (E (T K))
 
 -- will need a state/context at some point (let &c.)
 eNorm :: E (T K)
@@ -34,8 +40,8 @@ eNorm e@AllColumn{}   = e
 eNorm e@IParseCol{}   = e
 eNorm e@FParseCol{}   = e
 eNorm e@AllField{}    = e
-eNorm e@Guarded{}     = e
-eNorm e@Lam{}         = e
+eNorm (Guarded ty pe e) = Guarded ty (eNorm pe) (eNorm e)
+eNorm (Lam ty n e)    = Lam ty n $ eNorm e
 eNorm e@BBuiltin{}    = e
 eNorm e@TBuiltin{}    = e
 eNorm (Tup tys es)    = Tup tys (eNorm <$> es)
@@ -176,3 +182,5 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin _ Or) e) e') =
         _                           -> e0
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = e
 eNorm e@(EApp _ (UBuiltin _ Const) _) = e
+eNorm Dfn{} = desugar
+eNorm ResVar{} = desugar
