@@ -6,7 +6,6 @@ module Jacinda.Backend.IOStream ( runJac
 
 import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
-import           Control.Recursion         (cata, embed)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
 import           Data.IORef                (modifyIORef', newIORef, readIORef)
@@ -67,76 +66,81 @@ mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
       -> E (T K)
-eEval (ix, line, ctx) = cata a where
-    a b@BoolLitF{} = embed b
-    a i@IntLitF{} = embed i
-    a f@FloatLitF{} = embed f
-    a str@StrLitF{} = embed str
-    a rr@RegexLitF{} = embed rr
-    a re@RegexCompiledF{} = embed re
-    a op@BBuiltinF{} = embed op
-    a op@UBuiltinF{} = embed op
-    a op@TBuiltinF{} = embed op
-    a e@(EAppF _ BBuiltin{} _) = embed e
-    a IxF{} = mkI (fromIntegral ix)
-    a AllFieldF{} = StrLit tyStr line
-    a (FieldF _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
-    a (IParseFieldF _ i) = mkI (readDigits $ ctx V.! (i-1))
-    a (FParseFieldF _ i) = FloatLit tyF (readFloat $ ctx V.! (i-1))
-    a (EAppF _ (EApp _ (BBuiltin _ Matches) e) e') =
-        case (e, e') of
+eEval allCtx@(ix, line, ctx) = go where
+    go b@BoolLit{} = b
+    go i@IntLit{} = i
+    go f@FloatLit{} = f
+    go str@StrLit{} = str
+    go rr@RegexLit{} = rr
+    go re@RegexCompiled{} = re
+    go op@BBuiltin{} = op
+    go op@UBuiltin{} = op
+    go op@TBuiltin{} = op
+    go e@(EApp _ BBuiltin{} _) = e
+    go Ix{} = mkI (fromIntegral ix)
+    go AllField{} = StrLit tyStr line
+    go (Field _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
+    go (IParseField _ i) = mkI (readDigits $ ctx V.! (i-1))
+    go (FParseField _ i) = FloatLit tyF (readFloat $ ctx V.! (i-1))
+    go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
+        let eI = eEval allCtx e
+            eI' = eEval allCtx e'
+        in case (eI, eI') of
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
             _                                -> noRes
-    a (EAppF _ (EApp _ (BBuiltin _ NotMatches) e) e') =
-        case (e, e') of
+    go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
+        let eI = eEval allCtx e
+            eI' = eEval allCtx e'
+        in case (eI, eI') of
+            (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
             _                                -> noRes
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
-        let eI = asFloat e
-            eI' = asFloat e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
+        let eI = asFloat (eEval allCtx e)
+            eI' = asFloat (eEval allCtx e')
             in FloatLit tyF (eI * eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
-        let eI = asInt e
-            eI' = asInt e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
             in IntLit tyI (eI + eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
-        let eI = asInt e
-            eI' = asInt e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
             in BoolLit tyBool (eI > eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
-        let eI = asInt e
-            eI' = asInt e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
             in BoolLit tyBool (eI < eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
-        let eI = asInt e
-            eI' = asInt e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
             in BoolLit tyBool (eI == eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
-        let eI = asStr e
-            eI' = asStr e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
+        let eI = asStr (eEval allCtx e)
+            eI' = asStr (eEval allCtx e')
             in BoolLit tyBool (eI == eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
-        let eI = asInt e
-            eI' = asInt e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
             in BoolLit tyBool (eI == eI')
-    a (EAppF _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
-        let eI = asStr e
-            eI' = asStr e'
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
+        let eI = asStr (eEval allCtx e)
+            eI' = asStr (eEval allCtx e')
             in BoolLit tyBool (eI /= eI')
-    a (EAppF _ (EApp _ (BBuiltin _ And) e) e') =
-        let b = asBool e
-            b' = asBool e'
+    go (EApp _ (EApp _ (BBuiltin _ And) e) e') =
+        let b = asBool (eEval allCtx e)
+            b' = asBool (eEval allCtx e')
             in BoolLit tyBool (b && b')
-    a (EAppF _ (EApp _ (BBuiltin _ Or) e) e') =
+    go (EApp _ (EApp _ (BBuiltin _ Or) e) e') =
         let b = asBool e
             b' = asBool e'
             in BoolLit tyBool (b || b')
-    a (EAppF _ (UBuiltin _ Tally) e) =
+    a (EApp _ (UBuiltin _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
-        where str = asStr e
-    a (TupF ty es) = Tup ty es
+        where str = asStr (eEval allCtx e)
+    a (Tup ty es) = Tup ty es
 
 applyOp :: E (T K) -- ^ Operator
         -> E (T K)
