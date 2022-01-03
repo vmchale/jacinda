@@ -14,7 +14,6 @@ import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           System.IO.Unsafe       (unsafeDupablePerformIO)
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
@@ -51,11 +50,6 @@ pAst =
                 (UBuiltin () Tally)
                 (AllField ())))
         (IntLit () 72)
-
-splitWhitespace :: BS.ByteString -> V.Vector BS.ByteString
-splitWhitespace bs = unsafeDupablePerformIO $ do
-    re <- defaultRurePtr
-    pure $ splitBy re bs
 
 splitWhitespaceT :: BS.ByteString -> [BS.ByteString] -> TestTree
 splitWhitespaceT haystack expected =
