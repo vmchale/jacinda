@@ -166,6 +166,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | BBuiltin { eLoc :: a, eBin :: BBin }
          | TBuiltin { eLoc :: a, eTer :: BTer }
          | UBuiltin { eLoc :: a, eUn :: BUn }
+         | Ix { eLoc :: a } -- only 0-ary builtin atm
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
@@ -199,6 +200,7 @@ data EF a x = ColumnF a Int
             | BBuiltinF a BBin
             | TBuiltinF a BTer
             | UBuiltinF a BUn
+            | IxF a
             | TupF a [x]
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
@@ -238,6 +240,7 @@ instance Pretty (E a) where
     pretty (Lam _ n e)                                            = "\\" <> pretty n <> "." <+> pretty e
     pretty (Dfn _ e)                                              = brackets (pretty e)
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
+    pretty Ix{}                                                   = "ix"
 
 instance Show (E a) where
     show = show . pretty
@@ -268,6 +271,7 @@ instance Eq (E a) where
     (==) (Tup _ es) (Tup _ es')                 = es == es'
     (==) (ResVar _ x) (ResVar _ y)              = x == y
     (==) (Dfn _ f) (Dfn _ g)                    = f == g -- we're testing for lexical equivalence
+    (==) Ix{} Ix{}                              = True
     (==) RegexCompiled{} _                      = error "Cannot compare compiled regex!"
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) _ _                                    = False

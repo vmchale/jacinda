@@ -61,6 +61,9 @@ asFloat :: E a -> Double
 asFloat (FloatLit _ f) = f
 asFloat _              = noRes
 
+mkI :: Integer -> E (T K)
+mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common module?
+
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
@@ -76,9 +79,10 @@ eEval (ix, line, ctx) = cata a where
     a op@UBuiltinF{} = embed op
     a op@TBuiltinF{} = embed op
     a e@(EAppF _ BBuiltin{} _) = embed e
+    a IxF{} = mkI (fromIntegral ix)
     a AllFieldF{} = StrLit tyStr line
     a (FieldF _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
-    a (IParseFieldF _ i) = IntLit tyI (readDigits $ ctx V.! (i-1))
+    a (IParseFieldF _ i) = mkI (readDigits $ ctx V.! (i-1))
     a (FParseFieldF _ i) = FloatLit tyF (readFloat $ ctx V.! (i-1))
     a (EAppF _ (EApp _ (BBuiltin _ Matches) e) e') =
         case (e, e') of
@@ -131,7 +135,7 @@ eEval (ix, line, ctx) = cata a where
             b' = asBool e'
             in BoolLit tyBool (b || b')
     a (EAppF _ (UBuiltin _ Tally) e) =
-        IntLit tyI (fromIntegral $ BS.length str)
+        mkI (fromIntegral $ BS.length str)
         where str = asStr e
     a (TupF ty es) = Tup ty es
 

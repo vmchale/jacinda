@@ -88,6 +88,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
     min { TokResVar $$ VarMin }
     max { TokResVar $$ VarMax }
+    ix { TokResVar $$ VarIx }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -172,6 +173,7 @@ E :: { E AlexPosn }
   | rr { RegexLit (loc $1) (BSL.toStrict $ rr $1) }
   | min { BBuiltin $1 Min }
   | max { BBuiltin $1 Max }
+  | ix { Ix $1 }
 
 {
 

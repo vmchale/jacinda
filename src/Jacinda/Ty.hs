@@ -287,6 +287,7 @@ tyE0 (FParseField _ i)  = pure $ FParseField tyF i
 tyE0 (Field _ i)        = pure $ Field tyStr i
 tyE0 AllField{}         = pure $ AllField tyStr
 tyE0 AllColumn{}        = pure $ AllColumn (tyStream tyStr)
+tyE0 Ix{}               = pure $ Ix tyI
 tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tyNumOp <*> pure Plus
 tyE0 (BBuiltin _ Minus) = BBuiltin <$> tyNumOp <*> pure Minus
 tyE0 (BBuiltin _ Times) = BBuiltin <$> tyNumOp <*> pure Times
