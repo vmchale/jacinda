@@ -1,0 +1,132 @@
+cabal-version:      2.0
+name:               jacinda
+version:            0.1.0.0
+
+-- A short (one-line) description of the package.
+-- synopsis:
+
+-- A longer description of the package.
+-- description:
+
+-- A URL where users can report bugs.
+-- bug-reports:
+
+license: GPL-3
+license-file: LICENSE
+author:             Vanessa McHale
+maintainer:         vamchale@gmail.com
+build-type: Simple
+
+-- A copyright notice.
+-- category:
+extra-source-files: CHANGELOG.md
+
+library
+    exposed-modules:  Jacinda.Parser
+                    , Jacinda.Parser.Rewrite
+                    , Jacinda.AST
+                    , Jacinda.Ty
+                    , Jacinda.Ty.Const
+                    , Jacinda.Regex
+                    , Jacinda.File
+                    , Jacinda.Rename
+                    , Jacinda.Backend.IOStream
+    other-modules: Jacinda.Lexer
+                 , Intern.Name
+                 , Intern.Unique
+                , Jacinda.Backend.Normalize
+    build-tool-depends: alex:alex, happy:happy
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:    base >=4.10.0.0 && <5
+                    , bytestring >= 0.11.0.0
+                    , text
+                    , prettyprinter >=1.7.0
+                    , containers
+                    , array
+                    , mtl
+                    , transformers
+                    , regex-rure
+                    , microlens
+                    , microlens-mtl
+                    , vector
+                    , io-streams
+                    , recursion >=1.0.0.0
+    hs-source-dirs:   src
+    ghc-options: -Wall
+    default-language: Haskell2010
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints -Widentities
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.2)
+        ghc-options: -Wcpp-undef
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages
+
+executable ja
+    main-is:          Main.hs
+    other-modules:    Paths_jacinda
+    autogen-modules:  Paths_jacinda
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:    base 
+                    , jacinda
+                    , optparse-applicative
+                    , bytestring
+    ghc-options: -Wall -rtsopts -with-rtsopts=-A100k
+    hs-source-dirs:   app
+    default-language: Haskell2010
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints -Widentities
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.2)
+        ghc-options: -Wcpp-undef
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages
+
+test-suite jacinda-test
+    default-language: Haskell2010
+    type:             exitcode-stdio-1.0
+    ghc-options: -Wall
+    ghc-options:      -threaded -rtsopts "-with-rtsopts=-N -K1K" -Wall
+    hs-source-dirs:   test
+    main-is:          Spec.hs
+    build-depends:    base
+                    , jacinda
+                    , tasty
+                    , tasty-hunit
+                    , bytestring
+                    , vector
+
+    if impl(ghc >=8.0)
+        ghc-options:
+            -Wincomplete-uni-patterns -Wincomplete-record-updates
+            -Wredundant-constraints -Widentities
+
+    if impl(ghc >=8.4)
+        ghc-options: -Wmissing-export-lists
+
+    if impl(ghc >=8.2)
+        ghc-options: -Wcpp-undef
+
+    if impl(ghc >=8.10)
+        ghc-options: -Wunused-packages

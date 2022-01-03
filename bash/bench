@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+
+# curl https://www.gutenberg.org/files/4300/4300-0.txt -o /tmp/ulysses.txt
+
+bench "ja '(+)|0 {#t}{1}' -i /tmp/ulysses.txt" \
+    "awk '{ total += 1 }; END { print total }' /tmp/ulysses.txt" \
+    "gawk '{ total += 1 }; END { print total }' /tmp/ulysses.txt" \
+    "mawk '{ total += 1 }; END { print total }' /tmp/ulysses.txt"
+
+bench "ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt" \
+    "awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
+    "gawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
+    "mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt"
