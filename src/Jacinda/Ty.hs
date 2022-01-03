@@ -51,6 +51,7 @@ data C = IsNum
        | IsEq
        | IsOrd
        | IsParseable
+       | IsSemigroup
        deriving (Eq, Ord)
 
 instance Pretty C where
@@ -58,6 +59,7 @@ instance Pretty C where
     pretty IsEq        = "Eq"
     pretty IsOrd       = "Ord"
     pretty IsParseable = "Parseable"
+    pretty IsSemigroup = "Semigroup"
 
 -- Idea:
 -- solve, unify etc. THEN check that all constraints are satisfied?
@@ -194,11 +196,14 @@ pushConstraint l ty ty' =
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: T b -> C -> TypeM a ()
+checkType (TyB _ TyStr) IsSemigroup     = pure ()
+checkType (TyB _ TyInteger) IsSemigroup = pure ()
 checkType (TyB _ TyInteger) IsNum       = pure ()
 checkType (TyB _ TyInteger) IsOrd       = pure ()
 checkType (TyB _ TyInteger) IsEq        = pure ()
 checkType (TyB _ TyInteger) IsParseable = pure ()
 checkType (TyB _ TyFloat) IsParseable   = pure ()
+checkType (TyB _ TyFloat) IsSemigroup   = pure ()
 checkType (TyB _ TyFloat) IsNum         = pure ()
 checkType (TyB _ TyFloat) IsOrd         = pure ()
 checkType (TyB _ TyFloat) IsEq          = pure ()
@@ -248,6 +253,13 @@ tyNumOp = do
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
+tySemiOp :: TypeM a (T K)
+tySemiOp = do
+    m <- dummyName "m"
+    modifying classVarsLens (addC m IsSemigroup)
+    let m' = var m
+    pure $ tyArr m' (tyArr m' m')
+
 tyOrd :: TypeM a (T K)
 tyOrd = do
     a <- dummyName "a"
@@ -288,7 +300,7 @@ tyE0 (Field _ i)        = pure $ Field tyStr i
 tyE0 AllField{}         = pure $ AllField tyStr
 tyE0 AllColumn{}        = pure $ AllColumn (tyStream tyStr)
 tyE0 Ix{}               = pure $ Ix tyI
-tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tyNumOp <*> pure Plus
+tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tySemiOp <*> pure Plus
 tyE0 (BBuiltin _ Minus) = BBuiltin <$> tyNumOp <*> pure Minus
 tyE0 (BBuiltin _ Times) = BBuiltin <$> tyNumOp <*> pure Times
 tyE0 (BBuiltin _ Gt)    = BBuiltin <$> tyOrd <*> pure Gt

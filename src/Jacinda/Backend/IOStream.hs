@@ -16,7 +16,7 @@ import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import qualified System.IO.Streams         as Streams
 
-data StreamError = FieldFile deriving (Show)
+data StreamError = NakedField deriving (Show)
 
 instance Exception StreamError where
 
@@ -104,6 +104,10 @@ eEval allCtx@(ix, line, ctx) = go where
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
             in IntLit tyI (eI + eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
+        let eI = asStr (eEval allCtx e)
+            eI' = asStr (eEval allCtx e')
+            in StrLit tyI (eI <> eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
@@ -227,10 +231,10 @@ dupStream = Streams.unzip <=< Streams.map (\x -> (x, x)) -- aka join (,) 🤓
 -- TODO: eNormal before runJac
 runJac :: E (T K)
        -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
-runJac AllField{}    = Left FieldFile
-runJac Field{}       = Left FieldFile
-runJac IParseField{} = Left FieldFile
-runJac FParseField{} = Left FieldFile
+runJac AllField{}    = Left NakedField
+runJac Field{}       = Left NakedField
+runJac IParseField{} = Left NakedField
+runJac FParseField{} = Left NakedField
 runJac AllColumn{} = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps =<< Streams.map mkStr inp
