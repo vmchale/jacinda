@@ -181,6 +181,7 @@ ir (Guarded _ pe e) =
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
 ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eNorm op in Streams.map (eNorm . applyUn op') <=< ir stream
+ir (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eNorm op in Streams.prior (applyOp op') <=< ir stream
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
     irl <- ir streaml inp0
@@ -206,9 +207,6 @@ parseAsF = FloatLit tyF . readFloat
 printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
 
-dupStream :: Streams.InputStream a -> IO (Streams.InputStream a, Streams.InputStream a)
-dupStream = Streams.unzip <=< Streams.map (\x -> (x, x)) -- aka join (,) 🤓
-
 -- TODO: eNormal before runJac
 runJac :: E (T K)
        -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
@@ -229,6 +227,10 @@ runJac e@Guarded{} = Right $ \inp -> do
     Streams.connectTo ps resStream
 runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) (eNorm seed) <=< ir stream
 runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
+    resStream <- ir e inp
+    ps <- printStream
+    Streams.connectTo ps resStream
+runJac e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream

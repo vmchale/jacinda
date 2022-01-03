@@ -340,6 +340,12 @@ tyE0 (TBuiltin _ Fold) = do
         a' = var a
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (tyStream a') b'))
     pure $ TBuiltin fTy Fold
+-- (a -> a -> a) -> Stream a -> Stream a
+tyE0 (BBuiltin _ Prior) = do
+    a <- dummyName "a"
+    let a' = var a
+        fTy = tyArr (tyArr a' (tyArr a' a')) (tyArr (tyStream a') (tyStream a'))
+    pure $ BBuiltin fTy Prior
 -- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (TBuiltin _ ZipW) = do
     a <- dummyName "a"

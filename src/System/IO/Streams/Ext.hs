@@ -1,10 +1,25 @@
 module System.IO.Streams.Ext ( imap
                              , ifilter
                              , scan
+                             , prior
+                             , dupStream
                              ) where
 
+import           Control.Monad     ((<=<))
 import           Data.IORef        (modifyIORef', newIORef, readIORef)
 import qualified System.IO.Streams as Streams
+
+-- prior :: (a -> a -> a) -> [a] -> [a]
+-- prior op xs = zipWith op (tail xs) xs
+
+prior :: (a -> a -> a) -> Streams.InputStream a -> IO (Streams.InputStream a)
+prior op xs = do
+    (xsϵ, xsϵ') <- dupStream xs
+    shifted <- Streams.drop 1 xsϵ
+    Streams.zipWith op shifted xsϵ'
+
+dupStream :: Streams.InputStream a -> IO (Streams.InputStream a, Streams.InputStream a)
+dupStream = Streams.unzip <=< Streams.map (\x -> (x, x)) -- aka join (,) 🤓
 
 scan :: (b -> a -> b)
      -> b
