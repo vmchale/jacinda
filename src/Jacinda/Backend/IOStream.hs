@@ -8,13 +8,13 @@ import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
-import           Data.IORef                (modifyIORef', newIORef, readIORef)
 import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import qualified System.IO.Streams         as Streams
+import           System.IO.Streams.Ext     as Streams
 
 data StreamError = NakedField deriving (Show)
 
@@ -103,7 +103,7 @@ eEval allCtx@(ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
-            in IntLit tyI (eI + eI')
+            in mkI (eI + eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (eEval allCtx e)
             eI' = asStr (eEval allCtx e')
@@ -167,28 +167,6 @@ applyUn unOp e =
         TyArr _ _ res -> EApp res unOp e
         _             -> error "Internal error?"
 
-imap :: (Int -> a -> b)
-     -> Streams.InputStream a
-     -> IO (Streams.InputStream b)
-imap f inp = do
-    ix <- newIORef 1
-    Streams.mapM (\a -> do
-        { ixϵ <- readIORef ix
-        ; modifyIORef' ix (+1)
-        ; pure (f ixϵ a)
-        }) inp
-
-ifilter :: (Int -> a -> Bool)
-        -> Streams.InputStream a
-        -> IO (Streams.InputStream a)
-ifilter p inp = do
-    ix <- newIORef 1
-    Streams.filterM (\x -> do
-        { ixϵ <- readIORef ix
-        ; modifyIORef' ix (+1)
-        ; pure (p ixϵ x)
-        }) inp
-
 -- | eval stream expression using line as context
 ir :: E (T K)
    -> Streams.InputStream BS.ByteString
@@ -209,6 +187,9 @@ ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream
     irr <- ir streamr inp1
     let op' = eNorm op
     Streams.zipWith (applyOp op') irl irr
+ir (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
+    let op' = eNorm op
+    Streams.scan (applyOp op') (eNorm seed) =<< ir xs inp
 
 mkStr :: BS.ByteString -- ^ Field
       -> E (T K)
@@ -216,7 +197,7 @@ mkStr = StrLit tyStr
 
 parseAsEInt :: BS.ByteString -- ^ Field
             -> E (T K)
-parseAsEInt = IntLit tyI . readDigits
+parseAsEInt = mkI . readDigits
 
 parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
@@ -251,8 +232,13 @@ runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
+runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
+    resStream <- ir e inp
+    ps <- printStream
+    Streams.connectTo ps resStream
 runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
 runJac e@Let{} = runJac (eNorm e)
+runJac Var{} = error "Internal error: ill-scoping should've been caught in the typechecker stage."

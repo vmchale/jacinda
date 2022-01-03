@@ -34,7 +34,8 @@ library
     other-modules: Jacinda.Lexer
                  , Intern.Name
                  , Intern.Unique
-                , Jacinda.Backend.Normalize
+                 , Jacinda.Backend.Normalize
+                 , System.IO.Streams.Ext
     build-tool-depends: alex:alex, happy:happy
 
     -- LANGUAGE extensions used by modules in this package.
