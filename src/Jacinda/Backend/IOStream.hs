@@ -15,7 +15,7 @@ import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Regex.Rure                (RureIterPtr)
+import           Regex.Rure                (RureIterPtr, RurePtr)
 import qualified System.IO.Streams         as Streams
 
 data StreamError = FieldFile deriving (Show)
@@ -141,14 +141,13 @@ applyOp :: E (T K) -- ^ Operator
         -> E (T K)
 applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
-atField :: RureIterPtr
-        -> Int
+atField :: Int
         -> BS.ByteString -- ^ Line
         -> BS.ByteString
-atField re i = (V.! (i-1)) . splitBy re
+atField i = (V.! (i-1)) . splitWhitespace
 
-mkCtx :: RureIterPtr -> Int -> BS.ByteString -> (Int, BS.ByteString, V.Vector BS.ByteString)
-mkCtx re ix line = (ix, line, splitBy re line)
+mkCtx :: Int -> BS.ByteString -> (Int, BS.ByteString, V.Vector BS.ByteString)
+mkCtx ix line = (ix, line, splitWhitespace line)
 
 applyUn :: E (T K)
         -> E (T K)
@@ -185,14 +184,13 @@ ir :: E (T K)
    -> Streams.InputStream BS.ByteString
    -> IO (Streams.InputStream (E (T K))) -- TODO: include chunks/context too?
 ir AllColumn{}     = Streams.map mkStr
-ir (Column _ i)    = \inp -> do { re <- defaultRurePtr ; Streams.map (mkStr . atField re i) inp }
-ir (IParseCol _ i) = \inp -> do { re <- defaultRurePtr ; Streams.map (parseAsEInt . atField re i) inp }
-ir (FParseCol _ i) = \inp -> do { re <- defaultRurePtr ; Streams.map (parseAsF . atField re i) inp }
-ir (Guarded _ pe e) = \inp -> do
-    re <- defaultRurePtr
-    pe' <- compileR pe
+ir (Column _ i)    = Streams.map (mkStr . atField i)
+ir (IParseCol _ i) = Streams.map (parseAsEInt . atField i)
+ir (FParseCol _ i) = Streams.map (parseAsF . atField i)
+ir (Guarded _ pe e) =
+    let pe' = compileR pe
     -- FIXME: compile e too?
-    imap (\ix line -> eEval (mkCtx re ix line) e) =<< ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe')) inp
+        in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
 ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = Streams.map (eNorm . applyUn (eNorm op)) <=< ir stream
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
@@ -230,8 +228,7 @@ runJac AllColumn{} = Right $ \inp -> do
     Streams.connectTo ps =<< Streams.map mkStr inp
 runJac (Column _ i) = Right $ \inp -> do
     ps <- printStream
-    re <- defaultRurePtr
-    Streams.connectTo ps =<< Streams.map (mkStr . atField re i) inp
+    Streams.connectTo ps =<< Streams.map (mkStr . atField i) inp
 -- TODO: this should extract any regex and compile them, use io/low-level API...
 runJac e@Guarded{} = Right $ \inp -> do
     resStream <- ir e inp

@@ -11,10 +11,10 @@ import           Jacinda.Ty.Const
 
 -- fill in regex with compiled.
 compileR :: E (T K)
-         -> IO (E (T K))
-compileR = cataM a where
-    a (RegexLitF _ rr) = RegexCompiled <$> compileDefault rr
-    a x                = pure (embed x)
+         -> E (T K)
+compileR = cata a where
+    a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
+    a x                = embed x
 
 -- will need a state/context at some point (let &c.)
 eNorm :: E (T K)

@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Regex ( splitBy
-                     , defaultRurePtr
+                     , splitWhitespace
                      , isMatch'
                      , compileDefault
                      ) where
@@ -13,7 +13,7 @@ import qualified Data.ByteString.Internal as BS
 import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureIterPtr, RureMatch (..), RurePtr, compile, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureMatch (..), RurePtr, compile, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- see: https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
@@ -27,17 +27,22 @@ defaultFs = "\\s+"
 -- anyway this could in theory go awry if something got allocated in the same
 -- pointer or whatever but... I don't think that'll happen.
 
-defaultRurePtr :: IO RureIterPtr
-defaultRurePtr = mkIter =<< yeetRureIO =<< compile genFlags defaultFs
+-- FIXME: compile can be "pure', mkIter can not!!
+{-# NOINLINE defaultRurePtr #-}
+defaultRurePtr :: RurePtr
+defaultRurePtr = unsafePerformIO $ yeetRureIO =<< compile genFlags defaultFs
     where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a weird custom record separator
 
+splitWhitespace :: BS.ByteString -> V.Vector BS.ByteString
+splitWhitespace = splitBy defaultRurePtr
+
 {-# NOINLINE splitBy #-}
-splitBy :: RureIterPtr
+splitBy :: RurePtr
         -> BS.ByteString
         -> V.Vector BS.ByteString
 splitBy re haystack@(BS.BS fp l) =
     (\sp -> V.fromList [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- sp]) slicePairs
-    where ixes = unsafeDupablePerformIO $ matches re haystack
+    where ixes = unsafeDupablePerformIO $ do { reIptr <- mkIter re; matches reIptr haystack }
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
                 rms                 -> mkMiddle 0 rms
@@ -49,8 +54,8 @@ isMatch' :: RurePtr
          -> Bool
 isMatch' re haystack = unsafePerformIO $ isMatch re haystack 0
 
-compileDefault :: BS.ByteString -> IO RurePtr
-compileDefault = yeetRureIO <=< compile rureDefaultFlags -- TODO: rureFlagDotNL? in case they have weird records idk.
+compileDefault :: BS.ByteString -> RurePtr
+compileDefault = unsafePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL? in case they have weird records
 
 newtype RureExe = RegexCompile String deriving (Show)
 
