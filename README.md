@@ -49,15 +49,16 @@ variance introduced by outliers: 25% (moderately inflated)
 
 ```
 benchmarking bench/ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt
-time                 35.97 ms   (33.98 ms .. 38.48 ms)
-                     0.988 R²   (0.978 R² .. 0.995 R²)
-mean                 33.72 ms   (32.46 ms .. 34.73 ms)
-std dev              2.342 ms   (1.874 ms .. 2.878 ms)
-variance introduced by outliers: 24% (moderately inflated)
+time                 27.95 ms   (25.60 ms .. 31.51 ms)
+                     0.941 R²   (0.894 R² .. 0.987 R²)
+mean                 25.45 ms   (23.95 ms .. 27.05 ms)
+std dev              3.604 ms   (2.496 ms .. 5.447 ms)
+variance introduced by outliers: 62% (severely inflated)
 
 benchmarking bench/awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 56.48 ms   (56.03 ms .. 57.02 ms)
-                     1.000 R²   (1.000 R² .. 1.000 R²)
-mean                 56.15 ms   (56.04 ms .. 56.38 ms)
-std dev              282.1 μs   (127.9 μs .. 465.7 μs)
+time                 37.09 ms   (34.59 ms .. 39.64 ms)
+                     0.990 R²   (0.983 R² .. 0.999 R²)
+mean                 40.35 ms   (37.41 ms .. 51.32 ms)
+std dev              10.69 ms   (931.2 μs .. 20.31 ms)
+variance introduced by outliers: 86% (severely inflated)
 ```
