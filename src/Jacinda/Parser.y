@@ -46,7 +46,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     tally { TokSym $$ TallyTok }
     const { TokSym $$ ConstTok }
     exclamation { TokSym $$ Exclamation }
-    backslash { TokSym $$ Backslash }
+    backslash { TokSym $$ BackslashDot }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }

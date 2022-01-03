@@ -220,7 +220,7 @@ instance Pretty (E a) where
     pretty (Field _ i)                                            = "`" <> pretty i
     pretty (IParseField _ i)                                      = "`" <> pretty i <> ":i"
     pretty (FParseField _ i)                                      = "`" <> pretty i <> ":f"
-    pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\" <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                  = pretty e <> pretty b <> pretty e'
