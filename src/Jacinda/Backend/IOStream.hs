@@ -1,8 +1,8 @@
 -- | Tree-walking interpreter, uses [io-streams](https://hackage.haskell.org/package/io-streams).
 module Jacinda.Backend.IOStream ( runJac
-                                -- * Field parsers
-                                , readDigits
                                 ) where
+
+-- TODO: normalize before mapping?
 
 import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
@@ -193,13 +193,15 @@ ir (FParseCol _ i) = Streams.map (parseAsF . atField i)
 ir (Guarded _ pe e) =
     let pe' = compileR pe
     -- FIXME: compile e too?
+    -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
-ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = Streams.map (eNorm . applyUn (eNorm op)) <=< ir stream
+ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eNorm op in Streams.map (eNorm . applyUn op') <=< ir stream
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
     irl <- ir streaml inp0
     irr <- ir streamr inp1
-    Streams.zipWith (applyOp (eNorm op)) irl irr
+    let op' = eNorm op
+    Streams.zipWith (applyOp op') irl irr
 
 mkStr :: BS.ByteString -- ^ Field
       -> E (T K)
@@ -237,7 +239,7 @@ runJac e@Guarded{} = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) seed <=< ir stream
+runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) (eNorm seed) <=< ir stream
 runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream

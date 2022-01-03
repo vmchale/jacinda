@@ -55,3 +55,15 @@ ls -l | awk '{ total += $5; } END { print total; }'
 ```
 ls -l | ja '(+)|0 {ix>1}{`5:i}'
 ```
+
+# Discard First Line
+
+Posed on [StackOverflow](https://stackoverflow.com/a/34504648):
+
+```awk
+NR>1
+```
+
+```
+{ix>1}{`0}
+```
