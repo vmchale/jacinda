@@ -46,7 +46,7 @@ splitBy re haystack@(BS.BS fp l) =
 isMatch' :: RurePtr
          -> BS.ByteString
          -> Bool
-isMatch' re haystack = unsafePerformIO $ isMatch re haystack 0
+isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
 compileDefault = unsafePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL? in case they have weird records
