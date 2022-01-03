@@ -20,10 +20,8 @@ import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerform
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
 
--- FIXME: need to do this in IO proper ls -l | ja '(+)|0 {`0!~/total \d+/}{`5:i}' (segfaults)
--- also ls -l | ja '{ix>1}{`5:i}' (wrong results)
+-- also ls -l | ja '{ix>1}{`5:i}'
 
--- FIXME: compile can be "pure', mkIter can not!!
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yeetRureIO =<< compile genFlags defaultFs
