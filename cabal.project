@@ -5,8 +5,3 @@ haddock-internal: true
 program-options
   alex-options: -g
   happy-options: -gcsa
-
-source-repository-package
-  location: git@github.com:vmchale/rure.git
-  type: git
-  tag: ca1560b1a8ae811ae5d6923afc9d149f46e9a8dc
