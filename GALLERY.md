@@ -131,3 +131,13 @@ count := [(+)|0 [:1"x]
 
 maximum := [max|_1 x]
 ```
+
+# Print Line Number
+
+```
+(+)^0 [:1"$0
+```
+
+```
+{#t}{ix}
+```
