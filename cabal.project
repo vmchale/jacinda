@@ -5,3 +5,6 @@ haddock-internal: true
 program-options
   alex-options: -g
   happy-options: -gcsa
+
+package jacinda
+  ghc-options: -j +RTS -A32m
