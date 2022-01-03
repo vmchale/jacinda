@@ -40,6 +40,7 @@ eNorm = cata a where
     a e@BBuiltinF{}    = embed e
     a e@TBuiltinF{}    = embed e
     a e@TupF{}         = embed e
+    a e@IxF{}          = embed e
     a e@(EAppF _ BBuiltin{} _) = embed e
     a e0@(EAppF _ (EApp _ (BBuiltin _ Matches) e) e') =
         case (e, e') of

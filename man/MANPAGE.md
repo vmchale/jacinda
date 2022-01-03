@@ -74,6 +74,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **!~** Does not match
 
+**ix** Line number
+
 ## SYNTAX
 
 **`n** nth field

@@ -20,12 +20,8 @@ import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerform
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
 
--- there's some funny business going on in this module with unsafePerformIO but
--- it works because Rust doesn't seem to modify the compiled thing, just read
--- it.
---
--- anyway this could in theory go awry if something got allocated in the same
--- pointer or whatever but... I don't think that'll happen.
+-- FIXME: need to do this in IO proper ls -l | ja '(+)|0 {`0!~/total \d+/}{`5:i}' (segfaults)
+-- also ls -l | ja '{ix>1}{`5:i}' (wrong results)
 
 -- FIXME: compile can be "pure', mkIter can not!!
 {-# NOINLINE defaultRurePtr #-}
