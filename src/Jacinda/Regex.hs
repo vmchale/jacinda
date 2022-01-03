@@ -49,7 +49,7 @@ isMatch' :: RurePtr
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
-compileDefault = unsafePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL? in case they have weird records
+compileDefault = unsafeDupablePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL? in case they have weird records
 
 newtype RureExe = RegexCompile String deriving (Show)
 
