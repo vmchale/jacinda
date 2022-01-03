@@ -102,6 +102,12 @@ let
 in count lparen = count rparen end
 ```
 
+# Count Bytes in Directory
+
+```
+ls -l | ja '(+)|0 {ix>1}{`5:i}'
+```
+
 # In Conjunction with awk
 
 ```

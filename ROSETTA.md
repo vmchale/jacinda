@@ -45,3 +45,13 @@
 ```
 (+)|0 #"$0
 ```
+
+# Sum Directory Content Size
+
+```awk
+ls -l | awk '{ total += $5; } END { print total; }'
+```
+
+```
+ls -l | ja '(+)|0 {ix>1}{`5:i}'
+```
