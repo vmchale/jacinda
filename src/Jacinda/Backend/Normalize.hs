@@ -12,7 +12,7 @@ import           Jacinda.Ty.Const
 -- fill in regex with compiled.
 compileR :: E (T K)
          -> E (T K)
-compileR = cata a where
+compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
 
@@ -38,7 +38,7 @@ eNorm e@Guarded{}     = e
 eNorm e@Lam{}         = e
 eNorm e@BBuiltin{}    = e
 eNorm e@TBuiltin{}    = e
-eNorm e@Tup{}         = e
+eNorm (Tup tys es)    = Tup tys (eNorm <$> es)
 eNorm e@Ix{}          = e
 eNorm e@(EApp _ BBuiltin{} _) = e
 eNorm e0@(EApp _ (EApp _ (BBuiltin _ Matches) e) e') =

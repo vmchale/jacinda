@@ -93,7 +93,6 @@ eEval allCtx@(ix, line, ctx) = go where
         let eI = eEval allCtx e
             eI' = eEval allCtx e'
         in case (eI, eI') of
-            (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
             _                                -> noRes
@@ -137,10 +136,10 @@ eEval allCtx@(ix, line, ctx) = go where
         let b = asBool e
             b' = asBool e'
             in BoolLit tyBool (b || b')
-    a (EApp _ (UBuiltin _ Tally) e) =
+    go (EApp _ (UBuiltin _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
         where str = asStr (eEval allCtx e)
-    a (Tup ty es) = Tup ty es
+    go (Tup ty es) = Tup ty (eEval allCtx <$> es)
 
 applyOp :: E (T K) -- ^ Operator
         -> E (T K)
