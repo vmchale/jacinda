@@ -77,11 +77,13 @@ instance Show (T a) where
 -- unary
 data BUn = Tally -- length of string field
          | Const
+         | Not -- ^ Boolean
          deriving (Eq)
 
 instance Pretty BUn where
     pretty Tally = "#"
     pretty Const = "[:"
+    pretty Not   = "!"
 
 -- ternary
 data BTer = ZipW
@@ -241,6 +243,7 @@ instance Pretty (E a) where
     pretty (Dfn _ e)                                              = brackets (pretty e)
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty Ix{}                                                   = "ix"
+    pretty RegexCompiled{}                                        = error "Nonsense."
 
 instance Show (E a) where
     show = show . pretty

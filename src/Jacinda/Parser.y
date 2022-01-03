@@ -167,6 +167,7 @@ E :: { E AlexPosn }
   | E E { EApp (eLoc $1) $1 $2 }
   | tally { UBuiltin $1 Tally }
   | const { UBuiltin $1 Const }
+  | exclamation { UBuiltin $1 Not }
   | lsqbracket E rsqbracket { Dfn $1 $2 }
   | x { ResVar $1 X }
   | y { ResVar $1 Y }

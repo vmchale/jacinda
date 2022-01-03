@@ -7,7 +7,6 @@ import qualified Data.ByteString        as BS
 import qualified Data.ByteString.Lazy   as BSL
 import           Data.Foldable          (toList)
 import           Data.Functor           (void)
-import qualified Data.Vector            as V
 import           Jacinda.AST
 import           Jacinda.File
 import           Jacinda.Parser

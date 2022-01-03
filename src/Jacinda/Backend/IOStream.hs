@@ -15,7 +15,6 @@ import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Regex.Rure                (RureIterPtr, RurePtr)
 import qualified System.IO.Streams         as Streams
 
 data StreamError = FieldFile deriving (Show)
@@ -183,7 +182,7 @@ ifilter p inp = do
         ; pure (p ixϵ x)
         }) inp
 
--- eval stream expression
+-- | eval stream expression using line as context
 ir :: E (T K)
    -> Streams.InputStream BS.ByteString
    -> IO (Streams.InputStream (E (T K))) -- TODO: include chunks/context too?

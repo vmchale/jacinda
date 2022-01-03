@@ -115,7 +115,6 @@ test-suite jacinda-test
                     , tasty
                     , tasty-hunit
                     , bytestring
-                    , vector
 
     if impl(ghc >=8.0)
         ghc-options:

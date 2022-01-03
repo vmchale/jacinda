@@ -303,6 +303,7 @@ tyE0 (BBuiltin _ Matches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) M
 tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
 tyE0 (UBuiltin _ Tally) = pure $ UBuiltin (tyArr tyStr tyI) Tally
 tyE0 (BBuiltin _ Div)   = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
+tyE0 (UBuiltin _ Not)   = pure $ UBuiltin (tyArr tyBool tyBool) Not
 tyE0 (BBuiltin _ And)   = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
 tyE0 (BBuiltin _ Or)    = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
 tyE0 (UBuiltin _ Const) = do
