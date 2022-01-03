@@ -5,10 +5,9 @@ module Intern.Name ( Name (..)
                    , eqName
                    ) where
 
-import           Data.Semigroup ((<>))
-import qualified Data.Text      as T
+import qualified Data.Text     as T
 import           Intern.Unique
-import           Prettyprinter  (Pretty (pretty))
+import           Prettyprinter (Pretty (pretty))
 
 data Name a = Name { name   :: T.Text
                    , unique :: !Unique
