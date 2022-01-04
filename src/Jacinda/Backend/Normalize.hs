@@ -212,12 +212,21 @@ eNorm e@(EApp _ (UBuiltin _ Const) _) = pure e
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
-    modify (mapBinds (IM.insert i b))
+    b' <- eNorm b
+    modify (mapBinds (IM.insert i b'))
     eNorm e
-eNorm (Var _ (Name _ (Unique i) _)) = eNorm =<< renameE =<< gets (IM.findWithDefault (error "Internal error? Ill-scoped expression should've been caught during typechecking") i . binds)
+eNorm e@(Var _ (Name _ (Unique i) _)) = do
+    st <- gets binds
+    case IM.lookup i st of
+        Just e'@Var{} -> eNorm e' -- no cyclic binds!!
+        Just e'       -> renameE e'
+        Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = EApp ty <$> eNorm e <*> eNorm e'
 eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
-    -- TODO: is this better? might normalize twice...
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
     eNorm e
+-- FIXME: this will almost surely run into trouble; if the above pattern matches
+-- are not complete it will bottom!
+eNorm (EApp ty e@EApp{} e') =
+    eNorm =<< (EApp ty <$> eNorm e <*> pure e') -- don't normalize e' yet; hopefully it'll get done.

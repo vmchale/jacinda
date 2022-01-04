@@ -3,6 +3,7 @@
 
 module Jacinda.Regex ( splitBy
                      , splitWhitespace
+                     , defaultRurePtr
                      , isMatch'
                      , compileDefault
                      ) where

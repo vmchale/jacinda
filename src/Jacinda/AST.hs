@@ -13,12 +13,17 @@ module Jacinda.AST ( E (..)
                    , BUn (..)
                    , K (..)
                    , DfnVar (..)
+                   , D (..)
+                   , Program (..)
+                   , mapExpr
+                   , getFS
                    -- * Base functors
                    , EF (..)
                    ) where
 
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
+import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.Generics       (Generic)
@@ -241,7 +246,7 @@ instance Pretty (E a) where
     pretty (StrLit _ bstr)                                        = pretty (decodeUtf8 bstr)
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
-    pretty (Lam _ n e)                                            = parens ("\\" <> pretty n <> "." <+> pretty e)
+    pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
     pretty (Dfn _ e)                                              = brackets (pretty e)
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty Ix{}                                                   = "ix"
@@ -281,5 +286,16 @@ instance Eq (E a) where
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) _ _                                    = False
 
--- TODO: decls/type decls
--- data Program a = Program [D a] (E a)
+-- decl
+data D a = SetFS a BS.ByteString
+
+-- TODO: fun decls (type decls)
+data Program a = Program { decls :: [D a], expr :: E a }
+
+getFS :: Program a -> Maybe BS.ByteString
+getFS (Program ds _) = listToMaybe (concatMap go ds) where
+    go (SetFS _ bs) = [bs]
+    go _            = []
+
+mapExpr :: (E a -> E a) -> Program a -> Program a
+mapExpr f (Program ds e) = Program ds (f e)
