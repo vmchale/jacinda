@@ -49,11 +49,11 @@ where the initial expression is of boolean type, possibly involving the line
 context. An example:
 
 ```
-{`0:i>110}{`0}
+{#`0>110}{`0}
 ```
 
 This defines a stream of lines that are more than 110 bytes.
-The postfix `:i` parses the ``0` field as an integer.
+The postfix `:i` parses the ``1` field as an integer.
 
 ### Fold
 

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <meta name="author" content="Vanessa McHale" />
+  <title>Jacinda - Functional Stream Processing Language</title>
+  <style>
+    html {
+      line-height: 1.5;
+      font-family: Georgia, serif;
+      font-size: 20px;
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 1em;
+      }
+    }
+    @media print {
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, 'Lucida Console', Consolas, monospace;
+      font-size: 85%;
+      margin: 0;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      background-color: #1a1a1a;
+      border: none;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header id="title-block-header">
+<h1 class="title">Jacinda - Functional Stream Processing Language</h1>
+<p class="author">Vanessa McHale</p>
+</header>
+<nav id="TOC" role="doc-toc">
+<ul>
+<li><a href="#tutorial">Tutorial</a>
+<ul>
+<li><a href="#tour-de-force">Tour de Force</a>
+<ul>
+<li><a href="#filtering">Filtering</a></li>
+<li><a href="#fold">Fold</a></li>
+<li><a href="#map">Map</a></li>
+<li><a href="#parting-shots">Parting Shots</a></li>
+<li><a href="#functions">Functions</a></li>
+</ul></li>
+</ul></li>
+<li><a href="#machinery">Machinery</a></li>
+</ul>
+</nav>
+<h1 id="tutorial">Tutorial</h1>
+<p>Jacinda has fluent support for filters, maps and folds that are familiar to functional programmers; the syntax in particular is derivative of J or APL.</p>
+<p>Jacinda is at its best when piped through other command-line tools (including awk).</p>
+<h2 id="tour-de-force">Tour de Force</h2>
+<h3 id="filtering">Filtering</h3>
+<p>Awk is oriented around patterns and actions. Jacinda has support for a similar style: one defines a pattern and an expression defined by the lines that this matches, viz. </p>
+<pre><code>{% &lt;pattern&gt;}{&lt;expr&gt;}</code></pre>
+<p>This defines a stream of expressions.</p>
+<p>One can search a file for all occurrences of a string:</p>
+<pre><code>ja &#39;{% /Bloom/}{`0}&#39; -i ulysses.txt</code></pre>
+<p>`<code>0</code> here functions like <code>$0</code> in awk: it means the whole line. <!-- mention type --></p>
+<p>Thus, the above functions like ripgrep. We could imitate fd with, say:</p>
+<pre><code>ls -1 -R | ja &#39;{% /\.hs$/}{`0}&#39;</code></pre>
+<p>This would print all Haskell source files in the current directory.</p>
+<p>There is another form,</p>
+<pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
+<p>where the initial expression is of boolean type, possibly involving the line context. An example:</p>
+<pre><code>{`0:i&gt;110}{`0}</code></pre>
+<p>This defines a stream of lines that are more than 110 bytes. The postfix <code>:i</code> parses the `<code>0</code> field as an integer.</p>
+<h3 id="fold">Fold</h3>
+<p>Then, count lines with the word “Bloom”:</p>
+<pre><code>ja &#39;(+)|0 {% /Bloom/}{1}&#39; -i ulysses.txt</code></pre>
+<p>Note the <em>fold</em>, <code>|</code>. It is a ternary operator taking <code>(+)</code>, <code>0</code>, and <code>{% /Bloom/}{1}</code> as arguments. The general syntax is:</p>
+<pre><code>&lt;expr&gt;|&lt;expr&gt; &lt;expr&gt;</code></pre>
+<p>It takes a binary operator, a seed, and a stream and returns an expression.</p>
+<h3 id="map">Map</h3>
+<p>Suppose we wish to count the lines in a file. We have nearly all the tools to do so:</p>
+<pre><code>(+)|0 {#t}{1}</code></pre>
+<p>This uses the above <code>{&lt;expr&gt;}{&lt;expr&gt;}</code> syntax. <code>#t</code> is a boolean literal. So this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
+<p>We could also do the following:</p>
+<pre><code>(+)|0 [:1&quot;$0</code></pre>
+<p><code>$0</code> is the stream of all lines.</p>
+<h3 id="parting-shots">Parting Shots</h3>
+<pre><code>any := [(||)|#f x]
+
+all := [(&amp;)|#t x]
+
+count := [(+)|0 [:1&quot;x]</code></pre>
+<h3 id="functions">Functions</h3>
+<p>We could abstract away <code>sum</code> in the above example like so:</p>
+<pre><code>let val
+  sum := [(+)|0 x]
+in sum {% /Bloom/}{1} end</code></pre>
+<p>In Jacinda, one defines functions like <a href="https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm">dfns</a> in APL. We do not need to bind <code>x</code>; the variables <code>x</code> and <code>y</code> are implicit. Since <code>[(+)|0 x]</code> only mentions <code>x</code>, it is treated as a unary function.</p>
+<p>Note also that <code>:=</code> is used for function definition. The general syntax is</p>
+<pre><code>let (val &lt;name&gt; := &lt;expr&gt;)* in &lt;expr&gt; end</code></pre>
+<!-- TODO: scans, zips -->
+<h1 id="machinery">Machinery</h1>
+<p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to disambiguate operators and witness with an implementation.</p>
+</body>
+</html>
