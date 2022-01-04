@@ -274,3 +274,4 @@ runJac _ _ ResVar{} = desugar
 runJac _ _ BBuiltin{} = Left UnevalFun
 runJac _ _ UBuiltin{} = Left UnevalFun
 runJac _ _ TBuiltin{} = Left UnevalFun
+runJac re i e@(EApp _ Lam{} _) = runJac re i (eClosed i e)

@@ -226,6 +226,7 @@ eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
     eNorm e
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 -- FIXME: this will almost surely run into trouble; if the above pattern matches
 -- are not complete it will bottom!
 eNorm (EApp ty e@EApp{} e') =
