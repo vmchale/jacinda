@@ -214,23 +214,24 @@ eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
     b' <- eNorm b
     modify (mapBinds (IM.insert i b'))
-    eNorm e
+    res <- eNorm e
+    error (show res)
 eNorm e@(Var _ (Name _ (Unique i) _)) = do
     st <- gets binds
     case IM.lookup i st of
         Just e'@Var{} -> eNorm e' -- no cyclic binds!!
         Just e'       -> renameE e'
         Nothing       -> pure e -- default to e in case var was bound in a lambda
-eNorm (EApp ty e@Var{} e') = EApp ty <$> eNorm e <*> eNorm e'
+eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
     eNorm e
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
--- FIXME: this will almost surely run into trouble; if the above pattern matches
--- are not complete it will bottom!
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
+-- FIXME: this will almost surely run into trouble; if the above pattern matches
+-- are not complete it will bottom!
 eNorm (EApp ty e@EApp{} e') =
-    eNorm =<< (EApp ty <$> eNorm e <*> pure e') -- don't normalize e' yet; hopefully it'll get done.
+    eNorm =<< (EApp ty <$> eNorm e <*> pure e')

@@ -18,7 +18,9 @@ import qualified System.IO.Streams         as Streams
 import           System.IO.Streams.Ext     as Streams
 
 data StreamError = NakedField
-                 | UnevalFun deriving (Show)
+                 | UnevalFun
+                 | TupOfStreams -- ^ Reject a tuple of streams
+                 deriving (Show)
 
 instance Exception StreamError where
 
@@ -286,3 +288,4 @@ fileProcessor _ _ ResVar{} = badSugar
 fileProcessor _ _ BBuiltin{} = Left UnevalFun
 fileProcessor _ _ UBuiltin{} = Left UnevalFun
 fileProcessor _ _ TBuiltin{} = Left UnevalFun
+fileProcessor _ _ e = error (show e)
