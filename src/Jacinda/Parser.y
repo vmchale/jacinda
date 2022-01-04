@@ -22,7 +22,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
 }
 
-%name parseE E
+%name parseP Program
 %tokentype { Token AlexPosn }
 %error { parseError }
 %monad { Parse } { (>>=) } { pure }
@@ -83,6 +83,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     in { TokKeyword $$ KwIn }
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
+    set { TokKeyword $$ KwSet }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -90,6 +91,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     min { TokResVar $$ VarMin }
     max { TokResVar $$ VarMax }
     ix { TokResVar $$ VarIx }
+    fs { TokResVar $$ VarFs }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -141,6 +143,12 @@ BBin :: { BBin }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
+
+D :: { D AlexPosn }
+  : set fs defEq rr semicolon { SetFS $1 (BSL.toStrict $ rr $4) }
+
+Program :: { Program AlexPosn }
+        : many(D) E { Program (reverse $1) $2 }
 
 E :: { E AlexPosn }
   : name { Var (Name.loc $1) $1 }
@@ -203,18 +211,18 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-parse :: BSL.ByteString -> Either (ParseError AlexPosn) (E AlexPosn)
-parse = fmap snd . runParse parseE
+parse :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn)
+parse = fmap snd . runParse parseP
 
-parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, E AlexPosn)
+parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, Program AlexPosn)
 parseWithMax = fmap (first fst3) . parseWithInitCtx
     where fst3 (x, _, _) = x
 
-parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, E AlexPosn)
+parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
 parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 
-parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, E AlexPosn)
-parseWithCtx = parseWithInitSt parseE
+parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
+parseWithCtx = parseWithInitSt parseP
 
 runParse :: Parse a -> BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, a)
 runParse parser str = liftErr $ runAlexSt str (runExceptT parser)

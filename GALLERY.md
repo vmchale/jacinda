@@ -89,7 +89,7 @@ Is there a line >110 bytes?
 # CSV Processing
 
 ```
-csvformat excess-j.csv -D '|' | ja ':set fs := /|/; $1'
+csvformat excess-j.csv -D '|' | ja ':set fs := /\|/; $1'
 ```
 
 # Balance Parens
@@ -113,6 +113,13 @@ ls -l | ja '(+)|0 {ix>1}{`5:i}'
 ```
 cat *.pgn | grep "Result" | awk '{ split($0, a, "-"); res = substr(a[1], length(a[1]), 1); if (res == 1) white++; if (res == 0) black++; if (res == 2) draw++;} END { print white+black+draw, white, black, draw }'
 ```
+
+```
+cat *.pgn | grep "Result" | awk '{ split($0, a, "-"); res = substr(a[1], length(a[1]), 1); print res }' | ja 'let val sum := [(+)|0 x] in (sum {`1~/\d/ & `1:i=1}{1}) end'
+```
+
+Awk is doing the heavy lifting here but it is notably more prolix when
+summarizing data.
 
 # Library Functions
 

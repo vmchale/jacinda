@@ -92,12 +92,14 @@ tokens :-
         "[:"                     { mkSym ConstTok }
         "!"                      { mkSym Exclamation }
         ":"                      { mkSym Colon }
+        ";"                      { mkSym Semicolon }
         "\."                     { mkSym BackslashDot }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
         val                      { mkKw KwVal }   
         end                      { mkKw KwEnd }
+        :set                     { mkKw KwSet }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -251,6 +253,7 @@ data Keyword = KwLet
              | KwIn
              | KwVal
              | KwEnd
+             | KwSet
 
 -- | Reserved/special variables
 data Var = VarX
@@ -274,6 +277,7 @@ instance Pretty Keyword where
     pretty KwIn  = "in"
     pretty KwVal = "val"
     pretty KwEnd = "end"
+    pretty KwSet = ":set"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse
