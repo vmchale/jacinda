@@ -1,6 +1,7 @@
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
                                  , eClosed
+                                 , desugar
                                  ) where
 
 import           Control.Monad.State.Strict (State, evalState, gets, modify)
@@ -11,6 +12,7 @@ import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Regex
+import           Jacinda.Rename
 import           Jacinda.Ty.Const
 
 -- fill in regex with compiled.
@@ -23,13 +25,22 @@ compileR = cata a where -- TODO: combine with eNorm pass?
 desugar :: a
 desugar = error "Should have been desugared by this stage."
 
-type LetCtx = IM.IntMap (E (T K))
+data LetCtx = LetCtx { binds    :: IM.IntMap (E (T K))
+                     , renames_ :: Renames
+                     }
+
+instance HasRenames LetCtx where
+    rename f s = fmap (\x -> s { renames_ = x }) (f (renames_ s))
+
+mapBinds :: (IM.IntMap (E (T K)) -> IM.IntMap (E (T K))) -> LetCtx -> LetCtx
+mapBinds f (LetCtx b r) = LetCtx (f b) r
 
 type EvalM = State LetCtx
 
-eClosed :: E (T K)
+eClosed :: Int
         -> E (T K)
-eClosed = flip evalState IM.empty . eNorm
+        -> E (T K)
+eClosed i = flip evalState (LetCtx IM.empty (Renames i IM.empty)) . eNorm
 
 eNorm :: E (T K)
       -> EvalM (E (T K))
@@ -201,7 +212,7 @@ eNorm e@(EApp _ (UBuiltin _ Const) _) = pure e
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
-    modify (IM.insert i b)
+    modify (mapBinds (IM.insert i b))
     eNorm e
-eNorm (Var _ (Name _ (Unique i) _)) = gets (IM.findWithDefault (error "Internal error? Ill-scoped expression should've been caught during typechecking") i)
+eNorm (Var _ (Name _ (Unique i) _)) = renameE =<< gets (IM.findWithDefault (error "Internal error? Ill-scoped expression should've been caught during typechecking") i . binds)
 eNorm (EApp ty e@Var{} e') = EApp ty <$> eNorm e <*> eNorm e'

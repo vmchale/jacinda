@@ -16,7 +16,8 @@ import           Jacinda.Ty.Const
 import qualified System.IO.Streams         as Streams
 import           System.IO.Streams.Ext     as Streams
 
-data StreamError = NakedField deriving (Show)
+data StreamError = NakedField
+                 | UnevalFun deriving (Show)
 
 instance Exception StreamError where
 
@@ -210,7 +211,8 @@ printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
 
 -- TODO: eNormal before runJac
-runJac :: E (T K)
+runJac :: Int
+       -> E (T K)
        -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
 runJac AllField{}    = Left NakedField
 runJac Field{}       = Left NakedField
@@ -222,6 +224,12 @@ runJac AllColumn{} = Right $ \inp -> do
 runJac (Column _ i) = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps =<< Streams.map (mkStr . atField i) inp
+runJac (IParseCol _ i) = Right $ \inp -> do
+    ps <- printStream
+    Streams.connectTo ps =<< Streams.map (parseAsEInt . atField i) inp
+runJac (FParseCol _ i) = Right $ \inp -> do
+    ps <- printStream
+    Streams.connectTo ps =<< Streams.map (parseAsF . atField i) inp
 -- TODO: this should extract any regex and compile them, use io/low-level API...
 runJac e@Guarded{} = Right $ \inp -> do
     resStream <- ir e inp
@@ -245,4 +253,15 @@ runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps resStream
 runJac e@Let{} = runJac (eClosed e)
-runJac Var{} = error "Internal error: ill-scoping should've been caught in the typechecker stage."
+runJac Var{} = error "Internal error?"
+runJac e@IntLit{} = Right $ const (print e)
+runJac e@BoolLit{} = Right $ const (print e)
+runJac e@StrLit{} = Right $ const (print e)
+runJac e@FloatLit{} = Right $ const (print e)
+runJac e@RegexLit{} = Right $ const (print e)
+runJac Lam{} = Left UnevalFun
+runJac Dfn{} = desugar
+runJac ResVar{} = desugar
+runJac BBuiltin{} = Left UnevalFun
+runJac UBuiltin{} = Left UnevalFun
+runJac TBuiltin{} = Left UnevalFun
