@@ -10,6 +10,7 @@ import           System.IO            (stdin)
 data Command = TypeCheck !FilePath
              | Run !FilePath !(Maybe FilePath)
              | Expr !BSL.ByteString !(Maybe FilePath)
+             | Eval !BSL.ByteString
 
 jacFile :: Parser FilePath
 jacFile = argument str
@@ -34,12 +35,14 @@ jacCompletions = completer . bashCompleter $ "file -X '!*.jac' -o plusdirs"
 commandP :: Parser Command
 commandP = hsubparser
     (command "tc" (info tcP (progDesc "Type-check file"))
+    <> command "e" (info eP (progDesc "Evaluate an expression (no file context)"))
     <> command "run" (info runP (progDesc "Run from file")))
     <|> exprP
     where
         tcP = TypeCheck <$> jacFile
         runP = Run <$> jacFile <*> inpFile
         exprP = Expr <$> jacExpr <*> inpFile
+        eP = Eval <$> jacExpr
 
 wrapper :: ParserInfo Command
 wrapper = info (helper <*> versionMod <*> commandP)
@@ -59,3 +62,4 @@ run (Run fp Nothing)    = do { contents <- BSL.readFile fp ; runOnHandle content
 run (Run fp (Just dat)) = do { contents <- BSL.readFile fp ; runOnFile contents dat }
 run (Expr eb Nothing)   = runOnHandle eb stdin
 run (Expr eb (Just fp)) = runOnFile eb fp
+run (Eval e)            = print (exprEval e)

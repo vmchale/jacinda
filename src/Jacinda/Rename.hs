@@ -5,6 +5,7 @@ module Jacinda.Rename ( renameE
                       , renameEGlobal
                       , RenameM
                       , Renames (..)
+                      , HasRenames (..)
                       ) where
 
 import           Control.Monad.State.Strict (MonadState, State, runState)
@@ -111,7 +112,7 @@ replaceX n = cata a where
     a (ResVarF l X) = Var l (n l)
     a x             = embed x
 
-renameE :: E a -> RenameM (E a)
+renameE :: (HasRenames s, MonadState s m) => E a -> m (E a)
 renameE (EApp l e e')   = EApp l <$> renameE e <*> renameE e'
 renameE (Tup l es)      = Tup l <$> traverse renameE es
 renameE (Var l n)       = Var l <$> replaceVar n

@@ -68,7 +68,7 @@ instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
     pretty (TyVar _ n)      = "'" <> pretty n -- type variables are ticked
-    pretty (TyArr _ ty ty') = pretty ty <+> "->" <+> pretty ty' -- tODO: unicode arrows
+    pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty' -- tODO: unicode arrows
     pretty (TyTup _ tys)    = jacTup tys
 
 instance Show (T a) where
@@ -241,7 +241,7 @@ instance Pretty (E a) where
     pretty (StrLit _ bstr)                                        = pretty (decodeUtf8 bstr)
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
-    pretty (Lam _ n e)                                            = "\\" <> pretty n <> "." <+> pretty e
+    pretty (Lam _ n e)                                            = parens ("\\" <> pretty n <> "." <+> pretty e)
     pretty (Dfn _ e)                                              = brackets (pretty e)
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty Ix{}                                                   = "ix"
