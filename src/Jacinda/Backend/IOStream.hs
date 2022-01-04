@@ -16,7 +16,8 @@ import           Jacinda.Ty.Const
 import qualified System.IO.Streams         as Streams
 import           System.IO.Streams.Ext     as Streams
 
-data StreamError = NakedField deriving (Show)
+data StreamError = NakedField
+                 | UnevalFun deriving (Show)
 
 instance Exception StreamError where
 
@@ -61,6 +62,8 @@ asFloat _              = noRes
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common module?
+
+-- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
@@ -145,11 +148,12 @@ eEval allCtx@(ix, line, ctx) = go where
         where str = asStr (eEval allCtx e)
     go (Tup ty es) = Tup ty (eEval allCtx <$> es)
 
-applyOp :: E (T K) -- ^ Operator
+applyOp :: Int
+        -> E (T K) -- ^ Operator
         -> E (T K)
         -> E (T K)
         -> E (T K)
-applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
+applyOp i op e e' = eClosed i (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
 atField :: Int
         -> BS.ByteString -- ^ Line
@@ -168,29 +172,30 @@ applyUn unOp e =
         _             -> error "Internal error?"
 
 -- | eval stream expression using line as context
-ir :: E (T K)
+ir :: Int
+   -> E (T K)
    -> Streams.InputStream BS.ByteString
    -> IO (Streams.InputStream (E (T K))) -- TODO: include chunks/context too?
-ir AllColumn{}     = Streams.map mkStr
-ir (Column _ i)    = Streams.map (mkStr . atField i)
-ir (IParseCol _ i) = Streams.map (parseAsEInt . atField i)
-ir (FParseCol _ i) = Streams.map (parseAsF . atField i)
-ir (Guarded _ pe e) =
+ir _ AllColumn{}     = Streams.map mkStr
+ir _ (Column _ i)    = Streams.map (mkStr . atField i)
+ir _ (IParseCol _ i) = Streams.map (parseAsEInt . atField i)
+ir _ (FParseCol _ i) = Streams.map (parseAsF . atField i)
+ir _ (Guarded _ pe e) =
     let pe' = compileR pe
     -- FIXME: compile e too?
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
-ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eNorm op in Streams.map (eNorm . applyUn op') <=< ir stream
-ir (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eNorm op in Streams.prior (applyOp op') <=< ir stream
-ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
+ir i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eClosed i op in Streams.map (eClosed i . applyUn op') <=< ir i stream
+ir i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eClosed i op in Streams.prior (applyOp i op') <=< ir i stream
+ir i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
-    irl <- ir streaml inp0
-    irr <- ir streamr inp1
-    let op' = eNorm op
-    Streams.zipWith (applyOp op') irl irr
-ir (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
-    let op' = eNorm op
-    Streams.scan (applyOp op') (eNorm seed) =<< ir xs inp
+    irl <- ir i streaml inp0
+    irr <- ir i streamr inp1
+    let op' = eClosed i op
+    Streams.zipWith (applyOp i op') irl irr
+ir i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
+    let op' = eClosed i op
+    Streams.scan (applyOp i op') (eClosed i seed) =<< ir i xs inp
 
 mkStr :: BS.ByteString -- ^ Field
       -> E (T K)
@@ -207,40 +212,62 @@ parseAsF = FloatLit tyF . readFloat
 printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
 
--- TODO: eNormal before runJac
-runJac :: E (T K)
+-- TODO: eClosed before runJac or w/e
+--
+-- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
+-- won't blow up in our faces idk
+runJac :: Int
+       -> E (T K)
        -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
-runJac AllField{}    = Left NakedField
-runJac Field{}       = Left NakedField
-runJac IParseField{} = Left NakedField
-runJac FParseField{} = Left NakedField
-runJac AllColumn{} = Right $ \inp -> do
+runJac _ AllField{}    = Left NakedField
+runJac _ Field{}       = Left NakedField
+runJac _ IParseField{} = Left NakedField
+runJac _ FParseField{} = Left NakedField
+runJac _ AllColumn{} = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps =<< Streams.map mkStr inp
-runJac (Column _ i) = Right $ \inp -> do
+runJac _ (Column _ i) = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps =<< Streams.map (mkStr . atField i) inp
+runJac _ (IParseCol _ i) = Right $ \inp -> do
+    ps <- printStream
+    Streams.connectTo ps =<< Streams.map (parseAsEInt . atField i) inp
+runJac _ (FParseCol _ i) = Right $ \inp -> do
+    ps <- printStream
+    Streams.connectTo ps =<< Streams.map (parseAsF . atField i) inp
 -- TODO: this should extract any regex and compile them, use io/low-level API...
-runJac e@Guarded{} = Right $ \inp -> do
-    resStream <- ir e inp
+runJac i e@Guarded{} = Right $ \inp -> do
+    resStream <- ir i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) (eNorm seed) <=< ir stream
-runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
-    resStream <- ir e inp
+runJac i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp i op) (eClosed i seed) <=< ir i stream
+runJac i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
+    resStream <- ir i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
-    resStream <- ir e inp
+runJac i e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
+    resStream <- ir i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
-    resStream <- ir e inp
+runJac i e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
+    resStream <- ir i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
-    resStream <- ir e inp
+runJac i e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
+    resStream <- ir i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac e@Let{} = runJac (eNorm e)
-runJac Var{} = error "Internal error: ill-scoping should've been caught in the typechecker stage."
+runJac i e@Let{} = runJac i (eClosed i e)
+runJac _ Var{} = error "Internal error?"
+runJac _ e@IntLit{} = Right $ const (print e)
+runJac _ e@BoolLit{} = Right $ const (print e)
+runJac _ e@StrLit{} = Right $ const (print e)
+runJac _ e@FloatLit{} = Right $ const (print e)
+runJac _ e@RegexLit{} = Right $ const (print e)
+runJac _ Lam{} = Left UnevalFun
+runJac _ Dfn{} = desugar
+runJac _ ResVar{} = desugar
+runJac _ BBuiltin{} = Left UnevalFun
+runJac _ UBuiltin{} = Left UnevalFun
+runJac _ TBuiltin{} = Left UnevalFun
+runJac _ e = error (show e)

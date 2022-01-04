@@ -10,7 +10,8 @@ module Jacinda.Ty ( TypeM
 
 import           Control.Exception          (Exception)
 import           Control.Monad.Except       (throwError)
-import           Control.Monad.State.Strict (StateT, evalStateT, gets)
+import           Control.Monad.State.Strict (StateT, gets, runStateT)
+import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
@@ -96,8 +97,8 @@ constraintsLens f s = fmap (\x -> s { constraints = x }) (f (constraints s))
 
 type TypeM a = StateT (TyState a) (Either (Error a))
 
-runTypeM :: Int -> TypeM a b -> Either (Error a) b
-runTypeM i = flip evalStateT (TyState i IM.empty IM.empty IM.empty S.empty)
+runTypeM :: Int -> TypeM a b -> Either (Error a) (b, Int)
+runTypeM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.empty S.empty)
 
 type UnifyMap a = IM.IntMap (T a)
 
