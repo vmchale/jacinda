@@ -30,7 +30,7 @@
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
-- [ ] `\\` (backslash) for "prior", succ diffs
+- [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
