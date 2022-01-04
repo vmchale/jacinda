@@ -251,6 +251,7 @@ instance Pretty (E a) where
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty Ix{}                                                   = "ix"
     pretty RegexCompiled{}                                        = error "Nonsense."
+    pretty (Let _ (n, b) e)                                       = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
 
 instance Show (E a) where
     show = show . pretty
@@ -295,7 +296,6 @@ data Program a = Program { decls :: [D a], expr :: E a }
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where
     go (SetFS _ bs) = [bs]
-    go _            = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)
