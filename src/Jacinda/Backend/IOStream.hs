@@ -62,6 +62,8 @@ asFloat _              = noRes
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common module?
 
+-- TODO: do I want to interleave state w/ eNorm or w/e
+
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
@@ -149,7 +151,7 @@ applyOp :: E (T K) -- ^ Operator
         -> E (T K)
         -> E (T K)
         -> E (T K)
-applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
+applyOp op e e' = eClosed (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
 atField :: Int
         -> BS.ByteString -- ^ Line
@@ -180,17 +182,17 @@ ir (Guarded _ pe e) =
     -- FIXME: compile e too?
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
-ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eNorm op in Streams.map (eNorm . applyUn op') <=< ir stream
-ir (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eNorm op in Streams.prior (applyOp op') <=< ir stream
+ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eClosed op in Streams.map (eClosed . applyUn op') <=< ir stream
+ir (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eClosed op in Streams.prior (applyOp op') <=< ir stream
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
     irl <- ir streaml inp0
     irr <- ir streamr inp1
-    let op' = eNorm op
+    let op' = eClosed op
     Streams.zipWith (applyOp op') irl irr
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
-    let op' = eNorm op
-    Streams.scan (applyOp op') (eNorm seed) =<< ir xs inp
+    let op' = eClosed op
+    Streams.scan (applyOp op') (eClosed seed) =<< ir xs inp
 
 mkStr :: BS.ByteString -- ^ Field
       -> E (T K)
@@ -225,7 +227,7 @@ runJac e@Guarded{} = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) (eNorm seed) <=< ir stream
+runJac (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp op) (eClosed seed) <=< ir stream
 runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
@@ -242,5 +244,5 @@ runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac e@Let{} = runJac (eNorm e)
+runJac e@Let{} = runJac (eClosed e)
 runJac Var{} = error "Internal error: ill-scoping should've been caught in the typechecker stage."
