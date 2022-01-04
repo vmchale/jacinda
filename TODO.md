@@ -25,6 +25,7 @@
 - [x] `[:` as shorthand for `const`
 - [ ] `.1` etc. to extract tuples (arrays?)
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
+- [ ] parse dates
 ## Syntax
 - [ ] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
