@@ -80,7 +80,7 @@ so:
 (+)|0 {#t}{1}
 ```
 
-This uses the above `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
+This uses aforementioned `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
 this defines a stream of `1`s for each line, and takes its sum.
 
 We could also do the following:
@@ -90,16 +90,6 @@ We could also do the following:
 ```
 
 `$0` is the stream of all lines.
-
-### Parting Shots
-
-```
-any := [(||)|#f x]
-
-all := [(&)|#t x]
-
-count := [(+)|0 [:1"x]
-```
 
 ### Functions
 
@@ -161,6 +151,16 @@ succDiff := [(-) \. x]
 ```
 
 to track successive differences.
+
+### Parting Shots
+
+```
+any := [(||)|#f x]
+
+all := [(&)|#t x]
+
+count := [(+)|0 [:1"x]
+```
 
 # Machinery
 
