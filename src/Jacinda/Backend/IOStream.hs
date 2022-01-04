@@ -215,6 +215,14 @@ parseAsF = FloatLit tyF . readFloat
 printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
 
+foldWithCtx :: RurePtr -> Int
+            -> E (T K)
+            -> E (T K)
+            -> E (T K)
+            -> Streams.InputStream BS.ByteString
+            -> IO (E (T K))
+foldWithCtx re i op seed streamExpr = Streams.fold (applyOp i op) (eClosed i seed) <=< ir re i streamExpr
+
 -- TODO: eClosed before runJac or w/e
 --
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
@@ -244,7 +252,7 @@ runJac re i e@Guarded{} = Right $ \inp -> do
     resStream <- ir re i e inp
     ps <- printStream
     Streams.connectTo ps resStream
-runJac re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< Streams.fold (applyOp i op) (eClosed i seed) <=< ir re i stream
+runJac re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< foldWithCtx re i op seed stream
 runJac re i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir re i e inp
     ps <- printStream
