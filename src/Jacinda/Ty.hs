@@ -126,24 +126,22 @@ unifyPrep um ((l, ty, ty'):tys) =
 
 unifyMatch :: UnifyMap a -> [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unifyMatch _ [] = pure mempty
-unifyMatch um ((l, ty@(TyB _ b), ty'@(TyB _ b')):tys) | b == b' = unifyPrep um tys
-                                                      | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
-unifyMatch um ((l, ty@(TyNamed _ n0), ty'@(TyNamed _ n1)):tys) | n0 == n1 = unifyPrep um tys
-                                                               | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
+unifyMatch um ((_, TyB _ b, TyB _ b'):tys) | b == b' = unifyPrep um tys
+unifyMatch um ((_, TyNamed _ n0, TyNamed _ n1):tys) | n0 == n1 = unifyPrep um tys
 unifyMatch um ((_, ty@TyB{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyB{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, ty@TyArr{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyArr{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, ty@TyApp{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyTup{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, ty@TyTup{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyApp{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((l, TyApp _ ty ty', TyApp _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
 unifyMatch um ((l, TyArr _ ty ty', TyArr _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
-unifyMatch _ ((l, ty@TyApp{}, ty'@TyNamed{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
 unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
     | n == n' = unifyPrep um tys -- a type variable is always equal to itself, don't bother inserting this!
     | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch _ ((l, ty@TyArr{}, ty'@TyB{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
-unifyMatch _ ((l, ty@TyB{}, ty'@TyArr{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
+unifyMatch _ ((l, ty, ty'):_) = throwError (UnificationFailed l (void ty) (void ty'))
 
 unify :: [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unify = unifyPrep IM.empty
