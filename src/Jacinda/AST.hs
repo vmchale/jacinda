@@ -68,7 +68,7 @@ instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
     pretty (TyVar _ n)      = "'" <> pretty n -- type variables are ticked
-    pretty (TyArr _ ty ty') = pretty ty <+> "->" <+> pretty ty' -- tODO: unicode arrows
+    pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty' -- tODO: unicode arrows
     pretty (TyTup _ tys)    = jacTup tys
 
 instance Show (T a) where
