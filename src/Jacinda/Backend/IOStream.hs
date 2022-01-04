@@ -270,3 +270,4 @@ runJac _ ResVar{} = desugar
 runJac _ BBuiltin{} = Left UnevalFun
 runJac _ UBuiltin{} = Left UnevalFun
 runJac _ TBuiltin{} = Left UnevalFun
+runJac _ e = error (show e)

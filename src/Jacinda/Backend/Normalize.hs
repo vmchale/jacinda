@@ -214,5 +214,10 @@ eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
     modify (mapBinds (IM.insert i b))
     eNorm e
-eNorm (Var _ (Name _ (Unique i) _)) = renameE =<< gets (IM.findWithDefault (error "Internal error? Ill-scoped expression should've been caught during typechecking") i . binds)
+eNorm (Var _ (Name _ (Unique i) _)) = eNorm =<< renameE =<< gets (IM.findWithDefault (error "Internal error? Ill-scoped expression should've been caught during typechecking") i . binds)
 eNorm (EApp ty e@Var{} e') = EApp ty <$> eNorm e <*> eNorm e'
+eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
+    -- TODO: is this better? might normalize twice...
+    e'' <- eNorm e'
+    modify (mapBinds (IM.insert i e''))
+    eNorm e
