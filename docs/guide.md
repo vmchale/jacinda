@@ -144,7 +144,7 @@ step. One could define a stream containing line numbers for a file with:
 
 ### Prior
 
-Jacinda has a binary operator, `\.`, like q's `prior` or J's [dyadic infix](https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic). One could write:
+Jacinda has a binary operator, `\.`, like q's [each prior](https://code.kx.com/q/ref/maps/#each-prior) or J's [dyadic infix](https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic). One could write:
 
 ```
 succDiff := [(-) \. x]
