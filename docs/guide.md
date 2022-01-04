@@ -121,7 +121,46 @@ Note also that `:=` is used for function definition. The general syntax is
 let (val <name> := <expr>)* in <expr> end
 ```
 
-<!-- TODO: scans, zips -->
+### Zips
+
+The syntax is:
+
+```
+, <expr> <expr> <expr>
+```
+
+One could (for instance) calculate population density:
+
+```
+, (%) $5:f $6:f
+```
+
+### Scans
+
+The syntax is:
+
+```
+<expr> ^ <expr> <expr>
+```
+
+Scans are like folds, except that the intermediate value is tracked at each
+step. One could define a stream containing line numbers for a file with:
+
+```
+(+)^0 [:1"$0
+```
+
+(this is the same as `{#t}{ix}`)
+
+### Prior
+
+Jacinda has a binary operator, `\.`, like q's `prior` or J's [dyadic infix](https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic). One could write:
+
+```
+succDiff := [(-) \. x]
+```
+
+to track successive differences.
 
 # Machinery
 
