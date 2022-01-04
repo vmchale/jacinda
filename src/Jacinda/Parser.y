@@ -34,6 +34,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     colon { TokSym $$ Colon }
     lbrace { TokSym $$ LBrace }
     rbrace { TokSym $$ RBrace }
+    rbracedot { TokSym $$ RBraceDot }
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
@@ -164,7 +165,7 @@ E :: { E AlexPosn }
   | field iParse { IParseField (loc $1) (ix $1) }
   | field fParse { FParseField (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
-  -- TODO: left and right sections
+  | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
   | parens(E) { $1 }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
@@ -172,6 +173,7 @@ E :: { E AlexPosn }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BBuiltin tl Matches) (AllField tl)) $2) $4 }
+  | lbrace E rbracedot E { EApp $1 (EApp $1 (BBuiltin $3 Filter) $2) $4 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }

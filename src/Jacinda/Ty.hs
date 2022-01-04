@@ -324,6 +324,11 @@ tyE0 (UBuiltin _ Const) = do
         b' = var b
         fTy = tyArr a' (tyArr b' a')
     pure $ UBuiltin fTy Const
+tyE0 (BBuiltin _ Filter) = do
+    a <- dummyName "a"
+    let a' = var a
+        fTy = tyArr (tyArr a' tyBool) (tyArr (tyStream a') (tyStream a'))
+    pure $ BBuiltin fTy Filter
 tyE0 (BBuiltin _ Map) = do
     a <- dummyName "a"
     b <- dummyName "b"

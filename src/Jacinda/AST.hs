@@ -120,6 +120,7 @@ data BBin = Plus
           | Min
           | Max
           | Prior
+          | Filter
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 

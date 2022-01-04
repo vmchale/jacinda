@@ -60,6 +60,7 @@ tokens :-
         ":="                     { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
+        "}."                     { mkSym RBraceDot }
 
         -- symbols/operators
         "%"                      { mkSym PercentTok }
@@ -188,6 +189,7 @@ data Sym = PlusTok
          | Colon
          | LBrace
          | RBrace
+         | RBraceDot
          | LParen
          | RParen
          | LSqBracket
@@ -223,6 +225,7 @@ instance Pretty Sym where
     pretty Colon         = ":"
     pretty LBrace        = "{"
     pretty RBrace        = "}"
+    pretty RBraceDot     = "}."
     pretty Semicolon     = ";"
     pretty Underscore    = "_"
     pretty EqTok         = "="
