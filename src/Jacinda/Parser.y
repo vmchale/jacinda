@@ -46,6 +46,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     tally { TokSym $$ TallyTok }
     const { TokSym $$ ConstTok }
     exclamation { TokSym $$ Exclamation }
+    backslash { TokSym $$ BackslashDot }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -136,6 +137,7 @@ BBin :: { BBin }
      | notMatch { NotMatches }
      | and { And }
      | or { Or }
+     | backslash { Prior }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }

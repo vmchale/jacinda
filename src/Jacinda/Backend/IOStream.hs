@@ -8,15 +8,15 @@ import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
-import           Data.IORef                (modifyIORef', newIORef, readIORef)
 import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import qualified System.IO.Streams         as Streams
+import           System.IO.Streams.Ext     as Streams
 
-data StreamError = FieldFile deriving (Show)
+data StreamError = NakedField deriving (Show)
 
 instance Exception StreamError where
 
@@ -103,7 +103,11 @@ eEval allCtx@(ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
-            in IntLit tyI (eI + eI')
+            in mkI (eI + eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
+        let eI = asStr (eEval allCtx e)
+            eI' = asStr (eEval allCtx e')
+            in StrLit tyI (eI <> eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
@@ -163,28 +167,6 @@ applyUn unOp e =
         TyArr _ _ res -> EApp res unOp e
         _             -> error "Internal error?"
 
-imap :: (Int -> a -> b)
-     -> Streams.InputStream a
-     -> IO (Streams.InputStream b)
-imap f inp = do
-    ix <- newIORef 1
-    Streams.mapM (\a -> do
-        { ixϵ <- readIORef ix
-        ; modifyIORef' ix (+1)
-        ; pure (f ixϵ a)
-        }) inp
-
-ifilter :: (Int -> a -> Bool)
-        -> Streams.InputStream a
-        -> IO (Streams.InputStream a)
-ifilter p inp = do
-    ix <- newIORef 1
-    Streams.filterM (\x -> do
-        { ixϵ <- readIORef ix
-        ; modifyIORef' ix (+1)
-        ; pure (p ixϵ x)
-        }) inp
-
 -- | eval stream expression using line as context
 ir :: E (T K)
    -> Streams.InputStream BS.ByteString
@@ -199,12 +181,16 @@ ir (Guarded _ pe e) =
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx ix line) pe'))
 ir (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = eNorm op in Streams.map (eNorm . applyUn op') <=< ir stream
+ir (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = let op' = eNorm op in Streams.prior (applyOp op') <=< ir stream
 ir (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
     irl <- ir streaml inp0
     irr <- ir streamr inp1
     let op' = eNorm op
     Streams.zipWith (applyOp op') irl irr
+ir (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
+    let op' = eNorm op
+    Streams.scan (applyOp op') (eNorm seed) =<< ir xs inp
 
 mkStr :: BS.ByteString -- ^ Field
       -> E (T K)
@@ -212,7 +198,7 @@ mkStr = StrLit tyStr
 
 parseAsEInt :: BS.ByteString -- ^ Field
             -> E (T K)
-parseAsEInt = IntLit tyI . readDigits
+parseAsEInt = mkI . readDigits
 
 parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
@@ -221,16 +207,13 @@ parseAsF = FloatLit tyF . readFloat
 printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
 
-dupStream :: Streams.InputStream a -> IO (Streams.InputStream a, Streams.InputStream a)
-dupStream = Streams.unzip <=< Streams.map (\x -> (x, x)) -- aka join (,) 🤓
-
 -- TODO: eNormal before runJac
 runJac :: E (T K)
        -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
-runJac AllField{}    = Left FieldFile
-runJac Field{}       = Left FieldFile
-runJac IParseField{} = Left FieldFile
-runJac FParseField{} = Left FieldFile
+runJac AllField{}    = Left NakedField
+runJac Field{}       = Left NakedField
+runJac IParseField{} = Left NakedField
+runJac FParseField{} = Left NakedField
 runJac AllColumn{} = Right $ \inp -> do
     ps <- printStream
     Streams.connectTo ps =<< Streams.map mkStr inp
@@ -247,8 +230,17 @@ runJac e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
+runJac e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
+    resStream <- ir e inp
+    ps <- printStream
+    Streams.connectTo ps resStream
+runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
+    resStream <- ir e inp
+    ps <- printStream
+    Streams.connectTo ps resStream
 runJac e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
     resStream <- ir e inp
     ps <- printStream
     Streams.connectTo ps resStream
 runJac e@Let{} = runJac (eNorm e)
+runJac Var{} = error "Internal error: ill-scoping should've been caught in the typechecker stage."

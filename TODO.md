@@ -11,16 +11,19 @@
 - [ ] lambda
 - [ ] ♯ in front of type variables
 # Features
-- [ ] SCANS
+- [x] SCANS
+  - [x] backend
 - [ ] dyadic infix/prior? Something for successive differences!
-- [ ] string concatenation
-- [ ] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
+- [x] string concatenation
+- [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
   can be a variable!
+  - [ ] that introduced a bug w/ nested dfns (euh)
 - [ ] better error messages ja: ./Data/Vector/Generic.hs:257 ((!)): index out of bounds (5,2)
 - [ ] `NR` - number of records (per line) also `-1 (last)
 - [ ] printf
+  - [ ] array/vector type (integer indexed)
 - [x] `[:` as shorthand for `const`
-- [ ] `.1` etc. to extract tuples
+- [ ] `.1` etc. to extract tuples (arrays?)
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 ## Syntax
 - [ ] `;` vs. `val`?
@@ -28,6 +31,7 @@
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
 - [ ] `\\` (backslash) for "prior", succ diffs
+- [ ] `{\<pat>}. $0` ... filter on stream expressions
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/

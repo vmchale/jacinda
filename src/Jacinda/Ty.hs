@@ -51,6 +51,7 @@ data C = IsNum
        | IsEq
        | IsOrd
        | IsParseable
+       | IsSemigroup
        deriving (Eq, Ord)
 
 instance Pretty C where
@@ -58,6 +59,7 @@ instance Pretty C where
     pretty IsEq        = "Eq"
     pretty IsOrd       = "Ord"
     pretty IsParseable = "Parseable"
+    pretty IsSemigroup = "Semigroup"
 
 -- Idea:
 -- solve, unify etc. THEN check that all constraints are satisfied?
@@ -124,24 +126,22 @@ unifyPrep um ((l, ty, ty'):tys) =
 
 unifyMatch :: UnifyMap a -> [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unifyMatch _ [] = pure mempty
-unifyMatch um ((l, ty@(TyB _ b), ty'@(TyB _ b')):tys) | b == b' = unifyPrep um tys
-                                                      | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
-unifyMatch um ((l, ty@(TyNamed _ n0), ty'@(TyNamed _ n1)):tys) | n0 == n1 = unifyPrep um tys
-                                                               | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
+unifyMatch um ((_, TyB _ b, TyB _ b'):tys) | b == b' = unifyPrep um tys
+unifyMatch um ((_, TyNamed _ n0, TyNamed _ n1):tys) | n0 == n1 = unifyPrep um tys
 unifyMatch um ((_, ty@TyB{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyB{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, ty@TyArr{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyArr{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, ty@TyApp{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyTup{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, ty@TyTup{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyApp{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((l, TyApp _ ty ty', TyApp _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
 unifyMatch um ((l, TyArr _ ty ty', TyArr _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
-unifyMatch _ ((l, ty@TyApp{}, ty'@TyNamed{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
 unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
     | n == n' = unifyPrep um tys -- a type variable is always equal to itself, don't bother inserting this!
     | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch _ ((l, ty@TyArr{}, ty'@TyB{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
-unifyMatch _ ((l, ty@TyB{}, ty'@TyArr{}):_) = throwError (UnificationFailed l (void ty) (void ty'))
+unifyMatch _ ((l, ty, ty'):_) = throwError (UnificationFailed l (void ty) (void ty'))
 
 unify :: [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unify = unifyPrep IM.empty
@@ -194,11 +194,14 @@ pushConstraint l ty ty' =
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: T b -> C -> TypeM a ()
+checkType (TyB _ TyStr) IsSemigroup     = pure ()
+checkType (TyB _ TyInteger) IsSemigroup = pure ()
 checkType (TyB _ TyInteger) IsNum       = pure ()
 checkType (TyB _ TyInteger) IsOrd       = pure ()
 checkType (TyB _ TyInteger) IsEq        = pure ()
 checkType (TyB _ TyInteger) IsParseable = pure ()
 checkType (TyB _ TyFloat) IsParseable   = pure ()
+checkType (TyB _ TyFloat) IsSemigroup   = pure ()
 checkType (TyB _ TyFloat) IsNum         = pure ()
 checkType (TyB _ TyFloat) IsOrd         = pure ()
 checkType (TyB _ TyFloat) IsEq          = pure ()
@@ -248,6 +251,13 @@ tyNumOp = do
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
+tySemiOp :: TypeM a (T K)
+tySemiOp = do
+    m <- dummyName "m"
+    modifying classVarsLens (addC m IsSemigroup)
+    let m' = var m
+    pure $ tyArr m' (tyArr m' m')
+
 tyOrd :: TypeM a (T K)
 tyOrd = do
     a <- dummyName "a"
@@ -288,7 +298,7 @@ tyE0 (Field _ i)        = pure $ Field tyStr i
 tyE0 AllField{}         = pure $ AllField tyStr
 tyE0 AllColumn{}        = pure $ AllColumn (tyStream tyStr)
 tyE0 Ix{}               = pure $ Ix tyI
-tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tyNumOp <*> pure Plus
+tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tySemiOp <*> pure Plus
 tyE0 (BBuiltin _ Minus) = BBuiltin <$> tyNumOp <*> pure Minus
 tyE0 (BBuiltin _ Times) = BBuiltin <$> tyNumOp <*> pure Times
 tyE0 (BBuiltin _ Gt)    = BBuiltin <$> tyOrd <*> pure Gt
@@ -328,6 +338,12 @@ tyE0 (TBuiltin _ Fold) = do
         a' = var a
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (tyStream a') b'))
     pure $ TBuiltin fTy Fold
+-- (a -> a -> a) -> Stream a -> Stream a
+tyE0 (BBuiltin _ Prior) = do
+    a <- dummyName "a"
+    let a' = var a
+        fTy = tyArr (tyArr a' (tyArr a' a')) (tyArr (tyStream a') (tyStream a'))
+    pure $ BBuiltin fTy Prior
 -- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (TBuiltin _ ZipW) = do
     a <- dummyName "a"

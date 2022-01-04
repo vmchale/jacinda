@@ -46,7 +46,7 @@ eNorm e@BBuiltin{}    = e
 eNorm e@TBuiltin{}    = e
 eNorm (Tup tys es)    = Tup tys (eNorm <$> es)
 eNorm e@Ix{}          = e
-eNorm e@(EApp _ BBuiltin{} _) = e
+eNorm (EApp ty op@BBuiltin{} e) = EApp ty op $ eNorm e
 eNorm e0@(EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
     let eI = eNorm e
         eI' = eNorm e'
@@ -67,6 +67,14 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
     in case (eI, eI') of
         (IntLit _ i, IntLit _ j) -> IntLit tyI (i+j)
         _                        -> e0
+eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
+    let eI = eNorm e
+        eI' = eNorm e'
+    in case (eI, eI') of
+        (StrLit _ s, StrLit _ s')       -> StrLit tyStr (s <> s')
+        (RegexLit _ rr, RegexLit _ rr') -> RegexLit tyStr (rr <> rr')
+        -- TODO: str + regex? eh
+        _                               -> e0
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') =
     let eI = eNorm e
         eI' = eNorm e'
