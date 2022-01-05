@@ -53,7 +53,6 @@ context. An example:
 ```
 
 This defines a stream of lines that are more than 110 bytes.
-<!-- The postfix `:i` parses the ``1` field as an integer. -->
 
 ### Fold
 
@@ -124,6 +123,8 @@ One could (for instance) calculate population density:
 ```
 , (%) $5:f $6:f
 ```
+
+The postfix `:f` parses the column as an integer. 
 
 ### Scans
 
