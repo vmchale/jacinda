@@ -4,6 +4,7 @@ module Jacinda.Ty ( TypeM
                   , Error (..)
                   , runTypeM
                   , tyE
+                  , tyProgram
                   -- * For debugging
                   , tyOf
                   ) where
@@ -47,26 +48,6 @@ instance Pretty a => Show (Error a) where
 
 instance (Typeable a, Pretty a) => Exception (Error a) where
 
-data C = IsNum
-       | IsEq
-       | IsOrd
-       | IsParseable
-       | IsSemigroup
-       | Functor -- ^ For map (@"@)
-       | Foldable
-       -- TODO: witherable
-       deriving (Eq, Ord)
-
-instance Pretty C where
-    pretty IsNum       = "Num"
-    pretty IsEq        = "Eq"
-    pretty IsOrd       = "Ord"
-    pretty IsParseable = "Parseable"
-    pretty IsSemigroup = "Semigroup"
-    pretty Functor     = "Functor"
-    pretty Foldable    = "Foldable"
-
--- Idea:
 -- solve, unify etc. THEN check that all constraints are satisfied?
 -- (after accumulating classVar membership...)
 data TyState a = TyState { maxU        :: Int
@@ -252,6 +233,24 @@ lookupVar n@(Name _ (Unique i) l) = do
 
 tyOf :: Ord a => E a -> TypeM a (T K)
 tyOf = fmap eLoc . tyE
+
+tyD0 :: Ord a => D a -> TypeM a (D (T K))
+tyD0 (SetFS bs) = pure $ SetFS bs
+tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
+    e' <- tyE0 e
+    let ty = eLoc e'
+    modifying varEnvLens (IM.insert i ty)
+    pure $ FunDecl (n $> ty) [] e'
+tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
+
+tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
+tyProgram (Program ds e) = do
+    ds' <- traverse tyD0 ds
+    e' <- tyE0 e
+    backNames <- unifyM =<< gets constraints
+    toCheck <- gets (IM.toList . classVars)
+    traverse_ (uncurry (checkClass backNames)) toCheck
+    pure (fmap (substConstraints backNames) (Program ds' e'))
 
 -- FIXME kind check
 tyE :: Ord a => E a -> TypeM a (E (T K))

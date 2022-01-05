@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Rename ( renameE
+                      , renameProgram
                       , runRenameM
                       , renamePGlobal
                       , RenameM
@@ -38,7 +39,7 @@ maxLens f s = fmap (\x -> s { max_ = x }) (f (max_ s))
 type RenameM = State Renames
 
 renamePGlobal :: Int -> Program a -> (Program a, Int)
-renamePGlobal i (Program ds e) = let (e', i') = runRenameM i (renameE e) in (Program ds e', i')
+renamePGlobal i = runRenameM i . renameProgram
 
 runRenameM :: Int -> RenameM x -> (x, Int)
 runRenameM i act = second max_ (runState act (Renames i IM.empty))
@@ -86,6 +87,10 @@ mapBound f (Renames m b) = Renames m (f b)
 setMax :: Int -> Renames -> Renames
 setMax i (Renames _ b) = Renames i b
 
+-- | Desguar top-level functions as lambdas
+mkLam :: [Name a] -> E a -> E a
+mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
+
 -- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
@@ -111,6 +116,13 @@ replaceX :: (a -> Name a) -> E a -> E a
 replaceX n = cata a where
     a (ResVarF l X) = Var l (n l)
     a x             = embed x
+
+renameD :: D a -> RenameM (D a)
+renameD d@SetFS{}        = pure d
+renameD (FunDecl n ns e) = FunDecl n [] <$> renameE (mkLam ns e)
+
+renameProgram :: Program a -> RenameM (Program a)
+renameProgram (Program ds e) = Program <$> traverse renameD ds <*> renameE e
 
 renameE :: (HasRenames s, MonadState s m) => E a -> m (E a)
 renameE (EApp l e e')   = EApp l <$> renameE e <*> renameE e'

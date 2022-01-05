@@ -86,6 +86,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
     set { TokKeyword $$ KwSet }
+    fn { TokKeyword $$ KwFn }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -147,8 +148,14 @@ BBin :: { BBin }
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
+Args :: { [(Name AlexPosn)] }
+     : lparen rparen { [] }
+     | parens(name) { [$1] }
+     | sepBy(name,comma) { reverse $1 }
+
 D :: { D AlexPosn }
-  : set fs defEq rr semicolon { SetFS $1 (BSL.toStrict $ rr $4) }
+  : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
+  | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
 
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }

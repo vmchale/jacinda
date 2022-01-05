@@ -26,7 +26,7 @@ import qualified System.IO.Streams         as Streams
 
 -- | Parse + rename (globally)
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry renamePGlobal . second (mapExpr rewriteE)) . parseWithMax
+parseWithMax' = fmap (uncurry renamePGlobal . second rewriteProgram) . parseWithMax
 
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =
@@ -63,7 +63,7 @@ tcIO = yeetIO . tyCheck
 tyCheck :: BSL.ByteString -> Either (Error AlexPosn) ()
 tyCheck src =
     case parseWithMax' src of
-        Right (ast, m) -> void $ runTypeM m (tyOf (expr ast))
+        Right (ast, m) -> void $ runTypeM m (tyProgram ast)
         Left err       -> throw err
 
 tySrc :: BSL.ByteString -> T K

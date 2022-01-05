@@ -15,6 +15,7 @@ module Jacinda.AST ( E (..)
                    , DfnVar (..)
                    , D (..)
                    , Program (..)
+                   , C (..)
                    , mapExpr
                    , getFS
                    -- * Base functors
@@ -74,7 +75,7 @@ instance Pretty TB where
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
-    pretty (TyVar _ n)      = "'" <> pretty n -- type variables are ticked
+    pretty (TyVar _ n)      = pretty n
     pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty' -- tODO: unicode arrows
     pretty (TyTup _ tys)    = jacTup tys
 
@@ -234,6 +235,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                  = pretty e <+> pretty b <+> pretty e'
     pretty (EApp _ (BBuiltin _ b) e)                              = parens (pretty b <> pretty e)
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')  = pretty e <> "|" <> pretty e' <+> pretty e''
@@ -293,15 +295,37 @@ instance Eq (E a) where
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) _ _                                    = False
 
+data C = IsNum
+       | IsEq
+       | IsOrd
+       | IsParseable
+       | IsSemigroup
+       | Functor -- ^ For map (@"@)
+       | Foldable
+       -- TODO: witherable
+       deriving (Eq, Ord)
+
+instance Pretty C where
+    pretty IsNum       = "Num"
+    pretty IsEq        = "Eq"
+    pretty IsOrd       = "Ord"
+    pretty IsParseable = "Parseable"
+    pretty IsSemigroup = "Semigroup"
+    pretty Functor     = "Functor"
+    pretty Foldable    = "Foldable"
+
 -- decl
-data D a = SetFS a BS.ByteString
+data D a = SetFS BS.ByteString
+           | FunDecl (Name a) [Name a] (E a)
+           deriving (Functor)
 
 -- TODO: fun decls (type decls)
-data Program a = Program { decls :: [D a], expr :: E a }
+data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where
-    go (SetFS _ bs) = [bs]
+    go (SetFS bs) = [bs]
+    go _          = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)

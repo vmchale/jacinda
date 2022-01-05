@@ -104,6 +104,7 @@ tokens :-
         val                      { mkKw KwVal }   
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
+        fn                       { mkKw KwFn }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -264,6 +265,7 @@ data Keyword = KwLet
              | KwVal
              | KwEnd
              | KwSet
+             | KwFn
 
 -- | Reserved/special variables
 data Var = VarX
@@ -288,6 +290,7 @@ instance Pretty Keyword where
     pretty KwVal = "val"
     pretty KwEnd = "end"
     pretty KwSet = ":set"
+    pretty KwFn  = "fn"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse
