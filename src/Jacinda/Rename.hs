@@ -2,7 +2,7 @@
 
 module Jacinda.Rename ( renameE
                       , runRenameM
-                      , renameEGlobal
+                      , renamePGlobal
                       , RenameM
                       , Renames (..)
                       , HasRenames (..)
@@ -37,8 +37,8 @@ maxLens f s = fmap (\x -> s { max_ = x }) (f (max_ s))
 
 type RenameM = State Renames
 
-renameEGlobal :: Int -> E a -> (E a, Int)
-renameEGlobal i = runRenameM i . renameE
+renamePGlobal :: Int -> Program a -> (Program a, Int)
+renamePGlobal i (Program ds e) = let (e', i') = runRenameM i (renameE e) in (Program ds e', i')
 
 runRenameM :: Int -> RenameM x -> (x, Int)
 runRenameM i act = second max_ (runState act (Renames i IM.empty))

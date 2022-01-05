@@ -13,12 +13,17 @@ module Jacinda.AST ( E (..)
                    , BUn (..)
                    , K (..)
                    , DfnVar (..)
+                   , D (..)
+                   , Program (..)
+                   , mapExpr
+                   , getFS
                    -- * Base functors
                    , EF (..)
                    ) where
 
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
+import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
 import           Data.Text.Encoding (decodeUtf8)
 import           GHC.Generics       (Generic)
@@ -115,6 +120,7 @@ data BBin = Plus
           | Min
           | Max
           | Prior
+          | Filter
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -136,7 +142,7 @@ instance Pretty BBin where
     pretty Or         = "||"
     pretty Max        = "max"
     pretty Min        = "min"
-    pretty Prior      = "\\"
+    pretty Prior      = "\\."
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -220,6 +226,7 @@ instance Pretty (E a) where
     pretty (Field _ i)                                            = "`" <> pretty i
     pretty (IParseField _ i)                                      = "`" <> pretty i <> ":i"
     pretty (FParseField _ i)                                      = "`" <> pretty i <> ":f"
+    pretty (EApp _ (EApp _ (BBuiltin _ Filter) e) e')             = braces (pretty e) <> "." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'
@@ -241,11 +248,12 @@ instance Pretty (E a) where
     pretty (StrLit _ bstr)                                        = pretty (decodeUtf8 bstr)
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
-    pretty (Lam _ n e)                                            = parens ("\\" <> pretty n <> "." <+> pretty e)
+    pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
     pretty (Dfn _ e)                                              = brackets (pretty e)
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty Ix{}                                                   = "ix"
     pretty RegexCompiled{}                                        = error "Nonsense."
+    pretty (Let _ (n, b) e)                                       = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
 
 instance Show (E a) where
     show = show . pretty
@@ -281,5 +289,15 @@ instance Eq (E a) where
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) _ _                                    = False
 
--- TODO: decls/type decls
--- data Program a = Program [D a] (E a)
+-- decl
+data D a = SetFS a BS.ByteString
+
+-- TODO: fun decls (type decls)
+data Program a = Program { decls :: [D a], expr :: E a }
+
+getFS :: Program a -> Maybe BS.ByteString
+getFS (Program ds _) = listToMaybe (concatMap go ds) where
+    go (SetFS _ bs) = [bs]
+
+mapExpr :: (E a -> E a) -> Program a -> Program a
+mapExpr f (Program ds e) = Program ds (f e)

@@ -49,11 +49,11 @@ where the initial expression is of boolean type, possibly involving the line
 context. An example:
 
 ```
-{`0:i>110}{`0}
+{#`0>110}{`0}
 ```
 
 This defines a stream of lines that are more than 110 bytes.
-The postfix `:i` parses the ``0` field as an integer.
+The postfix `:i` parses the ``1` field as an integer.
 
 ### Fold
 
@@ -80,7 +80,7 @@ so:
 (+)|0 {#t}{1}
 ```
 
-This uses the above `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
+This uses aforementioned `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
 this defines a stream of `1`s for each line, and takes its sum.
 
 We could also do the following:
@@ -90,16 +90,6 @@ We could also do the following:
 ```
 
 `$0` is the stream of all lines.
-
-### Parting Shots
-
-```
-any := [(||)|#f x]
-
-all := [(&)|#t x]
-
-count := [(+)|0 [:1"x]
-```
 
 ### Functions
 
@@ -121,7 +111,56 @@ Note also that `:=` is used for function definition. The general syntax is
 let (val <name> := <expr>)* in <expr> end
 ```
 
-<!-- TODO: scans, zips -->
+### Zips
+
+The syntax is:
+
+```
+, <expr> <expr> <expr>
+```
+
+One could (for instance) calculate population density:
+
+```
+, (%) $5:f $6:f
+```
+
+### Scans
+
+The syntax is:
+
+```
+<expr> ^ <expr> <expr>
+```
+
+Scans are like folds, except that the intermediate value is tracked at each
+step. One could define a stream containing line numbers for a file with:
+
+```
+(+)^0 [:1"$0
+```
+
+(this is the same as `{#t}{ix}`)
+
+### Prior
+
+Jacinda has a binary operator, `\.`, like q's [each prior](https://code.kx.com/q/ref/maps/#each-prior) or J's [dyadic infix](https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic). One could write:
+
+```
+succDiff := [(-) \. x]
+```
+
+to track successive differences.
+
+### Parting Shots
+
+```
+any := [(||)|#f x]
+
+all := [(&)|#t x]
+
+count := [(+)|0 [:1"x]
+```
 
 # Machinery
 

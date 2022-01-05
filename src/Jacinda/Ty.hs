@@ -47,12 +47,12 @@ instance Pretty a => Show (Error a) where
 
 instance (Typeable a, Pretty a) => Exception (Error a) where
 
--- TODO: + as semigroup? lol
 data C = IsNum
        | IsEq
        | IsOrd
        | IsParseable
        | IsSemigroup
+       -- TODO: foldable (vect.), functor &c.?
        deriving (Eq, Ord)
 
 instance Pretty C where
@@ -214,6 +214,7 @@ checkType ty@TyTup{} c@IsNum            = throwError $ Doesn'tSatisfy (void ty) 
 checkType ty@(TyB _ TyStr) c@IsNum      = throwError $ Doesn'tSatisfy (void ty) c
 checkType ty@(TyB _ TyBool) c@IsNum     = throwError $ Doesn'tSatisfy (void ty) c
 checkType ty@TyArr{} c                  = throwError $ Doesn'tSatisfy (void ty) c
+-- FIXME: when we encounter a type variable at this stage I think it's ok?
 -- TODO: maybe streams could have num + eq instances...
 
 checkClass :: IM.IntMap (T K) -- ^ Unification result
@@ -324,6 +325,11 @@ tyE0 (UBuiltin _ Const) = do
         b' = var b
         fTy = tyArr a' (tyArr b' a')
     pure $ UBuiltin fTy Const
+tyE0 (BBuiltin _ Filter) = do
+    a <- dummyName "a"
+    let a' = var a
+        fTy = tyArr (tyArr a' tyBool) (tyArr (tyStream a') (tyStream a'))
+    pure $ BBuiltin fTy Filter
 tyE0 (BBuiltin _ Map) = do
     a <- dummyName "a"
     b <- dummyName "b"

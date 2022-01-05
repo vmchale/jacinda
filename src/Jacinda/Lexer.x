@@ -60,6 +60,7 @@ tokens :-
         ":="                     { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
+        "}."                     { mkSym RBraceDot }
 
         -- symbols/operators
         "%"                      { mkSym PercentTok }
@@ -92,12 +93,14 @@ tokens :-
         "[:"                     { mkSym ConstTok }
         "!"                      { mkSym Exclamation }
         ":"                      { mkSym Colon }
+        ";"                      { mkSym Semicolon }
         "\."                     { mkSym BackslashDot }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
         val                      { mkKw KwVal }   
         end                      { mkKw KwEnd }
+        :set                     { mkKw KwSet }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -186,6 +189,7 @@ data Sym = PlusTok
          | Colon
          | LBrace
          | RBrace
+         | RBraceDot
          | LParen
          | RParen
          | LSqBracket
@@ -221,6 +225,7 @@ instance Pretty Sym where
     pretty Colon         = ":"
     pretty LBrace        = "{"
     pretty RBrace        = "}"
+    pretty RBraceDot     = "}."
     pretty Semicolon     = ";"
     pretty Underscore    = "_"
     pretty EqTok         = "="
@@ -251,6 +256,7 @@ data Keyword = KwLet
              | KwIn
              | KwVal
              | KwEnd
+             | KwSet
 
 -- | Reserved/special variables
 data Var = VarX
@@ -274,6 +280,7 @@ instance Pretty Keyword where
     pretty KwIn  = "in"
     pretty KwVal = "val"
     pretty KwEnd = "end"
+    pretty KwSet = ":set"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse

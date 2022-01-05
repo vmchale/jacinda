@@ -17,8 +17,7 @@ author:             Vanessa McHale
 maintainer:         vamchale@gmail.com
 build-type: Simple
 
--- A copyright notice.
--- category:
+category: Language, Interpreters, Text, Data
 extra-source-files: CHANGELOG.md
 
 library

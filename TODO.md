@@ -25,13 +25,15 @@
 - [x] `[:` as shorthand for `const`
 - [ ] `.1` etc. to extract tuples (arrays?)
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
+- [ ] parse dates
 ## Syntax
 - [ ] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
-- [ ] `\\` (backslash) for "prior", succ diffs
+- [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
+  - [ ] or #: maybe?
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/

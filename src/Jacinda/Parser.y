@@ -22,7 +22,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
 }
 
-%name parseE E
+%name parseP Program
 %tokentype { Token AlexPosn }
 %error { parseError }
 %monad { Parse } { (>>=) } { pure }
@@ -34,6 +34,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     colon { TokSym $$ Colon }
     lbrace { TokSym $$ LBrace }
     rbrace { TokSym $$ RBrace }
+    rbracedot { TokSym $$ RBraceDot }
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
@@ -83,6 +84,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     in { TokKeyword $$ KwIn }
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
+    set { TokKeyword $$ KwSet }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -90,6 +92,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     min { TokResVar $$ VarMin }
     max { TokResVar $$ VarMax }
     ix { TokResVar $$ VarIx }
+    fs { TokResVar $$ VarFs }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -142,6 +145,12 @@ BBin :: { BBin }
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
+D :: { D AlexPosn }
+  : set fs defEq rr semicolon { SetFS $1 (BSL.toStrict $ rr $4) }
+
+Program :: { Program AlexPosn }
+        : many(D) E { Program (reverse $1) $2 }
+
 E :: { E AlexPosn }
   : name { Var (Name.loc $1) $1 }
   | intLit { IntLit (loc $1) (int $1) }
@@ -156,7 +165,7 @@ E :: { E AlexPosn }
   | field iParse { IParseField (loc $1) (ix $1) }
   | field fParse { FParseField (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
-  -- TODO: left and right sections
+  | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
   | parens(E) { $1 }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
@@ -164,6 +173,7 @@ E :: { E AlexPosn }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BBuiltin tl Matches) (AllField tl)) $2) $4 }
+  | lbrace E rbracedot E { EApp $1 (EApp $1 (BBuiltin $3 Filter) $2) $4 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
@@ -203,18 +213,18 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-parse :: BSL.ByteString -> Either (ParseError AlexPosn) (E AlexPosn)
-parse = fmap snd . runParse parseE
+parse :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn)
+parse = fmap snd . runParse parseP
 
-parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, E AlexPosn)
+parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, Program AlexPosn)
 parseWithMax = fmap (first fst3) . parseWithInitCtx
     where fst3 (x, _, _) = x
 
-parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, E AlexPosn)
+parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
 parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 
-parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, E AlexPosn)
-parseWithCtx = parseWithInitSt parseE
+parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
+parseWithCtx = parseWithInitSt parseP
 
 runParse :: Parse a -> BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, a)
 runParse parser str = liftErr $ runAlexSt str (runExceptT parser)

@@ -18,6 +18,7 @@ prior op xs = do
     shifted <- Streams.drop 1 xsϵ
     Streams.zipWith op shifted xsϵ'
 
+-- FIXME: don't do this; do something better for zips! (like, in-memory)
 dupStream :: Streams.InputStream a -> IO (Streams.InputStream a, Streams.InputStream a)
 dupStream = Streams.unzip <=< Streams.map (\x -> (x, x)) -- aka join (,) 🤓
 
