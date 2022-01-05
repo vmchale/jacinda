@@ -3,7 +3,6 @@
 module Jacinda.Ty ( TypeM
                   , Error (..)
                   , runTypeM
-                  , tyE
                   , tyProgram
                   -- * For debugging
                   , tyOf
@@ -432,3 +431,4 @@ tyE0 Dfn{} = desugar
 tyE0 (ResVar _ X) = desugar
 tyE0 (ResVar _ Y) = desugar
 tyE0 RegexCompiled{} = error "Regex should not be compiled at this stage."
+tyE0 Paren{} = desugar

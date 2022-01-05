@@ -151,7 +151,7 @@ Bind :: { (Name AlexPosn, E AlexPosn) }
 Args :: { [(Name AlexPosn)] }
      : lparen rparen { [] }
      | parens(name) { [$1] }
-     | sepBy(name,comma) { reverse $1 }
+     | parens(sepBy(name, comma)) { reverse $1 }
 
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
@@ -176,7 +176,7 @@ E :: { E AlexPosn }
   | field fParse { FParseField (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
-  | parens(E) { $1 }
+  | parens(E) { Paren (eLoc $1) $1 }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }

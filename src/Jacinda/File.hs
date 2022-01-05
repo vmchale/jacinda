@@ -33,8 +33,8 @@ exprEval src =
     case parseWithMax' src of
         Left err -> throw err
         Right (ast, m) ->
-            let (typed, i) = yeet $ runTypeM m (tyE (expr ast))
-            in eClosed i typed
+            let (typed, i) = yeet $ runTypeM m (tyProgram ast)
+            in eClosed i (expr typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
@@ -47,8 +47,8 @@ runOnHandle src h =
     case parseWithMax' src of
         Left err -> throwIO err
         Right (ast, m) -> do
-            (typed, i) <- yeetIO $ runTypeM m (tyE (expr ast))
-            cont <- yeetIO $ runJac (compileFS (getFS ast)) i typed
+            (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
+            cont <- yeetIO $ runJac (compileFS (getFS ast)) i (expr typed)
             cont =<< (Streams.handleToInputStream h >>= Streams.lines)
 
 runOnFile :: BSL.ByteString
