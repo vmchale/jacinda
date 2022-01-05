@@ -143,6 +143,7 @@ instance Pretty BBin where
     pretty Max        = "max"
     pretty Min        = "min"
     pretty Prior      = "\\."
+    pretty Filter     = "#."
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -226,7 +227,6 @@ instance Pretty (E a) where
     pretty (Field _ i)                                            = "`" <> pretty i
     pretty (IParseField _ i)                                      = "`" <> pretty i <> ":i"
     pretty (FParseField _ i)                                      = "`" <> pretty i <> ":f"
-    pretty (EApp _ (EApp _ (BBuiltin _ Filter) e) e')             = braces (pretty e) <> "." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'

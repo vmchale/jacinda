@@ -13,6 +13,8 @@ ja - Jacinda: data filtering, processing, reporting
 
   ja tc script.jac
 
+  ja e '11.67\*1.2'
+
 # DESCRIPTION
 
 **Jacinda** is a data stream processing language à la AWK.
@@ -60,6 +62,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **[:** Unary operator: const 
 :   a -> b -> a
 
+**#.** Binary operator: filter
+:   (a -> Bool) -> Stream a -> Stream a
+
 **max** Maximum of two values
 
 **min** Minimum of two values
@@ -86,8 +91,6 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **{\<expr>}{\<expr>}** Filtered stream defined by \<expr>, on lines satisfying
 a boolean expression.
-
-**{\<expr>}. \<expr>** Filter stream defined by \<expr> by applying proposition
 
 **#t** Boolean literal
 

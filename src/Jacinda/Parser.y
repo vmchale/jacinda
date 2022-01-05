@@ -34,7 +34,6 @@ import Prettyprinter (Pretty (pretty), (<+>))
     colon { TokSym $$ Colon }
     lbrace { TokSym $$ LBrace }
     rbrace { TokSym $$ RBrace }
-    rbracedot { TokSym $$ RBraceDot }
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
@@ -46,6 +45,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lbracePercent { TokSym $$ LBracePercent }
     tally { TokSym $$ TallyTok }
     const { TokSym $$ ConstTok }
+    filter { TokSym $$ FilterTok }
     exclamation { TokSym $$ Exclamation }
     backslash { TokSym $$ BackslashDot }
 
@@ -142,6 +142,7 @@ BBin :: { BBin }
      | and { And }
      | or { Or }
      | backslash { Prior }
+     | filter { Filter }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
@@ -175,7 +176,6 @@ E :: { E AlexPosn }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BBuiltin tl Matches) (AllField tl)) $2) $4 }
-  | lbrace E rbracedot E { EApp $1 (EApp $1 (BBuiltin $3 Filter) $2) $4 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }

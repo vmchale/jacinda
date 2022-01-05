@@ -62,7 +62,8 @@ tokens :-
         ":="                     { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
-        "}."                     { mkSym RBraceDot }
+
+        "#."                     { mkSym FilterTok }
 
         -- symbols/operators
         "%"                      { mkSym PercentTok }
@@ -194,7 +195,6 @@ data Sym = PlusTok
          | Colon
          | LBrace
          | RBrace
-         | RBraceDot
          | LParen
          | RParen
          | LSqBracket
@@ -219,6 +219,7 @@ data Sym = PlusTok
          | Exclamation
          | Caret
          | BackslashDot
+         | FilterTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -230,7 +231,6 @@ instance Pretty Sym where
     pretty Colon         = ":"
     pretty LBrace        = "{"
     pretty RBrace        = "}"
-    pretty RBraceDot     = "}."
     pretty Semicolon     = ";"
     pretty Underscore    = "_"
     pretty EqTok         = "="
@@ -256,6 +256,7 @@ instance Pretty Sym where
     pretty LBracePercent = "{%"
     pretty Exclamation   = "!"
     pretty BackslashDot  = "\\"
+    pretty FilterTok     = "#."
 
 data Keyword = KwLet
              | KwIn
