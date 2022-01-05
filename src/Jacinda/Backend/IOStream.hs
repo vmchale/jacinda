@@ -191,6 +191,9 @@ ir re _ (Guarded _ pe e) =
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx re ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
 ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = Streams.map (applyUn op) <=< ir re i stream
+ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
+    let op' = compileR op
+        in Streams.filter (\e -> asBool (eClosed i $ applyUn op' e)) <=< ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = Streams.prior (applyOp i op) <=< ir re i stream
 ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
     (inp0, inp1) <- dupStream lineStream
@@ -259,6 +262,10 @@ fileProcessor re i e@Guarded{} = Right $ \inp -> do
     resStream <- ir re i e inp
     ps <- printStream
     Streams.connectTo ps resStream
+fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
+    resStream <- ir re i e inp
+    ps <- printStream
+    Streams.connectTo ps resStream
 fileProcessor re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< foldWithCtx re i op seed stream
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     resStream <- ir re i e inp
@@ -288,4 +295,3 @@ fileProcessor _ _ ResVar{} = badSugar
 fileProcessor _ _ BBuiltin{} = Left UnevalFun
 fileProcessor _ _ UBuiltin{} = Left UnevalFun
 fileProcessor _ _ TBuiltin{} = Left UnevalFun
-fileProcessor _ _ e = error (show e)

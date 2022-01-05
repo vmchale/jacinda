@@ -34,7 +34,6 @@ import Prettyprinter (Pretty (pretty), (<+>))
     colon { TokSym $$ Colon }
     lbrace { TokSym $$ LBrace }
     rbrace { TokSym $$ RBrace }
-    rbracedot { TokSym $$ RBraceDot }
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
@@ -46,6 +45,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lbracePercent { TokSym $$ LBracePercent }
     tally { TokSym $$ TallyTok }
     const { TokSym $$ ConstTok }
+    filter { TokSym $$ FilterTok }
     exclamation { TokSym $$ Exclamation }
     backslash { TokSym $$ BackslashDot }
 
@@ -73,6 +73,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     tyName { TokTyName  _ $$ }
 
     intLit { $$@(TokInt _ _) }
+    floatLit { $$@(TokFloat _ _) }
     boolLit { $$@(TokBool _ _) }
     strLit { $$@(TokStr _ _) }
     allColumn { TokStreamLit $$ 0 }
@@ -141,6 +142,7 @@ BBin :: { BBin }
      | and { And }
      | or { Or }
      | backslash { Prior }
+     | filter { Filter }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
@@ -154,6 +156,7 @@ Program :: { Program AlexPosn }
 E :: { E AlexPosn }
   : name { Var (Name.loc $1) $1 }
   | intLit { IntLit (loc $1) (int $1) }
+  | floatLit { FloatLit (loc $1) (float $1) }
   | boolLit { BoolLit (loc $1) (boolTok $1) }
   | strLit { StrLit (loc $1) (BSL.toStrict $ strTok $1) }
   | column { Column (loc $1) (ix $1) }
@@ -173,7 +176,6 @@ E :: { E AlexPosn }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BBuiltin tl Matches) (AllField tl)) $2) $4 }
-  | lbrace E rbracedot E { EApp $1 (EApp $1 (BBuiltin $3 Filter) $2) $4 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }

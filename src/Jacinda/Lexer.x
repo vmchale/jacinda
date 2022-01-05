@@ -44,6 +44,8 @@ $latin = [a-zA-Z]
 @name = [a-z] @follow_char*
 @tyname = [A-Z] @follow_char*
 
+@float = $digit+\.$digit+
+
 tokens :-
 
     <dfn> {
@@ -60,7 +62,8 @@ tokens :-
         ":="                     { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
-        "}."                     { mkSym RBraceDot }
+
+        "#."                     { mkSym FilterTok }
 
         -- symbols/operators
         "%"                      { mkSym PercentTok }
@@ -116,8 +119,12 @@ tokens :-
         \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ ASCII.unpack $ BSL.tail s)) }
         `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
 
+        "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ ASCII.unpack $ ASCII.tail s)) }
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
+
+        $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ ASCII.unpack s)) }
+        _$digit+                 { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
         -- TODO: allow chars to be escaped
         -- TODO: consider dropping this syntax for strings?
@@ -189,7 +196,6 @@ data Sym = PlusTok
          | Colon
          | LBrace
          | RBrace
-         | RBraceDot
          | LParen
          | RParen
          | LSqBracket
@@ -214,6 +220,7 @@ data Sym = PlusTok
          | Exclamation
          | Caret
          | BackslashDot
+         | FilterTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -225,7 +232,6 @@ instance Pretty Sym where
     pretty Colon         = ":"
     pretty LBrace        = "{"
     pretty RBrace        = "}"
-    pretty RBraceDot     = "}."
     pretty Semicolon     = ";"
     pretty Underscore    = "_"
     pretty EqTok         = "="
@@ -251,6 +257,7 @@ instance Pretty Sym where
     pretty LBracePercent = "{%"
     pretty Exclamation   = "!"
     pretty BackslashDot  = "\\"
+    pretty FilterTok     = "#."
 
 data Keyword = KwLet
              | KwIn
@@ -297,11 +304,13 @@ data Token a = EOF { loc :: a }
              | TokKeyword { loc :: a, _kw :: Keyword }
              | TokResVar { loc :: a, _var :: Var }
              | TokInt { loc :: a, int :: Integer }
+             | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
              | TokStr { loc :: a, strTok :: BSL.ByteString }
              | TokStreamLit { loc :: a, ix :: Int }
              | TokFieldLit { loc :: a, ix :: Int }
              | TokRR { loc :: a, rr :: BSL.ByteString }
+             | TokAccess { loc :: a, ix :: Int }
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
@@ -318,6 +327,7 @@ instance Pretty (Token a) where
     pretty (TokResVar _ v)    = "reserved variable" <+> squotes (pretty v)
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
+    pretty (TokAccess _ i)    = "." <> pretty i
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do

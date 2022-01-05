@@ -52,7 +52,9 @@ data C = IsNum
        | IsOrd
        | IsParseable
        | IsSemigroup
-       -- TODO: foldable (vect.), functor &c.?
+       | Functor -- ^ For map (@"@)
+       | Foldable
+       -- TODO: witherable
        deriving (Eq, Ord)
 
 instance Pretty C where
@@ -61,6 +63,8 @@ instance Pretty C where
     pretty IsOrd       = "Ord"
     pretty IsParseable = "Parseable"
     pretty IsSemigroup = "Semigroup"
+    pretty Functor     = "Functor"
+    pretty Foldable    = "Foldable"
 
 -- Idea:
 -- solve, unify etc. THEN check that all constraints are satisfied?
@@ -169,12 +173,18 @@ substConstraints tys (TyApp l ty ty')                   =
 substConstraints tys (TyArr l ty ty')                   =
     TyArr l (substConstraints tys ty) (substConstraints tys ty')
 
--- all names are of kind 'Star'
-dummyName :: T.Text -> TypeM a (Name K)
-dummyName n = do
+freshName :: T.Text -> K -> TypeM a (Name K)
+freshName n k = do
     st <- gets maxU
-    Name n (Unique $ st+1) Star
+    Name n (Unique $ st+1) k
         <$ modifying maxULens (+1)
+
+higherOrder :: T.Text -> TypeM a (Name K)
+higherOrder t = freshName t (KArr Star Star)
+
+-- of kind 'Star'
+dummyName :: T.Text -> TypeM a (Name K)
+dummyName n = freshName n Star
 
 addC :: Name a -> C -> IM.IntMap (S.Set C) -> IM.IntMap (S.Set C)
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
@@ -195,25 +205,32 @@ pushConstraint l ty ty' =
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: T b -> C -> TypeM a ()
-checkType (TyB _ TyStr) IsSemigroup     = pure ()
-checkType (TyB _ TyInteger) IsSemigroup = pure ()
-checkType (TyB _ TyInteger) IsNum       = pure ()
-checkType (TyB _ TyInteger) IsOrd       = pure ()
-checkType (TyB _ TyInteger) IsEq        = pure ()
-checkType (TyB _ TyInteger) IsParseable = pure ()
-checkType (TyB _ TyFloat) IsParseable   = pure ()
-checkType (TyB _ TyFloat) IsSemigroup   = pure ()
-checkType (TyB _ TyFloat) IsNum         = pure ()
-checkType (TyB _ TyFloat) IsOrd         = pure ()
-checkType (TyB _ TyFloat) IsEq          = pure ()
-checkType (TyB _ TyBool) IsEq           = pure ()
-checkType (TyB _ TyStr) IsEq            = pure ()
-checkType (TyTup _ tys) IsEq            = traverse_ (`checkType` IsEq) tys
-checkType (TyTup _ tys) IsOrd           = traverse_ (`checkType` IsOrd) tys
-checkType ty@TyTup{} c@IsNum            = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@(TyB _ TyStr) c@IsNum      = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@(TyB _ TyBool) c@IsNum     = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@TyArr{} c                  = throwError $ Doesn'tSatisfy (void ty) c
+checkType (TyB _ TyStr) IsSemigroup       = pure ()
+checkType (TyB _ TyInteger) IsSemigroup   = pure ()
+checkType (TyB _ TyInteger) IsNum         = pure ()
+checkType (TyB _ TyInteger) IsOrd         = pure ()
+checkType (TyB _ TyInteger) IsEq          = pure ()
+checkType (TyB _ TyInteger) IsParseable   = pure ()
+checkType (TyB _ TyFloat) IsParseable     = pure ()
+checkType (TyB _ TyFloat) IsSemigroup     = pure ()
+checkType (TyB _ TyFloat) IsNum           = pure ()
+checkType (TyB _ TyFloat) IsOrd           = pure ()
+checkType (TyB _ TyFloat) IsEq            = pure ()
+checkType (TyB _ TyBool) IsEq             = pure ()
+checkType (TyB _ TyStr) IsEq              = pure ()
+checkType (TyTup _ tys) IsEq              = traverse_ (`checkType` IsEq) tys
+checkType (TyTup _ tys) IsOrd             = traverse_ (`checkType` IsOrd) tys
+checkType (TyApp _ (TyB _ TyVec) ty) IsEq = checkType ty IsEq
+checkType ty@TyTup{} c@IsNum              = throwError $ Doesn'tSatisfy (void ty) c
+checkType ty@(TyB _ TyStr) c@IsNum        = throwError $ Doesn'tSatisfy (void ty) c
+checkType ty@(TyB _ TyBool) c@IsNum       = throwError $ Doesn'tSatisfy (void ty) c
+checkType ty@TyArr{} c                    = throwError $ Doesn'tSatisfy (void ty) c
+checkType (TyB _ TyVec) Functor           = pure ()
+checkType (TyB _ TyStream) Functor        = pure ()
+checkType ty c@Functor                    = throwError $ Doesn'tSatisfy (void ty) c
+checkType (TyB _ TyVec) Foldable          = pure ()
+checkType (TyB _ TyStream) Foldable       = pure ()
+checkType ty c@Foldable                   = throwError $ Doesn'tSatisfy (void ty) c
 -- FIXME: when we encounter a type variable at this stage I think it's ok?
 -- TODO: maybe streams could have num + eq instances...
 
@@ -224,8 +241,7 @@ checkClass :: IM.IntMap (T K) -- ^ Unification result
 checkClass tys i cs =
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (S.toList cs)
-        Nothing -> error "idk what to do in this case." -- TODO:
-        -- FIXME: to allow generic user functions,
+        Nothing -> pure () -- FIXME: do we need to check var is well-kinded for constraint?
 
 lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
@@ -285,6 +301,9 @@ tyM = do
 desugar :: a
 desugar = error "Should have been de-sugared in an earlier stage!"
 
+hkt :: T K -> T K -> T K
+hkt = TyApp Star
+
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
 tyE0 (BoolLit _ b)      = pure $ BoolLit tyBool b
 tyE0 (IntLit _ i)       = pure $ IntLit tyI i
@@ -333,17 +352,23 @@ tyE0 (BBuiltin _ Filter) = do
 tyE0 (BBuiltin _ Map) = do
     a <- dummyName "a"
     b <- dummyName "b"
+    f <- dummyName "f"
     let a' = var a
         b' = var b
-        fTy = tyArr (tyArr a' b') (tyArr (tyStream a') (tyStream b'))
+        f' = var f
+        fTy = tyArr (tyArr a' b') (tyArr (hkt f' a') (hkt f' b'))
+    modifying classVarsLens (addC f Functor)
     pure $ BBuiltin fTy Map
 -- (b -> a -> b) -> b -> Stream a -> b
 tyE0 (TBuiltin _ Fold) = do
     b <- dummyName "b"
     a <- dummyName "a"
+    f <- dummyName "f"
     let b' = var b
         a' = var a
-        fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (tyStream a') b'))
+        f' = var f
+        fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (hkt f' a') b'))
+    modifying classVarsLens (addC f Foldable)
     pure $ TBuiltin fTy Fold
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do

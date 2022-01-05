@@ -2,14 +2,11 @@ cabal-version:      2.0
 name:               jacinda
 version:            0.1.0.0
 
--- A short (one-line) description of the package.
--- synopsis:
+synopsis: Functional, expression-oriented data processing language
 
--- A longer description of the package.
--- description:
+description: APL meets AWK. A command-line tool for summarizing and reporting, powered by Rust's [regex](https://docs.rs/regex/regex/) library.
 
--- A URL where users can report bugs.
--- bug-reports:
+bug-reports: https://github.com/vmchale/jacinda/issues
 
 license: GPL-3
 license-file: LICENSE
@@ -19,6 +16,8 @@ build-type: Simple
 
 category: Language, Interpreters, Text, Data
 extra-source-files: CHANGELOG.md
+                    README.md
+                    man/ja.1
 
 library
     exposed-modules:  Jacinda.Parser
@@ -75,9 +74,6 @@ executable ja
     main-is:          Main.hs
     other-modules:    Paths_jacinda
     autogen-modules:  Paths_jacinda
-
-    -- Modules included in this executable, other than Main.
-    -- other-modules:
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:

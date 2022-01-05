@@ -1,9 +1,20 @@
 Jacinda is a functional, expression-oriented complement to
 [AWK](http://www.awklang.org).
 
+# Installation
+
+## From Source
+
+If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (via [ghcup](https://www.haskell.org/ghcup/)):
+
+```
+cabal install jacinda
+```
+
+# Documentation
+
 # Further Advantages
 
-  * Arbitrary-precision integers - no overflow
   * [Rust's regular expressions](https://docs.rs/regex/)
     - extensively documented with Unicode support
 
