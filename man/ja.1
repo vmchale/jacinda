@@ -12,6 +12,8 @@ ja run src.jac -i data.txt
 cat FILE1 FILE2 | ja `#\[lq]$0'
 .PP
 ja tc script.jac
+.PP
+ja e `11.67*1.2'
 .SH DESCRIPTION
 .PP
 \f[B]Jacinda\f[R] is a data stream processing language \[`a] la AWK.
@@ -20,6 +22,8 @@ ja tc script.jac
 \f[B]run\f[R] - Run a program from file
 .PP
 \f[B]tc\f[R] - Typecheck a program
+.PP
+\f[B]e\f[R] - Evaluate an expression (without reference to a file)
 .SH OPTIONS
 .TP
 \f[B]-h\f[R] \f[B]--help\f[R]
@@ -54,6 +58,9 @@ a -> b -> Stream a -> Stream b
 .TP
 \f[B][:\f[R] Unary operator: const
 a -> b -> a
+.TP
+\f[B]#.\f[R] Binary operator: filter
+(a -> Bool) -> Stream a -> Stream a
 .PP
 \f[B]max\f[R] Maximum of two values
 .PP
@@ -82,19 +89,16 @@ a -> b -> a
 \f[B]{<expr>}{<expr>}\f[R] Filtered stream defined by <expr>, on lines
 satisfying a boolean expression.
 .PP
-\f[B]{<expr>}.
-<expr>\f[R] Filter stream defined by <expr> by applying proposition
-.PP
 \f[B]#t\f[R] Boolean literal
 .PP
 \f[B]_n\f[R] Negative number
 .SH BUGS
 .PP
 Please report any bugs you may come across to
-https://hub.darcs.net/vmchale/jacinda/issues
+https://github.com/vmchale/jacinda/issues
 .SH COPYRIGHT
 .PP
-Copyright 2021.
+Copyright 2021-2022.
 Vanessa McHale.
 All Rights Reserved.
 .SH AUTHORS

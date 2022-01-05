@@ -25,6 +25,8 @@ ja - Jacinda: data filtering, processing, reporting
 
 **tc** - Typecheck a program
 
+**e** - Evaluate an expression (without reference to a file)
+
 # OPTIONS
 
 **-h** **-\-help**
