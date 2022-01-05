@@ -99,8 +99,8 @@ a boolean expression.
 # BUGS
 
 Please report any bugs you may come across to
-https://hub.darcs.net/vmchale/jacinda/issues
+https://github.com/vmchale/jacinda/issues
 
 # COPYRIGHT
 
-Copyright 2021. Vanessa McHale. All Rights Reserved.
+Copyright 2021-2022. Vanessa McHale. All Rights Reserved.
