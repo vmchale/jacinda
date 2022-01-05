@@ -234,7 +234,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                  = pretty e <> pretty b <> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                  = pretty e <+> pretty b <+> pretty e'
     pretty (EApp _ (BBuiltin _ b) e)                              = parens (pretty b <> pretty e)
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')  = pretty e <> "|" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')  = pretty e <> "^" <> pretty e' <+> pretty e''
