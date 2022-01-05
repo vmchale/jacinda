@@ -3,7 +3,7 @@
 module Jacinda.Ty ( TypeM
                   , Error (..)
                   , runTypeM
-                  , tyE
+                  , tyProgram
                   -- * For debugging
                   , tyOf
                   ) where
@@ -47,26 +47,6 @@ instance Pretty a => Show (Error a) where
 
 instance (Typeable a, Pretty a) => Exception (Error a) where
 
-data C = IsNum
-       | IsEq
-       | IsOrd
-       | IsParseable
-       | IsSemigroup
-       | Functor -- ^ For map (@"@)
-       | Foldable
-       -- TODO: witherable
-       deriving (Eq, Ord)
-
-instance Pretty C where
-    pretty IsNum       = "Num"
-    pretty IsEq        = "Eq"
-    pretty IsOrd       = "Ord"
-    pretty IsParseable = "Parseable"
-    pretty IsSemigroup = "Semigroup"
-    pretty Functor     = "Functor"
-    pretty Foldable    = "Foldable"
-
--- Idea:
 -- solve, unify etc. THEN check that all constraints are satisfied?
 -- (after accumulating classVar membership...)
 data TyState a = TyState { maxU        :: Int
@@ -253,6 +233,24 @@ lookupVar n@(Name _ (Unique i) l) = do
 tyOf :: Ord a => E a -> TypeM a (T K)
 tyOf = fmap eLoc . tyE
 
+tyD0 :: Ord a => D a -> TypeM a (D (T K))
+tyD0 (SetFS bs) = pure $ SetFS bs
+tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
+    e' <- tyE0 e
+    let ty = eLoc e'
+    modifying varEnvLens (IM.insert i ty)
+    pure $ FunDecl (n $> ty) [] e'
+tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
+
+tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
+tyProgram (Program ds e) = do
+    ds' <- traverse tyD0 ds
+    e' <- tyE0 e
+    backNames <- unifyM =<< gets constraints
+    toCheck <- gets (IM.toList . classVars)
+    traverse_ (uncurry (checkClass backNames)) toCheck
+    pure (fmap (substConstraints backNames) (Program ds' e'))
+
 -- FIXME kind check
 tyE :: Ord a => E a -> TypeM a (E (T K))
 tyE e = do
@@ -304,39 +302,48 @@ desugar = error "Should have been de-sugared in an earlier stage!"
 hkt :: T K -> T K -> T K
 hkt = TyApp Star
 
+tyVec :: T K
+tyVec = TyB (KArr Star Star) TyVec
+
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
-tyE0 (BoolLit _ b)      = pure $ BoolLit tyBool b
-tyE0 (IntLit _ i)       = pure $ IntLit tyI i
-tyE0 (FloatLit _ f)     = pure $ FloatLit tyF f
-tyE0 (StrLit _ str)     = pure $ StrLit tyStr str
-tyE0 (RegexLit _ rr)    = pure $ RegexLit tyStr rr
-tyE0 (Column _ i)       = pure $ Column (tyStream tyStr) i
-tyE0 (IParseCol _ i)    = pure $ IParseCol (tyStream tyI) i
-tyE0 (IParseField _ i)  = pure $ IParseField tyI i
-tyE0 (FParseCol _ i)    = pure $ FParseCol (tyStream tyF) i
-tyE0 (FParseField _ i)  = pure $ FParseField tyF i
-tyE0 (Field _ i)        = pure $ Field tyStr i
-tyE0 AllField{}         = pure $ AllField tyStr
-tyE0 AllColumn{}        = pure $ AllColumn (tyStream tyStr)
-tyE0 Ix{}               = pure $ Ix tyI
-tyE0 (BBuiltin _ Plus)  = BBuiltin <$> tySemiOp <*> pure Plus
-tyE0 (BBuiltin _ Minus) = BBuiltin <$> tyNumOp <*> pure Minus
-tyE0 (BBuiltin _ Times) = BBuiltin <$> tyNumOp <*> pure Times
-tyE0 (BBuiltin _ Gt)    = BBuiltin <$> tyOrd <*> pure Gt
-tyE0 (BBuiltin _ Lt)    = BBuiltin <$> tyOrd <*> pure Lt
-tyE0 (BBuiltin _ Geq)   = BBuiltin <$> tyOrd <*> pure Geq
-tyE0 (BBuiltin _ Leq)   = BBuiltin <$> tyOrd <*> pure Leq
-tyE0 (BBuiltin _ Eq)    = BBuiltin <$> tyEq <*> pure Eq
-tyE0 (BBuiltin _ Neq)   = BBuiltin <$> tyEq <*> pure Neq
-tyE0 (BBuiltin _ Min)   = BBuiltin <$> tyM <*> pure Min
-tyE0 (BBuiltin _ Max)   = BBuiltin <$> tyM <*> pure Max
-tyE0 (BBuiltin _ Matches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
+tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
+tyE0 (IntLit _ i)            = pure $ IntLit tyI i
+tyE0 (FloatLit _ f)          = pure $ FloatLit tyF f
+tyE0 (StrLit _ str)          = pure $ StrLit tyStr str
+tyE0 (RegexLit _ rr)         = pure $ RegexLit tyStr rr
+tyE0 (Column _ i)            = pure $ Column (tyStream tyStr) i
+tyE0 (IParseCol _ i)         = pure $ IParseCol (tyStream tyI) i
+tyE0 (IParseField _ i)       = pure $ IParseField tyI i
+tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
+tyE0 (FParseField _ i)       = pure $ FParseField tyF i
+tyE0 (Field _ i)             = pure $ Field tyStr i
+tyE0 AllField{}              = pure $ AllField tyStr
+tyE0 AllColumn{}             = pure $ AllColumn (tyStream tyStr)
+tyE0 Ix{}                    = pure $ Ix tyI
+tyE0 (BBuiltin _ Plus)       = BBuiltin <$> tySemiOp <*> pure Plus
+tyE0 (BBuiltin _ Minus)      = BBuiltin <$> tyNumOp <*> pure Minus
+tyE0 (BBuiltin _ Times)      = BBuiltin <$> tyNumOp <*> pure Times
+tyE0 (BBuiltin _ Gt)         = BBuiltin <$> tyOrd <*> pure Gt
+tyE0 (BBuiltin _ Lt)         = BBuiltin <$> tyOrd <*> pure Lt
+tyE0 (BBuiltin _ Geq)        = BBuiltin <$> tyOrd <*> pure Geq
+tyE0 (BBuiltin _ Leq)        = BBuiltin <$> tyOrd <*> pure Leq
+tyE0 (BBuiltin _ Eq)         = BBuiltin <$> tyEq <*> pure Eq
+tyE0 (BBuiltin _ Neq)        = BBuiltin <$> tyEq <*> pure Neq
+tyE0 (BBuiltin _ Min)        = BBuiltin <$> tyM <*> pure Min
+tyE0 (BBuiltin _ Max)        = BBuiltin <$> tyM <*> pure Max
+tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Split
+tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
 tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
-tyE0 (UBuiltin _ Tally) = pure $ UBuiltin (tyArr tyStr tyI) Tally
-tyE0 (BBuiltin _ Div)   = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
-tyE0 (UBuiltin _ Not)   = pure $ UBuiltin (tyArr tyBool tyBool) Not
-tyE0 (BBuiltin _ And)   = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
-tyE0 (BBuiltin _ Or)    = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
+tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally
+tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
+tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
+tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
+tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
+tyE0 (UBuiltin _ (At i)) = do
+    a <- dummyName "a"
+    let a' = var a
+        tyV = hkt tyVec a'
+    pure $ UBuiltin (tyArr tyV a') (At i)
 tyE0 (UBuiltin _ Const) = do
     a <- dummyName "a"
     b <- dummyName "b"

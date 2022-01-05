@@ -26,15 +26,15 @@ import qualified System.IO.Streams         as Streams
 
 -- | Parse + rename (globally)
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry renamePGlobal . second (mapExpr rewriteE)) . parseWithMax
+parseWithMax' = fmap (uncurry renamePGlobal . second rewriteProgram) . parseWithMax
 
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =
     case parseWithMax' src of
         Left err -> throw err
         Right (ast, m) ->
-            let (typed, i) = yeet $ runTypeM m (tyE (expr ast))
-            in eClosed i typed
+            let (typed, i) = yeet $ runTypeM m (tyProgram ast)
+            in eClosed i (compileR $ expr typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
@@ -47,8 +47,8 @@ runOnHandle src h =
     case parseWithMax' src of
         Left err -> throwIO err
         Right (ast, m) -> do
-            (typed, i) <- yeetIO $ runTypeM m (tyE (expr ast))
-            cont <- yeetIO $ runJac (compileFS (getFS ast)) i typed
+            (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
+            cont <- yeetIO $ runJac (compileFS (getFS ast)) i (expr typed)
             cont =<< (Streams.handleToInputStream h >>= Streams.lines)
 
 runOnFile :: BSL.ByteString
@@ -63,7 +63,7 @@ tcIO = yeetIO . tyCheck
 tyCheck :: BSL.ByteString -> Either (Error AlexPosn) ()
 tyCheck src =
     case parseWithMax' src of
-        Right (ast, m) -> void $ runTypeM m (tyOf (expr ast))
+        Right (ast, m) -> void $ runTypeM m (tyProgram ast)
         Left err       -> throw err
 
 tySrc :: BSL.ByteString -> T K

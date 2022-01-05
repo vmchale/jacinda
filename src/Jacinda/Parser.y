@@ -48,6 +48,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     filter { TokSym $$ FilterTok }
     exclamation { TokSym $$ Exclamation }
     backslash { TokSym $$ BackslashDot }
+    at { $$@(TokAccess _ _) }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -86,6 +87,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
     set { TokKeyword $$ KwSet }
+    fn { TokKeyword $$ KwFn }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -94,6 +96,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     max { TokResVar $$ VarMax }
     ix { TokResVar $$ VarIx }
     fs { TokResVar $$ VarFs }
+
+    split { TokBuiltin $$ BuiltinSplit }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -147,8 +151,14 @@ BBin :: { BBin }
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
+Args :: { [(Name AlexPosn)] }
+     : lparen rparen { [] }
+     | parens(name) { [$1] }
+     | parens(sepBy(name, comma)) { reverse $1 }
+
 D :: { D AlexPosn }
-  : set fs defEq rr semicolon { SetFS $1 (BSL.toStrict $ rr $4) }
+  : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
+  | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
 
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
@@ -188,7 +198,10 @@ E :: { E AlexPosn }
   | rr { RegexLit (loc $1) (BSL.toStrict $ rr $1) }
   | min { BBuiltin $1 Min }
   | max { BBuiltin $1 Max }
+  | split { BBuiltin $1 Split }
   | ix { Ix $1 }
+  | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
+  | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
 
 {
 

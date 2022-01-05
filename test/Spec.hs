@@ -85,9 +85,9 @@ tyOfT src expected =
 
 parseTo :: BSL.ByteString -> E () -> Assertion
 parseTo src e =
-    case rewriteE . expr <$> parse src of
+    case rewriteProgram <$> parse src of
         Left err     -> assertFailure (show err)
-        Right actual -> void actual @?= e
+        Right actual -> void (expr actual) @?= e
 
 parseFile :: FilePath -> TestTree
 parseFile fp = testCase ("Parses " ++ fp) $ parseNoErr =<< BSL.readFile fp

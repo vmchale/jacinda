@@ -8,6 +8,8 @@ import           Control.Monad.State.Strict (State, evalState, gets, modify)
 import           Control.Recursion          (cata, embed)
 import qualified Data.ByteString            as BS
 import qualified Data.IntMap                as IM
+import           Data.Semigroup             ((<>))
+import qualified Data.Vector                as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -119,6 +121,12 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Min) e) e') = do
     pure $ case (eI, eI') of
         (FloatLit _ x, FloatLit _ y) -> FloatLit tyF (min x y)
         _                            -> e0
+eNorm e0@(EApp _ (EApp _ (BBuiltin _ Split) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss)
+        _                                -> e0
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -210,13 +218,17 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin _ Or) e) e') = do
         _                           -> e0
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = pure e
 eNorm e@(EApp _ (UBuiltin _ Const) _) = pure e
+eNorm e0@(EApp _ (UBuiltin _ (At i)) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (Arr _ es) -> es V.! (i-1)
+        _          -> e0
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
     b' <- eNorm b
     modify (mapBinds (IM.insert i b'))
-    res <- eNorm e
-    error (show res)
+    eNorm e
 eNorm e@(Var _ (Name _ (Unique i) _)) = do
     st <- gets binds
     case IM.lookup i st of

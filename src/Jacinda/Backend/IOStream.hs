@@ -8,6 +8,7 @@ import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
+import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
@@ -62,6 +63,10 @@ asStr _              = noRes
 asFloat :: E a -> Double
 asFloat (FloatLit _ f) = f
 asFloat _              = noRes
+
+asRegex :: E a -> RurePtr
+asRegex (RegexCompiled re) = re
+asRegex _                  = noRes
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common module?
@@ -150,6 +155,11 @@ eEval allCtx@(ix, line, ctx) = go where
         mkI (fromIntegral $ BS.length str)
         where str = asStr (eEval allCtx e)
     go (Tup ty es) = Tup ty (eEval allCtx <$> es)
+    go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
+        let str = asStr (eEval allCtx e)
+            re = asRegex (eEval allCtx e')
+            bss = splitBy re str
+            in Arr undefined (StrLit undefined <$> bss)
 
 applyOp :: Int
         -> E (T K) -- ^ Operator

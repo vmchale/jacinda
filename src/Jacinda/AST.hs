@@ -15,6 +15,7 @@ module Jacinda.AST ( E (..)
                    , DfnVar (..)
                    , D (..)
                    , Program (..)
+                   , C (..)
                    , mapExpr
                    , getFS
                    -- * Base functors
@@ -26,6 +27,7 @@ import qualified Data.ByteString    as BS
 import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
 import           Data.Text.Encoding (decodeUtf8)
+import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
 import           Intern.Name
 import           Prettyprinter      (Doc, Pretty (..), braces, brackets, encloseSep, flatAlt, group, parens, (<+>))
@@ -43,6 +45,7 @@ data TB = TyInteger
         | TyStream
         | TyVec
         | TyBool
+        -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
 
@@ -74,7 +77,7 @@ instance Pretty TB where
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
-    pretty (TyVar _ n)      = "'" <> pretty n -- type variables are ticked
+    pretty (TyVar _ n)      = pretty n
     pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty' -- tODO: unicode arrows
     pretty (TyTup _ tys)    = jacTup tys
 
@@ -85,12 +88,14 @@ instance Show (T a) where
 data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
+         | At Int
          deriving (Eq)
 
 instance Pretty BUn where
-    pretty Tally = "#"
-    pretty Const = "[:"
-    pretty Not   = "!"
+    pretty Tally  = "#"
+    pretty Const  = "[:"
+    pretty Not    = "!"
+    pretty (At i) = "." <> pretty i
 
 -- ternary
 data BTer = ZipW
@@ -121,6 +126,7 @@ data BBin = Plus
           | Or
           | Min
           | Max
+          | Split
           | Prior
           | Filter
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
@@ -146,6 +152,7 @@ instance Pretty BBin where
     pretty Min        = "min"
     pretty Prior      = "\\."
     pretty Filter     = "#."
+    pretty Split      = "split"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -182,7 +189,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
-         | Arr { eLoc :: a, elems :: [E a] }
+         | Arr { eLoc :: a, elems :: V.Vector (E a) }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -217,7 +224,7 @@ data EF a x = ColumnF a Int
             | TupF a [x]
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
-            | ArrF a [x]
+            | ArrF a (V.Vector x)
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -234,11 +241,14 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')              = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                = "min" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')              = "split" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                  = pretty e <+> pretty b <+> pretty e'
     pretty (EApp _ (BBuiltin _ b) e)                              = parens (pretty b <> pretty e)
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')  = pretty e <> "|" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')  = pretty e <> "^" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'') = "," <> pretty op <+> pretty e' <+> pretty e''
+    pretty (EApp _ (UBuiltin _ (At i)) e')                        = pretty e' <> "." <> pretty i
     pretty (EApp _ e@UBuiltin{} e')                               = pretty e <> pretty e'
     pretty (EApp _ e e')                                          = pretty e <+> pretty e'
     pretty (Var _ n)                                              = pretty n
@@ -293,15 +303,37 @@ instance Eq (E a) where
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) _ _                                    = False
 
+data C = IsNum
+       | IsEq
+       | IsOrd
+       | IsParseable
+       | IsSemigroup
+       | Functor -- ^ For map (@"@)
+       | Foldable
+       -- TODO: witherable
+       deriving (Eq, Ord)
+
+instance Pretty C where
+    pretty IsNum       = "Num"
+    pretty IsEq        = "Eq"
+    pretty IsOrd       = "Ord"
+    pretty IsParseable = "Parseable"
+    pretty IsSemigroup = "Semigroup"
+    pretty Functor     = "Functor"
+    pretty Foldable    = "Foldable"
+
 -- decl
-data D a = SetFS a BS.ByteString
+data D a = SetFS BS.ByteString
+           | FunDecl (Name a) [Name a] (E a)
+           deriving (Functor)
 
 -- TODO: fun decls (type decls)
-data Program a = Program { decls :: [D a], expr :: E a }
+data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where
-    go (SetFS _ bs) = [bs]
+    go (SetFS bs) = [bs]
+    go _          = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)
