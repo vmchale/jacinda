@@ -119,6 +119,7 @@ tokens :-
         \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ ASCII.unpack $ BSL.tail s)) }
         `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
 
+        "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ ASCII.unpack $ ASCII.tail s)) }
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
@@ -309,6 +310,7 @@ data Token a = EOF { loc :: a }
              | TokStreamLit { loc :: a, ix :: Int }
              | TokFieldLit { loc :: a, ix :: Int }
              | TokRR { loc :: a, rr :: BSL.ByteString }
+             | TokAccess { loc :: a, ix :: Int }
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
@@ -325,6 +327,7 @@ instance Pretty (Token a) where
     pretty (TokResVar _ v)    = "reserved variable" <+> squotes (pretty v)
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
+    pretty (TokAccess _ i)    = "." <> pretty i
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do
