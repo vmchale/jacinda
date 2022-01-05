@@ -164,8 +164,11 @@
 <li><a href="#filtering">Filtering</a></li>
 <li><a href="#fold">Fold</a></li>
 <li><a href="#map">Map</a></li>
-<li><a href="#parting-shots">Parting Shots</a></li>
 <li><a href="#functions">Functions</a></li>
+<li><a href="#zips">Zips</a></li>
+<li><a href="#scans">Scans</a></li>
+<li><a href="#prior">Prior</a></li>
+<li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
 </ul></li>
 <li><a href="#machinery">Machinery</a></li>
@@ -188,8 +191,8 @@
 <p>There is another form,</p>
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving the line context. An example:</p>
-<pre><code>{`0:i&gt;110}{`0}</code></pre>
-<p>This defines a stream of lines that are more than 110 bytes. The postfix <code>:i</code> parses the `<code>0</code> field as an integer.</p>
+<pre><code>{#`0&gt;110}{`0}</code></pre>
+<p>This defines a stream of lines that are more than 110 bytes.</p>
 <h3 id="fold">Fold</h3>
 <p>Then, count lines with the word “Bloom”:</p>
 <pre><code>ja &#39;(+)|0 {% /Bloom/}{1}&#39; -i ulysses.txt</code></pre>
@@ -199,16 +202,10 @@
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file. We have nearly all the tools to do so:</p>
 <pre><code>(+)|0 {#t}{1}</code></pre>
-<p>This uses the above <code>{&lt;expr&gt;}{&lt;expr&gt;}</code> syntax. <code>#t</code> is a boolean literal. So this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
+<p>This uses aforementioned <code>{&lt;expr&gt;}{&lt;expr&gt;}</code> syntax. <code>#t</code> is a boolean literal. So this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
 <p>We could also do the following:</p>
 <pre><code>(+)|0 [:1&quot;$0</code></pre>
 <p><code>$0</code> is the stream of all lines.</p>
-<h3 id="parting-shots">Parting Shots</h3>
-<pre><code>any := [(||)|#f x]
-
-all := [(&amp;)|#t x]
-
-count := [(+)|0 [:1&quot;x]</code></pre>
 <h3 id="functions">Functions</h3>
 <p>We could abstract away <code>sum</code> in the above example like so:</p>
 <pre><code>let val
@@ -217,7 +214,28 @@ in sum {% /Bloom/}{1} end</code></pre>
 <p>In Jacinda, one defines functions like <a href="https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm">dfns</a> in APL. We do not need to bind <code>x</code>; the variables <code>x</code> and <code>y</code> are implicit. Since <code>[(+)|0 x]</code> only mentions <code>x</code>, it is treated as a unary function.</p>
 <p>Note also that <code>:=</code> is used for function definition. The general syntax is</p>
 <pre><code>let (val &lt;name&gt; := &lt;expr&gt;)* in &lt;expr&gt; end</code></pre>
-<!-- TODO: scans, zips -->
+<h3 id="zips">Zips</h3>
+<p>The syntax is:</p>
+<pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
+<p>One could (for instance) calculate population density:</p>
+<pre><code>, (%) $5:f $6:f</code></pre>
+<p>The postfix <code>:f</code> parses the column as an integer.</p>
+<h3 id="scans">Scans</h3>
+<p>The syntax is:</p>
+<pre><code>&lt;expr&gt; ^ &lt;expr&gt; &lt;expr&gt;</code></pre>
+<p>Scans are like folds, except that the intermediate value is tracked at each step. One could define a stream containing line numbers for a file with:</p>
+<pre><code>(+)^0 [:1&quot;$0</code></pre>
+<p>(this is the same as <code>{#t}{ix}</code>)</p>
+<h3 id="prior">Prior</h3>
+<p>Jacinda has a binary operator, <code>\.</code>, like q’s <a href="https://code.kx.com/q/ref/maps/#each-prior">each prior</a> or J’s <a href="https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic">dyadic infix</a>. One could write:</p>
+<pre><code>succDiff := [(-) \. x]</code></pre>
+<p>to track successive differences.</p>
+<h3 id="parting-shots">Parting Shots</h3>
+<pre><code>any := [(||)|#f x]
+
+all := [(&amp;)|#t x]
+
+count := [(+)|0 [:1&quot;x]</code></pre>
 <h1 id="machinery">Machinery</h1>
 <p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to disambiguate operators and witness with an implementation.</p>
 </body>
