@@ -41,6 +41,7 @@ data TB = TyInteger
         | TyDate
         | TyStr
         | TyStream
+        | TyVec
         | TyBool
         -- TODO: convert float to int
         deriving (Eq, Ord)
@@ -68,6 +69,7 @@ instance Pretty TB where
     pretty TyStr     = "Str"
     pretty TyFloat   = "Float"
     pretty TyDate    = "Date"
+    pretty TyVec     = "List"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
@@ -180,6 +182,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
+         | Arr { eLoc :: a, elems :: [E a] }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -214,6 +217,7 @@ data EF a x = ColumnF a Int
             | TupF a [x]
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
+            | ArrF a [x]
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)

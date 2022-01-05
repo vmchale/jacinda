@@ -19,6 +19,8 @@ build-type: Simple
 
 category: Language, Interpreters, Text, Data
 extra-source-files: CHANGELOG.md
+                    README.md
+                    man/ja.1
 
 library
     exposed-modules:  Jacinda.Parser

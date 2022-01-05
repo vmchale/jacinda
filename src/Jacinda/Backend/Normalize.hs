@@ -42,6 +42,7 @@ eClosed :: Int
         -> E (T K)
 eClosed i = flip evalState (LetCtx IM.empty (Renames i IM.empty)) . eNorm
 
+-- TODO: equality on tuples, lists
 eNorm :: E (T K)
       -> EvalM (E (T K))
 eNorm e@Field{}       = pure e
