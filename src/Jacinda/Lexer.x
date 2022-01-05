@@ -111,6 +111,9 @@ tokens :-
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 
+        substr                   { mkBuiltin BuiltinSubstr }
+        split                    { mkBuiltin BuiltinSplit }
+
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
 
@@ -276,13 +279,13 @@ data Var = VarX
          | VarMax
 
 instance Pretty Var where
-    pretty VarX   = "x"
-    pretty VarY   = "y"
-    pretty VarFs  = "fs"
-    pretty VarIx  = "ix"
-    pretty VarMin = "min"
-    pretty VarMax = "max"
-    -- TODO: exp, log, sqrt, ...
+    pretty VarX     = "x"
+    pretty VarY     = "y"
+    pretty VarFs    = "fs"
+    pretty VarIx    = "ix"
+    pretty VarMin   = "min"
+    pretty VarMax   = "max"
+    -- TODO: exp, log, sqrt, floor ...
 
 instance Pretty Keyword where
     pretty KwLet = "let"
@@ -294,10 +297,14 @@ instance Pretty Keyword where
 
 data Builtin = BuiltinIParse
              | BuiltinFParse
+             | BuiltinSubstr
+             | BuiltinSplit
 
 instance Pretty Builtin where
     pretty BuiltinIParse = ":i"
     pretty BuiltinFParse = ":f"
+    pretty BuiltinSubstr = "substr"
+    pretty BuiltinSplit  = "split"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
@@ -331,6 +338,7 @@ instance Pretty (Token a) where
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
+    pretty (TokFloat _ f)     = pretty f
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do

@@ -34,4 +34,5 @@ rewriteE = cata a where
     a (EAppF l e0@Var{} (EApp lϵ e1 e2))                                                            = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Max) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Min) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
+    a (EAppF l e0@(BBuiltin _ Split) (EApp lϵ e1 e2))                                               = EApp l (EApp lϵ e0 e1) e2
     a x                                                                                             = embed x

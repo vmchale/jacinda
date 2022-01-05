@@ -8,6 +8,7 @@ import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
+import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
