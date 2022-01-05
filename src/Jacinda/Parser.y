@@ -73,6 +73,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     tyName { TokTyName  _ $$ }
 
     intLit { $$@(TokInt _ _) }
+    floatLit { $$@(TokFloat _ _) }
     boolLit { $$@(TokBool _ _) }
     strLit { $$@(TokStr _ _) }
     allColumn { TokStreamLit $$ 0 }
@@ -154,6 +155,7 @@ Program :: { Program AlexPosn }
 E :: { E AlexPosn }
   : name { Var (Name.loc $1) $1 }
   | intLit { IntLit (loc $1) (int $1) }
+  | floatLit { FloatLit (loc $1) (float $1) }
   | boolLit { BoolLit (loc $1) (boolTok $1) }
   | strLit { StrLit (loc $1) (BSL.toStrict $ strTok $1) }
   | column { Column (loc $1) (ix $1) }

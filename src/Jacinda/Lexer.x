@@ -44,6 +44,8 @@ $latin = [a-zA-Z]
 @name = [a-z] @follow_char*
 @tyname = [A-Z] @follow_char*
 
+@float = $digit+\.$digit+
+
 tokens :-
 
     <dfn> {
@@ -118,6 +120,9 @@ tokens :-
 
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
+
+        $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ ASCII.unpack s)) }
+        _$digit+                 { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
         -- TODO: allow chars to be escaped
         -- TODO: consider dropping this syntax for strings?
@@ -297,6 +302,7 @@ data Token a = EOF { loc :: a }
              | TokKeyword { loc :: a, _kw :: Keyword }
              | TokResVar { loc :: a, _var :: Var }
              | TokInt { loc :: a, int :: Integer }
+             | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
              | TokStr { loc :: a, strTok :: BSL.ByteString }
              | TokStreamLit { loc :: a, ix :: Int }
