@@ -339,6 +339,9 @@ tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
 tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
 tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
 tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
+tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
+tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
+tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
     let a' = var a
