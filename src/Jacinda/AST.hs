@@ -194,6 +194,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
+         | Paren { eLoc :: a, eExpr :: E a }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -227,6 +228,7 @@ data EF a x = ColumnF a Int
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
             | ArrF a (V.Vector x)
+            | ParenF a x
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -271,6 +273,7 @@ instance Pretty (E a) where
     pretty Ix{}                                                    = "ix"
     pretty RegexCompiled{}                                         = error "Nonsense."
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
+    pretty (Paren _ e)                                             = parens (pretty e)
 
 instance Show (E a) where
     show = show . pretty
@@ -302,6 +305,8 @@ instance Eq (E a) where
     (==) Ix{} Ix{}                              = True
     (==) RegexCompiled{} _                      = error "Cannot compare compiled regex!"
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
+    (==) (Paren _ e) e'                         = e == e'
+    (==) e (Paren _ e')                         = e == e'
     (==) _ _                                    = False
 
 data C = IsNum

@@ -186,7 +186,7 @@ E :: { E AlexPosn }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
-  | parens(E) { $1 }
+  | parens(E) { Paren (eLoc $1) $1 }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }

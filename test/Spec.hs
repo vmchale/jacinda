@@ -38,6 +38,7 @@ main = defaultMain $
         , testCase "running count (lines)" (tyOfT "(+)^0 [:1\"$0" (tyStream tyI))
         , testCase "type of (tally)" (tyOfT "#'hello world'" tyI)
         , testCase "typechecks dfn" (tyFile "test/examples/ab.jac")
+        , testCase "parses parens" (tyFile "lib/example.jac")
         , testCase "typechecks/parses correctly" (tyFile "test/examples/line.jac")
         ]
 
