@@ -174,10 +174,12 @@ E :: { E AlexPosn }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
+  | field iParse { EApp (loc $1) (UBuiltin $2 IParse) (Field (loc $1) (ix $1)) }
+  | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
+  | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
+  | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
-  | field iParse { IParseField (loc $1) (ix $1) }
-  | field fParse { FParseField (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
   | parens(E) { $1 }

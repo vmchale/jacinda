@@ -39,7 +39,7 @@ $digit = [0-9]
 
 $latin = [a-zA-Z]
 
-@follow_char = [$latin $digit \-\!\_]
+@follow_char = [$latin $digit \_]
 
 @name = [a-z] @follow_char*
 @tyname = [A-Z] @follow_char*
