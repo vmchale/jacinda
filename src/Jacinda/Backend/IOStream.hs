@@ -50,9 +50,6 @@ asRegex :: E a -> RurePtr
 asRegex (RegexCompiled re) = re
 asRegex _                  = noRes
 
-mkI :: Integer -> E (T K)
-mkI = IntLit tyI -- TODO: do this for float, string, bool and put it in a common module?
-
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
@@ -73,8 +70,12 @@ eEval allCtx@(ix, line, ctx) = go where
     go Ix{} = mkI (fromIntegral ix)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
-    go (IParseField _ i) = mkI (readDigits $ ctx V.! (i-1))
-    go (FParseField _ i) = FloatLit tyF (readFloat $ ctx V.! (i-1))
+    go (EApp _ (UBuiltin _ IParse) e) =
+        let eI = asStr (eEval allCtx e)
+            in parseAsEInt eI
+    go (EApp _ (UBuiltin _ FParse) e) =
+        let eI = asStr (eEval allCtx e)
+            in parseAsEInt eI
     go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
         let eI = eEval allCtx e
             eI' = eEval allCtx e'
@@ -195,17 +196,6 @@ ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineS
 ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
     Streams.scan (applyOp i op) seed =<< ir re i xs inp
 
-mkStr :: BS.ByteString -- ^ Field
-      -> E (T K)
-mkStr = StrLit tyStr
-
-parseAsEInt :: BS.ByteString -- ^ Field
-            -> E (T K)
-parseAsEInt = mkI . readDigits
-
-parseAsF :: BS.ByteString -> E (T K)
-parseAsF = FloatLit tyF . readFloat
-
 -- | Output stream that prints each entry (expression)
 printStream :: IO (Streams.OutputStream (E (T K)))
 printStream = Streams.makeOutputStream (foldMap print)
@@ -234,8 +224,6 @@ fileProcessor :: RurePtr
               -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
 fileProcessor _ _ AllField{}    = Left NakedField
 fileProcessor _ _ Field{}       = Left NakedField
-fileProcessor _ _ IParseField{} = Left NakedField
-fileProcessor _ _ FParseField{} = Left NakedField
 fileProcessor _ _ Ix{}          = Left NakedField
 fileProcessor _ _ AllColumn{} = Right $ \inp -> do
     ps <- printStream
