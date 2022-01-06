@@ -1,5 +1,6 @@
 module Main (main) where
 
+import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Version         as V
 import           Jacinda.File
@@ -9,7 +10,7 @@ import           System.IO            (stdin)
 
 data Command = TypeCheck !FilePath
              | Run !FilePath !(Maybe FilePath)
-             | Expr !BSL.ByteString !(Maybe FilePath)
+             | Expr !BSL.ByteString !(Maybe FilePath) !(Maybe BS.ByteString)
              | Eval !BSL.ByteString
 
 jacFile :: Parser FilePath
@@ -17,6 +18,12 @@ jacFile = argument str
     (metavar "JACFILE"
     <> help "Source code"
     <> jacCompletions)
+
+jacFs :: Parser (Maybe BS.ByteString)
+jacFs = optional $ option str
+    (short 'F'
+    <> metavar "REGEXP"
+    <> help "Field separator")
 
 jacExpr :: Parser BSL.ByteString
 jacExpr = argument str
@@ -41,7 +48,7 @@ commandP = hsubparser
     where
         tcP = TypeCheck <$> jacFile
         runP = Run <$> jacFile <*> inpFile
-        exprP = Expr <$> jacExpr <*> inpFile
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs
         eP = Eval <$> jacExpr
 
 wrapper :: ParserInfo Command
@@ -57,9 +64,9 @@ main :: IO ()
 main = run =<< execParser wrapper
 
 run :: Command -> IO ()
-run (TypeCheck fp)      = tcIO =<< BSL.readFile fp
-run (Run fp Nothing)    = do { contents <- BSL.readFile fp ; runOnHandle contents stdin }
-run (Run fp (Just dat)) = do { contents <- BSL.readFile fp ; runOnFile contents dat }
-run (Expr eb Nothing)   = runOnHandle eb stdin
-run (Expr eb (Just fp)) = runOnFile eb fp
-run (Eval e)            = print (exprEval e)
+run (TypeCheck fp)         = tcIO =<< BSL.readFile fp
+run (Run fp Nothing)       = do { contents <- BSL.readFile fp ; runOnHandle contents Nothing stdin }
+run (Run fp (Just dat))    = do { contents <- BSL.readFile fp ; runOnFile contents Nothing dat }
+run (Expr eb Nothing fs)   = runOnHandle eb fs stdin
+run (Expr eb (Just fp) fs) = runOnFile eb fs fp
+run (Eval e)               = print (exprEval e)
