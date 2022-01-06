@@ -135,6 +135,7 @@ data BBin = Plus
           | Split
           | Prior
           | Filter
+          | Printf
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -316,6 +317,7 @@ data C = IsNum
        | IsSemigroup
        | Functor -- ^ For map (@"@)
        | Foldable
+       | IsPrintf
        -- TODO: witherable
        deriving (Eq, Ord)
 
@@ -327,6 +329,7 @@ instance Pretty C where
     pretty IsSemigroup = "Semigroup"
     pretty Functor     = "Functor"
     pretty Foldable    = "Foldable"
+    pretty IsPrintf    = "Printf"
 
 -- decl
 data D a = SetFS BS.ByteString

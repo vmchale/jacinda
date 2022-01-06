@@ -211,6 +211,12 @@ checkType ty c@Functor                    = throwError $ Doesn'tSatisfy (void ty
 checkType (TyB _ TyVec) Foldable          = pure ()
 checkType (TyB _ TyStream) Foldable       = pure ()
 checkType ty c@Foldable                   = throwError $ Doesn'tSatisfy (void ty) c
+checkType (TyB _ TyStr) IsPrintf          = pure ()
+checkType (TyB _ TyFloat) IsPrintf        = pure ()
+checkType (TyB _ TyInteger) IsPrintf      = pure ()
+checkType (TyB _ TyBool) IsPrintf         = pure ()
+checkType (TyTup _ tys) IsPrintf          = traverse_ (`checkType` IsPrintf) tys
+checkType ty c@IsPrintf                   = throwError $ Doesn'tSatisfy (void ty) c
 -- FIXME: when we encounter a type variable at this stage I think it's ok?
 -- TODO: maybe streams could have num + eq instances...
 
@@ -340,6 +346,11 @@ tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBoo
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
+tyE0 (BBuiltin _ Printf) = do
+    a <- dummyName "a"
+    let a' = var a
+    modifying classVarsLens (addC a IsPrintf)
+    pure $ BBuiltin (tyArr tyStr (tyArr a' tyStr)) Printf
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
     let a' = var a
@@ -360,7 +371,7 @@ tyE0 (BBuiltin _ Filter) = do
 tyE0 (BBuiltin _ Map) = do
     a <- dummyName "a"
     b <- dummyName "b"
-    f <- dummyName "f"
+    f <- higherOrder "f"
     let a' = var a
         b' = var b
         f' = var f
@@ -371,7 +382,7 @@ tyE0 (BBuiltin _ Map) = do
 tyE0 (TBuiltin _ Fold) = do
     b <- dummyName "b"
     a <- dummyName "a"
-    f <- dummyName "f"
+    f <- higherOrder "f"
     let b' = var b
         a' = var a
         f' = var f
