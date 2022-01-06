@@ -83,6 +83,12 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **ix** Line number
 
+**substr** Extract substring
+:   Str -> Int -> Int -> Str
+
+**split** Split a string by regex
+:   Str -> Regex -> List Str
+
 ## SYNTAX
 
 **`n** nth field
