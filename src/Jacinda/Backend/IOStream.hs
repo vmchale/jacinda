@@ -75,7 +75,7 @@ eEval allCtx@(ix, line, ctx) = go where
             in parseAsEInt eI
     go (EApp _ (UBuiltin _ FParse) e) =
         let eI = asStr (eEval allCtx e)
-            in parseAsEInt eI
+            in parseAsF eI
     go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
         let eI = eEval allCtx e
             eI' = eEval allCtx e'
