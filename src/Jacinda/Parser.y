@@ -178,6 +178,10 @@ E :: { E AlexPosn }
   | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
   | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
   | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
+  | x iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 X) }
+  | x fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 X) }
+  | y iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 Y) }
+  | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
@@ -206,8 +210,6 @@ E :: { E AlexPosn }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
-  -- | E iParse { EApp (eLoc $1) (UBuiltin $2 IParse) $1 }
-  -- | E fParse { EApp (eLoc $1) (UBuiltin $2 FParse) $1 }
 
 {
 
