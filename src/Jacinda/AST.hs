@@ -171,8 +171,6 @@ data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
          | FParseCol { eLoc :: a, col :: Int }
          | Field { eLoc :: a, field :: Int }
-         | IParseField { eLoc :: a, field :: Int }
-         | FParseField { eLoc :: a, field :: Int }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
@@ -196,6 +194,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
+         | Paren { eLoc :: a, eExpr :: E a }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -208,8 +207,6 @@ data EF a x = ColumnF a Int
             | IParseColF a Int
             | FParseColF a Int
             | FieldF a Int
-            | IParseFieldF a Int
-            | FParseFieldF a Int
             | AllFieldF a
             | AllColumnF a
             | EAppF a x x
@@ -231,6 +228,7 @@ data EF a x = ColumnF a Int
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
             | ArrF a (V.Vector x)
+            | ParenF a x
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -242,8 +240,6 @@ instance Pretty (E a) where
     pretty (FParseCol _ i)                                         = "$" <> pretty i <> ":f"
     pretty AllField{}                                              = "`0"
     pretty (Field _ i)                                             = "`" <> pretty i
-    pretty (IParseField _ i)                                       = "`" <> pretty i <> ":i"
-    pretty (FParseField _ i)                                       = "`" <> pretty i <> ":f"
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')               = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                 = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                 = "min" <+> pretty e <+> pretty e'
@@ -277,6 +273,7 @@ instance Pretty (E a) where
     pretty Ix{}                                                    = "ix"
     pretty RegexCompiled{}                                         = error "Nonsense."
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
+    pretty (Paren _ e)                                             = parens (pretty e)
 
 instance Show (E a) where
     show = show . pretty
@@ -287,8 +284,6 @@ instance Eq (E a) where
     (==) (IParseCol _ i) (IParseCol _ j)        = i == j
     (==) (FParseCol _ i) (FParseCol _ j)        = i == j
     (==) (Field _ i) (Field _ j)                = i == j
-    (==) (IParseField _ i) (IParseField _ j)    = i == j
-    (==) (FParseField _ i) (FParseField _ j)    = i == j
     (==) AllColumn{} AllColumn{}                = True
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'
@@ -310,6 +305,8 @@ instance Eq (E a) where
     (==) Ix{} Ix{}                              = True
     (==) RegexCompiled{} _                      = error "Cannot compare compiled regex!"
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
+    (==) (Paren _ e) e'                         = e == e'
+    (==) e (Paren _ e')                         = e == e'
     (==) _ _                                    = False
 
 data C = IsNum

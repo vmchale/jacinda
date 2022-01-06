@@ -174,13 +174,19 @@ E :: { E AlexPosn }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
+  | field iParse { EApp (loc $1) (UBuiltin $2 IParse) (Field (loc $1) (ix $1)) }
+  | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
+  | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
+  | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
+  | x iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 X) }
+  | x fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 X) }
+  | y iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 Y) }
+  | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
-  | field iParse { IParseField (loc $1) (ix $1) }
-  | field fParse { FParseField (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
-  | parens(E) { $1 }
+  | parens(E) { Paren (eLoc $1) $1 }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }
@@ -204,8 +210,6 @@ E :: { E AlexPosn }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
-  -- | E iParse { EApp (eLoc $1) (UBuiltin $2 IParse) $1 }
-  -- | E fParse { EApp (eLoc $1) (UBuiltin $2 FParse) $1 }
 
 {
 

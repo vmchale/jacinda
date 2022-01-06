@@ -145,4 +145,5 @@ renameE (Let l (n, eϵ) e') = do
     eϵ' <- renameE eϵ
     (n', modR) <- withName n
     Let l (n', eϵ') <$> withRenames modR (renameE e')
+renameE (Paren _ e) = renameE e
 renameE e = pure e -- literals &c.

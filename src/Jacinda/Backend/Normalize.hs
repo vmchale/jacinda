@@ -3,6 +3,11 @@ module Jacinda.Backend.Normalize ( compileR
                                  , eClosed
                                  , readDigits
                                  , readFloat
+                                 , mkI
+                                 , mkF
+                                 , mkStr
+                                 , parseAsEInt
+                                 , parseAsF
                                  ) where
 
 import           Control.Monad.State.Strict (State, evalState, gets, modify)
@@ -18,6 +23,21 @@ import           Jacinda.AST
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
+
+mkI :: Integer -> E (T K)
+mkI = IntLit tyI
+
+mkF :: Double -> E (T K)
+mkF = FloatLit tyF
+
+mkStr :: BS.ByteString -> E (T K)
+mkStr = StrLit tyStr
+
+parseAsEInt :: BS.ByteString -> E (T K)
+parseAsEInt = mkI . readDigits
+
+parseAsF :: BS.ByteString -> E (T K)
+parseAsF = FloatLit tyF . readFloat
 
 readDigits :: BS.ByteString -> Integer
 readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
@@ -67,8 +87,6 @@ eClosed i = flip evalState (LetCtx IM.empty (Renames i IM.empty)) . eNorm
 eNorm :: E (T K)
       -> EvalM (E (T K))
 eNorm e@Field{}       = pure e
-eNorm e@IParseField{} = pure e
-eNorm e@FParseField{} = pure e
 eNorm e@IntLit{}      = pure e
 eNorm e@FloatLit{}    = pure e
 eNorm e@BoolLit{}     = pure e
@@ -245,12 +263,12 @@ eNorm e0@(EApp _ (UBuiltin _ (At i)) e) = do
 eNorm e0@(EApp _ (UBuiltin _ IParse) e) = do
     eI <- eNorm e
     pure $ case eI of
-        (StrLit _ str) -> IntLit tyI (readDigits str)
+        (StrLit _ str) -> parseAsEInt str
         _              -> e0
 eNorm e0@(EApp _ (UBuiltin _ FParse) e) = do
     eI <- eNorm e
     pure $ case eI of
-        (StrLit _ str) -> FloatLit tyF (readFloat str)
+        (StrLit _ str) -> parseAsF str
         _              -> e0
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
