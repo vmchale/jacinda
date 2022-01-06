@@ -7,7 +7,6 @@ module Jacinda.Backend.IOStream ( runJac
 import           Control.Exception         (Exception)
 import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
-import qualified Data.ByteString.Char8     as ASCII
 import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
@@ -24,23 +23,6 @@ data StreamError = NakedField
                  deriving (Show)
 
 instance Exception StreamError where
-
-readFloat :: BS.ByteString -> Double
-readFloat = read . ASCII.unpack
-
-readDigits :: BS.ByteString -> Integer
-readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
-    where f '0' = 0
-          f '1' = 1
-          f '2' = 2
-          f '3' = 3
-          f '4' = 4
-          f '5' = 5
-          f '6' = 6
-          f '7' = 7
-          f '8' = 8
-          f '9' = 9
-          f c   = error (c:" is not a valid digit!")
 
 noRes :: a
 noRes = error "Internal error: did not normalize to appropriate type."

@@ -98,6 +98,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fs { TokResVar $$ VarFs }
 
     split { TokBuiltin $$ BuiltinSplit }
+    substr { TokBuiltin $$ BuiltinSubstr }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -106,8 +107,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
 -- TODO: exclamation?
 %right const
-%left paren tally
-%nonassoc leq geq gt lt neq eq tally iParse fParse
+%left paren iParse fParse
+%nonassoc leq geq gt lt neq eq
 
 %%
 
@@ -199,9 +200,12 @@ E :: { E AlexPosn }
   | min { BBuiltin $1 Min }
   | max { BBuiltin $1 Max }
   | split { BBuiltin $1 Split }
+  | substr { TBuiltin $1 Substr }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
+  -- | E iParse { EApp (eLoc $1) (UBuiltin $2 IParse) $1 }
+  -- | E fParse { EApp (eLoc $1) (UBuiltin $2 FParse) $1 }
 
 {
 
