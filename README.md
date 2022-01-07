@@ -5,6 +5,8 @@ Jacinda is a functional, expression-oriented complement to
 
 ## From Source
 
+First, install [Rust's regex library](https://github.com/rust-lang/regex/tree/master/regex-capi#c-api-for-rusts-regex-engine).
+
 If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (via [ghcup](https://www.haskell.org/ghcup/)):
 
 ```
@@ -12,6 +14,8 @@ cabal install jacinda
 ```
 
 # Documentation
+
+The manpages include various builtins and a syntax reference.
 
 # Further Advantages
 
