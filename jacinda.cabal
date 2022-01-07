@@ -28,12 +28,12 @@ library
                     , Jacinda.Regex
                     , Jacinda.File
                     , Jacinda.Rename
-                    , Jacinda.Backend.IOStream
+                    , Jacinda.Backend.TreeWalk
     other-modules: Jacinda.Lexer
                  , Intern.Name
                  , Intern.Unique
                  , Jacinda.Backend.Normalize
-                 , System.IO.Streams.Ext
+                 , Data.List.Ext
     build-tool-depends: alex:alex, happy:happy
 
     -- LANGUAGE extensions used by modules in this package.
@@ -50,7 +50,6 @@ library
                     , microlens
                     , microlens-mtl
                     , vector
-                    , io-streams
                     , recursion >=1.0.0.0
     hs-source-dirs:   src
     ghc-options: -Wall
