@@ -98,6 +98,7 @@ tokens :-
         ":"                      { mkSym Colon }
         ";"                      { mkSym Semicolon }
         "\."                     { mkSym BackslashDot }
+        \\                       { mkSym Backslash }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -224,6 +225,7 @@ data Sym = PlusTok
          | LBracePercent
          | Exclamation
          | Caret
+         | Backslash
          | BackslashDot
          | FilterTok
 
@@ -261,7 +263,8 @@ instance Pretty Sym where
     pretty ConstTok      = "[:"
     pretty LBracePercent = "{%"
     pretty Exclamation   = "!"
-    pretty BackslashDot  = "\\"
+    pretty Backslash     = "\\"
+    pretty BackslashDot  = "\\."
     pretty FilterTok     = "#."
 
 data Keyword = KwLet
