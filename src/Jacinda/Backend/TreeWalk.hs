@@ -54,10 +54,11 @@ asRegex _                  = noRes
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
-eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
+eEval :: RurePtr
+      -> (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
       -> E (T K)
-eEval allCtx@(ix, line, ctx) = go where
+eEval re allCtx@(ix, line, ctx) = go where
     go b@BoolLit{} = b
     go i@IntLit{} = i
     go f@FloatLit{} = f
@@ -67,89 +68,89 @@ eEval allCtx@(ix, line, ctx) = go where
     go op@BBuiltin{} = op
     go op@UBuiltin{} = op
     go op@TBuiltin{} = op
-    go (EApp ty op@BBuiltin{} e) = EApp ty op (eEval allCtx e)
+    go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
     go Ix{} = mkI (fromIntegral ix)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
     go (EApp _ (UBuiltin _ IParse) e) =
-        let eI = asStr (eEval allCtx e)
+        let eI = asStr (go e)
             in parseAsEInt eI
     go (EApp _ (UBuiltin _ FParse) e) =
-        let eI = asStr (eEval allCtx e)
+        let eI = asStr (go e)
             in parseAsF eI
     go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
-        let eI = eEval allCtx e
-            eI' = eEval allCtx e'
+        let eI = go e
+            eI' = go e'
         in case (eI, eI') of
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
             _                                -> noRes
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
-        let eI = eEval allCtx e
-            eI' = eEval allCtx e'
+        let eI = go e
+            eI' = go e'
         in case (eI, eI') of
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
             _                                -> noRes
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in mkI (eI + eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
-        let eI = asStr (eEval allCtx e)
-            eI' = asStr (eEval allCtx e')
+        let eI = asStr (go e)
+            eI' = asStr (go e')
             in StrLit tyI (eI <> eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI > eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI < eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
-        let eI = asStr (eEval allCtx e)
-            eI' = asStr (eEval allCtx e')
+        let eI = asStr (go e)
+            eI' = asStr (go e')
             in BoolLit tyBool (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
-        let eI = asStr (eEval allCtx e)
-            eI' = asStr (eEval allCtx e')
+        let eI = asStr (go e)
+            eI' = asStr (go e')
             in BoolLit tyBool (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Leq) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Geq) e) e') =
-        let eI = asInt (eEval allCtx e)
-            eI' = asInt (eEval allCtx e')
+        let eI = asInt (go e)
+            eI' = asInt (go e')
             in BoolLit tyBool (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
-        let eI = asFloat (eEval allCtx e)
-            eI' = asFloat (eEval allCtx e')
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
             in mkF (eI + eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Minus) e) e') =
-        let eI = asFloat (eEval allCtx e)
-            eI' = asFloat (eEval allCtx e')
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
             in mkF (eI - eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
-        let eI = asFloat (eEval allCtx e)
-            eI' = asFloat (eEval allCtx e')
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
             in FloatLit tyF (eI * eI')
     go (EApp _ (EApp _ (BBuiltin _ Div) e) e') =
-        let eI = asFloat (eEval allCtx e)
-            eI' = asFloat (eEval allCtx e')
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
             in FloatLit tyF (eI / eI')
     go (EApp _ (EApp _ (BBuiltin _ And) e) e') =
-        let b = asBool (eEval allCtx e)
-            b' = asBool (eEval allCtx e')
+        let b = asBool (go e)
+            b' = asBool (go e')
             in BoolLit tyBool (b && b')
     go (EApp _ (EApp _ (BBuiltin _ Or) e) e') =
         let b = asBool e
@@ -157,13 +158,14 @@ eEval allCtx@(ix, line, ctx) = go where
             in BoolLit tyBool (b || b')
     go (EApp _ (UBuiltin _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
-        where str = asStr (eEval allCtx e)
-    go (Tup ty es) = Tup ty (eEval allCtx <$> es)
+        where str = asStr (go e)
+    go (Tup ty es) = Tup ty (go <$> es)
     go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
-        let str = asStr (eEval allCtx e)
-            re = asRegex (eEval allCtx e')
+        let str = asStr (go e)
+            re = asRegex (go e')
             bss = splitBy re str
             in Arr undefined (StrLit undefined <$> bss)
+    -- go (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = foldWithCtx re i op seed stream
 
 applyOp :: Int
         -> E (T K) -- ^ Operator
@@ -195,15 +197,15 @@ ir :: RurePtr
    -> E (T K)
    -> [BS.ByteString]
    -> [E (T K)] -- TODO: include chunks/context too?
-ir _ _ AllColumn{}     = fmap mkStr
-ir re _ (Column _ i)    = fmap (mkStr . atField re i)
+ir _ _ AllColumn{} = fmap mkStr
+ir re _ (Column _ i) = fmap (mkStr . atField re i)
 ir re _ (IParseCol _ i) = fmap (parseAsEInt . atField re i)
 ir re _ (FParseCol _ i) = fmap (parseAsF . atField re i)
 ir re _ (Guarded _ pe e) =
     let pe' = compileR pe
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
+        in imap (\ix line -> eEval re (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval re (mkCtx re ix line) pe'))
 ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
@@ -214,8 +216,8 @@ ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineS
         irl = ir re i streaml lineStream
         irr = ir re i streamr lineStream
     in zipWith (applyOp i op) irl irr
-ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp ->
-    scanl' (applyOp i op) seed $ ir re i xs inp
+ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
+    scanl' (applyOp i op) seed . ir re i xs
 
 -- | Output stream that prints each entry (expression)
 printStream :: [E (T K)] -> IO ()
@@ -234,6 +236,17 @@ runJac :: RurePtr -- ^ Record separator
        -> E (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
 runJac re i e = fileProcessor re i (eClosed i e)
+
+-- evaluate something that has a fold nested in it
+eWith :: RurePtr -> Int -> E (T K) -> [BS.ByteString] -> E (T K)
+eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = foldWithCtx re i op seed stream -- FIXME: only fold on streams!!
+eWith re i (EApp ty e0 e1)                                             = \bs -> eClosed i (EApp ty (eWith re i e0 bs) (eWith re i e1 bs))
+eWith re i e@BBuiltin{}                                                = const e
+eWith re i e@UBuiltin{}                                                = const e
+eWith re i e@TBuiltin{}                                                = const e
+eWith re i e@StrLit{}                                                  = const e
+eWith re i e@FloatLit{}                                                = const e
+eWith re i e@IntLit{}                                                  = const e
 
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
 -- won't blow up in our faces idk
@@ -259,7 +272,6 @@ fileProcessor re i e@Guarded{} = Right $ \inp -> do
     printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp
-fileProcessor re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print . foldWithCtx re i op seed stream
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
@@ -280,3 +292,4 @@ fileProcessor _ _ ResVar{} = badSugar
 fileProcessor _ _ BBuiltin{} = Left UnevalFun
 fileProcessor _ _ UBuiltin{} = Left UnevalFun
 fileProcessor _ _ TBuiltin{} = Left UnevalFun
+fileProcessor re i e = Right $ print . eWith re i e
