@@ -162,7 +162,7 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin _ Split) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss)
+        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss) -- FIXME type of Arr (l) is wrong
         _                                -> e0
 eNorm e0@(EApp _ (UBuiltin _ Floor) e) = do
     eI <- eNorm e

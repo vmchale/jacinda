@@ -54,17 +54,16 @@ asRegex _                  = noRes
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
-eEval :: RurePtr
-      -> (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
+eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
       -> E (T K)
-eEval re allCtx@(ix, line, ctx) = go where
+eEval (ix, line, ctx) = go where
     go b@BoolLit{} = b
     go i@IntLit{} = i
     go f@FloatLit{} = f
     go str@StrLit{} = str
     go rr@RegexLit{} = rr
-    go re@RegexCompiled{} = re
+    go reϵ@RegexCompiled{} = reϵ
     go op@BBuiltin{} = op
     go op@UBuiltin{} = op
     go op@TBuiltin{} = op
@@ -82,16 +81,16 @@ eEval re allCtx@(ix, line, ctx) = go where
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
-            (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
-            _                                -> noRes
+            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
+            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
+            _                                  -> noRes
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
-            (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
-            _                                -> noRes
+            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
+            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
+            _                                  -> noRes
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
@@ -100,6 +99,10 @@ eEval re allCtx@(ix, line, ctx) = go where
         let eI = asStr (go e)
             eI' = asStr (go e')
             in StrLit tyI (eI <> eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
+        let eI = asStr (go e)
+            eI' = asStr (go e')
+            in BoolLit tyBool (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
@@ -111,10 +114,6 @@ eEval re allCtx@(ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
-        let eI = asStr (go e)
-            eI' = asStr (go e')
             in BoolLit tyBool (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
         let eI = asInt (go e)
@@ -132,6 +131,14 @@ eEval re allCtx@(ix, line, ctx) = go where
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyBool (eI <= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Eq) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI == eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Neq) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
@@ -159,13 +166,46 @@ eEval re allCtx@(ix, line, ctx) = go where
     go (EApp _ (UBuiltin _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
         where str = asStr (go e)
+    go (EApp _ (UBuiltin _ Floor) e) =
+        let f = asFloat e
+        in mkI (floor f)
+    go (EApp _ (UBuiltin _ Ceiling) e) =
+        let f = asFloat e
+        in mkI (ceiling f)
     go (Tup ty es) = Tup ty (go <$> es)
     go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
         let str = asStr (go e)
             re = asRegex (go e')
             bss = splitBy re str
             in Arr undefined (StrLit undefined <$> bss)
-    -- go (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) =
+        let eI0 = asStr (go e0)
+            eI1 = asInt (go e1)
+            eI2 = asInt (go e2)
+        in mkStr (substr eI0 (fromIntegral eI1) (fromIntegral eI2))
+    go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
+        let e0 = asStr e
+            e1 = asRegex e'
+        in Arr undefined (mkStr <$> splitBy e1 e0)
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Max) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in mkF (max eI eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Min) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in mkF (min eI eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (max eI eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Min) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (min eI eI')
+    go (EApp _ (UBuiltin _ Not) e) =
+        let eI = asBool (go e)
+        in BoolLit tyBool (not eI)
 
 applyOp :: Int
         -> E (T K) -- ^ Operator
@@ -205,7 +245,7 @@ ir re _ (Guarded _ pe e) =
     let pe' = compileR pe
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval re (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval re (mkCtx re ix line) pe'))
+        in imap (\ix line -> eEval (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
 ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
@@ -241,15 +281,16 @@ runJac re i e = fileProcessor re i (eClosed i e)
 eWith :: RurePtr -> Int -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = foldWithCtx re i op seed stream -- FIXME: only fold on streams!!
 eWith re i (EApp ty e0 e1)                                             = \bs -> eClosed i (EApp ty (eWith re i e0 bs) (eWith re i e1 bs))
-eWith re i e@BBuiltin{}                                                = const e
-eWith re i e@UBuiltin{}                                                = const e
-eWith re i e@TBuiltin{}                                                = const e
-eWith re i e@StrLit{}                                                  = const e
-eWith re i e@FloatLit{}                                                = const e
-eWith re i e@IntLit{}                                                  = const e
+eWith _ _ e@BBuiltin{}                                                 = const e
+eWith _ _ e@UBuiltin{}                                                 = const e
+eWith _ _ e@TBuiltin{}                                                 = const e
+eWith _ _ e@StrLit{}                                                   = const e
+eWith _ _ e@FloatLit{}                                                 = const e
+eWith _ _ e@IntLit{}                                                   = const e
+eWith _ _ e@BoolLit{}                                                  = const e
 
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
--- won't blow up in our faces idk
+-- won't blow up in our faces
 --
 -- | Given an expression, turn it into a function which will process the file.
 fileProcessor :: RurePtr
