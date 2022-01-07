@@ -165,6 +165,16 @@ succDiff := [(-) \. x]
 
 to track successive differences.
 
+#### Currying
+
+Jacinda allows partially applied (curried) functions, one could write
+
+```
+succDiff := ((-)\.)
+```
+
+as well.
+
 ### Parting Shots
 
 ```
