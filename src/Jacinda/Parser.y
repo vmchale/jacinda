@@ -39,6 +39,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lparen { TokSym $$ LParen }
     rparen { TokSym $$ RParen }
     semicolon { TokSym $$ Semicolon }
+    backslash { TokSym $$ Backslash }
     tilde { TokSym $$ Tilde }
     notMatch { TokSym $$ NotMatchTok }
     dot { TokSym $$ Dot }
@@ -47,7 +48,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     const { TokSym $$ ConstTok }
     filter { TokSym $$ FilterTok }
     exclamation { TokSym $$ Exclamation }
-    backslash { TokSym $$ BackslashDot }
+    backslashdot { TokSym $$ BackslashDot }
     at { $$@(TokAccess _ _) }
 
     plus { TokSym $$ PlusTok }
@@ -147,7 +148,7 @@ BBin :: { BBin }
      | notMatch { NotMatches }
      | and { And }
      | or { Or }
-     | backslash { Prior }
+     | backslashdot { Prior }
      | filter { Filter }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
@@ -212,6 +213,7 @@ E :: { E AlexPosn }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
+  | backslash name dot E { Lam $1 $2 $4 }
 
 {
 
