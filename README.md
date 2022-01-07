@@ -1,6 +1,16 @@
 Jacinda is a functional, expression-oriented complement to
 [AWK](http://www.awklang.org).
 
+# SHOCK & AWE
+
+```
+ls -l | ja '(+)|0 {ix>1}{`5:i}'
+```
+
+```
+curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F,
+```
+
 # Installation
 
 ## From Source
