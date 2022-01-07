@@ -99,6 +99,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
     split { TokBuiltin $$ BuiltinSplit }
     substr { TokBuiltin $$ BuiltinSubstr }
+    sprintf { TokBuiltin $$ BuiltinSprintf }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -207,6 +208,7 @@ E :: { E AlexPosn }
   | max { BBuiltin $1 Max }
   | split { BBuiltin $1 Split }
   | substr { TBuiltin $1 Substr }
+  | sprintf { BBuiltin $1 Sprintf }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }

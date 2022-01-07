@@ -113,6 +113,7 @@ tokens :-
 
         substr                   { mkBuiltin BuiltinSubstr }
         split                    { mkBuiltin BuiltinSplit }
+        sprintf                  { mkBuiltin BuiltinSprintf }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -299,12 +300,14 @@ data Builtin = BuiltinIParse
              | BuiltinFParse
              | BuiltinSubstr
              | BuiltinSplit
+             | BuiltinSprintf
 
 instance Pretty Builtin where
-    pretty BuiltinIParse = ":i"
-    pretty BuiltinFParse = ":f"
-    pretty BuiltinSubstr = "substr"
-    pretty BuiltinSplit  = "split"
+    pretty BuiltinIParse  = ":i"
+    pretty BuiltinFParse  = ":f"
+    pretty BuiltinSubstr  = "substr"
+    pretty BuiltinSplit   = "split"
+    pretty BuiltinSprintf = "sprintf"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

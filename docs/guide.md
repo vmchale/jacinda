@@ -165,6 +165,58 @@ all := [(&)|#t x]
 count := [(+)|0 [:1"x]
 ```
 
+# Data Processing
+
+## CSV Processing
+
+We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html), viz.
+
+```
+csvformat file.csv -D'|' | ja -F'|' '$1'
+```
+
+For "well-behaved" csv data, we can simply split on `,`:
+
+```
+ja -F, '$1'
+```
+
+### Vaccine Effectiveness
+
+As an example, NYC publishes weighted data on [vaccine breakthroughs](https://github.com/nychealth/coronavirus-data/blob/master/latest/now-weekly-breakthrough.csv).
+
+We can download it:
+
+```
+curl -L https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv -o /tmp/now-weekly-breakthrough.csv
+```
+
+And then process its columns with `ja`
+
+```
+ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F, -i /tmp/now-weekly-breakthrough.csv
+```
+
+As of writing:
+
+```
+0.8793436293436293
+0.8524501884760366
+0.8784741144414169
+0.8638045891931903
+0.8644207066557108
+0.8572567783094098
+0.8475274725274725
+0.879263670817542
+0.8816131830008673
+0.8846732911773563
+0.8974564390146205
+0.9692181407757029
+```
+
+This extracts the 5th and 11th columns (discarding headers), and then computes
+effectiveness.
+
 # Machinery
 
 Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to
