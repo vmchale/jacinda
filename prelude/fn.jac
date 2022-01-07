@@ -7,3 +7,6 @@ fn drop(n, str) :=
 
 fn take(n, str) :=
   substr str 0 n;
+
+{. rounds down on .5
+fn round(x) := floor (x+0.5);
