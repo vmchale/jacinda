@@ -38,52 +38,35 @@ The manpages document the builtins and a syntax reference.
 
 ```
 benchmarking bench/ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt
-time                 15.33 ms   (15.21 ms .. 15.56 ms)
-                     0.999 R²   (0.998 R² .. 1.000 R²)
-mean                 15.52 ms   (15.44 ms .. 15.63 ms)
-std dev              246.5 μs   (203.2 μs .. 297.6 μs)
+time                 8.110 ms   (7.926 ms .. 8.304 ms)
+                     0.996 R²   (0.993 R² .. 0.998 R²)
+mean                 8.470 ms   (8.278 ms .. 8.771 ms)
+std dev              693.0 μs   (437.4 μs .. 1.008 ms)
+variance introduced by outliers: 47% (moderately inflated)
 
 benchmarking bench/original-awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 13.18 ms   (13.10 ms .. 13.29 ms)
-                     1.000 R²   (0.999 R² .. 1.000 R²)
-mean                 13.06 ms   (13.01 ms .. 13.12 ms)
-std dev              147.8 μs   (119.1 μs .. 201.4 μs)
+time                 13.24 ms   (13.04 ms .. 13.39 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 13.39 ms   (13.29 ms .. 13.49 ms)
+std dev              256.0 μs   (197.8 μs .. 380.7 μs)
 
 benchmarking bench/gawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 7.281 ms   (7.213 ms .. 7.370 ms)
-                     0.999 R²   (0.997 R² .. 1.000 R²)
-mean                 7.331 ms   (7.284 ms .. 7.408 ms)
-std dev              165.9 μs   (105.0 μs .. 232.6 μs)
+time                 7.804 ms   (7.706 ms .. 7.931 ms)
+                     0.996 R²   (0.991 R² .. 0.999 R²)
+mean                 7.668 ms   (7.572 ms .. 7.783 ms)
+std dev              303.4 μs   (229.7 μs .. 442.5 μs)
+variance introduced by outliers: 17% (moderately inflated)
 
 benchmarking bench/mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 2.912 ms   (2.736 ms .. 3.059 ms)
-                     0.927 R²   (0.841 R² .. 0.980 R²)
-mean                 3.350 ms   (3.100 ms .. 3.758 ms)
-std dev              1.023 ms   (588.7 μs .. 1.496 ms)
-variance introduced by outliers: 96% (severely inflated)
+time                 3.179 ms   (3.099 ms .. 3.240 ms)
+                     0.997 R²   (0.995 R² .. 0.998 R²)
+mean                 3.213 ms   (3.178 ms .. 3.270 ms)
+std dev              148.9 μs   (97.11 μs .. 267.6 μs)
+variance introduced by outliers: 29% (moderately inflated)
 
 benchmarking bench/busybox awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 12.68 ms   (12.46 ms .. 13.08 ms)
-                     0.994 R²   (0.982 R² .. 1.000 R²)
-mean                 12.95 ms   (12.74 ms .. 13.28 ms)
-std dev              682.5 μs   (371.1 μs .. 1.020 ms)
-variance introduced by outliers: 25% (moderately inflated)
-```
-
-## OSX + Aarch64
-
-```
-benchmarking bench/ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt
-time                 27.95 ms   (25.60 ms .. 31.51 ms)
-                     0.941 R²   (0.894 R² .. 0.987 R²)
-mean                 25.45 ms   (23.95 ms .. 27.05 ms)
-std dev              3.604 ms   (2.496 ms .. 5.447 ms)
-variance introduced by outliers: 62% (severely inflated)
-
-benchmarking bench/awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt
-time                 37.09 ms   (34.59 ms .. 39.64 ms)
-                     0.990 R²   (0.983 R² .. 0.999 R²)
-mean                 40.35 ms   (37.41 ms .. 51.32 ms)
-std dev              10.69 ms   (931.2 μs .. 20.31 ms)
-variance introduced by outliers: 86% (severely inflated)
+time                 12.61 ms   (12.43 ms .. 12.77 ms)
+                     0.999 R²   (0.998 R² .. 1.000 R²)
+mean                 12.98 ms   (12.86 ms .. 13.09 ms)
+std dev              303.1 μs   (234.5 μs .. 396.2 μs)
 ```
