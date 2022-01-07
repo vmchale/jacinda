@@ -1,12 +1,14 @@
--- | Tree-walking interpreter, uses [io-streams](https://hackage.haskell.org/package/io-streams).
-module Jacinda.Backend.IOStream ( runJac
+-- | Tree-walking interpreter
+module Jacinda.Backend.TreeWalk ( runJac
                                 ) where
 
 -- TODO: normalize before mapping?
 
 import           Control.Exception         (Exception)
-import           Control.Monad             ((<=<))
 import qualified Data.ByteString           as BS
+import           Data.Foldable             (foldl', traverse_)
+import           Data.List                 (scanl')
+import           Data.List.Ext
 import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
@@ -14,12 +16,11 @@ import           Jacinda.Backend.Normalize
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import           Regex.Rure                (RurePtr)
-import qualified System.IO.Streams         as Streams
-import           System.IO.Streams.Ext     as Streams
 
 data StreamError = NakedField
                  | UnevalFun
                  | TupOfStreams -- ^ Reject a tuple of streams
+                 | BadCtx
                  deriving (Show)
 
 instance Exception StreamError where
@@ -90,10 +91,6 @@ eEval allCtx@(ix, line, ctx) = go where
             (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
             (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
             _                                -> noRes
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
-        let eI = asFloat (eEval allCtx e)
-            eI' = asFloat (eEval allCtx e')
-            in FloatLit tyF (eI * eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (eEval allCtx e)
             eI' = asInt (eEval allCtx e')
@@ -126,6 +123,30 @@ eEval allCtx@(ix, line, ctx) = go where
         let eI = asStr (eEval allCtx e)
             eI' = asStr (eEval allCtx e')
             in BoolLit tyBool (eI /= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Leq) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
+            in BoolLit tyBool (eI <= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Geq) e) e') =
+        let eI = asInt (eEval allCtx e)
+            eI' = asInt (eEval allCtx e')
+            in BoolLit tyBool (eI <= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
+        let eI = asFloat (eEval allCtx e)
+            eI' = asFloat (eEval allCtx e')
+            in mkF (eI + eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Minus) e) e') =
+        let eI = asFloat (eEval allCtx e)
+            eI' = asFloat (eEval allCtx e')
+            in mkF (eI - eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
+        let eI = asFloat (eEval allCtx e)
+            eI' = asFloat (eEval allCtx e')
+            in FloatLit tyF (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin _ Div) e) e') =
+        let eI = asFloat (eEval allCtx e)
+            eI' = asFloat (eEval allCtx e')
+            in FloatLit tyF (eI / eI')
     go (EApp _ (EApp _ (BBuiltin _ And) e) e') =
         let b = asBool (eEval allCtx e)
             b' = asBool (eEval allCtx e')
@@ -172,46 +193,46 @@ applyUn unOp e =
 ir :: RurePtr
    -> Int
    -> E (T K)
-   -> Streams.InputStream BS.ByteString
-   -> IO (Streams.InputStream (E (T K))) -- TODO: include chunks/context too?
-ir _ _ AllColumn{}     = Streams.map mkStr
-ir re _ (Column _ i)    = Streams.map (mkStr . atField re i)
-ir re _ (IParseCol _ i) = Streams.map (parseAsEInt . atField re i)
-ir re _ (FParseCol _ i) = Streams.map (parseAsF . atField re i)
+   -> [BS.ByteString]
+   -> [E (T K)] -- TODO: include chunks/context too?
+ir _ _ AllColumn{}     = fmap mkStr
+ir re _ (Column _ i)    = fmap (mkStr . atField re i)
+ir re _ (IParseCol _ i) = fmap (parseAsEInt . atField re i)
+ir re _ (FParseCol _ i) = fmap (parseAsF . atField re i)
 ir re _ (Guarded _ pe e) =
     let pe' = compileR pe
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval (mkCtx re ix line) e) <=< ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
-ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = Streams.map (applyUn op) <=< ir re i stream
+        in imap (\ix line -> eEval (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
+ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
-        in Streams.filter (\e -> asBool (eClosed i $ applyUn op' e)) <=< ir re i stream
-ir re i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = Streams.prior (applyOp i op) <=< ir re i stream
-ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream -> do
-    (inp0, inp1) <- dupStream lineStream
-    irl <- ir re i streaml inp0
-    irr <- ir re i streamr inp1
-    Streams.zipWith (applyOp i op) irl irr
-ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp -> do
-    Streams.scan (applyOp i op) seed =<< ir re i xs inp
+        in filter (\e -> asBool (eClosed i $ applyUn op' e)) . ir re i stream
+ir re i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp i op) . ir re i stream
+ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
+    let
+        irl = ir re i streaml lineStream
+        irr = ir re i streamr lineStream
+    in zipWith (applyOp i op) irl irr
+ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) = \inp ->
+    scanl' (applyOp i op) seed $ ir re i xs inp
 
 -- | Output stream that prints each entry (expression)
-printStream :: IO (Streams.OutputStream (E (T K)))
-printStream = Streams.makeOutputStream (foldMap print)
+printStream :: [E (T K)] -> IO ()
+printStream = traverse_ print
 
 foldWithCtx :: RurePtr -> Int
             -> E (T K)
             -> E (T K)
             -> E (T K)
-            -> Streams.InputStream BS.ByteString
-            -> IO (E (T K))
-foldWithCtx re i op seed streamExpr = Streams.fold (applyOp i op) seed <=< ir re i streamExpr
+            -> [BS.ByteString]
+            -> E (T K)
+foldWithCtx re i op seed streamExpr = foldl' (applyOp i op) seed . ir re i streamExpr
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
        -> E (T K)
-       -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
+       -> Either StreamError ([BS.ByteString] -> IO ())
 runJac re i e = fileProcessor re i (eClosed i e)
 
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
@@ -221,48 +242,32 @@ runJac re i e = fileProcessor re i (eClosed i e)
 fileProcessor :: RurePtr
               -> Int
               -> E (T K)
-              -> Either StreamError (Streams.InputStream BS.ByteString -> IO ())
+              -> Either StreamError ([BS.ByteString] -> IO ())
 fileProcessor _ _ AllField{}    = Left NakedField
 fileProcessor _ _ Field{}       = Left NakedField
 fileProcessor _ _ Ix{}          = Left NakedField
-fileProcessor _ _ AllColumn{} = Right $ \inp -> do
-    ps <- printStream
-    Streams.connectTo ps =<< Streams.map mkStr inp
+fileProcessor _ _ AllColumn{} = Right $ \inp ->
+    printStream $ fmap mkStr inp
 fileProcessor re _ (Column _ i) = Right $ \inp -> do
-    ps <- printStream
-    Streams.connectTo ps =<< Streams.map (mkStr . atField re i) inp
+    printStream $ fmap (mkStr . atField re i) inp
 fileProcessor re _ (IParseCol _ i) = Right $ \inp -> do
-    ps <- printStream
-    Streams.connectTo ps =<< Streams.map (parseAsEInt . atField re i) inp
+    printStream $ fmap (parseAsEInt . atField re i) inp
 fileProcessor re _ (FParseCol _ i) = Right $ \inp -> do
-    ps <- printStream
-    Streams.connectTo ps =<< Streams.map (parseAsF . atField re i) inp
+    printStream $ fmap (parseAsF . atField re i) inp
 -- TODO: this should extract any regex and compile them, use io/low-level API...
 fileProcessor re i e@Guarded{} = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
+    printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
-fileProcessor re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print <=< foldWithCtx re i op seed stream
+    printStream $ ir re i e inp
+fileProcessor re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = Right $ print . foldWithCtx re i op seed stream
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
+    printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
+    printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
+    printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
-    resStream <- ir re i e inp
-    ps <- printStream
-    Streams.connectTo ps resStream
+    printStream $ ir re i e inp
 fileProcessor _ _ Var{} = error "Internal error?"
 fileProcessor _ _ e@IntLit{} = Right $ const (print e)
 fileProcessor _ _ e@BoolLit{} = Right $ const (print e)

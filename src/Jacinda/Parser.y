@@ -109,7 +109,6 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
     rr { $$@(TokRR _ _) }
 
--- TODO: exclamation?
 %right const
 %left paren iParse fParse
 %nonassoc leq geq gt lt neq eq

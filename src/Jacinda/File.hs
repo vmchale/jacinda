@@ -6,24 +6,25 @@ module Jacinda.File ( tyCheck
                     , exprEval
                     ) where
 
-import           Control.Applicative       ((<|>))
-import           Control.Exception         (Exception, throw, throwIO)
-import           Data.Bifunctor            (second)
-import qualified Data.ByteString           as BS
-import qualified Data.ByteString.Lazy      as BSL
-import           Data.Functor              (void)
+import           Control.Applicative        ((<|>))
+import           Control.Exception          (Exception, throw, throwIO)
+import           Control.Monad              ((<=<))
+import           Data.Bifunctor             (second)
+import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Lazy       as BSL
+import qualified Data.ByteString.Lazy.Char8 as ASCIIL
+import           Data.Functor               (void)
 import           Jacinda.AST
-import           Jacinda.Backend.IOStream
 import           Jacinda.Backend.Normalize
+import           Jacinda.Backend.TreeWalk
 import           Jacinda.Lexer
 import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty
-import           Regex.Rure                (RurePtr)
-import           System.IO                 (Handle, IOMode (ReadMode), withFile)
-import qualified System.IO.Streams         as Streams
+import           Regex.Rure                 (RurePtr)
+import           System.IO                  (Handle)
 
 -- | Parse + rename (globally)
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
@@ -41,23 +42,29 @@ compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
 compileFS Nothing   = defaultRurePtr
 
-runOnHandle :: BSL.ByteString -- ^ Program
-            -> Maybe BS.ByteString -- ^ Field separator
-            -> Handle
-            -> IO ()
-runOnHandle src cliFS h =
+runOnBytes :: BSL.ByteString -- ^ Program
+           -> Maybe BS.ByteString -- ^ Field separator
+           -> BSL.ByteString
+           -> IO ()
+runOnBytes src cliFS contents =
     case parseWithMax' src of
         Left err -> throwIO err
         Right (ast, m) -> do
             (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
             cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (expr typed)
-            cont =<< (Streams.handleToInputStream h >>= Streams.lines)
+            cont $ concatMap BSL.toChunks (ASCIIL.lines contents)
+
+runOnHandle :: BSL.ByteString -- ^ Program
+            -> Maybe BS.ByteString -- ^ Field separator
+            -> Handle
+            -> IO ()
+runOnHandle src cliFS = runOnBytes src cliFS <=< BSL.hGetContents
 
 runOnFile :: BSL.ByteString
           -> Maybe BS.ByteString
           -> FilePath
           -> IO ()
-runOnFile e fs fp = withFile fp ReadMode $ runOnHandle e fs
+runOnFile e fs = runOnBytes e fs <=< BSL.readFile
 
 tcIO :: BSL.ByteString -> IO ()
 tcIO = yeetIO . tyCheck
