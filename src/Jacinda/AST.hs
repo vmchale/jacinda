@@ -135,7 +135,7 @@ data BBin = Plus
           | Split
           | Prior
           | Filter
-          | Printf
+          | Sprintf
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -160,6 +160,7 @@ instance Pretty BBin where
     pretty Prior      = "\\."
     pretty Filter     = "#."
     pretty Split      = "split"
+    pretty Sprintf    = "sprintf"
 
 data DfnVar = X | Y deriving (Eq)
 
