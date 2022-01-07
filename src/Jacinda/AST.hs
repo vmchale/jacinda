@@ -248,7 +248,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')               = "split" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                 = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                   = pretty e <+> pretty b <+> pretty e'
-    pretty (EApp _ (BBuiltin _ b) e)                               = parens (pretty b <> pretty e)
+    pretty (EApp _ (BBuiltin _ b) e)                               = parens (pretty e <> pretty b)
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')   = pretty e <> "|" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')   = pretty e <> "^" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'')  = "," <> pretty op <+> pretty e' <+> pretty e''

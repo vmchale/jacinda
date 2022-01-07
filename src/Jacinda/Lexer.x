@@ -7,6 +7,7 @@
                          , runAlexSt
                          , withAlexSt
                          , lexJac
+                         , freshName
                          , AlexPosn (..)
                          , Alex (..)
                          , Token (..)
@@ -345,6 +346,11 @@ instance Pretty (Token a) where
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
     pretty (TokFloat _ f)     = pretty f
+
+freshName :: T.Text -> Alex (Name AlexPosn)
+freshName t = do
+    pos <- get_pos
+    newIdentAlex pos t 
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do
