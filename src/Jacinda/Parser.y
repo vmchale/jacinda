@@ -187,8 +187,9 @@ E :: { E AlexPosn }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | lparen BBin rparen { BBuiltin $1 $2 }
-  | lparen BBin E rparen { EApp $1 (BBuiltin $1 $2) $3 }
-  | parens(E) { Paren (eLoc $1) $1 }
+  | lparen E BBin rparen { EApp $1 (BBuiltin $1 $3) $2 }
+  | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Name.loc n) n)) $3)) } }
+  -- TODO: currying other side
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }
@@ -214,6 +215,7 @@ E :: { E AlexPosn }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
   | backslash name dot E { Lam $1 $2 $4 }
+  | parens(E) { Paren (eLoc $1) $1 }
 
 {
 

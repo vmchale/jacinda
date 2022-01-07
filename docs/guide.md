@@ -102,15 +102,25 @@ let val
 in sum {% /Bloom/}{1} end
 ```
 
-In Jacinda, one defines functions like [dfns](https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm) in
+In Jacinda, one can define functions with a [dfn](https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm) syntax in, like in
 APL. We do not need to bind `x`; the variables `x` and `y` are implicit. Since
 `[(+)|0 x]` only mentions `x`, it is treated as a unary function.
 
-Note also that `:=` is used for function definition. The general syntax is
+Note also that `:=` is used for definition. The general syntax is
 
 ```
 let (val <name> := <expr>)* in <expr> end
 ```
+
+#### Lambdas
+
+There is syntactical support for lambdas;
+
+```
+\x. (+)|0 x
+```
+
+would be equivalent to the above example.
 
 ### Zips
 
@@ -154,6 +164,16 @@ succDiff := [(-) \. x]
 ```
 
 to track successive differences.
+
+#### Currying
+
+Jacinda allows partially applied (curried) functions, one could write
+
+```
+succDiff := ((-)\.)
+```
+
+as well.
 
 ### Parting Shots
 
