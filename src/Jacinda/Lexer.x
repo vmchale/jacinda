@@ -116,6 +116,8 @@ tokens :-
         substr                   { mkBuiltin BuiltinSubstr }
         split                    { mkBuiltin BuiltinSplit }
         sprintf                  { mkBuiltin BuiltinSprintf }
+        floor                    { mkBuiltin BuiltinFloor }
+        ceil                     { mkBuiltin BuiltinCeil }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -131,7 +133,7 @@ tokens :-
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
         $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ ASCII.unpack s)) }
-        _$digit+                 { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
+        _$digit+\.$digit+        { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
         -- TODO: allow chars to be escaped
         -- TODO: consider dropping this syntax for strings?
@@ -305,6 +307,8 @@ data Builtin = BuiltinIParse
              | BuiltinSubstr
              | BuiltinSplit
              | BuiltinSprintf
+             | BuiltinFloor
+             | BuiltinCeil
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
@@ -312,6 +316,8 @@ instance Pretty Builtin where
     pretty BuiltinSubstr  = "substr"
     pretty BuiltinSplit   = "split"
     pretty BuiltinSprintf = "sprintf"
+    pretty BuiltinFloor   = "floor"
+    pretty BuiltinCeil    = "ceil"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

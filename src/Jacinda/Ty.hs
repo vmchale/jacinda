@@ -346,6 +346,8 @@ tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBoo
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
+tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
+tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
 tyE0 (BBuiltin _ Sprintf) = do
     a <- dummyName "a"
     let a' = var a

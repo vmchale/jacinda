@@ -164,6 +164,16 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin _ Split) e) e') = do
     pure $ case (eI, eI') of
         (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss)
         _                                -> e0
+eNorm e0@(EApp _ (UBuiltin _ Floor) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (FloatLit _ f) -> mkI (floor f)
+        _              -> e0
+eNorm e0@(EApp _ (UBuiltin _ Ceiling) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (FloatLit _ f) -> mkI (ceiling f)
+        _              -> e0
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -293,7 +303,7 @@ eNorm e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) = do
     e2' <- eNorm e2
     pure $ case (e0', e1', e2') of
         (StrLit ty str, IntLit _ i, IntLit _ j) -> StrLit ty (substr str (fromIntegral i) (fromIntegral j))
-        _                                       -> e -- FIXME: in such cases, still included normalized lower-layer stuff
+        _                                       -> e -- FIXME: in such cases, still included normalized lower-layer stuff ?
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y

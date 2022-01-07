@@ -101,6 +101,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     split { TokBuiltin $$ BuiltinSplit }
     substr { TokBuiltin $$ BuiltinSubstr }
     sprintf { TokBuiltin $$ BuiltinSprintf }
+    floor { TokBuiltin $$ BuiltinFloor }
+    ceil { TokBuiltin $$ BuiltinCeil }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -211,6 +213,8 @@ E :: { E AlexPosn }
   | split { BBuiltin $1 Split }
   | substr { TBuiltin $1 Substr }
   | sprintf { BBuiltin $1 Sprintf }
+  | floor { UBuiltin $1 Floor }
+  | ceil { UBuiltin $1 Ceiling }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
