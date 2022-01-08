@@ -30,6 +30,7 @@
 - [ ] parse dates
 - [ ] lint for duplicate names at top-level
 - [ ] map, filter, scan, prior for vectors &c.?
+- [ ] lint for duplicate names at top-level
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol

@@ -90,7 +90,10 @@ We could also do the following:
 (+)|0 [:1"$0
 ```
 
-`$0` is the stream of all lines.
+`$0` is the stream of all lines. `[:` is the constant operator, `a -> b -> a`,
+so `[:1` sends anything to `1`.
+
+`"` maps over a stream. So the above maps `1` over every line and takes the sum.
 
 ### Functions
 
@@ -167,13 +170,11 @@ to track successive differences.
 
 #### Currying
 
-Jacinda allows partially applied (curried) functions, one could write
+Jacinda allows partially applied (curried) functions; one could write
 
 ```
 succDiff := ((-)\.)
 ```
-
-as well.
 
 ### Parting Shots
 
@@ -185,6 +186,22 @@ all := [(&)|#t x]
 count := [(+)|0 [:1"x]
 ```
 
+# Libraries
+
+There is a syntax for functions:
+
+```
+fn sum(x) :=
+  (+)|0 x;
+
+fn drop(n, str) :=
+  let val l := #str
+    in substr str n l end;
+```
+
+Note the `:=` and also the semicolon at the end of the expression that is the
+function body.
+
 # Data Processing
 
 ## CSV Processing
@@ -192,7 +209,7 @@ count := [(+)|0 [:1"x]
 We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html), viz.
 
 ```
-csvformat file.csv -D'|' | ja -F'|' '$1'
+csvformat file.csv -D'|' | ja -F'\|' '$1'
 ```
 
 For "well-behaved" csv data, we can simply split on `,`:
