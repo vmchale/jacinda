@@ -25,7 +25,7 @@ cabal install jacinda
 
 # Documentation
 
-The manpages document the builtins and a syntax reference.
+The manpages document the builtins and provide a syntax reference.
 
 # Further Advantages
 

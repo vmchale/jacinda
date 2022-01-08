@@ -28,9 +28,13 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
+<<<<<<< HEAD
 - [ ] map, filter, scan, prior for vectors &c.?
+=======
+- [ ] lint for duplicate names at top-level
+>>>>>>> 234c9ae (doc)
 ## Syntax
-- [ ] `;` vs. `val`?
+- [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] Redo string sytnax (`'` for map, `"` for etc.)
 - [ ] `?` for if... then? lol
@@ -41,6 +45,4 @@
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
-- [ ] get `(max|_1 #"$0) > 72` to compile
 - [ ] mve.awk
-- [ ] wget https://norvig.com/big.txt
