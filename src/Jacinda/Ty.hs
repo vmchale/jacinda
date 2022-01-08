@@ -185,6 +185,7 @@ pushConstraint l ty ty' =
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: T b -> C -> TypeM a ()
+checkType TyVar{} _                       = pure () -- TODO: I think this is right
 checkType (TyB _ TyStr) IsSemigroup       = pure ()
 checkType (TyB _ TyInteger) IsSemigroup   = pure ()
 checkType (TyB _ TyInteger) IsNum         = pure ()
@@ -217,8 +218,6 @@ checkType (TyB _ TyInteger) IsPrintf      = pure ()
 checkType (TyB _ TyBool) IsPrintf         = pure ()
 checkType (TyTup _ tys) IsPrintf          = traverse_ (`checkType` IsPrintf) tys
 checkType ty c@IsPrintf                   = throwError $ Doesn'tSatisfy (void ty) c
--- FIXME: when we encounter a type variable at this stage I think it's ok?
--- TODO: maybe streams could have num + eq instances...
 
 checkClass :: IM.IntMap (T K) -- ^ Unification result
            -> Int

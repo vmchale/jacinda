@@ -305,6 +305,7 @@ eWith _ _ e@StrLit{}                                                   = const e
 eWith _ _ e@FloatLit{}                                                 = const e
 eWith _ _ e@IntLit{}                                                   = const e
 eWith _ _ e@BoolLit{}                                                  = const e
+eWith re i (Tup ty es)                                                 = \bs -> Tup ty ((\e -> eWith re i e bs) <$> es)
 
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
 -- won't blow up in our faces
