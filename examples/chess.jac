@@ -1,11 +1,14 @@
-fn sum(x) :=
-  (+)|0 x;
+{. fn sum(x) :=
+  {. (+)|0 x;
+
+{. fn count(x) :=
+  {. sum [:1"x;
 
 fn count(x) :=
-  sum [:1"x;
+  (+)|0 [:1"x;
 
 fn processLine(b) :=
-  let 
+  let
     val pre := (split b /-/).1
     val l := #pre
     val res := substr pre (l-1) l

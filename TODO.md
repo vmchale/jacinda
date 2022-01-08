@@ -46,3 +46,5 @@
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
+# Bugs
+- [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
