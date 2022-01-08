@@ -120,12 +120,12 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') = do
         (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
         (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
         _                                -> e0
-eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') = do
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
         (IntLit _ i, IntLit _ j) -> IntLit tyI (i+j)
-        _                        -> e0
+        _                        -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -174,12 +174,12 @@ eNorm e0@(EApp _ (UBuiltin _ Ceiling) e) = do
     pure $ case eI of
         (FloatLit _ f) -> mkI (ceiling f)
         _              -> e0
-eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') = do
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
         (IntLit _ i, IntLit _ j) -> IntLit tyI (i-j)
-        _                        -> e0
+        _                        -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Times) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -210,11 +210,11 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Div) e) e') = do
     pure $ case (eI, eI') of
         (FloatLit _ i, FloatLit _ j) -> FloatLit tyF (i/j)
         _                            -> e0
-eNorm e0@(EApp _ (UBuiltin _ Tally) e) = do
+eNorm (EApp ty (UBuiltin ty' Tally) e) = do
     eI <- eNorm e
     pure $ case eI of
         StrLit _ str -> IntLit tyI (fromIntegral $ BS.length str)
-        _            -> e0
+        _            -> EApp ty (UBuiltin ty' Tally) eI
 eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -299,20 +299,20 @@ eNorm e0@(EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') = do
     pure $ case (eI, eI') of
         (StrLit _ i, StrLit _ j) -> BoolLit tyBool (i /= j)
         _                        -> e0
-eNorm e0@(EApp _ (EApp _ (BBuiltin _ And) e) e') = do
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ And) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
         (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b && b')
-        _                           -> e0
-eNorm e0@(EApp _ (EApp _ (BBuiltin _ Or) e) e') = do
+        _                           -> EApp ty0 (EApp ty1 op eI) eI'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Or) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
         (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b || b')
-        _                           -> e0
+        _                           -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = pure e
-eNorm e@(EApp _ (UBuiltin _ Const) _) = pure e
+eNorm e@(EApp _ (UBuiltin _ Const) _) = pure e -- TODO: normalize arg?
 eNorm e0@(EApp _ (UBuiltin _ (At i)) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -350,13 +350,13 @@ eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
     eNorm e
-eNorm e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) = do
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
     e2' <- eNorm e2
     pure $ case (e0', e1', e2') of
-        (StrLit ty str, IntLit _ i, IntLit _ j) -> StrLit ty (substr str (fromIntegral i) (fromIntegral j))
-        _                                       -> e -- FIXME: in such cases, still included normalized lower-layer stuff ?
+        (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
+        _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y

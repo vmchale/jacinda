@@ -112,7 +112,7 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
-            in StrLit tyI (eI <> eI')
+            in mkStr (eI <> eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
@@ -259,10 +259,11 @@ ir re _ (IParseCol _ i) = fmap (parseAsEInt . atField re i)
 ir re _ (FParseCol _ i) = fmap (parseAsF . atField re i)
 ir re _ (Guarded _ pe e) =
     let pe' = compileR pe
+        e' = compileR e
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
-ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn i op) . ir re i stream
+        in imap (\ix line -> eEval (mkCtx re ix line) e') . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
+ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR op in fmap (applyUn i op') . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
         in filter (\e -> asBool (eClosed i $ applyUn i op' e)) . ir re i stream
