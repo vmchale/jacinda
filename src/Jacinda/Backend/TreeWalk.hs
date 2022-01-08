@@ -95,6 +95,14 @@ eEval (ix, line, ctx) = go where
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI + eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (eI - eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Times) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (eI * eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
