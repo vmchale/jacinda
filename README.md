@@ -1,5 +1,5 @@
-Jacinda is a functional, expression-oriented complement to
-[AWK](http://www.awklang.org).
+Jacinda is a functional, expression-oriented data processing language,
+complementing [AWK](http://www.awklang.org).
 
 # SHOCK & AWE
 
@@ -8,7 +8,8 @@ ls -l | ja '(+)|0 {ix>1}{`5:i}'
 ```
 
 ```
-curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F,
+curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | \
+    ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F,
 ```
 
 # Installation
@@ -17,7 +18,7 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
 
 First, install [Rust's regex library](https://github.com/rust-lang/regex/tree/master/regex-capi#c-api-for-rusts-regex-engine).
 
-If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (via [ghcup](https://www.haskell.org/ghcup/)):
+If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (perhaps via [ghcup](https://www.haskell.org/ghcup/)):
 
 ```
 cabal install jacinda
