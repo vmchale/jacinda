@@ -15,6 +15,6 @@ let
   val iStream := processLine"$0
   val white := count ((='1') #. iStream)
   val black := count ((='0') #. iStream)
-  val draw := count ((='0') #. iStream)
+  val draw := count ((='2') #. iStream)
   val total := white + black + draw
 in (total . white . black . draw) end

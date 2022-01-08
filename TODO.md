@@ -8,12 +8,13 @@
 - [ ] defeq ≜ ≔
 - [ ] arrows (types)
 - [ ] APL iota should be allowed instead of 'ix'
-- [ ] lambda
+- [x] lambda
 - [ ] ♯ in front of type variables
 # Features
+- [ ] `match`
 - [x] SCANS
   - [x] backend
-- [ ] dyadic infix/prior? Something for successive differences!
+- [x] dyadic infix/prior? Something for successive differences!
 - [x] string concatenation
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
   can be a variable!
@@ -21,20 +22,24 @@
 - [ ] better error messages ja: ./Data/Vector/Generic.hs:257 ((!)): index out of bounds (5,2)
 - [ ] `NR` - number of records (per line) also `-1 (last)
 - [ ] printf
-  - [ ] array/vector type (integer indexed)
+  - [x] array/vector type (integer indexed)
 - [x] `[:` as shorthand for `const`
 - [ ] `.1` etc. to extract tuples (arrays?)
+  - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
 - [ ] lint for duplicate names at top-level
+- [ ] map, filter, scan, prior for vectors &c.?
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
+- [ ] Redo string sytnax (`'` for map, `"` for etc.)
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
 - [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
-  - [ ] or #: maybe?
+  - [x] or #: maybe?
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
+- [ ] mve.awk

@@ -91,15 +91,19 @@ data BUn = Tally -- length of string field
          | At Int
          | IParse
          | FParse
+         | Floor
+         | Ceiling
          deriving (Eq)
 
 instance Pretty BUn where
-    pretty Tally  = "#"
-    pretty Const  = "[:"
-    pretty Not    = "!"
-    pretty (At i) = "." <> pretty i
-    pretty IParse = ":i"
-    pretty FParse = ":f"
+    pretty Tally   = "#"
+    pretty Const   = "[:"
+    pretty Not     = "!"
+    pretty (At i)  = "." <> pretty i
+    pretty IParse  = ":i"
+    pretty FParse  = ":f"
+    pretty Floor   = "floor"
+    pretty Ceiling = "ceil"
 
 -- ternary
 data BTer = ZipW
