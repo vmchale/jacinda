@@ -67,3 +67,34 @@ NR>1
 ```
 {ix>1}{`0}
 ```
+
+# Data Science
+
+```
+{ 
+  split($0, a, "-"); 
+  res = substr(a[1], length(a[1]), 1); 
+  if (res == 1) white++; 
+  if (res == 0) black++; 
+  if (res == 2) draw++;
+} 
+END 
+{ print white+black+draw, white, black, draw }
+```
+
+```
+let
+  val processLine := \b.
+    let
+      val pre := (split b /-/).1
+      val l := #pre
+      val res := substr pre (l-1) l
+    in res end
+  val count := [(+)|0 [:1"x]
+  val iStream := processLine"$0
+  val white := count ((='1') #. iStream)
+  val black := count ((='0') #. iStream)
+  val draw := count ((='2') #. iStream)
+  val total := white + black + draw
+in (total.white.black.draw) end
+```
