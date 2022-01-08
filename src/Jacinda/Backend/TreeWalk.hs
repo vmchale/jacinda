@@ -223,12 +223,13 @@ atField re i = (V.! (i-1)) . splitBy re
 mkCtx :: RurePtr -> Int -> BS.ByteString -> (Int, BS.ByteString, V.Vector BS.ByteString)
 mkCtx re ix line = (ix, line, splitBy re line)
 
-applyUn :: E (T K)
+applyUn :: Int
         -> E (T K)
         -> E (T K)
-applyUn unOp e =
+        -> E (T K)
+applyUn i unOp e =
     case eLoc unOp of
-        TyArr _ _ res -> EApp res unOp e
+        TyArr _ _ res -> eClosed i (EApp res unOp e)
         _             -> error "Internal error?"
 
 -- | Turn an expression representing a stream into a stream of expressions (using line as context)
@@ -246,10 +247,10 @@ ir re _ (Guarded _ pe e) =
     -- FIXME: compile e too?
     -- TODO: normalize before stream
         in imap (\ix line -> eEval (mkCtx re ix line) e) . ifilter (\ix line -> asBool (eEval (mkCtx re ix line) pe'))
-ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re i stream
+ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn i op) . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
-        in filter (\e -> asBool (eClosed i $ applyUn op' e)) . ir re i stream
+        in filter (\e -> asBool (eClosed i $ applyUn i op' e)) . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp i op) . ir re i stream
 ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
