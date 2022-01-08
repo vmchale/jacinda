@@ -338,8 +338,8 @@ instance Pretty C where
 
 -- decl
 data D a = SetFS BS.ByteString
-           | FunDecl (Name a) [Name a] (E a)
-           deriving (Functor)
+         | FunDecl (Name a) [Name a] (E a)
+         deriving (Functor)
 
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)

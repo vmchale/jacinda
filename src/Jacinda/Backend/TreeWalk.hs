@@ -290,9 +290,9 @@ foldWithCtx re i op seed streamExpr = foldl' (applyOp i op) seed . ir re i strea
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
-       -> E (T K)
+       -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = fileProcessor re i (eClosed i e)
+runJac re i e = fileProcessor re i (closedProgram i e)
 
 -- evaluate something that has a fold nested in it
 eWith :: RurePtr -> Int -> E (T K) -> [BS.ByteString] -> E (T K)

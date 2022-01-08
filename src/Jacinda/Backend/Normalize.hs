@@ -1,6 +1,7 @@
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
                                  , eClosed
+                                 , closedProgram
                                  , readDigits
                                  , readFloat
                                  , mkI
@@ -14,6 +15,7 @@ import           Control.Monad.State.Strict (State, evalState, gets, modify)
 import           Control.Recursion          (cata, embed)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
+import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -78,10 +80,27 @@ mapBinds f (LetCtx b r) = LetCtx (f b) r
 
 type EvalM = State LetCtx
 
+mkLetCtx :: Int -> LetCtx
+mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
+
 eClosed :: Int
         -> E (T K)
         -> E (T K)
-eClosed i = flip evalState (LetCtx IM.empty (Renames i IM.empty)) . eNorm
+eClosed i = flip evalState (mkLetCtx i) . eNorm
+
+closedProgram :: Int
+              -> Program (T K)
+              -> E (T K)
+closedProgram i (Program ds e) = flip evalState (mkLetCtx i) $
+    traverse_ processDecl ds *>
+    eNorm e
+
+processDecl :: D (T K)
+            -> EvalM ()
+processDecl SetFS{} = pure ()
+processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
+    e' <- eNorm e
+    modify (mapBinds (IM.insert i e'))
 
 -- TODO: equality on tuples, lists
 eNorm :: E (T K)
