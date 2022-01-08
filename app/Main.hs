@@ -55,7 +55,7 @@ wrapper :: ParserInfo Command
 wrapper = info (helper <*> versionMod <*> commandP)
     (fullDesc
     <> progDesc "Jacinda language for functional stream processing, filtering, and reports"
-    <> header "Jacinda - a functional AWK")
+    <> header "Jacinda - a functional complement to AWK")
 
 versionMod :: Parser (a -> a)
 versionMod = infoOption (V.showVersion P.version) (short 'V' <> long "version" <> help "Show version")
