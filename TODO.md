@@ -26,8 +26,9 @@
 - [ ] `.1` etc. to extract tuples (arrays?)
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
+- [ ] lint for duplicate names at top-level
 ## Syntax
-- [ ] `;` vs. `val`?
+- [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
@@ -37,4 +38,3 @@
 # Examples
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
-- [ ] get `(max|_1 #"$0) > 72` to compile
