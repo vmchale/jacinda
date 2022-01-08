@@ -4,7 +4,7 @@ module Jacinda.Backend.TreeWalk ( runJac
 
 -- TODO: normalize before mapping?
 
-import           Control.Exception         (Exception)
+import           Control.Exception         (Exception, throw)
 import qualified Data.ByteString           as BS
 import           Data.Foldable             (foldl', traverse_)
 import           Data.List                 (scanl')
@@ -21,9 +21,15 @@ data StreamError = NakedField
                  | UnevalFun
                  | TupOfStreams -- ^ Reject a tuple of streams
                  | BadCtx
+                 | IndexOutOfBounds Int
                  deriving (Show)
 
 instance Exception StreamError where
+
+(!) :: V.Vector a -> Int -> a
+v ! ix = case v V.!? ix of
+    Just x  -> x
+    Nothing -> throw $ IndexOutOfBounds ix
 
 noRes :: a
 noRes = error "Internal error: did not normalize to appropriate type."
@@ -70,7 +76,7 @@ eEval (ix, line, ctx) = go where
     go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
     go Ix{} = mkI (fromIntegral ix)
     go AllField{} = StrLit tyStr line
-    go (Field _ i) = StrLit tyStr (ctx V.! (i-1)) -- cause vector indexing starts at 0
+    go (Field _ i) = StrLit tyStr (ctx ! (i-1)) -- cause vector indexing starts at 0
     go (EApp _ (UBuiltin _ IParse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
@@ -191,10 +197,6 @@ eEval (ix, line, ctx) = go where
             eI1 = asInt (go e1)
             eI2 = asInt (go e2)
         in mkStr (substr eI0 (fromIntegral eI1) (fromIntegral eI2))
-    go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
-        let e0 = asStr e
-            e1 = asRegex e'
-        in Arr undefined (mkStr <$> splitBy e1 e0)
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Max) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
@@ -214,6 +216,11 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (UBuiltin _ Not) e) =
         let eI = asBool (go e)
         in BoolLit tyBool (not eI)
+    go (EApp _ (UBuiltin _ (At i)) e) =
+        let eI = go e
+            in case eI of
+                (Arr _ es) -> go (es V.! (i-1))
+                _          -> noRes
 
 applyOp :: Int
         -> E (T K) -- ^ Operator
@@ -226,7 +233,7 @@ atField :: RurePtr
         -> Int
         -> BS.ByteString -- ^ Line
         -> BS.ByteString
-atField re i = (V.! (i-1)) . splitBy re
+atField re i = (! (i-1)) . splitBy re
 
 mkCtx :: RurePtr -> Int -> BS.ByteString -> (Int, BS.ByteString, V.Vector BS.ByteString)
 mkCtx re ix line = (ix, line, splitBy re line)
