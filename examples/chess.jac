@@ -4,10 +4,10 @@
 {. fn count(x) :=
   {. sum [:1"x;
 
-fn count(x) :=
+fn count(x) ≔
   (+)|0 [:1"x;
 
-fn processLine(b) :=
+fn processLine(b) ≔
   let
     val pre := (split b /-/).1
     val l := #pre
