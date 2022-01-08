@@ -15,11 +15,11 @@
 ## Count Lines Mentioning
 
 ```awk
-/West Virginia/ { total += 1; } END { print total }
+/Bloom/ { total += 1; } END { print total }
 ```
 
 ```
-'(+)|0 {%/West Virginia/}{1}'
+'(+)|0 {%/Bloom/}{1}'
 ```
 
 ## Are There Lines >72 bytes?

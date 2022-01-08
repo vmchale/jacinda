@@ -1,5 +1,5 @@
-Jacinda is a functional, expression-oriented complement to
-[AWK](http://www.awklang.org).
+Jacinda is a functional, expression-oriented data processing language,
+complementing [AWK](http://www.awklang.org).
 
 # SHOCK & AWE
 
