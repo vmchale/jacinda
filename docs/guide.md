@@ -11,7 +11,7 @@ awk).
 
 ## Tour de Force
 
-### Filtering
+### Patterns + Implicits
 
 Awk is oriented around patterns and actions. Jacinda has support for a similar
 style: one defines a pattern and an expression defined by the lines that this
@@ -54,7 +54,13 @@ context. An example:
 
 This defines a stream of lines that are more than 110 bytes.
 
-<!-- TODO: alternate filter syntax -->
+There is also a syntax that defines a stream on *all* lines,
+
+```
+{|<expr>}
+```
+
+So `{|`0}` (for instance) would define a stream of text corresponding to the lines in the file. 
 
 ### Fold
 
@@ -156,7 +162,7 @@ step. One could define a stream containing line numbers for a file with:
 (+)^0 [:1"$0
 ```
 
-(this is the same as `{#t}{ix}`)
+(this is the same as `{|ix}`)
 
 ### Prior
 
