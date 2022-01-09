@@ -31,6 +31,14 @@ on some of the features as well as examples.
 
 The manpages document the builtins and provide a syntax reference.
 
+# Status
+
+The project is in alpha stage, it doesn't necessarily work and there are many
+missing features, but the language will remain stable.
+
+It is worse than awk but it has its place and it avoids some of the painful
+imperative/scoping defects.
+
 # Further Advantages
 
   * [Rust's regular expressions](https://docs.rs/regex/)
