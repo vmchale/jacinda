@@ -85,10 +85,10 @@ Suppose we wish to count the lines in a file. We have nearly all the tools to do
 so:
 
 ```
-(+)|0 {#t}{1}
+(+)|0 {|1}
 ```
 
-This uses aforementioned `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
+This uses aforementioned `{|<expr>}` syntax. It
 this defines a stream of `1`s for each line, and takes its sum.
 
 We could also do the following:
@@ -183,6 +183,16 @@ Jacinda allows partially applied (curried) functions; one could write
 succDiff := ((-)\.)
 ```
 
+### Filter
+
+We can filter an extant stream with `#.`, viz.
+
+```
+(>110) #. $0:i
+```
+
+`#.` takes as its left argument a unary function return a boolean.
+
 ### Parting Shots
 
 ```
@@ -192,6 +202,8 @@ and := [(&)|#t x]
 
 count := [(+)|0 [:1"x]
 ```
+
+`#t` and `#f` are boolean literals.
 
 # Libraries
 

@@ -168,6 +168,7 @@
 <li><a href="#zips">Zips</a></li>
 <li><a href="#scans">Scans</a></li>
 <li><a href="#prior">Prior</a></li>
+<li><a href="#filter">Filter</a></li>
 <li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
 </ul></li>
@@ -212,8 +213,8 @@
 <p>It takes a binary operator, a seed, and a stream and returns an expression.</p>
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file. We have nearly all the tools to do so:</p>
-<pre><code>(+)|0 {#t}{1}</code></pre>
-<p>This uses aforementioned <code>{&lt;expr&gt;}{&lt;expr&gt;}</code> syntax. <code>#t</code> is a boolean literal. So this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
+<pre><code>(+)|0 {|1}</code></pre>
+<p>This uses aforementioned <code>{|&lt;expr&gt;}</code> syntax. It this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
 <p>We could also do the following:</p>
 <pre><code>(+)|0 [:1&quot;$0</code></pre>
 <p><code>$0</code> is the stream of all lines. <code>[:</code> is the constant operator, <code>a -&gt; b -&gt; a</code>, so <code>[:1</code> sends anything to <code>1</code>.</p>
@@ -249,12 +250,17 @@ in sum {% /Bloom/}{1} end</code></pre>
 <h4 id="currying">Currying</h4>
 <p>Jacinda allows partially applied (curried) functions; one could write</p>
 <pre><code>succDiff := ((-)\.)</code></pre>
+<h3 id="filter">Filter</h3>
+<p>We can filter an extant stream with <code>#.</code>, viz.</p>
+<pre><code>(&gt;110) #. $0:i</code></pre>
+<p><code>#.</code> takes as its left argument a unary function return a boolean.</p>
 <h3 id="parting-shots">Parting Shots</h3>
-<pre><code>any := [(||)|#f x]
+<pre><code>or := [(||)|#f x]
 
-all := [(&amp;)|#t x]
+and := [(&amp;)|#t x]
 
 count := [(+)|0 [:1&quot;x]</code></pre>
+<p><code>#t</code> and <code>#f</code> are boolean literals.</p>
 <h1 id="libraries">Libraries</h1>
 <p>There is a syntax for functions:</p>
 <pre><code>fn sum(x) :=
@@ -264,6 +270,12 @@ fn drop(n, str) :=
   let val l := #str
     in substr str n l end;</code></pre>
 <p>Note the <code>:=</code> and also the semicolon at the end of the expression that is the function body.</p>
+<p>Since Jacinda has support for higher-order functions, one could write:</p>
+<pre><code>fn any(p, xs) :=
+  (||)|#f p&quot;xs;
+
+fn all(p, xs) :=
+  (&amp;)|#t p&quot;xs;</code></pre>
 <h1 id="data-processing">Data Processing</h1>
 <h2 id="csv-processing">CSV Processing</h2>
 <p>We can process <code>.csv</code> data with the aid of <a href="https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html">csvformat</a>, viz.</p>
