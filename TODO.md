@@ -6,13 +6,14 @@
 - [ ] xattr -d com.apple.quarantine
 # Unicode
 - [ ] defeq ≜ ≔
-- [ ] arrows (types)
-- [ ] APL iota should be allowed instead of 'ix'
+- [x] arrows (types)
+- [x] APL iota should be allowed instead of 'ix'
 - [x] lambda
 - [ ] ♯ in front of type variables
-- [ ] ⟨
+- [ ] 〈〈⟨⟩
 # Features
 - [ ] `match`
+- [ ] iota for vectors etc.
 - [x] SCANS
   - [x] backend
 - [x] dyadic infix/prior? Something for successive differences!
