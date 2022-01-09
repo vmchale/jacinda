@@ -74,7 +74,6 @@ tokens :-
 
         "|"                      { mkSym FoldTok }
         \"                       { mkSym Quot }
-        ¨                        { mkSym Quot }
         "^"                      { mkSym Caret }
 
         "="                      { mkSym EqTok }
@@ -112,7 +111,6 @@ tokens :-
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
-        ⍳                        { mkRes VarIx }
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 
