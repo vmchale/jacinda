@@ -24,7 +24,7 @@ sprintf fmt e = encodeUtf8 (sprintf' (decodeUtf8 fmt) e)
 
 -- TODO: https://hackage.haskell.org/package/floatshow
 --
--- TODO: interpret precision, like %0.6f
+-- TODO: interpret precision, like %0.6f %.6
 
 sprintf' :: T.Text -> E a -> T.Text
 sprintf' fmt (FloatLit _ f) =

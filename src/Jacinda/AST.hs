@@ -45,9 +45,14 @@ data TB = TyInteger
         | TyStream
         | TyVec
         | TyBool
+        | TyOptional
         -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
+
+-- unicode mathematical angle bracket
+tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
+tupledByFunky sep = group . encloseSep (flatAlt "⟨ " "⟨") (flatAlt " ⟩" "⟩") sep
 
 tupledBy :: Doc ann -> [Doc ann] -> Doc ann
 tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
@@ -66,19 +71,20 @@ data T a = TyNamed { tLoc :: a, tyName :: TyName a }
          -- TODO: type vars, products...
 
 instance Pretty TB where
-    pretty TyInteger = "Integer"
-    pretty TyStream  = "Stream"
-    pretty TyBool    = "Bool"
-    pretty TyStr     = "Str"
-    pretty TyFloat   = "Float"
-    pretty TyDate    = "Date"
-    pretty TyVec     = "List"
+    pretty TyInteger  = "Integer"
+    pretty TyStream   = "Stream"
+    pretty TyBool     = "Bool"
+    pretty TyStr      = "Str"
+    pretty TyFloat    = "Float"
+    pretty TyDate     = "Date"
+    pretty TyVec      = "List"
+    pretty TyOptional = "Optional"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
     pretty (TyVar _ n)      = pretty n
-    pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty' -- tODO: unicode arrows
+    pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup _ tys)    = jacTup tys
 
 instance Show (T a) where
@@ -284,6 +290,7 @@ instance Pretty (E a) where
     pretty RegexCompiled{}                                         = error "Nonsense."
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                             = parens (pretty e)
+    pretty (Arr _ es)                                              = tupledByFunky "," (V.toList $ pretty <$> es)
 
 instance Show (E a) where
     show = show . pretty
