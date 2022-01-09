@@ -16,7 +16,7 @@ extra-source-files:
     CHANGELOG.md
     README.md
     man/ja.1
-    docs/guide.pdf
+    doc/guide.pdf
 
 source-repository head
     type:     git
