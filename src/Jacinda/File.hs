@@ -52,7 +52,7 @@ runOnBytes src cliFS contents =
         Right (ast, m) -> do
             (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
             cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i typed
-            cont $ concatMap BSL.toChunks (ASCIIL.lines contents)
+            cont $ concatMap BSL.toChunks (ASCIIL.lines contents) -- FIXME: "lines" discards empty... perhaps ok?
 
 runOnHandle :: BSL.ByteString -- ^ Program
             -> Maybe BS.ByteString -- ^ Field separator

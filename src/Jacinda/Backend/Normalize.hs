@@ -22,6 +22,7 @@ import qualified Data.Vector                as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
+import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
@@ -375,6 +376,12 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    case (eI, eI') of
+        (StrLit _ fmt, _) | isReady eI' -> pure $ mkStr $ sprintf fmt eI'
+        _                               -> EApp ty0 (EApp ty1 op eI) <$> eNorm e'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y

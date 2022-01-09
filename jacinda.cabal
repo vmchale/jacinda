@@ -37,6 +37,7 @@ library
                  , Intern.Name
                  , Intern.Unique
                  , Jacinda.Backend.Normalize
+                 , Jacinda.Backend.Printf
                  , Data.List.Ext
     build-tool-depends: alex:alex, happy:happy
 
