@@ -16,6 +16,7 @@ extra-source-files:
     CHANGELOG.md
     README.md
     man/ja.1
+    docs/guide.pdf
 
 source-repository head
     type:     git
@@ -30,8 +31,6 @@ library jacinda-lib
         Jacinda.Ty.Const
         Jacinda.Regex
         Jacinda.File
-        Jacinda.Rename
-        Jacinda.Backend.TreeWalk
 
     build-tool-depends: alex:alex, happy:happy
     hs-source-dirs:     src
@@ -39,7 +38,9 @@ library jacinda-lib
         Jacinda.Lexer
         Intern.Name
         Intern.Unique
+        Jacinda.Rename
         Jacinda.Backend.Normalize
+        Jacinda.Backend.TreeWalk
         Jacinda.Backend.Printf
         Data.List.Ext
 
