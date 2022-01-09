@@ -11,7 +11,7 @@ awk).
 
 ## Tour de Force
 
-### Patterns + Implicits
+### Patterns + Implicits, Streams
 
 Awk is oriented around patterns and actions. Jacinda has support for a similar
 style: one defines a pattern and an expression defined by the lines that this
@@ -52,7 +52,8 @@ context. An example:
 {#`0>110}{`0}
 ```
 
-This defines a stream of lines that are more than 110 bytes.
+This defines a stream of lines that are more than 110 bytes (`#` is 'tally', it
+returns the length of a string).
 
 There is also a syntax that defines a stream on *all* lines,
 
@@ -60,9 +61,7 @@ There is also a syntax that defines a stream on *all* lines,
 {|<expr>}
 ```
 
-So `{|`0}` (for instance) would define a stream of text corresponding to the lines in the file. 
-
-<!-- TODO: filters w/ function -->
+So `{|``0}` would define a stream of text corresponding to the lines in the file. 
 
 ### Fold
 
@@ -86,10 +85,10 @@ Suppose we wish to count the lines in a file. We have nearly all the tools to do
 so:
 
 ```
-(+)|0 {#t}{1}
+(+)|0 {|1}
 ```
 
-This uses aforementioned `{<expr>}{<expr>}` syntax. `#t` is a boolean literal. So
+This uses aforementioned `{|<expr>}` syntax. It
 this defines a stream of `1`s for each line, and takes its sum.
 
 We could also do the following:
@@ -184,15 +183,27 @@ Jacinda allows partially applied (curried) functions; one could write
 succDiff := ((-)\.)
 ```
 
+### Filter
+
+We can filter an extant stream with `#.`, viz.
+
+```
+(>110) #. $0:i
+```
+
+`#.` takes as its left argument a unary function return a boolean.
+
 ### Parting Shots
 
 ```
-any := [(||)|#f x]
+or := [(||)|#f x]
 
-all := [(&)|#t x]
+and := [(&)|#t x]
 
 count := [(+)|0 [:1"x]
 ```
+
+`#t` and `#f` are boolean literals.
 
 # Libraries
 
@@ -209,6 +220,16 @@ fn drop(n, str) :=
 
 Note the `:=` and also the semicolon at the end of the expression that is the
 function body.
+
+Since Jacinda has support for higher-order functions, one could write:
+
+```
+fn any(p, xs) :=
+  (||)|#f p"xs;
+
+fn all(p, xs) :=
+  (&)|#t p"xs;
+```
 
 # Data Processing
 

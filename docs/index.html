@@ -161,13 +161,14 @@
 <ul>
 <li><a href="#tour-de-force">Tour de Force</a>
 <ul>
-<li><a href="#filtering">Filtering</a></li>
+<li><a href="#patterns-implicits-streams">Patterns + Implicits, Streams</a></li>
 <li><a href="#fold">Fold</a></li>
 <li><a href="#map">Map</a></li>
 <li><a href="#functions">Functions</a></li>
 <li><a href="#zips">Zips</a></li>
 <li><a href="#scans">Scans</a></li>
 <li><a href="#prior">Prior</a></li>
+<li><a href="#filter">Filter</a></li>
 <li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
 </ul></li>
@@ -186,7 +187,7 @@
 <p>Jacinda has fluent support for filters, maps and folds that are familiar to functional programmers; the syntax in particular is derivative of J or APL.</p>
 <p>Jacinda is at its best when piped through other command-line tools (including awk).</p>
 <h2 id="tour-de-force">Tour de Force</h2>
-<h3 id="filtering">Filtering</h3>
+<h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>Awk is oriented around patterns and actions. Jacinda has support for a similar style: one defines a pattern and an expression defined by the lines that this matches, viz. </p>
 <pre><code>{% &lt;pattern&gt;}{&lt;expr&gt;}</code></pre>
 <p>This defines a stream of expressions.</p>
@@ -200,8 +201,10 @@
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving the line context. An example:</p>
 <pre><code>{#`0&gt;110}{`0}</code></pre>
-<p>This defines a stream of lines that are more than 110 bytes.</p>
-<!-- TODO: alternate filter syntax -->
+<p>This defines a stream of lines that are more than 110 bytes (<code>#</code> is ‘tally’, it returns the length of a string).</p>
+<p>There is also a syntax that defines a stream on <em>all</em> lines,</p>
+<pre><code>{|&lt;expr&gt;}</code></pre>
+<p>So <code>{|``0}</code> would define a stream of text corresponding to the lines in the file.</p>
 <h3 id="fold">Fold</h3>
 <p>Then, count lines with the word “Bloom”:</p>
 <pre><code>ja &#39;(+)|0 {% /Bloom/}{1}&#39; -i ulysses.txt</code></pre>
@@ -210,8 +213,8 @@
 <p>It takes a binary operator, a seed, and a stream and returns an expression.</p>
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file. We have nearly all the tools to do so:</p>
-<pre><code>(+)|0 {#t}{1}</code></pre>
-<p>This uses aforementioned <code>{&lt;expr&gt;}{&lt;expr&gt;}</code> syntax. <code>#t</code> is a boolean literal. So this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
+<pre><code>(+)|0 {|1}</code></pre>
+<p>This uses aforementioned <code>{|&lt;expr&gt;}</code> syntax. It this defines a stream of <code>1</code>s for each line, and takes its sum.</p>
 <p>We could also do the following:</p>
 <pre><code>(+)|0 [:1&quot;$0</code></pre>
 <p><code>$0</code> is the stream of all lines. <code>[:</code> is the constant operator, <code>a -&gt; b -&gt; a</code>, so <code>[:1</code> sends anything to <code>1</code>.</p>
@@ -239,7 +242,7 @@ in sum {% /Bloom/}{1} end</code></pre>
 <pre><code>&lt;expr&gt; ^ &lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>Scans are like folds, except that the intermediate value is tracked at each step. One could define a stream containing line numbers for a file with:</p>
 <pre><code>(+)^0 [:1&quot;$0</code></pre>
-<p>(this is the same as <code>{#t}{ix}</code>)</p>
+<p>(this is the same as <code>{|ix}</code>)</p>
 <h3 id="prior">Prior</h3>
 <p>Jacinda has a binary operator, <code>\.</code>, like q’s <a href="https://code.kx.com/q/ref/maps/#each-prior">each prior</a> or J’s <a href="https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic">dyadic infix</a>. One could write:</p>
 <pre><code>succDiff := [(-) \. x]</code></pre>
@@ -247,12 +250,17 @@ in sum {% /Bloom/}{1} end</code></pre>
 <h4 id="currying">Currying</h4>
 <p>Jacinda allows partially applied (curried) functions; one could write</p>
 <pre><code>succDiff := ((-)\.)</code></pre>
+<h3 id="filter">Filter</h3>
+<p>We can filter an extant stream with <code>#.</code>, viz.</p>
+<pre><code>(&gt;110) #. $0:i</code></pre>
+<p><code>#.</code> takes as its left argument a unary function return a boolean.</p>
 <h3 id="parting-shots">Parting Shots</h3>
-<pre><code>any := [(||)|#f x]
+<pre><code>or := [(||)|#f x]
 
-all := [(&amp;)|#t x]
+and := [(&amp;)|#t x]
 
 count := [(+)|0 [:1&quot;x]</code></pre>
+<p><code>#t</code> and <code>#f</code> are boolean literals.</p>
 <h1 id="libraries">Libraries</h1>
 <p>There is a syntax for functions:</p>
 <pre><code>fn sum(x) :=
@@ -262,6 +270,12 @@ fn drop(n, str) :=
   let val l := #str
     in substr str n l end;</code></pre>
 <p>Note the <code>:=</code> and also the semicolon at the end of the expression that is the function body.</p>
+<p>Since Jacinda has support for higher-order functions, one could write:</p>
+<pre><code>fn any(p, xs) :=
+  (||)|#f p&quot;xs;
+
+fn all(p, xs) :=
+  (&amp;)|#t p&quot;xs;</code></pre>
 <h1 id="data-processing">Data Processing</h1>
 <h2 id="csv-processing">CSV Processing</h2>
 <p>We can process <code>.csv</code> data with the aid of <a href="https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html">csvformat</a>, viz.</p>

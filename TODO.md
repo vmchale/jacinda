@@ -6,12 +6,14 @@
 - [ ] xattr -d com.apple.quarantine
 # Unicode
 - [ ] defeq ≜ ≔
-- [ ] arrows (types)
-- [ ] APL iota should be allowed instead of 'ix'
+- [x] arrows (types)
+- [x] APL iota should be allowed instead of 'ix'
 - [x] lambda
 - [ ] ♯ in front of type variables
+- [ ] 〈〈⟨⟩
 # Features
 - [ ] `match`
+- [ ] iota for vectors etc.
 - [x] SCANS
   - [x] backend
 - [x] dyadic infix/prior? Something for successive differences!
@@ -28,9 +30,9 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
-- [ ] lint for duplicate names at top-level
 - [ ] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
+- [ ] list comprehensions or w/e
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol

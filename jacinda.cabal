@@ -1,64 +1,65 @@
 cabal-version:      2.0
 name:               jacinda
 version:            0.1.0.0
-
-synopsis: Functional, expression-oriented data processing language
-
-description: APL meets AWK. A command-line tool for summarizing and reporting, powered by Rust's [regex](https://docs.rs/regex/regex/) library.
-
-bug-reports: https://github.com/vmchale/jacinda/issues
-
-license: GPL-3
-license-file: LICENSE
-author:             Vanessa McHale
+license:            GPL-3
+license-file:       LICENSE
 maintainer:         vamchale@gmail.com
-build-type: Simple
+author:             Vanessa McHale
+bug-reports:        https://github.com/vmchale/jacinda/issues
+synopsis:           Functional, expression-oriented data processing language
+description:
+    APL meets AWK. A command-line tool for summarizing and reporting, powered by Rust's [regex](https://docs.rs/regex/regex/) library.
 
-category: Language, Interpreters, Text, Data
-extra-source-files: CHANGELOG.md
-                    README.md
-                    man/ja.1
+category:           Language, Interpreters, Text, Data
+build-type:         Simple
+extra-source-files:
+    CHANGELOG.md
+    README.md
+    man/ja.1
+    doc/guide.pdf
 
 source-repository head
     type:     git
     location: https://github.com/vmchale/jacinda
 
 library jacinda-lib
-    exposed-modules:  Jacinda.Parser
-                    , Jacinda.Parser.Rewrite
-                    , Jacinda.AST
-                    , Jacinda.Ty
-                    , Jacinda.Ty.Const
-                    , Jacinda.Regex
-                    , Jacinda.File
-                    , Jacinda.Rename
-                    , Jacinda.Backend.TreeWalk
-    other-modules: Jacinda.Lexer
-                 , Intern.Name
-                 , Intern.Unique
-                 , Jacinda.Backend.Normalize
-                 , Jacinda.Backend.Printf
-                 , Data.List.Ext
-    build-tool-depends: alex:alex, happy:happy
+    exposed-modules:
+        Jacinda.Parser
+        Jacinda.Parser.Rewrite
+        Jacinda.AST
+        Jacinda.Ty
+        Jacinda.Ty.Const
+        Jacinda.Regex
+        Jacinda.File
 
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    base >=4.10.0.0 && <5
-                    , bytestring >= 0.11.0.0
-                    , text
-                    , prettyprinter >=1.7.0
-                    , containers
-                    , array
-                    , mtl
-                    , transformers
-                    , regex-rure
-                    , microlens
-                    , microlens-mtl
-                    , vector
-                    , recursion >=1.0.0.0
-    hs-source-dirs:   src
-    ghc-options: -Wall
-    default-language: Haskell2010
+    build-tool-depends: alex:alex, happy:happy
+    hs-source-dirs:     src
+    other-modules:
+        Jacinda.Lexer
+        Intern.Name
+        Intern.Unique
+        Jacinda.Rename
+        Jacinda.Backend.Normalize
+        Jacinda.Backend.TreeWalk
+        Jacinda.Backend.Printf
+        Data.List.Ext
+
+    default-language:   Haskell2010
+    ghc-options:        -Wall
+    build-depends:
+        base >=4.10.0.0 && <5,
+        bytestring >=0.11.0.0,
+        text,
+        prettyprinter >=1.7.0,
+        containers,
+        array,
+        mtl,
+        transformers,
+        regex-rure,
+        microlens,
+        microlens-mtl,
+        vector,
+        recursion >=1.0.0.0
 
     if impl(ghc >=8.0)
         ghc-options:
@@ -76,18 +77,16 @@ library jacinda-lib
 
 executable ja
     main-is:          Main.hs
+    hs-source-dirs:   app
     other-modules:    Paths_jacinda
     autogen-modules:  Paths_jacinda
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    base 
-                    , jacinda-lib
-                    , optparse-applicative
-                    , bytestring
-    ghc-options: -Wall -rtsopts -with-rtsopts=-A100k
-    hs-source-dirs:   app
     default-language: Haskell2010
+    ghc-options:      -Wall -rtsopts -with-rtsopts=-A100k
+    build-depends:
+        base,
+        jacinda-lib,
+        optparse-applicative,
+        bytestring
 
     if impl(ghc >=8.0)
         ghc-options:
@@ -104,17 +103,17 @@ executable ja
         ghc-options: -Wunused-packages
 
 test-suite jacinda-test
-    default-language: Haskell2010
     type:             exitcode-stdio-1.0
-    ghc-options: -Wall
-    ghc-options:      -threaded -rtsopts "-with-rtsopts=-N -K1K" -Wall
-    hs-source-dirs:   test
     main-is:          Spec.hs
-    build-depends:    base
-                    , jacinda-lib
-                    , tasty
-                    , tasty-hunit
-                    , bytestring
+    hs-source-dirs:   test
+    default-language: Haskell2010
+    ghc-options:      -Wall -threaded -rtsopts "-with-rtsopts=-N -K1K" -Wall
+    build-depends:
+        base,
+        jacinda-lib,
+        tasty,
+        tasty-hunit,
+        bytestring
 
     if impl(ghc >=8.0)
         ghc-options:

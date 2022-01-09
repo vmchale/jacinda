@@ -1,6 +1,18 @@
 Jacinda is a functional, expression-oriented data processing language,
 complementing [AWK](http://www.awklang.org).
 
+# Installation
+
+## From Source
+
+First, install [Rust's regex library](https://github.com/rust-lang/regex/tree/master/regex-capi#c-api-for-rusts-regex-engine). You'll need to put `librure.so` or `librure.dylib` etc. in the appropriate place.
+
+If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (perhaps via [ghcup](https://www.haskell.org/ghcup/)):
+
+```
+cabal install jacinda
+```
+
 # SHOCK & AWE
 
 ```
@@ -12,21 +24,20 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
     ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F,
 ```
 
-# Installation
-
-## From Source
-
-First, install [Rust's regex library](https://github.com/rust-lang/regex/tree/master/regex-capi#c-api-for-rusts-regex-engine).
-
-If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskell.org/ghc/) installed (perhaps via [ghcup](https://www.haskell.org/ghcup/)):
-
-```
-cabal install jacinda
-```
-
 # Documentation
 
+See the [guide](https://vmchale.github.io/jacinda/), which contains a tutorial
+on some of the features as well as examples.
+
 The manpages document the builtins and provide a syntax reference.
+
+# Status
+
+The project is in alpha stage, it doesn't necessarily work and there are many
+missing features, but the language will remain stable.
+
+It is worse than awk but it has its place and it avoids some of the painful
+imperative/scoping defects.
 
 # Further Advantages
 
