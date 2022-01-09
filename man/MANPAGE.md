@@ -95,6 +95,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **ceil** Ceiling function
 :   Float -> Int
 
+**sprintf** Convert an expression to a string using the format string
+
 ## SYNTAX
 
 **`n** nth field
@@ -105,6 +107,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **{\<expr>}{\<expr>}** Filtered stream defined by \<expr>, on lines satisfying
 a boolean expression.
+
+**{|\<expr>}** Stream defined by \<expr>
 
 **#t** Boolean literal
 

@@ -11,7 +11,7 @@ awk).
 
 ## Tour de Force
 
-### Filtering
+### Patterns + Implicits, Streams
 
 Awk is oriented around patterns and actions. Jacinda has support for a similar
 style: one defines a pattern and an expression defined by the lines that this
@@ -52,9 +52,16 @@ context. An example:
 {#`0>110}{`0}
 ```
 
-This defines a stream of lines that are more than 110 bytes.
+This defines a stream of lines that are more than 110 bytes (`#` is 'tally', it
+returns the length of a string).
 
-<!-- TODO: alternate filter syntax -->
+There is also a syntax that defines a stream on *all* lines,
+
+```
+{|<expr>}
+```
+
+So `{|``0}` would define a stream of text corresponding to the lines in the file. 
 
 ### Fold
 
@@ -156,7 +163,7 @@ step. One could define a stream containing line numbers for a file with:
 (+)^0 [:1"$0
 ```
 
-(this is the same as `{#t}{ix}`)
+(this is the same as `{|ix}`)
 
 ### Prior
 
@@ -179,9 +186,9 @@ succDiff := ((-)\.)
 ### Parting Shots
 
 ```
-any := [(||)|#f x]
+or := [(||)|#f x]
 
-all := [(&)|#t x]
+and := [(&)|#t x]
 
 count := [(+)|0 [:1"x]
 ```
@@ -201,6 +208,16 @@ fn drop(n, str) :=
 
 Note the `:=` and also the semicolon at the end of the expression that is the
 function body.
+
+Since Jacinda has support for higher-order functions, one could write:
+
+```
+fn any(p, xs) :=
+  (||)|#f p"xs;
+
+fn all(p, xs) :=
+  (&)|#t p"xs;
+```
 
 # Data Processing
 

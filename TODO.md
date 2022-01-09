@@ -10,6 +10,7 @@
 - [ ] APL iota should be allowed instead of 'ix'
 - [x] lambda
 - [ ] ♯ in front of type variables
+- [ ] ⟨
 # Features
 - [ ] `match`
 - [x] SCANS

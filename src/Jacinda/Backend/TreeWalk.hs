@@ -262,6 +262,9 @@ ir _ _ AllColumn{} = fmap mkStr
 ir re _ (Column _ i) = fmap (mkStr . atField re i)
 ir re _ (IParseCol _ i) = fmap (parseAsEInt . atField re i)
 ir re _ (FParseCol _ i) = fmap (parseAsF . atField re i)
+ir re _ (Implicit _ e) =
+    let e' = compileR e
+        in imap (\ix line -> eEval (mkCtx re ix line) e')
 ir re _ (Guarded _ pe e) =
     let pe' = compileR pe
         e' = compileR e
@@ -333,6 +336,8 @@ fileProcessor re _ (FParseCol _ i) = Right $ \inp -> do
     printStream $ fmap (parseAsF . atField re i) inp
 -- TODO: this should extract any regex and compile them, use io/low-level API...
 fileProcessor re i e@Guarded{} = Right $ \inp -> do
+    printStream $ ir re i e inp
+fileProcessor re i e@Implicit{} = Right $ \inp -> do
     printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp

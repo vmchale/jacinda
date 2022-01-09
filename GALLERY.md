@@ -25,7 +25,7 @@ ls -1 -R | ja '{% /\.hs$/}{`0}'
 ```
 
 ```
-(+)|0 {#t}{1}
+(+)|0 {|1}
 ```
 
 Count nonblank lines:
@@ -47,7 +47,7 @@ Count blank lines:
 ```
 
 ```
-(+)|0 {#t}{#`0}
+(+)|0 {|#`0}
 ```
 
 # Count Occurrences
@@ -93,9 +93,9 @@ sum := [(+)|0 x]
 
 product := [(*)|1 x]
 
-any := [(||)|#f x]
+or := [(||)|#f x]
 
-all := [(&)|#t x]
+and := [(&)|#t x]
 
 count := [(+)|0 [:1"x]
 
@@ -109,5 +109,5 @@ maximum := [max|_1 x]
 ```
 
 ```
-{#t}{ix}
+{|ix}
 ```

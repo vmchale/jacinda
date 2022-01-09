@@ -10,3 +10,12 @@ fn take(n, str) :=
 
 {. rounds down on .5
 fn round(x) := floor (x+0.5);
+
+fn itostring() :=
+  sprintf '%i';
+
+fn any(p, xs) :=
+  (||)|#f p"xs;
+
+fn all(p, xs) :=
+  (&)|#t p"xs;
