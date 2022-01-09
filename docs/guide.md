@@ -186,9 +186,9 @@ succDiff := ((-)\.)
 ### Parting Shots
 
 ```
-any := [(||)|#f x]
+or := [(||)|#f x]
 
-all := [(&)|#t x]
+and := [(&)|#t x]
 
 count := [(+)|0 [:1"x]
 ```
@@ -208,6 +208,16 @@ fn drop(n, str) :=
 
 Note the `:=` and also the semicolon at the end of the expression that is the
 function body.
+
+Since Jacinda has support for higher-order functions, one could write:
+
+```
+fn any(p, xs) :=
+  (||)|#f p"xs;
+
+fn all(p, xs) :=
+  (&)|#t p"xs;
+```
 
 # Data Processing
 
