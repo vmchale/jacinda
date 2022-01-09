@@ -108,6 +108,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **{\<expr>}{\<expr>}** Filtered stream defined by \<expr>, on lines satisfying
 a boolean expression.
 
+**{|\<expr>}** Stream defined by \<expr>
+
 **#t** Boolean literal
 
 **\_n** Negative number
