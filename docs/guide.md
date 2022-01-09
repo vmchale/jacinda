@@ -55,6 +55,7 @@ context. An example:
 This defines a stream of lines that are more than 110 bytes.
 
 <!-- TODO: alternate filter syntax -->
+<!-- implicit syntax -->
 
 ### Fold
 
