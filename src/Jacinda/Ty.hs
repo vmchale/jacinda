@@ -414,6 +414,9 @@ tyE0 (TBuiltin _ Scan) = do
         a' = var a
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (tyStream a') (tyStream b')))
     pure $ TBuiltin fTy Scan
+tyE0 (Implicit _ e) = do
+    e' <- tyE0 e
+    pure $ Implicit (tyStream (eLoc e')) e'
 -- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (Guarded l e streamE) = do
     streamE' <- tyE0 streamE

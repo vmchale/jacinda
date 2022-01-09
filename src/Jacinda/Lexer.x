@@ -87,6 +87,7 @@ tokens :-
         "("                      { mkSym LParen }
         ")"                      { mkSym RParen }
         "{%"                     { mkSym LBracePercent }
+        "{|"                     { mkSym LBraceBar }
         "["                      { mkSym LSqBracket `andBegin` dfn }
         "]"                      { mkSym RSqBracket `andBegin` 0 } -- FIXME: this doesn't allow nested
         "~"                      { mkSym Tilde }
@@ -226,6 +227,7 @@ data Sym = PlusTok
          | TallyTok
          | ConstTok
          | LBracePercent
+         | LBraceBar
          | Exclamation
          | Caret
          | Backslash
@@ -265,6 +267,7 @@ instance Pretty Sym where
     pretty Caret         = "^"
     pretty ConstTok      = "[:"
     pretty LBracePercent = "{%"
+    pretty LBraceBar     = "{|"
     pretty Exclamation   = "!"
     pretty Backslash     = "\\"
     pretty BackslashDot  = "\\."
