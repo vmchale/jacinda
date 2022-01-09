@@ -95,6 +95,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **ceil** Ceiling function
 :   Float -> Int
 
+**sprintf** Convert an expression to a string using the format string
+
 ## SYNTAX
 
 **`n** nth field
