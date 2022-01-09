@@ -28,11 +28,9 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
-<<<<<<< HEAD
 - [ ] map, filter, scan, prior for vectors &c.?
-=======
 - [ ] lint for duplicate names at top-level
->>>>>>> 234c9ae (doc)
+- [ ] list comprehensions or w/e
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
