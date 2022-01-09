@@ -23,7 +23,7 @@ source-repository head
     type:     git
     location: https://github.com/vmchale/jacinda
 
-library
+library jacinda-lib
     exposed-modules:  Jacinda.Parser
                     , Jacinda.Parser.Rewrite
                     , Jacinda.AST
@@ -82,7 +82,7 @@ executable ja
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:    base 
-                    , jacinda
+                    , jacinda-lib
                     , optparse-applicative
                     , bytestring
     ghc-options: -Wall -rtsopts -with-rtsopts=-A100k
@@ -111,7 +111,7 @@ test-suite jacinda-test
     hs-source-dirs:   test
     main-is:          Spec.hs
     build-depends:    base
-                    , jacinda
+                    , jacinda-lib
                     , tasty
                     , tasty-hunit
                     , bytestring
