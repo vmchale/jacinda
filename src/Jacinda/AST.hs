@@ -181,6 +181,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
          | Guarded { eLoc :: a, eP :: E a, eGuarded :: E a }
+         | Implicit { eLoc :: a, eImplicit :: E a }
          | Let { eLoc :: a, eBind :: (Name a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: Name a }
@@ -217,6 +218,7 @@ data EF a x = ColumnF a Int
             | AllColumnF a
             | EAppF a x x
             | GuardedF a x x
+            | ImplicitF a x
             | LetF a (Name a, x) x
             | VarF a (Name a)
             | IntLitF a Integer
@@ -277,6 +279,7 @@ instance Pretty (E a) where
     pretty (Lam _ n e)                                             = parens ("λ" <> pretty n <> "." <+> pretty e)
     pretty (Dfn _ e)                                               = brackets (pretty e)
     pretty (Guarded _ p e)                                         = braces (pretty p) <> braces (pretty e)
+    pretty (Implicit _ e)                                          = braces ("|" <+> pretty e)
     pretty Ix{}                                                    = "ix"
     pretty RegexCompiled{}                                         = error "Nonsense."
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
@@ -295,6 +298,7 @@ instance Eq (E a) where
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'
     (==) (Guarded _ p e) (Guarded _ p' e')      = p == p' && e == e'
+    (==) (Implicit _ e) (Implicit _ e')         = e == e'
     (==) (Let _ (n, eϵ) e) (Let _ (n', eϵ') e') = eqName n n' && e == e' && eϵ == eϵ'
     (==) (Var _ n) (Var _ n')                   = eqName n n'
     (==) (Lam _ n e) (Lam _ n' e')              = eqName n n' && e == e'

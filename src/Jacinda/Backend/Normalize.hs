@@ -120,6 +120,7 @@ eNorm e@IParseCol{}   = pure e
 eNorm e@FParseCol{}   = pure e
 eNorm e@AllField{}    = pure e
 eNorm (Guarded ty pe e) = Guarded ty <$> eNorm pe <*> eNorm e
+eNorm (Implicit ty e) = Implicit ty <$> eNorm e
 eNorm (Lam ty n e)    = Lam ty n <$> eNorm e
 eNorm e@BBuiltin{}    = pure e
 eNorm e@TBuiltin{}    = pure e

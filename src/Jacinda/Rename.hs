@@ -140,6 +140,7 @@ renameE (Dfn l e) | hasY e = do
     -- no need for withName... withRenames because this is fresh/globally unique
     Lam l x <$> renameE (replaceX (Name n u) e)
 renameE (Guarded l p e) = Guarded l <$> renameE p <*> renameE e
+renameE (Implicit l e) = Implicit l <$> renameE e
 renameE ResVar{} = error "Bare reserved variable."
 renameE (Let l (n, eϵ) e') = do
     eϵ' <- renameE eϵ
