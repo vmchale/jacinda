@@ -36,7 +36,7 @@ exprEval src =
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTypeM m (tyProgram ast)
-            in eClosed i (expr typed)
+            in closedProgram i typed
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
@@ -51,8 +51,8 @@ runOnBytes src cliFS contents =
         Left err -> throwIO err
         Right (ast, m) -> do
             (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
-            cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (expr typed)
-            cont $ concatMap BSL.toChunks (ASCIIL.lines contents)
+            cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i typed
+            cont $ concatMap BSL.toChunks (ASCIIL.lines contents) -- FIXME: "lines" discards empty... perhaps ok?
 
 runOnHandle :: BSL.ByteString -- ^ Program
             -> Maybe BS.ByteString -- ^ Field separator

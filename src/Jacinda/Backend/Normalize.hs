@@ -1,6 +1,7 @@
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
                                  , eClosed
+                                 , closedProgram
                                  , readDigits
                                  , readFloat
                                  , mkI
@@ -14,12 +15,14 @@ import           Control.Monad.State.Strict (State, evalState, gets, modify)
 import           Control.Recursion          (cata, embed)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
+import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
+import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
@@ -78,10 +81,27 @@ mapBinds f (LetCtx b r) = LetCtx (f b) r
 
 type EvalM = State LetCtx
 
+mkLetCtx :: Int -> LetCtx
+mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
+
 eClosed :: Int
         -> E (T K)
         -> E (T K)
-eClosed i = flip evalState (LetCtx IM.empty (Renames i IM.empty)) . eNorm
+eClosed i = flip evalState (mkLetCtx i) . eNorm
+
+closedProgram :: Int
+              -> Program (T K)
+              -> E (T K)
+closedProgram i (Program ds e) = flip evalState (mkLetCtx i) $
+    traverse_ processDecl ds *>
+    eNorm e
+
+processDecl :: D (T K)
+            -> EvalM ()
+processDecl SetFS{} = pure ()
+processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
+    e' <- eNorm e
+    modify (mapBinds (IM.insert i e'))
 
 -- TODO: equality on tuples, lists
 eNorm :: E (T K)
@@ -356,6 +376,12 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    case (eI, eI') of
+        (StrLit _ fmt, _) | isReady eI' -> pure $ mkStr $ sprintf fmt eI'
+        _                               -> EApp ty0 (EApp ty1 op eI) <$> eNorm e'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y

@@ -1,15 +1,7 @@
 # Count lines of code
 
-(Haskell + Alex + Happy)
-
 ```
-fd '\.(hs|x|y)$' -x wc -l | ja '(+)|0 $1:i'
-```
-
-(C + Yacc)
-
-```
-fd '\.(c|h|y)$' -x wc -l | ja '(+)|0 $1:i'
+fd '\.(c|h)$' -x wc -l | ja '(+)|0 $1:i'
 ```
 
 # Label lines
@@ -86,40 +78,11 @@ Is there a line >110 bytes?
 (max|_1 #"$0) > 110
 ```
 
-# CSV Processing
-
-```
-csvformat excess-j.csv -D '|' | ja ':set fs := /\|/; $1'
-```
-
-# Balance Parens
-
-```
-let
-  val count := [(+)|0 x]
-  val lparen := {%/\(/}{1}
-  val rparen := {%/\)/}{1}
-in count lparen = count rparen end
-```
-
 # Count Bytes in Directory
 
 ```
 ls -l | ja '(+)|0 {ix>1}{`5:i}'
 ```
-
-# In Conjunction with awk
-
-```
-cat *.pgn | grep "Result" | awk '{ split($0, a, "-"); res = substr(a[1], length(a[1]), 1); if (res == 1) white++; if (res == 0) black++; if (res == 2) draw++;} END { print white+black+draw, white, black, draw }'
-```
-
-```
-cat *.pgn | grep "Result" | awk '{ split($0, a, "-"); res = substr(a[1], length(a[1]), 1); print res }' | ja 'let val sum := [(+)|0 x] in (sum {`1~/\d/ & `1:i=1}{1}) end'
-```
-
-Awk is doing the heavy lifting here but it is notably more prolix when
-summarizing data.
 
 # Library Functions
 

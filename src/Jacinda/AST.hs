@@ -250,6 +250,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                 = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                 = "min" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')               = "split" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e')             = "sprintf" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                 = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                   = pretty e <+> pretty b <+> pretty e'
     pretty (EApp _ (BBuiltin _ b) e)                               = parens (pretty e <> pretty b)
@@ -338,8 +339,8 @@ instance Pretty C where
 
 -- decl
 data D a = SetFS BS.ByteString
-           | FunDecl (Name a) [Name a] (E a)
-           deriving (Functor)
+         | FunDecl (Name a) [Name a] (E a)
+         deriving (Functor)
 
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)

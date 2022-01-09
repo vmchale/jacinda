@@ -13,6 +13,7 @@ import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
+import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import           Regex.Rure                (RurePtr)
@@ -221,6 +222,10 @@ eEval (ix, line, ctx) = go where
             in case eI of
                 (Arr _ es) -> go (es V.! (i-1))
                 _          -> noRes
+    go (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e') =
+        let eI = asStr (go e)
+            eI' = go e'
+        in mkStr (sprintf eI eI')
 
 applyOp :: Int
         -> E (T K) -- ^ Operator
@@ -290,9 +295,9 @@ foldWithCtx re i op seed streamExpr = foldl' (applyOp i op) seed . ir re i strea
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
-       -> E (T K)
+       -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = fileProcessor re i (eClosed i e)
+runJac re i e = fileProcessor re i (closedProgram i e)
 
 -- evaluate something that has a fold nested in it
 eWith :: RurePtr -> Int -> E (T K) -> [BS.ByteString] -> E (T K)
