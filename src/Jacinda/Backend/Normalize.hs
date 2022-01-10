@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
                                  , eClosed
@@ -9,6 +11,7 @@ module Jacinda.Backend.Normalize ( compileR
                                  , mkStr
                                  , parseAsEInt
                                  , parseAsF
+                                 , the
                                  ) where
 
 import           Control.Monad.State.Strict (State, evalState, gets, modify)
@@ -19,6 +22,7 @@ import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
+import           Data.Word                  (Word8)
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -55,6 +59,12 @@ readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
           f '8' = 8
           f '9' = 9
           f c   = error (c:" is not a valid digit!")
+
+the :: BS.ByteString -> Word8
+the bs = case BS.uncons bs of
+    Nothing     -> error "Empty splitc char!"
+    Just (c,"") -> c
+    Just (c,_)  -> error "Splitc takes only one char!"
 
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
@@ -182,8 +192,14 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Split) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss) -- FIXME type of Arr (l) is wrong
+        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr undefined (StrLit l <$> bss)
         _                                -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin _ Splitc) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit l str, StrLit _ c) -> let bss = BS.split (the c) str in Arr undefined (StrLit l <$> V.fromList bss)
+        _                          -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty op@(UBuiltin _ Floor) e) = do
     eI <- eNorm e
     pure $ case eI of

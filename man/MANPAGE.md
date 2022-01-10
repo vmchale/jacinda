@@ -89,6 +89,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **split** Split a string by regex
 :   Str -> Regex -> List Str
 
+**splitc** Split a string on a single character
+:   Str -> Str -> List Str
+
 **floor** Floor function
 :   Float -> Int
 

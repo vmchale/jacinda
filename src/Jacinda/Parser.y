@@ -100,6 +100,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fs { TokResVar $$ VarFs }
 
     split { TokBuiltin $$ BuiltinSplit }
+    splitc { TokBuiltin $$ BuiltinSplitc }
     substr { TokBuiltin $$ BuiltinSubstr }
     sprintf { TokBuiltin $$ BuiltinSprintf }
     floor { TokBuiltin $$ BuiltinFloor }
@@ -211,6 +212,7 @@ E :: { E AlexPosn }
   | min { BBuiltin $1 Min }
   | max { BBuiltin $1 Max }
   | split { BBuiltin $1 Split }
+  | splitc { BBuiltin $1 Splitc }
   | substr { TBuiltin $1 Substr }
   | sprintf { BBuiltin $1 Sprintf }
   | floor { UBuiltin $1 Floor }

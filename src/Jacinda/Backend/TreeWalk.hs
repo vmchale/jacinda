@@ -193,6 +193,11 @@ eEval (ix, line, ctx) = go where
             re = asRegex (go e')
             bss = splitBy re str
             in Arr undefined (StrLit undefined <$> bss)
+    go (EApp _ (EApp _ (BBuiltin _ Splitc) e) e') =
+        let str = asStr (go e)
+            c = the (asStr (go e'))
+            bss = BS.split c str
+            in Arr undefined (StrLit undefined <$> V.fromList bss)
     go (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) =
         let eI0 = asStr (go e0)
             eI1 = asInt (go e1)

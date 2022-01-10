@@ -335,6 +335,7 @@ tyE0 (BBuiltin _ Neq)        = BBuiltin <$> tyEq <*> pure Neq
 tyE0 (BBuiltin _ Min)        = BBuiltin <$> tyM <*> pure Min
 tyE0 (BBuiltin _ Max)        = BBuiltin <$> tyM <*> pure Max
 tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Split
+tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Splitc
 tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
 tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
 tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally

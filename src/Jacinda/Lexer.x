@@ -119,6 +119,7 @@ tokens :-
 
         substr                   { mkBuiltin BuiltinSubstr }
         split                    { mkBuiltin BuiltinSplit }
+        splitc                   { mkBuiltin BuiltinSplitc }
         sprintf                  { mkBuiltin BuiltinSprintf }
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
@@ -312,6 +313,7 @@ data Builtin = BuiltinIParse
              | BuiltinFParse
              | BuiltinSubstr
              | BuiltinSplit
+             | BuiltinSplitc
              | BuiltinSprintf
              | BuiltinFloor
              | BuiltinCeil
@@ -321,6 +323,7 @@ instance Pretty Builtin where
     pretty BuiltinFParse  = ":f"
     pretty BuiltinSubstr  = "substr"
     pretty BuiltinSplit   = "split"
+    pretty BuiltinSplitc  = "splitc"
     pretty BuiltinSprintf = "sprintf"
     pretty BuiltinFloor   = "floor"
     pretty BuiltinCeil    = "ceil"
