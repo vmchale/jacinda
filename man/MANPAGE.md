@@ -114,6 +114,9 @@ a boolean expression.
 
 **\_n** Negative number
 
+**.n**  Extract the nth value
+:   List a -> a
+
 # BUGS
 
 Please report any bugs you may come across to
