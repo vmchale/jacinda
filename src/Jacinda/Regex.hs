@@ -33,7 +33,7 @@ splitWhitespace :: BS.ByteString -> V.Vector BS.ByteString
 splitWhitespace = splitBy defaultRurePtr
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
-substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) ((min l endϵ)-begin)
+substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
                                | otherwise = "error: invalid substring indices."
 
 {-# NOINLINE splitBy #-}
