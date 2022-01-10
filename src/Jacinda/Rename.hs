@@ -101,6 +101,8 @@ hasY = cata a where
     a DfnF{}           = error "Not supported yet."
     a (LetF _ b e)     = e || snd b
     a (GuardedF _ p b) = b || p
+    a (ImplicitF _ e)  = e
+    a (ParenF _ e)     = e
     a _                = False
 
 replaceXY :: (a -> Name a) -- ^ @x@
