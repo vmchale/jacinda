@@ -1,8 +1,8 @@
 cabal-version:      2.0
 name:               jacinda
 version:            0.1.0.0
-license:            GPL-3
-license-file:       LICENSE
+license:            AGPL-3
+license-file:       COPYING
 maintainer:         vamchale@gmail.com
 author:             Vanessa McHale
 bug-reports:        https://github.com/vmchale/jacinda/issues
