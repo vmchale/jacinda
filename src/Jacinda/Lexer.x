@@ -121,6 +121,7 @@ tokens :-
         split                    { mkBuiltin BuiltinSplit }
         splitc                   { mkBuiltin BuiltinSplitc }
         sprintf                  { mkBuiltin BuiltinSprintf }
+        option                   { mkBuiltin BuiltinOption }
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
 
@@ -134,6 +135,7 @@ tokens :-
         `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
 
         "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ ASCII.unpack $ ASCII.tail s)) }
+        "->"$digit+              { tok (\p s -> alex $ TokSelect p (read $ ASCII.unpack $ ASCII.drop 2 s)) }
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
@@ -314,6 +316,7 @@ data Builtin = BuiltinIParse
              | BuiltinSubstr
              | BuiltinSplit
              | BuiltinSplitc
+             | BuiltinOption
              | BuiltinSprintf
              | BuiltinFloor
              | BuiltinCeil
@@ -323,6 +326,7 @@ instance Pretty Builtin where
     pretty BuiltinFParse  = ":f"
     pretty BuiltinSubstr  = "substr"
     pretty BuiltinSplit   = "split"
+    pretty BuiltinOption  = "option"
     pretty BuiltinSplitc  = "splitc"
     pretty BuiltinSprintf = "sprintf"
     pretty BuiltinFloor   = "floor"
@@ -343,6 +347,7 @@ data Token a = EOF { loc :: a }
              | TokFieldLit { loc :: a, ix :: Int }
              | TokRR { loc :: a, rr :: BSL.ByteString }
              | TokAccess { loc :: a, ix :: Int }
+             | TokSelect { loc :: a, field :: Int }
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
@@ -361,6 +366,7 @@ instance Pretty (Token a) where
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
     pretty (TokFloat _ f)     = pretty f
+    pretty (TokSelect _ i)    = "->" <> pretty i
 
 freshName :: T.Text -> Alex (Name AlexPosn)
 freshName t = do

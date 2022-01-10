@@ -64,7 +64,7 @@ the :: BS.ByteString -> Word8
 the bs = case BS.uncons bs of
     Nothing     -> error "Empty splitc char!"
     Just (c,"") -> c
-    Just (c,_)  -> error "Splitc takes only one char!"
+    Just _      -> error "Splitc takes only one char!"
 
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
@@ -354,6 +354,11 @@ eNorm (EApp ty op@(UBuiltin _ (At i)) e) = do
     pure $ case eI of
         (Arr _ es) -> es V.! (i-1)
         _          -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin _ (Select i)) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (Tup _ es) -> es !! (i-1)
+        _          -> EApp ty op eI
 eNorm (EApp ty op@(UBuiltin _ Not) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -393,6 +398,14 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
+    e0' <- eNorm e0
+    e1' <- eNorm e1
+    e2' <- eNorm e2
+    case e2' of
+        (OptionVal _ Nothing)  -> pure e0'
+        (OptionVal _ (Just e)) -> eNorm (EApp undefined e1' e)
+        _                      -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'

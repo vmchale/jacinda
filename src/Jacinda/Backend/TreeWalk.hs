@@ -227,6 +227,11 @@ eEval (ix, line, ctx) = go where
             in case eI of
                 (Arr _ es) -> go (es V.! (i-1))
                 _          -> noRes
+    go (EApp _ (UBuiltin _ (Select i)) e) =
+        let eI = go e
+            in case eI of
+                (Tup _ es) -> go (es !! (i-1))
+                _          -> noRes
     go (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e') =
         let eI = asStr (go e)
             eI' = go e'

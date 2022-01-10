@@ -11,7 +11,7 @@ module Jacinda.Ty ( TypeM
 import           Control.Exception          (Exception)
 import           Control.Monad.Except       (throwError)
 import           Control.Monad.State.Strict (StateT, gets, runStateT)
-import           Data.Bifunctor             (second)
+import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
@@ -20,6 +20,7 @@ import           Data.Semigroup             ((<>))
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
+import           Debug.Trace
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -34,12 +35,12 @@ infixr 6 <#>
 (<#>) x y = x <> hardline <> y
 
 data Error a = UnificationFailed a (T ()) (T ())
-             | Doesn'tSatisfy (T ()) C
+             | Doesn'tSatisfy a (T ()) C
              | IllScoped a (Name a)
 
 instance Pretty a => Pretty (Error a) where
     pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
-    pretty (Doesn'tSatisfy ty c)        = squotes (pretty ty) <+> "is not a member of class" <+> pretty c
+    pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
     pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
 
 instance Pretty a => Show (Error a) where
@@ -51,7 +52,7 @@ instance (Typeable a, Pretty a) => Exception (Error a) where
 -- (after accumulating classVar membership...)
 data TyState a = TyState { maxU        :: Int
                          , kindEnv     :: IM.IntMap K
-                         , classVars   :: IM.IntMap (S.Set C)
+                         , classVars   :: IM.IntMap (S.Set (C, a))
                          , varEnv      :: IM.IntMap (T K)
                          , constraints :: S.Set (a, T K, T K)
                          }
@@ -70,7 +71,7 @@ prettyEq (ty, ty') = pretty ty <+> "≡" <+> pretty ty'
 maxULens :: Lens' (TyState a) Int
 maxULens f s = fmap (\x -> s { maxU = x }) (f (maxU s))
 
-classVarsLens :: Lens' (TyState a) (IM.IntMap (S.Set C))
+classVarsLens :: Lens' (TyState a) (IM.IntMap (S.Set (C, a)))
 classVarsLens f s = fmap (\x -> s { classVars = x }) (f (classVars s))
 
 varEnvLens :: Lens' (TyState a) (IM.IntMap (T K))
@@ -166,7 +167,7 @@ higherOrder t = freshName t (KArr Star Star)
 dummyName :: T.Text -> TypeM a (Name K)
 dummyName n = freshName n Star
 
-addC :: Name a -> C -> IM.IntMap (S.Set C) -> IM.IntMap (S.Set C)
+addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
     go Nothing   = S.singleton c
     go (Just cs) = S.insert c cs
@@ -184,48 +185,58 @@ pushConstraint l ty ty' =
     modifying constraintsLens (S.insert (l, ty, ty'))
 
 -- TODO: this will need some class context if we permit custom types (Optional)
-checkType :: T b -> C -> TypeM a ()
-checkType TyVar{} _                       = pure () -- TODO: I think this is right
-checkType (TyB _ TyStr) IsSemigroup       = pure ()
-checkType (TyB _ TyInteger) IsSemigroup   = pure ()
-checkType (TyB _ TyInteger) IsNum         = pure ()
-checkType (TyB _ TyInteger) IsOrd         = pure ()
-checkType (TyB _ TyInteger) IsEq          = pure ()
-checkType (TyB _ TyInteger) IsParseable   = pure ()
-checkType (TyB _ TyFloat) IsParseable     = pure ()
-checkType (TyB _ TyFloat) IsSemigroup     = pure ()
-checkType (TyB _ TyFloat) IsNum           = pure ()
-checkType (TyB _ TyFloat) IsOrd           = pure ()
-checkType (TyB _ TyFloat) IsEq            = pure ()
-checkType (TyB _ TyBool) IsEq             = pure ()
-checkType (TyB _ TyStr) IsEq              = pure ()
-checkType (TyTup _ tys) IsEq              = traverse_ (`checkType` IsEq) tys
-checkType (TyTup _ tys) IsOrd             = traverse_ (`checkType` IsOrd) tys
-checkType (TyApp _ (TyB _ TyVec) ty) IsEq = checkType ty IsEq
-checkType ty@TyTup{} c@IsNum              = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@(TyB _ TyStr) c@IsNum        = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@(TyB _ TyBool) c@IsNum       = throwError $ Doesn'tSatisfy (void ty) c
-checkType ty@TyArr{} c                    = throwError $ Doesn'tSatisfy (void ty) c
-checkType (TyB _ TyVec) Functor           = pure ()
-checkType (TyB _ TyStream) Functor        = pure ()
-checkType ty c@Functor                    = throwError $ Doesn'tSatisfy (void ty) c
-checkType (TyB _ TyVec) Foldable          = pure ()
-checkType (TyB _ TyStream) Foldable       = pure ()
-checkType ty c@Foldable                   = throwError $ Doesn'tSatisfy (void ty) c
-checkType (TyB _ TyStr) IsPrintf          = pure ()
-checkType (TyB _ TyFloat) IsPrintf        = pure ()
-checkType (TyB _ TyInteger) IsPrintf      = pure ()
-checkType (TyB _ TyBool) IsPrintf         = pure ()
-checkType (TyTup _ tys) IsPrintf          = traverse_ (`checkType` IsPrintf) tys
-checkType ty c@IsPrintf                   = throwError $ Doesn'tSatisfy (void ty) c
+checkType :: Ord a => T K -> (C, a) -> TypeM a ()
+checkType TyVar{} _                            = pure () -- TODO: I think this is right
+checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
+checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
+checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
+checkType (TyB _ TyInteger) (IsOrd, _)         = pure ()
+checkType (TyB _ TyInteger) (IsEq, _)          = pure ()
+checkType (TyB _ TyInteger) (IsParseable, _)   = pure ()
+checkType (TyB _ TyFloat) (IsParseable, _)     = pure ()
+checkType (TyB _ TyFloat) (IsSemigroup, _)     = pure ()
+checkType (TyB _ TyFloat) (IsNum, _)           = pure ()
+checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
+checkType (TyB _ TyFloat) (IsEq, _)            = pure ()
+checkType (TyB _ TyBool) (IsEq, _)             = pure ()
+checkType (TyB _ TyStr) (IsEq, _)              = pure ()
+checkType (TyTup _ tys) (IsEq, l)              = traverse_ (`checkType` (IsEq, l)) tys
+checkType (TyTup _ tys) (IsOrd, l)             = traverse_ (`checkType` (IsOrd, l)) tys
+checkType (TyApp _ (TyB _ TyVec) ty) (IsEq, l) = checkType ty (IsEq, l)
+checkType ty@TyTup{} (c@IsNum, l)              = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty@(TyB _ TyStr) (c@IsNum, l)        = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty@(TyB _ TyBool) (c@IsNum, l)       = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty@TyArr{} (c, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
+checkType (TyB _ TyVec) (Functor, _)           = pure ()
+checkType (TyB _ TyStream) (Functor, _)        = pure ()
+checkType ty (c@Functor, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
+checkType (TyB _ TyVec) (Foldable, _)          = pure ()
+checkType (TyB _ TyStream) (Foldable, _)       = pure ()
+checkType ty (c@Foldable, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
+checkType (TyB _ TyStr) (IsPrintf, _)          = pure ()
+checkType (TyB _ TyFloat) (IsPrintf, _)        = pure ()
+checkType (TyB _ TyInteger) (IsPrintf, _)      = pure ()
+checkType (TyB _ TyBool) (IsPrintf, _)         = pure ()
+checkType (TyTup _ tys) (IsPrintf, l)          = traverse_ (`checkType` (IsPrintf, l)) tys
+checkType ty (c@IsPrintf, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty@(TyTup _ tys) (c@(HasField i ty'), l) | length tys >= i = pushConstraint l ty' (tys !! (i-1))
+                                                   | otherwise = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@HasField{}, l)                 = throwError $ Doesn'tSatisfy l (void ty) c
 
-checkClass :: IM.IntMap (T K) -- ^ Unification result
+substC :: IM.IntMap (T K) -- ^ Unification result
+       -> C
+       -> C
+substC um (HasField i ty) = HasField i (substConstraints um ty)
+substC _ c                = c
+
+checkClass :: Ord a
+           => IM.IntMap (T K) -- ^ Unification result
            -> Int
-           -> S.Set C
+           -> S.Set (C, a)
            -> TypeM a ()
 checkClass tys i cs =
     case substInt tys i of
-        Just ty -> traverse_ (checkType ty) (S.toList cs)
+        Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
         Nothing -> pure () -- FIXME: do we need to check var is well-kinded for constraint?
 
 lookupVar :: Name a -> TypeM a (T K)
@@ -254,7 +265,9 @@ tyProgram (Program ds e) = do
     backNames <- unifyM =<< gets constraints
     toCheck <- gets (IM.toList . classVars)
     traverse_ (uncurry (checkClass backNames)) toCheck
-    pure (fmap (substConstraints backNames) (Program ds' e'))
+    backNames' <- unifyM =<< gets constraints
+    -- FIXME: not sure if termination/whatever is guaranteed, need 2 think..
+    pure (fmap (substConstraints backNames') (Program ds' e'))
 
 -- FIXME kind check
 tyE :: Ord a => E a -> TypeM a (E (T K))
@@ -265,39 +278,39 @@ tyE e = do
     traverse_ (uncurry (checkClass backNames)) toCheck
     pure (fmap (substConstraints backNames) e')
 
-tyNumOp :: TypeM a (T K)
-tyNumOp = do
+tyNumOp :: Ord a => a -> TypeM a (T K)
+tyNumOp l = do
     m <- dummyName "m"
-    modifying classVarsLens (addC m IsNum)
+    modifying classVarsLens (addC m (IsNum, l))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
-tySemiOp :: TypeM a (T K)
-tySemiOp = do
+tySemiOp :: Ord a => a -> TypeM a (T K)
+tySemiOp l = do
     m <- dummyName "m"
-    modifying classVarsLens (addC m IsSemigroup)
+    modifying classVarsLens (addC m (IsSemigroup, l))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
-tyOrd :: TypeM a (T K)
-tyOrd = do
+tyOrd :: Ord a => a -> TypeM a (T K)
+tyOrd l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a IsOrd)
+    modifying classVarsLens (addC a (IsOrd, l))
     let a' = var a
     pure $ tyArr a' (tyArr a' tyBool)
 
-tyEq :: TypeM a (T K)
-tyEq = do
+tyEq :: Ord a => a -> TypeM a (T K)
+tyEq l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a IsEq)
+    modifying classVarsLens (addC a (IsEq, l))
     let a' = var a
     pure $ tyArr a' (tyArr a' tyBool)
 
 -- min/max
-tyM :: TypeM a (T K)
-tyM = do
+tyM :: Ord a => a -> TypeM a (T K)
+tyM l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a IsOrd)
+    modifying classVarsLens (addC a (IsOrd, l))
     let a' = var a
     pure $ tyArr a' (tyArr a' a')
 
@@ -309,6 +322,9 @@ hkt = TyApp Star
 
 tyVec :: T K
 tyVec = TyB (KArr Star Star) TyVec
+
+tyOpt :: T K
+tyOpt = TyB (KArr Star Star) TyOption
 
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
 tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
@@ -323,17 +339,17 @@ tyE0 (Field _ i)             = pure $ Field tyStr i
 tyE0 AllField{}              = pure $ AllField tyStr
 tyE0 AllColumn{}             = pure $ AllColumn (tyStream tyStr)
 tyE0 Ix{}                    = pure $ Ix tyI
-tyE0 (BBuiltin _ Plus)       = BBuiltin <$> tySemiOp <*> pure Plus
-tyE0 (BBuiltin _ Minus)      = BBuiltin <$> tyNumOp <*> pure Minus
-tyE0 (BBuiltin _ Times)      = BBuiltin <$> tyNumOp <*> pure Times
-tyE0 (BBuiltin _ Gt)         = BBuiltin <$> tyOrd <*> pure Gt
-tyE0 (BBuiltin _ Lt)         = BBuiltin <$> tyOrd <*> pure Lt
-tyE0 (BBuiltin _ Geq)        = BBuiltin <$> tyOrd <*> pure Geq
-tyE0 (BBuiltin _ Leq)        = BBuiltin <$> tyOrd <*> pure Leq
-tyE0 (BBuiltin _ Eq)         = BBuiltin <$> tyEq <*> pure Eq
-tyE0 (BBuiltin _ Neq)        = BBuiltin <$> tyEq <*> pure Neq
-tyE0 (BBuiltin _ Min)        = BBuiltin <$> tyM <*> pure Min
-tyE0 (BBuiltin _ Max)        = BBuiltin <$> tyM <*> pure Max
+tyE0 (BBuiltin l Plus)       = BBuiltin <$> tySemiOp l <*> pure Plus
+tyE0 (BBuiltin l Minus)      = BBuiltin <$> tyNumOp l <*> pure Minus
+tyE0 (BBuiltin l Times)      = BBuiltin <$> tyNumOp l <*> pure Times
+tyE0 (BBuiltin l Gt)         = BBuiltin <$> tyOrd l <*> pure Gt
+tyE0 (BBuiltin l Lt)         = BBuiltin <$> tyOrd l <*> pure Lt
+tyE0 (BBuiltin l Geq)        = BBuiltin <$> tyOrd l <*> pure Geq
+tyE0 (BBuiltin l Leq)        = BBuiltin <$> tyOrd l <*> pure Leq
+tyE0 (BBuiltin l Eq)         = BBuiltin <$> tyEq l <*> pure Eq
+tyE0 (BBuiltin l Neq)        = BBuiltin <$> tyEq l <*> pure Neq
+tyE0 (BBuiltin l Min)        = BBuiltin <$> tyM l <*> pure Min
+tyE0 (BBuiltin l Max)        = BBuiltin <$> tyM l <*> pure Max
 tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Split
 tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Splitc
 tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
@@ -348,16 +364,23 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
-tyE0 (BBuiltin _ Sprintf) = do
+tyE0 (BBuiltin l Sprintf) = do
     a <- dummyName "a"
     let a' = var a
-    modifying classVarsLens (addC a IsPrintf)
+    modifying classVarsLens (addC a (IsPrintf, l))
     pure $ BBuiltin (tyArr tyStr (tyArr a' tyStr)) Sprintf
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
     let a' = var a
         tyV = hkt tyVec a'
     pure $ UBuiltin (tyArr tyV a') (At i)
+tyE0 (UBuiltin l (Select i)) = do
+    a <- dummyName "a"
+    b <- dummyName "b"
+    let a' = var a
+        b' = var b
+    modifying classVarsLens (addC a (HasField i b', l))
+    pure $ UBuiltin (tyArr a' b') (Select i)
 tyE0 (UBuiltin _ Const) = do
     a <- dummyName "a"
     b <- dummyName "b"
@@ -370,7 +393,7 @@ tyE0 (BBuiltin _ Filter) = do
     let a' = var a
         fTy = tyArr (tyArr a' tyBool) (tyArr (tyStream a') (tyStream a'))
     pure $ BBuiltin fTy Filter
-tyE0 (BBuiltin _ Map) = do
+tyE0 (BBuiltin l Map) = do
     a <- dummyName "a"
     b <- dummyName "b"
     f <- higherOrder "f"
@@ -378,10 +401,10 @@ tyE0 (BBuiltin _ Map) = do
         b' = var b
         f' = var f
         fTy = tyArr (tyArr a' b') (tyArr (hkt f' a') (hkt f' b'))
-    modifying classVarsLens (addC f Functor)
+    modifying classVarsLens (addC f (Functor, l))
     pure $ BBuiltin fTy Map
 -- (b -> a -> b) -> b -> Stream a -> b
-tyE0 (TBuiltin _ Fold) = do
+tyE0 (TBuiltin l Fold) = do
     b <- dummyName "b"
     a <- dummyName "a"
     f <- higherOrder "f"
@@ -389,7 +412,7 @@ tyE0 (TBuiltin _ Fold) = do
         a' = var a
         f' = var f
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (hkt f' a') b'))
-    modifying classVarsLens (addC f Foldable)
+    modifying classVarsLens (addC f (Foldable, l))
     pure $ TBuiltin fTy Fold
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
@@ -415,6 +438,13 @@ tyE0 (TBuiltin _ Scan) = do
         a' = var a
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (tyStream a') (tyStream b')))
     pure $ TBuiltin fTy Scan
+tyE0 (TBuiltin _ Option) = do
+    b <- dummyName "b"
+    a <- dummyName "a"
+    let b' = var b
+        a' = var a
+        fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (hkt tyOpt a') b'))
+    pure $ TBuiltin fTy Option
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e
     pure $ Implicit (tyStream (eLoc e')) e'

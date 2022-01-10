@@ -100,6 +100,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **sprintf** Convert an expression to a string using the format string
 
+**option** Option eliminator
+:   b -> (a -> b) -> Option a -> b
+
 ## SYNTAX
 
 **`n** nth field
@@ -119,6 +122,8 @@ a boolean expression.
 
 **.n**  Extract the nth value
 :   List a -> a
+
+**->n** Get the nth element of a tuple
 
 # BUGS
 
