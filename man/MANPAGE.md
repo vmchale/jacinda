@@ -53,19 +53,22 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   (a -> b -> c) -> Stream a -> Stream b -> Stream c
 
 **|** Ternary operator: fold
-:   (b -> a -> b) -> b -> Stream a -> b
+:   Foldable f :=> (b -> a -> b) -> b -> f a -> b
 
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
 **"** Binary operator: map
-:   a -> b -> Stream a -> Stream b
+:   Functor f :=> a -> b -> f a -> f b
 
 **[:** Unary operator: const 
 :   a -> b -> a
 
 **#.** Binary operator: filter
 :   (a -> Bool) -> Stream a -> Stream a
+
+**\.** Binary operator: prior
+:   (a -> a -> a) -> Stream a -> Stream a
 
 **max** Maximum of two values
 
@@ -89,6 +92,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **split** Split a string by regex
 :   Str -> Regex -> List Str
 
+**splitc** Split a string on a single character
+:   Str -> Str -> List Str
+
 **floor** Floor function
 :   Float -> Int
 
@@ -96,6 +102,12 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   Float -> Int
 
 **sprintf** Convert an expression to a string using the format string
+
+**option** Option eliminator
+:   b -> (a -> b) -> Option a -> b
+
+**match**
+:   Str -> Regex -> Option (Int . Int)
 
 ## SYNTAX
 
@@ -117,10 +129,16 @@ a boolean expression.
 **.n**  Extract the nth value
 :   List a -> a
 
+**->n** Get the nth element of a tuple
+
 # BUGS
 
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
+
+## Limitations
+
+Note that `Option` is not implemented as a functor.
 
 # COPYRIGHT
 

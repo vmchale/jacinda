@@ -5,6 +5,7 @@ module Jacinda.Backend.Printf ( sprintf
                               ) where
 
 import qualified Data.ByteString    as BS
+import           Data.Semigroup     ((<>))
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import           Jacinda.AST

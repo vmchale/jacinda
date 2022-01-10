@@ -1,3 +1,28 @@
+# Process Compiler Output
+
+```awk
+BEGIN { FS="\|" }
+
+/ *\^+/ {
+    p=match($2, "\\^+")
+    colstart=RSTART-1
+    col=colstart+RLENGTH
+    printf("%d-%d\n", colstart, col)
+}
+```
+
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  let
+    val p := match str /\^+/
+    val str := option '(none)' (sprintf '%i-%i') p
+  in str end;
+
+printSpan"{% / *\^+/}{`2}
+```
+
 # Count Lines
 
 ```awk

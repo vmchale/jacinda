@@ -1,5 +1,8 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
+                                 , compileIn
                                  , eClosed
                                  , closedProgram
                                  , readDigits
@@ -9,6 +12,7 @@ module Jacinda.Backend.Normalize ( compileR
                                  , mkStr
                                  , parseAsEInt
                                  , parseAsF
+                                 , the
                                  ) where
 
 import           Control.Monad.State.Strict (State, evalState, gets, modify)
@@ -19,6 +23,7 @@ import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
+import           Data.Word                  (Word8)
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -26,6 +31,7 @@ import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
+import           Regex.Rure                 (RureMatch (..))
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI
@@ -56,15 +62,28 @@ readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
           f '9' = 9
           f c   = error (c:" is not a valid digit!")
 
+the :: BS.ByteString -> Word8
+the bs = case BS.uncons bs of
+    Nothing     -> error "Empty splitc char!"
+    Just (c,"") -> c
+    Just _      -> error "Splitc takes only one char!"
+
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
 
 -- fill in regex with compiled.
-compileR :: E (T K)
-         -> E (T K)
+compileR :: E a
+         -> E a
 compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
+
+compileIn :: Program a -> Program a
+compileIn (Program ds e) = Program (compileD <$> ds) (compileR e)
+
+compileD :: D a -> D a
+compileD d@SetFS{}       = d
+compileD (FunDecl n l e) = FunDecl n l (compileR e)
 
 desugar :: a
 desugar = error "Should have been desugared by this stage."
@@ -103,6 +122,30 @@ processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
     e' <- eNorm e
     modify (mapBinds (IM.insert i e'))
 
+asTup :: Maybe RureMatch -> E (T K)
+asTup Nothing                = OptionVal undefined Nothing
+asTup (Just (RureMatch s e)) = OptionVal undefined (Just $ Tup undefined (mkI . fromIntegral <$> [s, e]))
+
+applyUn :: E (T K)
+        -> E (T K)
+        -> EvalM (E (T K))
+applyUn unOp e =
+    case eLoc unOp of
+        TyArr _ _ res -> eNorm (EApp res unOp e)
+        _             -> error "Internal error?"
+
+applyOp :: E (T K)
+        -> E (T K)
+        -> E (T K)
+        -> EvalM (E (T K))
+applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- TODO: undefined??
+
+foldE :: E (T K)
+      -> E (T K)
+      -> V.Vector (E (T K))
+      -> EvalM (E (T K))
+foldE op = V.foldM' (applyOp op)
+
 -- TODO: equality on tuples, lists
 eNorm :: E (T K)
       -> EvalM (E (T K))
@@ -125,7 +168,7 @@ eNorm (Lam ty n e)    = Lam ty n <$> eNorm e
 eNorm e@BBuiltin{}    = pure e
 eNorm e@TBuiltin{}    = pure e
 eNorm (Tup tys es)    = Tup tys <$> traverse eNorm es
-eNorm e@Ix{}          = pure e
+eNorm e@(NBuiltin _ Ix) = pure e
 eNorm (EApp ty op@BBuiltin{} e) = EApp ty op <$> eNorm e
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
     eI <- eNorm e
@@ -182,8 +225,14 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Split) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr l (StrLit l <$> bss) -- FIXME type of Arr (l) is wrong
+        (StrLit l str, RegexCompiled re) -> let bss = splitBy re str in Arr undefined (StrLit l <$> bss)
         _                                -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin _ Splitc) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit l str, StrLit _ c) -> let bss = BS.split (the c) str in Arr undefined (StrLit l <$> V.fromList bss)
+        _                          -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty op@(UBuiltin _ Floor) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -338,6 +387,11 @@ eNorm (EApp ty op@(UBuiltin _ (At i)) e) = do
     pure $ case eI of
         (Arr _ es) -> es V.! (i-1)
         _          -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin _ (Select i)) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (Tup _ es) -> es !! (i-1)
+        _          -> EApp ty op eI
 eNorm (EApp ty op@(UBuiltin _ Not) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -377,18 +431,59 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
+    e0' <- eNorm e0
+    e1' <- eNorm e1
+    e2' <- eNorm e2
+    case e2' of
+        (OptionVal _ Nothing)  -> pure e0'
+        (OptionVal _ (Just e)) -> eNorm (EApp undefined e1' e)
+        _                      -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Match) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit _ str, RegexCompiled re) -> asTup (find' re str)
+        _                                -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
-    case (eI, eI') of
-        (StrLit _ fmt, _) | isReady eI' -> pure $ mkStr $ sprintf fmt eI'
-        _                               -> EApp ty0 (EApp ty1 op eI) <$> eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit _ fmt, _) | isReady eI' -> mkStr $ sprintf fmt eI'
+        _                               -> EApp ty0 (EApp ty1 op eI) eI'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) = do
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        Arr _ es -> Arr undefined <$> traverse (applyUn x') es -- TODO: undefined?
+        _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) x) y) = do
+    f' <- eNorm f
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        Arr _ es -> foldE f' x' es
+        _        -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
+-- eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Prior) x) y) = do
+    -- x' <- eNorm x
+    -- y' <- eNorm y
+    -- case y' of
+        -- Arr _ es -> Arr undefined <$> V.priorM (applyOp x') es
+        -- _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+-- eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyApp _ _ (TyApp _ (TyB _ TyVec) _))) ZipW) f) x) y) = do
+    -- f' <- eNorm f
+    -- x' <- eNorm x
+    -- y' <- eNorm y
+    -- case (x', y') of
+        -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
+        -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 -- FIXME: this will almost surely run into trouble; if the above pattern matches
 -- are not complete it will bottom!
 eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es
+eNorm (OptionVal ty e) = OptionVal ty <$> traverse eNorm e

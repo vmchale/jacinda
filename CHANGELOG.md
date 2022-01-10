@@ -1,4 +1,5 @@
 
+  * Fix space leak in folds
   * Fix line splitting (no longer discard blank lines)
   * Dfn fix
 

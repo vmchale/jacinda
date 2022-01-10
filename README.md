@@ -39,6 +39,27 @@ missing features, but the language will remain stable.
 It is worse than awk but it has its place and it avoids some of the painful
 imperative/scoping defects.
 
+## Missing Features & Bugs
+
+  * `sub`/`gsub` function equivalents
+  * No nested dfns
+  * Obscure renamer edge cases during evaluation
+  * Multiple folds are criminally inefficient
+  * Documentation for tuples, `Option` type
+  * `printf` formatting for floats
+  * No list literal syntax
+  * Typeclasses are not documented
+  * Type system is questionable
+  * Postfix `:f` and `:i` are handled poorly
+  * File imports/includes
+
+Intentionally missing features:
+
+  * No loops
+  * No conditionals
+
+The latter in particular I may add if necessary
+
 # Further Advantages
 
   * [Rust's regular expressions](https://docs.rs/regex/)

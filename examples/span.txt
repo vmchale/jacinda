@@ -1,0 +1,13 @@
+src/Jacinda/Backend/TreeWalk.hs:319:58: error:
+    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
+    • In the pattern:
+        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
+      In the pattern:
+        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
+      In the pattern:
+        TBuiltin (TyArr _ _
+                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
+                 Fold
+    |
+319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

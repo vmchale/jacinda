@@ -19,3 +19,8 @@ fn any(p, xs) :=
 
 fn all(p, xs) :=
   (&)|#t p"xs;
+
+fn id(x) := x;
+
+fn fromMaybe(a, x) :=
+  option a [x] x;
