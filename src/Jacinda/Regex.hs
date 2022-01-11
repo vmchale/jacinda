@@ -5,6 +5,7 @@ module Jacinda.Regex ( splitBy
                      , splitWhitespace
                      , defaultRurePtr
                      , isMatch'
+                     , find'
                      , compileDefault
                      , substr
                      ) where
@@ -15,7 +16,7 @@ import qualified Data.ByteString.Internal as BS
 import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureMatch (..), RurePtr, compile, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureMatch (..), RurePtr, compile, find, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- see: https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
@@ -35,6 +36,10 @@ splitWhitespace = splitBy defaultRurePtr
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
                                | otherwise = "error: invalid substring indices."
+
+{-# NOINLINE find' #-}
+find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
+find' re str = unsafeDupablePerformIO $ find re str 0
 
 {-# NOINLINE splitBy #-}
 splitBy :: RurePtr

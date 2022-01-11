@@ -35,6 +35,7 @@ rewriteE = cata a where
     a (EAppF l e0@(BBuiltin _ Max) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Min) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Split) (EApp lϵ e1 e2))                                               = EApp l (EApp lϵ e0 e1) e2
+    a (EAppF l e0@(BBuiltin _ Match) (EApp lϵ e1 e2))                                               = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Splitc) (EApp lϵ e1 e2))                                              = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Sprintf) (EApp lϵ e1 e2))                                             = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(TBuiltin _ Substr) (EApp lϵ (EApp lϵϵ e1 e2) e3))                                = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3

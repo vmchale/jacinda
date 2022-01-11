@@ -151,6 +151,7 @@ data BBin = Plus
           | Prior
           | Filter
           | Sprintf
+          | Match
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -177,6 +178,7 @@ instance Pretty BBin where
     pretty Split      = "split"
     pretty Splitc     = "splitc"
     pretty Sprintf    = "sprintf"
+    pretty Match      = "match"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -267,6 +269,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                 = "min" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')               = "split" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Splitc) e) e')              = "splitc" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Match) e) e')               = "match" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e')             = "sprintf" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                 = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                   = pretty e <+> pretty b <+> pretty e'

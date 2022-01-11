@@ -103,6 +103,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **option** Option eliminator
 :   b -> (a -> b) -> Option a -> b
 
+**match**
+:   Str -> Regex -> Option (Int . Int)
+
 ## SYNTAX
 
 **`n** nth field

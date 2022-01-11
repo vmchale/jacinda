@@ -124,6 +124,9 @@ unifyMatch um ((_, ty@TyTup{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert 
 unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyApp{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((l, TyApp _ ty ty', TyApp _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
 unifyMatch um ((l, TyArr _ ty ty', TyArr _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
+unifyMatch um ((l, ty@(TyTup _ tys), ty'@(TyTup _ tys')):tyss)
+    | length tys == length tys' = unifyPrep um (zip3 (repeat l) tys tys' ++ tyss)
+    | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
 unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
     | n == n' = unifyPrep um tys -- a type variable is always equal to itself, don't bother inserting this!
     | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
@@ -323,8 +326,8 @@ hkt = TyApp Star
 tyVec :: T K
 tyVec = TyB (KArr Star Star) TyVec
 
-tyOpt :: T K
-tyOpt = TyB (KArr Star Star) TyOption
+tyOpt :: T K -> T K
+tyOpt = hkt (TyB (KArr Star Star) TyOption)
 
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
 tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
@@ -359,6 +362,7 @@ tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
 tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
 tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
 tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
+tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (tyOpt $ TyTup Star [tyI, tyI]))) Match
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
@@ -443,7 +447,7 @@ tyE0 (TBuiltin _ Option) = do
     a <- dummyName "a"
     let b' = var b
         a' = var a
-        fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (hkt tyOpt a') b'))
+        fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (tyOpt a') b'))
     pure $ TBuiltin fTy Option
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e

@@ -6,7 +6,6 @@
                          , runAlex
                          , runAlexSt
                          , withAlexSt
-                         , lexJac
                          , freshName
                          , AlexPosn (..)
                          , Alex (..)
@@ -124,6 +123,7 @@ tokens :-
         option                   { mkBuiltin BuiltinOption }
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
+        match                    { mkBuiltin BuiltinMatch }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -320,6 +320,7 @@ data Builtin = BuiltinIParse
              | BuiltinSprintf
              | BuiltinFloor
              | BuiltinCeil
+             | BuiltinMatch
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
@@ -331,6 +332,7 @@ instance Pretty Builtin where
     pretty BuiltinSprintf = "sprintf"
     pretty BuiltinFloor   = "floor"
     pretty BuiltinCeil    = "ceil"
+    pretty BuiltinMatch   = "match"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
@@ -386,16 +388,6 @@ newIdent pos t pre@(max', names, uniqs) =
         Nothing -> let i = max' + 1
             in let newName = Name t (Unique i) pos
                 in ((i, M.insert t i names, IM.insert i newName uniqs), newName)
-
-loop :: Alex [Token AlexPosn]
-loop = do
-    tok' <- alexMonadScan
-    case tok' of
-        EOF{} -> pure []
-        _ -> (tok' :) <$> loop
-
-lexJac :: BSL.ByteString -> Either String [Token AlexPosn]
-lexJac = flip runAlex loop
 
 runAlexSt :: BSL.ByteString -> Alex a -> Either String (AlexUserState, a)
 runAlexSt inp = withAlexSt inp alexInitUserState

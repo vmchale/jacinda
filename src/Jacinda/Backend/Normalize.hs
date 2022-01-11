@@ -2,6 +2,7 @@
 
 -- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
+                                 , compileIn
                                  , eClosed
                                  , closedProgram
                                  , readDigits
@@ -30,6 +31,7 @@ import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
+import           Regex.Rure                 (RureMatch (..))
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI
@@ -70,11 +72,18 @@ readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
 
 -- fill in regex with compiled.
-compileR :: E (T K)
-         -> E (T K)
+compileR :: E a
+         -> E a
 compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
+
+compileIn :: Program a -> Program a
+compileIn (Program ds e) = Program (compileD <$> ds) (compileR e)
+
+compileD :: D a -> D a
+compileD d@SetFS{}       = d
+compileD (FunDecl n l e) = FunDecl n l (compileR e)
 
 desugar :: a
 desugar = error "Should have been desugared by this stage."
@@ -112,6 +121,10 @@ processDecl SetFS{} = pure ()
 processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
     e' <- eNorm e
     modify (mapBinds (IM.insert i e'))
+
+asTup :: Maybe RureMatch -> E (T K)
+asTup Nothing                = OptionVal undefined Nothing
+asTup (Just (RureMatch s e)) = OptionVal undefined (Just $ Tup undefined (mkI . fromIntegral <$> [s, e]))
 
 -- TODO: equality on tuples, lists
 eNorm :: E (T K)
@@ -406,12 +419,18 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
         (OptionVal _ Nothing)  -> pure e0'
         (OptionVal _ (Just e)) -> eNorm (EApp undefined e1' e)
         _                      -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Match) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit _ str, RegexCompiled re) -> asTup (find' re str)
+        _                                -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
-    case (eI, eI') of
-        (StrLit _ fmt, _) | isReady eI' -> pure $ mkStr $ sprintf fmt eI'
-        _                               -> EApp ty0 (EApp ty1 op eI) <$> eNorm e'
+    pure $ case (eI, eI') of
+        (StrLit _ fmt, _) | isReady eI' -> mkStr $ sprintf fmt eI'
+        _                               -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
