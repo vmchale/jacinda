@@ -36,7 +36,7 @@ exprEval src =
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTypeM m (tyProgram ast)
-            in closedProgram i typed
+            in closedProgram i (compileIn typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs

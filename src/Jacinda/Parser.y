@@ -51,6 +51,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     exclamation { TokSym $$ Exclamation }
     backslashdot { TokSym $$ BackslashDot }
     at { $$@(TokAccess _ _) }
+    select { $$@(TokSelect _ _) }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -100,10 +101,13 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fs { TokResVar $$ VarFs }
 
     split { TokBuiltin $$ BuiltinSplit }
+    splitc { TokBuiltin $$ BuiltinSplitc }
     substr { TokBuiltin $$ BuiltinSubstr }
     sprintf { TokBuiltin $$ BuiltinSprintf }
     floor { TokBuiltin $$ BuiltinFloor }
     ceil { TokBuiltin $$ BuiltinCeil }
+    option { TokBuiltin $$ BuiltinOption }
+    match { TokBuiltin $$ BuiltinMatch }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -211,13 +215,18 @@ E :: { E AlexPosn }
   | min { BBuiltin $1 Min }
   | max { BBuiltin $1 Max }
   | split { BBuiltin $1 Split }
+  | match { BBuiltin $1 Match }
+  | splitc { BBuiltin $1 Splitc }
   | substr { TBuiltin $1 Substr }
   | sprintf { BBuiltin $1 Sprintf }
+  | option { TBuiltin $1 Option }
   | floor { UBuiltin $1 Floor }
   | ceil { UBuiltin $1 Ceiling }
   | ix { Ix $1 }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
+  | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
+  | E select { EApp (eLoc $1) (UBuiltin (loc $2) (Select $ field $2)) $1 }
   | backslash name dot E { Lam $1 $2 $4 }
   | parens(E) { Paren (eLoc $1) $1 }
 

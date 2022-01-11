@@ -6,7 +6,6 @@
                          , runAlex
                          , runAlexSt
                          , withAlexSt
-                         , lexJac
                          , freshName
                          , AlexPosn (..)
                          , Alex (..)
@@ -54,6 +53,8 @@ tokens :-
         y                        { mkRes VarY }
     }
 
+    <0> "["                      { mkSym LSqBracket `andBegin` dfn } -- FIXME: this doesn't allow nested
+
     <0,dfn> {
 
         $white+                  ;
@@ -88,8 +89,7 @@ tokens :-
         ")"                      { mkSym RParen }
         "{%"                     { mkSym LBracePercent }
         "{|"                     { mkSym LBraceBar }
-        "["                      { mkSym LSqBracket `andBegin` dfn }
-        "]"                      { mkSym RSqBracket `andBegin` 0 } -- FIXME: this doesn't allow nested
+        "]"                      { mkSym RSqBracket `andBegin` 0 }
         "~"                      { mkSym Tilde }
         "!~"                     { mkSym NotMatchTok }
         ","                      { mkSym Comma }
@@ -104,7 +104,7 @@ tokens :-
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
-        val                      { mkKw KwVal }   
+        val                      { mkKw KwVal }
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
         fn                       { mkKw KwFn }
@@ -116,20 +116,24 @@ tokens :-
 
         substr                   { mkBuiltin BuiltinSubstr }
         split                    { mkBuiltin BuiltinSplit }
+        splitc                   { mkBuiltin BuiltinSplitc }
         sprintf                  { mkBuiltin BuiltinSprintf }
+        option                   { mkBuiltin BuiltinOption }
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
+        match                    { mkBuiltin BuiltinMatch }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
 
         "#t"                     { tok (\p _ -> alex $ TokBool p True) }
         "#f"                     { tok (\p _ -> alex $ TokBool p False) }
-    
+
         \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ ASCII.unpack $ BSL.tail s)) }
         `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
 
         "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ ASCII.unpack $ ASCII.tail s)) }
+        "->"$digit+              { tok (\p s -> alex $ TokSelect p (read $ ASCII.unpack $ ASCII.drop 2 s)) }
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
@@ -309,18 +313,24 @@ data Builtin = BuiltinIParse
              | BuiltinFParse
              | BuiltinSubstr
              | BuiltinSplit
+             | BuiltinSplitc
+             | BuiltinOption
              | BuiltinSprintf
              | BuiltinFloor
              | BuiltinCeil
+             | BuiltinMatch
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
     pretty BuiltinFParse  = ":f"
     pretty BuiltinSubstr  = "substr"
     pretty BuiltinSplit   = "split"
+    pretty BuiltinOption  = "option"
+    pretty BuiltinSplitc  = "splitc"
     pretty BuiltinSprintf = "sprintf"
     pretty BuiltinFloor   = "floor"
     pretty BuiltinCeil    = "ceil"
+    pretty BuiltinMatch   = "match"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
@@ -337,6 +347,7 @@ data Token a = EOF { loc :: a }
              | TokFieldLit { loc :: a, ix :: Int }
              | TokRR { loc :: a, rr :: BSL.ByteString }
              | TokAccess { loc :: a, ix :: Int }
+             | TokSelect { loc :: a, field :: Int }
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
@@ -355,11 +366,12 @@ instance Pretty (Token a) where
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
     pretty (TokFloat _ f)     = pretty f
+    pretty (TokSelect _ i)    = "->" <> pretty i
 
 freshName :: T.Text -> Alex (Name AlexPosn)
 freshName t = do
     pos <- get_pos
-    newIdentAlex pos t 
+    newIdentAlex pos t
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do
@@ -374,16 +386,6 @@ newIdent pos t pre@(max', names, uniqs) =
         Nothing -> let i = max' + 1
             in let newName = Name t (Unique i) pos
                 in ((i, M.insert t i names, IM.insert i newName uniqs), newName)
-
-loop :: Alex [Token AlexPosn]
-loop = do
-    tok' <- alexMonadScan
-    case tok' of
-        EOF{} -> pure []
-        _ -> (tok' :) <$> loop
-
-lexJac :: BSL.ByteString -> Either String [Token AlexPosn]
-lexJac = flip runAlex loop
 
 runAlexSt :: BSL.ByteString -> Alex a -> Either String (AlexUserState, a)
 runAlexSt inp = withAlexSt inp alexInitUserState

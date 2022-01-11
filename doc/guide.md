@@ -191,7 +191,7 @@ We can filter an extant stream with `#.`, viz.
 (>110) #. $0:i
 ```
 
-`#.` takes as its left argument a unary function return a boolean.
+`#.` takes as its left argument a unary function returning a boolean.
 
 ### Parting Shots
 

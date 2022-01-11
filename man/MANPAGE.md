@@ -89,6 +89,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **split** Split a string by regex
 :   Str -> Regex -> List Str
 
+**splitc** Split a string on a single character
+:   Str -> Str -> List Str
+
 **floor** Floor function
 :   Float -> Int
 
@@ -96,6 +99,12 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   Float -> Int
 
 **sprintf** Convert an expression to a string using the format string
+
+**option** Option eliminator
+:   b -> (a -> b) -> Option a -> b
+
+**match**
+:   Str -> Regex -> Option (Int . Int)
 
 ## SYNTAX
 
@@ -113,6 +122,11 @@ a boolean expression.
 **#t** Boolean literal
 
 **\_n** Negative number
+
+**.n**  Extract the nth value
+:   List a -> a
+
+**->n** Get the nth element of a tuple
 
 # BUGS
 

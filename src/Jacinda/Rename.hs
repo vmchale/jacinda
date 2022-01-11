@@ -101,6 +101,8 @@ hasY = cata a where
     a DfnF{}           = error "Not supported yet."
     a (LetF _ b e)     = e || snd b
     a (GuardedF _ p b) = b || p
+    a (ImplicitF _ e)  = e
+    a (ParenF _ e)     = e
     a _                = False
 
 replaceXY :: (a -> Name a) -- ^ @x@
@@ -147,4 +149,6 @@ renameE (Let l (n, eϵ) e') = do
     (n', modR) <- withName n
     Let l (n', eϵ') <$> withRenames modR (renameE e')
 renameE (Paren _ e) = renameE e
+renameE (Arr l es) = Arr l <$> traverse renameE es
+renameE (OptionVal l e) = OptionVal l <$> traverse renameE e
 renameE e = pure e -- literals &c.

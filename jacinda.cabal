@@ -1,8 +1,8 @@
 cabal-version:      2.0
 name:               jacinda
 version:            0.1.0.0
-license:            GPL-3
-license-file:       LICENSE
+license:            AGPL-3
+license-file:       COPYING
 maintainer:         vamchale@gmail.com
 author:             Vanessa McHale
 bug-reports:        https://github.com/vmchale/jacinda/issues
@@ -17,6 +17,8 @@ extra-source-files:
     README.md
     man/ja.1
     doc/guide.pdf
+    test/examples/*.jac
+    lib/*.jac
 
 source-repository head
     type:     git
@@ -81,7 +83,7 @@ executable ja
     other-modules:    Paths_jacinda
     autogen-modules:  Paths_jacinda
     default-language: Haskell2010
-    ghc-options:      -Wall -rtsopts -with-rtsopts=-A100k
+    ghc-options:      -Wall -rtsopts -with-rtsopts=-A200k
     build-depends:
         base,
         jacinda-lib,

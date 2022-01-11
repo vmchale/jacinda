@@ -45,7 +45,7 @@ data TB = TyInteger
         | TyStream
         | TyVec
         | TyBool
-        | TyOptional
+        | TyOption
         -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
@@ -71,14 +71,14 @@ data T a = TyNamed { tLoc :: a, tyName :: TyName a }
          -- TODO: type vars, products...
 
 instance Pretty TB where
-    pretty TyInteger  = "Integer"
-    pretty TyStream   = "Stream"
-    pretty TyBool     = "Bool"
-    pretty TyStr      = "Str"
-    pretty TyFloat    = "Float"
-    pretty TyDate     = "Date"
-    pretty TyVec      = "List"
-    pretty TyOptional = "Optional"
+    pretty TyInteger = "Integer"
+    pretty TyStream  = "Stream"
+    pretty TyBool    = "Bool"
+    pretty TyStr     = "Str"
+    pretty TyFloat   = "Float"
+    pretty TyDate    = "Date"
+    pretty TyVec     = "List"
+    pretty TyOption  = "Optional"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
@@ -95,6 +95,7 @@ data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
          | At Int
+         | Select Int
          | IParse
          | FParse
          | Floor
@@ -102,20 +103,22 @@ data BUn = Tally -- length of string field
          deriving (Eq)
 
 instance Pretty BUn where
-    pretty Tally   = "#"
-    pretty Const   = "[:"
-    pretty Not     = "!"
-    pretty (At i)  = "." <> pretty i
-    pretty IParse  = ":i"
-    pretty FParse  = ":f"
-    pretty Floor   = "floor"
-    pretty Ceiling = "ceil"
+    pretty Tally      = "#"
+    pretty Const      = "[:"
+    pretty Not        = "!"
+    pretty (At i)     = "." <> pretty i
+    pretty (Select i) = "->" <> pretty i
+    pretty IParse     = ":i"
+    pretty FParse     = ":f"
+    pretty Floor      = "floor"
+    pretty Ceiling    = "ceil"
 
 -- ternary
 data BTer = ZipW
           | Fold
           | Scan
           | Substr
+          | Option
           deriving (Eq)
 
 instance Pretty BTer where
@@ -123,6 +126,7 @@ instance Pretty BTer where
     pretty Fold   = "|"
     pretty Scan   = "^"
     pretty Substr = "substr"
+    pretty Option = "option"
 
 -- builtin
 data BBin = Plus
@@ -143,9 +147,11 @@ data BBin = Plus
           | Min
           | Max
           | Split
+          | Splitc
           | Prior
           | Filter
           | Sprintf
+          | Match
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -170,7 +176,9 @@ instance Pretty BBin where
     pretty Prior      = "\\."
     pretty Filter     = "#."
     pretty Split      = "split"
+    pretty Splitc     = "splitc"
     pretty Sprintf    = "sprintf"
+    pretty Match      = "match"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -182,7 +190,7 @@ instance Pretty DfnVar where
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
          | FParseCol { eLoc :: a, col :: Int }
-         | Field { eLoc :: a, field :: Int }
+         | Field { eLoc :: a, eField :: Int }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
@@ -208,6 +216,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
          | Paren { eLoc :: a, eExpr :: E a }
+         | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -243,6 +252,7 @@ data EF a x = ColumnF a Int
             | RegexCompiledF RurePtr
             | ArrF a (V.Vector x)
             | ParenF a x
+            | OptionValF a (Maybe x)
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -258,6 +268,8 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                 = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                 = "min" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')               = "split" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Splitc) e) e')              = "splitc" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Match) e) e')               = "match" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e')             = "sprintf" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                 = pretty e <> "\"" <> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                   = pretty e <+> pretty b <+> pretty e'
@@ -266,7 +278,9 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')   = pretty e <> "^" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'')  = "," <> pretty op <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e) e') e'') = "substr" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (UBuiltin _ (At i)) e')                         = pretty e' <> "." <> pretty i
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e) e') e'') = "substr" <+> pretty e <+> pretty e' <+> pretty e''
+    pretty (EApp _ (UBuiltin _ (At i)) e)                          = pretty e <> "." <> pretty i
+    pretty (EApp _ (UBuiltin _ (Select i)) e)                      = pretty e <> "->" <> pretty i
     pretty (EApp _ (UBuiltin _ IParse) e')                         = pretty e' <> ":i"
     pretty (EApp _ (UBuiltin _ FParse) e')                         = pretty e' <> ":f"
     pretty (EApp _ e@UBuiltin{} e')                                = pretty e <> pretty e'
@@ -291,6 +305,8 @@ instance Pretty (E a) where
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                             = parens (pretty e)
     pretty (Arr _ es)                                              = tupledByFunky "," (V.toList $ pretty <$> es)
+    pretty (OptionVal  _ (Just e))                                 = "Some" <+> pretty e
+    pretty (OptionVal _ Nothing)                                   = "None"
 
 instance Show (E a) where
     show = show . pretty
@@ -335,18 +351,23 @@ data C = IsNum
        | Functor -- ^ For map (@"@)
        | Foldable
        | IsPrintf
+       | HasField Int (T K)
        -- TODO: witherable
        deriving (Eq, Ord)
 
 instance Pretty C where
-    pretty IsNum       = "Num"
-    pretty IsEq        = "Eq"
-    pretty IsOrd       = "Ord"
-    pretty IsParseable = "Parseable"
-    pretty IsSemigroup = "Semigroup"
-    pretty Functor     = "Functor"
-    pretty Foldable    = "Foldable"
-    pretty IsPrintf    = "Printf"
+    pretty IsNum           = "Num"
+    pretty IsEq            = "Eq"
+    pretty IsOrd           = "Ord"
+    pretty IsParseable     = "Parseable"
+    pretty IsSemigroup     = "Semigroup"
+    pretty Functor         = "Functor"
+    pretty Foldable        = "Foldable"
+    pretty IsPrintf        = "Printf"
+    pretty (HasField i ty) = "HasField" <+> pretty i <+> "~" <+> pretty ty
+
+instance Show C where
+    show = show . pretty
 
 -- decl
 data D a = SetFS BS.ByteString
