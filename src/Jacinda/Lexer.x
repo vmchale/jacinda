@@ -53,6 +53,8 @@ tokens :-
         y                        { mkRes VarY }
     }
 
+    <0> "["                      { mkSym LSqBracket `andBegin` dfn } -- FIXME: this doesn't allow nested
+
     <0,dfn> {
 
         $white+                  ;
@@ -89,8 +91,7 @@ tokens :-
         ")"                      { mkSym RParen }
         "{%"                     { mkSym LBracePercent }
         "{|"                     { mkSym LBraceBar }
-        "["                      { mkSym LSqBracket `andBegin` dfn }
-        "]"                      { mkSym RSqBracket `andBegin` 0 } -- FIXME: this doesn't allow nested
+        "]"                      { mkSym RSqBracket `andBegin` 0 }
         "~"                      { mkSym Tilde }
         "!~"                     { mkSym NotMatchTok }
         ","                      { mkSym Comma }
@@ -105,7 +106,7 @@ tokens :-
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
-        val                      { mkKw KwVal }   
+        val                      { mkKw KwVal }
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
         fn                       { mkKw KwFn }
@@ -130,7 +131,7 @@ tokens :-
 
         "#t"                     { tok (\p _ -> alex $ TokBool p True) }
         "#f"                     { tok (\p _ -> alex $ TokBool p False) }
-    
+
         \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ ASCII.unpack $ BSL.tail s)) }
         `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
 
@@ -373,7 +374,7 @@ instance Pretty (Token a) where
 freshName :: T.Text -> Alex (Name AlexPosn)
 freshName t = do
     pos <- get_pos
-    newIdentAlex pos t 
+    newIdentAlex pos t
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Name AlexPosn)
 newIdentAlex pos t = do
