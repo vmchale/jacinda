@@ -13,6 +13,7 @@ module Jacinda.Backend.Normalize ( compileR
                                  , parseAsEInt
                                  , parseAsF
                                  , the
+                                 , asTup
                                  ) where
 
 import           Control.Monad.State.Strict (State, evalState, gets, modify)

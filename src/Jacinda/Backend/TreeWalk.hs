@@ -98,6 +98,10 @@ eEval (ix, line, ctx) = go where
             (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
             _                                  -> noRes
+    go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
+        let eI = asRegex (go e)
+            eI' = asStr (go e')
+        in asTup (find' eI eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
