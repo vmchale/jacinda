@@ -19,3 +19,5 @@ fn any(p, xs) :=
 
 fn all(p, xs) :=
   (&)|#t p"xs;
+
+fn id(x) := x;
