@@ -322,7 +322,6 @@ data Builtin = BuiltinIParse
              | BuiltinFloor
              | BuiltinCeil
              | BuiltinMatch
-             | BuiltinFail
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
@@ -335,7 +334,6 @@ instance Pretty Builtin where
     pretty BuiltinFloor   = "floor"
     pretty BuiltinCeil    = "ceil"
     pretty BuiltinMatch   = "match"
-    pretty BuiltinFail    = "fail"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
