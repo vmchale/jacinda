@@ -23,6 +23,22 @@ fn printSpan(str) :=
 printSpan"{% / *\^+/}{`2}
 ```
 
+# Present PATH
+
+```awk
+# e.g. awk -f path.awk <(echo $PATH)
+BEGIN { FS = ":" ;OFS = "\n" }
+{$1=$1 ; print $0}
+```
+
+```
+{. echo $PATH | ja run examples/path.jac
+fn path(x) :=
+  ([x+'\n'+y])|'' (splitc x ':');
+
+path"$0
+```
+
 # Count Lines
 
 ```awk
