@@ -48,19 +48,22 @@ https://docs.rs/regex/
 (a -> b -> c) -> Stream a -> Stream b -> Stream c
 .TP
 \f[B]|\f[R] Ternary operator: fold
-(b -> a -> b) -> b -> Stream a -> b
+Foldable f :=> (b -> a -> b) -> b -> f a -> b
 .TP
 \f[B]\[ha]\f[R] Ternary operator: scan
 (b -> a -> b) -> b -> Stream a -> Stream b
 .TP
 \f[B]\[lq]\f[R] Binary operator: map
-a -> b -> Stream a -> Stream b
+Functor f :=> a -> b -> f a -> f b
 .TP
 \f[B][:\f[R] Unary operator: const
 a -> b -> a
 .TP
 \f[B]#.\f[R] Binary operator: filter
 (a -> Bool) -> Stream a -> Stream a
+.TP
+\f[B].\f[R] Binary operator: prior
+(a -> a -> a) -> Stream a -> Stream a
 .PP
 \f[B]max\f[R] Maximum of two values
 .PP
@@ -84,6 +87,9 @@ Str -> Int -> Int -> Str
 \f[B]split\f[R] Split a string by regex
 Str -> Regex -> List Str
 .TP
+\f[B]splitc\f[R] Split a string on a single character
+Str -> Str -> List Str
+.TP
 \f[B]floor\f[R] Floor function
 Float -> Int
 .TP
@@ -92,6 +98,13 @@ Float -> Int
 .PP
 \f[B]sprintf\f[R] Convert an expression to a string using the format
 string
+.TP
+\f[B]option\f[R] Option eliminator
+b -> (a -> b) -> Option a -> b
+.TP
+\f[B]match\f[R]
+Str -> Regex -> Option (Int .
+Int)
 .SS SYNTAX
 .PP
 \f[B]\[ga]n\f[R] nth field
@@ -109,10 +122,18 @@ satisfying a boolean expression.
 \f[B]#t\f[R] Boolean literal
 .PP
 \f[B]_n\f[R] Negative number
+.TP
+\f[B].n\f[R] Extract the nth value
+List a -> a
+.PP
+\f[B]->n\f[R] Get the nth element of a tuple
 .SH BUGS
 .PP
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
+.SS Limitations
+.PP
+Note that \f[C]Option\f[R] is not implemented as a functor.
 .SH COPYRIGHT
 .PP
 Copyright 2021-2022.
