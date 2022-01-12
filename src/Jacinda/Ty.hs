@@ -341,7 +341,7 @@ tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
 tyE0 (Field _ i)             = pure $ Field tyStr i
 tyE0 AllField{}              = pure $ AllField tyStr
 tyE0 AllColumn{}             = pure $ AllColumn (tyStream tyStr)
-tyE0 Ix{}                    = pure $ Ix tyI
+tyE0 (NBuiltin _ Ix)         = pure $ NBuiltin tyI Ix
 tyE0 (BBuiltin l Plus)       = BBuiltin <$> tySemiOp l <*> pure Plus
 tyE0 (BBuiltin l Minus)      = BBuiltin <$> tyNumOp l <*> pure Minus
 tyE0 (BBuiltin l Times)      = BBuiltin <$> tyNumOp l <*> pure Times
@@ -492,3 +492,10 @@ tyE0 (ResVar _ X) = desugar
 tyE0 (ResVar _ Y) = desugar
 tyE0 RegexCompiled{} = error "Regex should not be compiled at this stage."
 tyE0 Paren{} = desugar
+tyE0 (OptionVal _ (Just e)) = do
+    e' <- tyE0 e
+    pure $ OptionVal (tyOpt $ eLoc e') (Just e')
+tyE0 (OptionVal _ Nothing) = do
+    a <- dummyName "a"
+    let a' = var a
+    pure $ OptionVal (tyOpt a') Nothing

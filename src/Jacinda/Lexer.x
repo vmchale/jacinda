@@ -19,6 +19,7 @@
 
 import Control.Arrow ((&&&))
 import Data.Bifunctor (first)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Lazy.Char8 as ASCII
 import Data.Functor (($>))
@@ -26,7 +27,7 @@ import qualified Data.IntMap as IM
 import qualified Data.Map as M
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
-import Data.Text.Encoding (decodeUtf8)
+import Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import Intern.Name
 import Intern.Unique
 import Prettyprinter (Pretty (pretty), (<+>), colon, squotes)
@@ -40,6 +41,12 @@ $digit = [0-9]
 $latin = [a-zA-Z]
 
 @follow_char = [$latin $digit \_]
+
+$str_special = [\\\']
+
+@escape_str = \\ [$str_special n]
+
+@string = \' ([^ $str_special] | @escape_str)* \'
 
 @name = [a-z] @follow_char*
 @tyname = [A-Z] @follow_char*
@@ -142,7 +149,7 @@ tokens :-
 
         -- TODO: allow chars to be escaped
         -- TODO: consider dropping this syntax for strings?
-        '[^']*'                  { tok (\p s -> alex $ TokStr p (BSL.init $ BSL.tail s)) }
+        @string                  { tok (\p s -> alex $ TokStr p (escReplace' $ BSL.init $ BSL.tail s)) }
 
         "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (BSL.init $ BSL.tail s)) } -- TODO: allow slashes that are escaped
 
@@ -170,6 +177,16 @@ mkKw = constructor TokKeyword
 mkSym = constructor TokSym
 
 mkBuiltin = constructor TokBuiltin
+
+escReplace' :: BSL.ByteString -> BS.ByteString
+escReplace' = encodeUtf8 . escReplace . decodeUtf8 . BSL.toStrict
+
+-- this is inefficient but w/e
+escReplace :: T.Text -> T.Text
+escReplace =
+      T.replace "\\\"" "\""
+    . T.replace "\\n" "\n"
+    . T.replace "\\$" "$"
 
 mkText :: BSL.ByteString -> T.Text
 mkText = decodeUtf8 . BSL.toStrict
@@ -342,7 +359,7 @@ data Token a = EOF { loc :: a }
              | TokInt { loc :: a, int :: Integer }
              | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
-             | TokStr { loc :: a, strTok :: BSL.ByteString }
+             | TokStr { loc :: a, strTok :: BS.ByteString }
              | TokStreamLit { loc :: a, ix :: Int }
              | TokFieldLit { loc :: a, ix :: Int }
              | TokRR { loc :: a, rr :: BSL.ByteString }
@@ -357,7 +374,7 @@ instance Pretty (Token a) where
     pretty (TokBuiltin _ b)   = "builtin" <+> squotes (pretty b)
     pretty (TokKeyword _ kw)  = "keyword" <+> squotes (pretty kw)
     pretty (TokInt _ i)       = pretty i
-    pretty (TokStr _ str)     = squotes (pretty $ mkText str)
+    pretty (TokStr _ str)     = squotes (pretty $ decodeUtf8 str)
     pretty (TokStreamLit _ i) = "$" <> pretty i
     pretty (TokFieldLit _ i)  = "`" <> pretty i
     pretty (TokRR _ rr')      = "/" <> pretty (mkText rr') <> "/"

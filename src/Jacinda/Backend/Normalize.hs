@@ -127,6 +127,26 @@ asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
 asTup (Just (RureMatch s e)) = OptionVal undefined (Just $ Tup undefined (mkI . fromIntegral <$> [s, e]))
 
+applyUn :: E (T K)
+        -> E (T K)
+        -> EvalM (E (T K))
+applyUn unOp e =
+    case eLoc unOp of
+        TyArr _ _ res -> eNorm (EApp res unOp e)
+        _             -> error "Internal error?"
+
+applyOp :: E (T K)
+        -> E (T K)
+        -> E (T K)
+        -> EvalM (E (T K))
+applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- TODO: undefined??
+
+foldE :: E (T K)
+      -> E (T K)
+      -> V.Vector (E (T K))
+      -> EvalM (E (T K))
+foldE op = V.foldM' (applyOp op)
+
 -- TODO: equality on tuples, lists
 eNorm :: E (T K)
       -> EvalM (E (T K))
@@ -149,7 +169,7 @@ eNorm (Lam ty n e)    = Lam ty n <$> eNorm e
 eNorm e@BBuiltin{}    = pure e
 eNorm e@TBuiltin{}    = pure e
 eNorm (Tup tys es)    = Tup tys <$> traverse eNorm es
-eNorm e@Ix{}          = pure e
+eNorm e@(NBuiltin _ Ix) = pure e
 eNorm (EApp ty op@BBuiltin{} e) = EApp ty op <$> eNorm e
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
     eI <- eNorm e
@@ -432,12 +452,39 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Sprintf) e) e') = do
     pure $ case (eI, eI') of
         (StrLit _ fmt, _) | isReady eI' -> mkStr $ sprintf fmt eI'
         _                               -> EApp ty0 (EApp ty1 op eI) eI'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) = do
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        Arr _ es -> Arr undefined <$> traverse (applyUn x') es -- TODO: undefined?
+        _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) x) y) = do
+    f' <- eNorm f
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        Arr _ es -> foldE f' x' es
+        _        -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
+-- eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Prior) x) y) = do
+    -- x' <- eNorm x
+    -- y' <- eNorm y
+    -- case y' of
+        -- Arr _ es -> Arr undefined <$> V.priorM (applyOp x') es
+        -- _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+-- eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyApp _ _ (TyApp _ (TyB _ TyVec) _))) ZipW) f) x) y) = do
+    -- f' <- eNorm f
+    -- x' <- eNorm x
+    -- y' <- eNorm y
+    -- case (x', y') of
+        -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
+        -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 -- FIXME: this will almost surely run into trouble; if the above pattern matches
 -- are not complete it will bottom!
 eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es
+eNorm (OptionVal ty e) = OptionVal ty <$> traverse eNorm e
