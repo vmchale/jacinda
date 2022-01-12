@@ -13,6 +13,10 @@ If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskel
 cabal install jacinda
 ```
 
+## Vim Plugin
+
+There is a [vim plugin](https://github.com/vmchale/jacinda-vim).
+
 # SHOCK & AWE
 
 ```
