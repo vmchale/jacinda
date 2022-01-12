@@ -16,6 +16,7 @@ module Jacinda.AST ( E (..)
                    , D (..)
                    , Program (..)
                    , C (..)
+                   , N (..)
                    , mapExpr
                    , getFS
                    -- * Base functors
@@ -186,6 +187,10 @@ instance Pretty DfnVar where
     pretty X = "x"
     pretty Y = "y"
 
+-- 0-ary
+data N = Ix
+       deriving (Eq)
+
 -- expression
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
@@ -210,7 +215,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | BBuiltin { eLoc :: a, eBin :: BBin }
          | TBuiltin { eLoc :: a, eTer :: BTer }
          | UBuiltin { eLoc :: a, eUn :: BUn }
-         | Ix { eLoc :: a } -- only 0-ary builtin atm
+         | NBuiltin { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
@@ -246,7 +251,7 @@ data EF a x = ColumnF a Int
             | BBuiltinF a BBin
             | TBuiltinF a BTer
             | UBuiltinF a BUn
-            | IxF a
+            | NBuiltinF a N
             | TupF a [x]
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
@@ -256,6 +261,9 @@ data EF a x = ColumnF a Int
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
+
+instance Pretty N where
+    pretty Ix   = "ix"
 
 instance Pretty (E a) where
     pretty (Column _ i)                                            = "$" <> pretty i
@@ -278,7 +286,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')   = pretty e <> "^" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'')  = "," <> pretty op <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e) e') e'') = "substr" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e) e') e'') = "substr" <+> pretty e <+> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e) e') e'') = "option" <+> pretty e <+> pretty e' <+> pretty e''
     pretty (EApp _ (UBuiltin _ (At i)) e)                          = pretty e <> "." <> pretty i
     pretty (EApp _ (UBuiltin _ (Select i)) e)                      = pretty e <> "->" <> pretty i
     pretty (EApp _ (UBuiltin _ IParse) e')                         = pretty e' <> ":i"
@@ -300,7 +308,7 @@ instance Pretty (E a) where
     pretty (Dfn _ e)                                               = brackets (pretty e)
     pretty (Guarded _ p e)                                         = braces (pretty p) <> braces (pretty e)
     pretty (Implicit _ e)                                          = braces ("|" <+> pretty e)
-    pretty Ix{}                                                    = "ix"
+    pretty (NBuiltin _ n)                                          = pretty n
     pretty RegexCompiled{}                                         = error "Nonsense."
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                             = parens (pretty e)
@@ -333,10 +341,10 @@ instance Eq (E a) where
     (==) (BBuiltin _ b) (BBuiltin _ b')         = b == b'
     (==) (TBuiltin _ b) (TBuiltin _ b')         = b == b'
     (==) (UBuiltin _ unOp) (UBuiltin _ unOp')   = unOp == unOp'
+    (==) (NBuiltin _ x) (NBuiltin _ y)          = x == y
     (==) (Tup _ es) (Tup _ es')                 = es == es'
     (==) (ResVar _ x) (ResVar _ y)              = x == y
     (==) (Dfn _ f) (Dfn _ g)                    = f == g -- we're testing for lexical equivalence
-    (==) Ix{} Ix{}                              = True
     (==) RegexCompiled{} _                      = error "Cannot compare compiled regex!"
     (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
     (==) (Paren _ e) e'                         = e == e'

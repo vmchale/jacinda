@@ -2,6 +2,7 @@ module Main (main) where
 
 import qualified Data.ByteString      as BS
 import qualified Data.ByteString.Lazy as BSL
+import           Data.Semigroup       ((<>))
 import qualified Data.Version         as V
 import           Jacinda.File
 import           Options.Applicative

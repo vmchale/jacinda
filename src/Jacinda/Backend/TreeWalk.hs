@@ -58,6 +58,10 @@ asRegex :: E a -> RurePtr
 asRegex (RegexCompiled re) = re
 asRegex _                  = noRes
 
+asArr :: E a -> V.Vector (E a)
+asArr (Arr _ es) = es
+asArr _          = noRes
+
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
@@ -75,7 +79,7 @@ eEval (ix, line, ctx) = go where
     go op@UBuiltin{} = op
     go op@TBuiltin{} = op
     go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
-    go Ix{} = mkI (fromIntegral ix)
+    go (NBuiltin _ Ix) = mkI (fromIntegral ix)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx ! (i-1)) -- cause vector indexing starts at 0
     go (EApp _ (UBuiltin _ IParse) e) =
@@ -240,6 +244,22 @@ eEval (ix, line, ctx) = go where
         let eI = asStr (go e)
             eI' = go e'
         in mkStr (sprintf eI eI')
+    go (OptionVal ty e) =
+        OptionVal ty (go <$> e)
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) =
+        let x' = go x
+            y' = asArr (go y)
+        in Arr undefined (applyUn' x' <$> y')
+        where applyUn' :: E (T K) -> E (T K) -> E (T K)
+              applyUn' e e' = go (EApp undefined e e')
+    go (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) seed) xs) =
+        let f' = go f
+            seed' = go seed
+            xs' = asArr (go xs)
+        in foldE f' seed' xs'
+        where foldE op = V.foldl' (applyOp' op)
+              applyOp' op e e' = go (EApp undefined (EApp undefined op e) e')
+    go (Arr ty es) = Arr ty (go <$> es)
 
 applyOp :: Int
         -> E (T K) -- ^ Operator
@@ -288,7 +308,7 @@ ir re _ (Guarded _ pe e) =
 ir re i (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR op in fmap (applyUn i op') . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR op
-        in filter (\e -> asBool (eClosed i $ applyUn i op' e)) . ir re i stream
+        in filter (asBool . applyUn i op') . ir re i stream
 ir re i (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp i op) . ir re i stream
 ir re i (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
@@ -318,7 +338,7 @@ runJac re i e = fileProcessor re i (closedProgram i e)
 
 -- evaluate something that has a fold nested in it
 eWith :: RurePtr -> Int -> E (T K) -> [BS.ByteString] -> E (T K)
-eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) op) seed) stream) = foldWithCtx re i op seed stream -- FIXME: only fold on streams!!
+eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re i op seed stream
 eWith re i (EApp ty e0 e1)                                             = \bs -> eClosed i (EApp ty (eWith re i e0 bs) (eWith re i e1 bs))
 eWith _ _ e@BBuiltin{}                                                 = const e
 eWith _ _ e@UBuiltin{}                                                 = const e
@@ -339,7 +359,7 @@ fileProcessor :: RurePtr
               -> Either StreamError ([BS.ByteString] -> IO ())
 fileProcessor _ _ AllField{}    = Left NakedField
 fileProcessor _ _ Field{}       = Left NakedField
-fileProcessor _ _ Ix{}          = Left NakedField
+fileProcessor _ _ (NBuiltin _ Ix) = Left NakedField
 fileProcessor _ _ AllColumn{} = Right $ \inp ->
     printStream $ fmap mkStr inp
 fileProcessor re _ (Column _ i) = Right $ \inp -> do
@@ -355,7 +375,7 @@ fileProcessor re i e@Implicit{} = Right $ \inp -> do
     printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp
-fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Map) _) _) = Right $ \inp -> do
+fileProcessor re i e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp
 fileProcessor re i e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
     printStream $ ir re i e inp

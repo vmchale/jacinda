@@ -177,7 +177,7 @@ E :: { E AlexPosn }
   | intLit { IntLit (loc $1) (int $1) }
   | floatLit { FloatLit (loc $1) (float $1) }
   | boolLit { BoolLit (loc $1) (boolTok $1) }
-  | strLit { StrLit (loc $1) (BSL.toStrict $ strTok $1) }
+  | strLit { StrLit (loc $1) (strTok $1) }
   | column { Column (loc $1) (ix $1) }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
@@ -222,7 +222,7 @@ E :: { E AlexPosn }
   | option { TBuiltin $1 Option }
   | floor { UBuiltin $1 Floor }
   | ceil { UBuiltin $1 Ceiling }
-  | ix { Ix $1 }
+  | ix { NBuiltin $1 Ix }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }

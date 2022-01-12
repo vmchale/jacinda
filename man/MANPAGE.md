@@ -53,19 +53,22 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   (a -> b -> c) -> Stream a -> Stream b -> Stream c
 
 **|** Ternary operator: fold
-:   (b -> a -> b) -> b -> Stream a -> b
+:   Foldable f :=> (b -> a -> b) -> b -> f a -> b
 
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
 **"** Binary operator: map
-:   a -> b -> Stream a -> Stream b
+:   Functor f :=> a -> b -> f a -> f b
 
 **[:** Unary operator: const 
 :   a -> b -> a
 
 **#.** Binary operator: filter
 :   (a -> Bool) -> Stream a -> Stream a
+
+**\.** Binary operator: prior
+:   (a -> a -> a) -> Stream a -> Stream a
 
 **max** Maximum of two values
 
@@ -132,6 +135,10 @@ a boolean expression.
 
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
+
+## Limitations
+
+Note that `Option` is not implemented as a functor.
 
 # COPYRIGHT
 
