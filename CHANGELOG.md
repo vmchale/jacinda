@@ -1,3 +1,4 @@
+# 0.2.0.0
 
   * Complete implementation of folds/maps for lists
   * Fix space leak in folds
