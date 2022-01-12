@@ -177,7 +177,7 @@ E :: { E AlexPosn }
   | intLit { IntLit (loc $1) (int $1) }
   | floatLit { FloatLit (loc $1) (float $1) }
   | boolLit { BoolLit (loc $1) (boolTok $1) }
-  | strLit { StrLit (loc $1) (BSL.toStrict $ strTok $1) }
+  | strLit { StrLit (loc $1) (strTok $1) }
   | column { Column (loc $1) (ix $1) }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }

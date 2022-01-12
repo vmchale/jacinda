@@ -1,10 +1,11 @@
 - inspiration: AWK, Haskell, J/APL, k, Dhall (expression imports), C (include), ATS... (some architectural decisions mime GHC)
 - [ ] regex errors should include position of regex
-- [ ] separate syntax for filtering a stream, e.g. {/pat/}[$0] or w/e
-  - [ ] still have {/pat/}{field}
+- [x] separate syntax for filtering a stream, e.g. {/pat/}[$0] or w/e
+  - [x] still have {/pat/}{field}
 - [ ] REPL would be good.
 - [ ] xattr -d com.apple.quarantine
 # Documentation
+- [ ] Document escaped characters
 - [ ] tuples
 # Unicode
 - [x] defeq ≔
