@@ -8,6 +8,7 @@
 - [ ] Document escaped characters
 - [ ] tuples
 # Unicode
+- [ ] ∅ for monoidal identity
 - [x] defeq ≔
   - [ ] ≜
 - [x] arrows (types)
