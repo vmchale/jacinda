@@ -3,6 +3,10 @@ complementing [AWK](http://www.awklang.org).
 
 # Installation
 
+## Releases
+
+There are binaries for some platforms on the [releases page](https://github.com/vmchale/jacinda/releases/).
+
 ## From Source
 
 First, install [Rust's regex library](https://github.com/rust-lang/regex/tree/master/regex-capi#c-api-for-rusts-regex-engine). You'll need to put `librure.so` or `librure.dylib` etc. in the appropriate place.
