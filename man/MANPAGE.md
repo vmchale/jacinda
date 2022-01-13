@@ -131,6 +131,8 @@ a boolean expression.
 
 **->n** Get the nth element of a tuple
 
+**{.** Line comment
+
 # BUGS
 
 Please report any bugs you may come across to

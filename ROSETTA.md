@@ -65,7 +65,7 @@ path"$0
 
 ## Are There Lines >72 bytes?
 
-```
+```awk
 { if (length($0) > 72) { res = 1; }} END { print res; }
 ```
 
@@ -113,7 +113,7 @@ NR>1
 
 See [here](https://adamdrake.com/command-line-tools-can-be-235x-faster-than-your-hadoop-cluster.html) for an explanation.
 
-```
+```awk
 { split($0, a, "-"); res = substr(a[1], length(a[1]), 1); if (res == 1) white++; if (res == 0) black++; if (res == 2) draw++; } END { print white+black+draw, white, black, draw }
 ```
 
