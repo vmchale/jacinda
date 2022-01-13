@@ -20,7 +20,7 @@ import           Data.Semigroup             ((<>))
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
-import           Debug.Trace
+import qualified Data.Vector                as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -150,6 +150,7 @@ substInt tys k =
 
 substConstraints :: IM.IntMap (T a) -> T a -> T a
 substConstraints _ ty@TyB{}                             = ty
+substConstraints _ ty@TyNamed{}                         = ty
 substConstraints tys ty@(TyVar _ (Name _ (Unique k) _)) = fromMaybe ty (substInt tys k)
 substConstraints tys (TyTup l tysϵ)                     = TyTup l (substConstraints tys <$> tysϵ)
 substConstraints tys (TyApp l ty ty')                   =
@@ -326,6 +327,9 @@ hkt = TyApp Star
 tyVec :: T K
 tyVec = TyB (KArr Star Star) TyVec
 
+mkVec :: T K -> T K
+mkVec = hkt tyVec
+
 tyOpt :: T K -> T K
 tyOpt = hkt (TyB (KArr Star Star) TyOption)
 
@@ -353,8 +357,8 @@ tyE0 (BBuiltin l Eq)         = BBuiltin <$> tyEq l <*> pure Eq
 tyE0 (BBuiltin l Neq)        = BBuiltin <$> tyEq l <*> pure Neq
 tyE0 (BBuiltin l Min)        = BBuiltin <$> tyM l <*> pure Min
 tyE0 (BBuiltin l Max)        = BBuiltin <$> tyM l <*> pure Max
-tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Split
-tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (hkt tyVec tyStr))) Splitc
+tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Split
+tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Splitc
 tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
 tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
 tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally
@@ -499,3 +503,7 @@ tyE0 (OptionVal _ Nothing) = do
     a <- dummyName "a"
     let a' = var a
     pure $ OptionVal (tyOpt a') Nothing
+tyE0 (Arr _ v) | V.null v = do
+    a <- dummyName "a"
+    let a' = var a
+    pure $ Arr (mkVec a') V.empty

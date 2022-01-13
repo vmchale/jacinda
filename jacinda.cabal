@@ -23,6 +23,11 @@ extra-source-files:
 source-repository head
     type:     git
     location: https://github.com/vmchale/jacinda
+flag cross
+    description: Enable to ease cross-compiling
+    default:     False
+    manual:      True
+
 
 library jacinda-lib
     exposed-modules:
@@ -34,7 +39,8 @@ library jacinda-lib
         Jacinda.Regex
         Jacinda.File
 
-    build-tool-depends: alex:alex, happy:happy
+    if !flag(cross)
+      build-tool-depends: alex:alex, happy:happy
     hs-source-dirs:     src
     other-modules:
         Jacinda.Lexer

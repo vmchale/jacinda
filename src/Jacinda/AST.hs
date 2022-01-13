@@ -87,6 +87,7 @@ instance Pretty (T a) where
     pretty (TyVar _ n)      = pretty n
     pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup _ tys)    = jacTup tys
+    pretty (TyNamed _ tn)   = pretty tn
 
 instance Show (T a) where
     show = show . pretty
