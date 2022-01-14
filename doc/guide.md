@@ -193,6 +193,12 @@ We can filter an extant stream with `#.`, viz.
 
 `#.` takes as its left argument a unary function returning a boolean.
 
+```
+[#x>110] #. $0
+```
+
+would filter to those lines >110 bytes wide.
+
 ### Parting Shots
 
 ```

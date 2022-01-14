@@ -68,6 +68,10 @@ All lines >110 bytes:
 {#`0>110}{`0}'
 ```
 
+```
+[#x>110] #. $0
+```
+
 Is there a line >110 bytes?
 
 ```
