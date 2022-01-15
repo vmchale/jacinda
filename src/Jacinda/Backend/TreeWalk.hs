@@ -351,10 +351,10 @@ eWith _ e@FloatLit{}                                                            
 eWith _ e@IntLit{}                                                                                                                  = const e
 eWith _ e@BoolLit{}                                                                                                                 = const e
 eWith re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith re e bs) <$> es)
+eWith re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith re eϵ bs) <$> e)
+-- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
+-- OR "compile" to [(Int, E (T K)] -> ...
 
--- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
--- won't blow up in our faces
---
 -- | Given an expression, turn it into a function which will process the file.
 fileProcessor :: RurePtr
               -> E (T K)
