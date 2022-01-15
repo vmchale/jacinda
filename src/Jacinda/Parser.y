@@ -186,6 +186,10 @@ E :: { E AlexPosn }
   | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
   | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
   | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
+  | field colon { EApp (loc $1) (UBuiltin $2 Parse) (Field (loc $1) (ix $1)) }
+  | name colon { EApp (Name.loc $1) (UBuiltin $2 Parse) (Var (Name.loc $1) $1) }
+  | x colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 X) }
+  | y colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 Y) }
   | x iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 X) }
   | x fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 X) }
   | y iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 Y) }

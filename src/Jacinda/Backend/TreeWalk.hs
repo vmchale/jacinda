@@ -88,6 +88,12 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (UBuiltin _ FParse) e) =
         let eI = asStr (go e)
             in parseAsF eI
+    go (EApp _ (UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) =
+        let eI = asStr (go e)
+            in parseAsEInt eI
+    go (EApp _ (UBuiltin (TyArr _ _ (TyB _ TyFloat)) Parse) e) =
+        let eI = asStr (go e)
+            in parseAsF eI
     go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
         let eI = go e
             eI' = go e'

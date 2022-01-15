@@ -408,6 +408,16 @@ eNorm (EApp ty op@(UBuiltin _ FParse) e) = do
     pure $ case eI of
         (StrLit _ str) -> parseAsF str
         _              -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyFloat)) Parse) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (StrLit _ str) -> parseAsF str
+        _              -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (StrLit _ str) -> parseAsEInt str
+        _              -> EApp ty op eI
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do

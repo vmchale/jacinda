@@ -100,6 +100,7 @@ data BUn = Tally -- length of string field
          | Select Int
          | IParse
          | FParse
+         | Parse
          | Floor
          | Ceiling
          deriving (Eq)
@@ -114,6 +115,7 @@ instance Pretty BUn where
     pretty FParse     = ":f"
     pretty Floor      = "floor"
     pretty Ceiling    = "ceil"
+    pretty Parse      = ":"
 
 -- ternary
 data BTer = ZipW
@@ -292,6 +294,7 @@ instance Pretty (E a) where
     pretty (EApp _ (UBuiltin _ (Select i)) e)                      = pretty e <> "->" <> pretty i
     pretty (EApp _ (UBuiltin _ IParse) e')                         = pretty e' <> ":i"
     pretty (EApp _ (UBuiltin _ FParse) e')                         = pretty e' <> ":f"
+    pretty (EApp _ (UBuiltin _ Parse) e')                          = pretty e' <> ":"
     pretty (EApp _ e@UBuiltin{} e')                                = pretty e <> pretty e'
     pretty (EApp _ e e')                                           = pretty e <+> pretty e'
     pretty (Var _ n)                                               = pretty n

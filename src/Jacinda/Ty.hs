@@ -198,6 +198,7 @@ checkType (TyB _ TyInteger) (IsOrd, _)         = pure ()
 checkType (TyB _ TyInteger) (IsEq, _)          = pure ()
 checkType (TyB _ TyInteger) (IsParseable, _)   = pure ()
 checkType (TyB _ TyFloat) (IsParseable, _)     = pure ()
+checkType ty (IsParseable, l)                  = throwError $ Doesn'tSatisfy l (void ty) IsParseable
 checkType (TyB _ TyFloat) (IsSemigroup, _)     = pure ()
 checkType (TyB _ TyFloat) (IsNum, _)           = pure ()
 checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
@@ -372,6 +373,11 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
+tyE0 (UBuiltin l Parse) = do
+    a <- dummyName "a"
+    let a' = var a
+    modifying classVarsLens (addC a (IsParseable, l))
+    pure $ UBuiltin (tyArr tyStr a') Parse
 tyE0 (BBuiltin l Sprintf) = do
     a <- dummyName "a"
     let a' = var a
