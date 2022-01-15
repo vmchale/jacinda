@@ -8,7 +8,7 @@ module Jacinda.Backend.TreeWalk ( runJac
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, get, modify, runState)
-import           Data.Bifunctor             (Bifunctor (second))
+import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
 import           Data.Foldable              (foldl', traverse_)
 import qualified Data.IntMap                as IM
@@ -380,7 +380,7 @@ ungather _ e@IntLit{}        = e
 gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
 gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
     (i,_) <- get
-    modify (second ((i, op, seed, stream) :))
+    modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i undefined
 gatherFoldsM (EApp ty e0 e1) = EApp ty <$> gatherFoldsM e0 <*> gatherFoldsM e1
 gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
