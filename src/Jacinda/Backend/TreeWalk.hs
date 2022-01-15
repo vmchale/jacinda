@@ -1,28 +1,36 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Tree-walking interpreter
 module Jacinda.Backend.TreeWalk ( runJac
                                 ) where
 
 -- TODO: normalize before mapping?
 
-import           Control.Exception         (Exception, throw)
-import qualified Data.ByteString           as BS
-import           Data.Foldable             (foldl', traverse_)
-import           Data.List                 (scanl')
+import           Control.Exception          (Exception, throw)
+import           Control.Monad.State.Strict (State, get, modify, runState)
+import           Data.Bifunctor             (Bifunctor (second))
+import qualified Data.ByteString            as BS
+import           Data.Foldable              (foldl', traverse_)
+import qualified Data.IntMap                as IM
+import           Data.List                  (scanl')
 import           Data.List.Ext
-import           Data.Semigroup            ((<>))
-import qualified Data.Vector               as V
+import           Data.Semigroup             ((<>))
+import qualified Data.Vector                as V
+import           Intern.Name                (Name (Name))
+import           Intern.Unique              (Unique (Unique))
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Regex.Rure                (RurePtr)
+import           Regex.Rure                 (RurePtr)
 
 data StreamError = NakedField
                  | UnevalFun
                  | TupOfStreams -- ^ Reject a tuple of streams
                  | BadCtx
                  | IndexOutOfBounds Int
+                 | InternalError
                  deriving (Show)
 
 instance Exception StreamError where
@@ -333,24 +341,64 @@ foldWithCtx :: RurePtr
             -> E (T K)
 foldWithCtx re op seed streamExpr = foldl' (applyOp op) seed . ir re streamExpr
 
+foldAll :: RurePtr
+        -> [(Int, E (T K), E (T K), E (T K))]
+        -> [BS.ByteString]
+        -> [(Int, E (T K))]
+foldAll re foldExprs bs = evalStep . go <$> foldExprs where
+    -- with the fourth of each foldExpr, compute ir
+    go (i, op, seed, streamExpr) = {-# SCC "go" #-} (i, op, seed, ir re streamExpr bs)
+    evalStep (i, _, seed, [])    = (i, seed)
+    evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
+
 runJac :: RurePtr -- ^ Record separator
        -> Int
        -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
 runJac re i e = fileProcessor re (closedProgram i e)
 
+mkFoldVar :: Int -> b -> E b
+mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
+
+ungather :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
+ungather st (Var _ (Name _ (Unique i) _)) =
+    case IM.lookup i st of
+        Just res -> res
+        Nothing  -> throw InternalError
+ungather st (EApp ty e0 e1)  = EApp ty (ungather st e0) (ungather st e1)
+ungather st (Tup ty es)      = Tup ty (ungather st <$> es)
+ungather st (Arr ty es)      = Arr ty (ungather st <$> es)
+ungather st (OptionVal ty e) = OptionVal ty (ungather st <$> e)
+ungather _ e@BBuiltin{}      = e
+ungather _ e@UBuiltin{}      = e
+ungather _ e@TBuiltin{}      = e
+ungather _ e@StrLit{}        = e
+ungather _ e@BoolLit{}       = e
+ungather _ e@FloatLit{}      = e
+ungather _ e@IntLit{}        = e
+
+gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
+gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+    (i,_) <- get
+    modify (second ((i, op, seed, stream) :))
+    pure $ mkFoldVar i undefined
+gatherFoldsM (EApp ty e0 e1) = EApp ty <$> gatherFoldsM e0 <*> gatherFoldsM e1
+gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
+gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
+gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
+gatherFoldsM e@BBuiltin{} = pure e
+gatherFoldsM e@TBuiltin{} = pure e
+gatherFoldsM e@UBuiltin{} = pure e
+gatherFoldsM e@StrLit{} = pure e
+gatherFoldsM e@FloatLit{} = pure e
+gatherFoldsM e@IntLit{} = pure e
+gatherFoldsM e@BoolLit{} = pure e
+
 -- evaluate something that has a fold nested in it
 eWith :: RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
-eWith re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
-eWith re (EApp ty e0 e1)                                                                                                            = \bs -> eClosed undefined (EApp ty (eWith re e0 bs) (eWith re e1 bs))
-eWith _ e@BBuiltin{}                                                                                                                = const e
-eWith _ e@UBuiltin{}                                                                                                                = const e
-eWith _ e@TBuiltin{}                                                                                                                = const e
-eWith _ e@StrLit{}                                                                                                                  = const e
-eWith _ e@FloatLit{}                                                                                                                = const e
-eWith _ e@IntLit{}                                                                                                                  = const e
-eWith _ e@BoolLit{}                                                                                                                 = const e
-eWith re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith re e bs) <$> es)
+eWith re e bs =
+    let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
+        in ungather (IM.fromList $ foldAll re folds bs) eHoles
 
 -- TODO: passing in 'i' separately to each eClosed is sketch but... hopefully
 -- won't blow up in our faces
