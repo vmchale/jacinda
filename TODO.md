@@ -21,9 +21,14 @@
 - [ ] `$0:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
-- [ ] Operator syntax for floor/ceiling?
-  - [ ] `|.` for instance? `|'`?
+- [x] Operator syntax for floor/ceiling?
+  - [x] `|.` for instance? `|'`?
 - [ ] Witherable typeclass, vectors/lists should be a member!
+- [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
+- [ ] `fail : a` builtin (unicode bottom?)
+- [ ] mapMaybe, catMaybes? for `Witherable`...
+  - [ ] `:?` or `.?` as `mapMaybe` and `catMaybes`??
+  - [ ] vectors/lists should be a member!
 - [x] `match`
 - [x] `splitc` - split on char! (easier/faster)
 - [ ] iota for vectors etc.
@@ -48,7 +53,6 @@
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
 - [ ] `Option` is not a functor
-- [ ] mapMaybe, catMaybes? for `Witherable`...
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol

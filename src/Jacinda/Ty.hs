@@ -399,6 +399,13 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
+tyE0 (UBuiltin _ Some) = do
+    a <- dummyName "a"
+    let a' = var a
+    pure $ UBuiltin (tyArr a' (tyOpt a')) Some
+tyE0 (NBuiltin _ None) = do
+    a <- dummyName "a"
+    pure $ NBuiltin (tyOpt $ var a) None
 tyE0 (UBuiltin l Parse) = do
     a <- dummyName "a"
     let a' = var a

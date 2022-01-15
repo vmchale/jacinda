@@ -110,6 +110,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     ceil { TokBuiltin $$ BuiltinCeil }
     option { TokBuiltin $$ BuiltinOption }
     match { TokBuiltin $$ BuiltinMatch }
+    some { TokBuiltin $$ BuiltinSome }
+    none { TokBuiltin $$ BuiltinNone }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -230,7 +232,9 @@ E :: { E AlexPosn }
   | ceil { UBuiltin $1 Ceiling }
   | floorSym { UBuiltin $1 Floor }
   | ceilSym { UBuiltin $1 Ceiling }
+  | some { UBuiltin $1 Some }
   | ix { NBuiltin $1 Ix }
+  | none { NBuiltin $1 None }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
