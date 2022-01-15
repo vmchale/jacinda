@@ -1,11 +1,7 @@
-module Data.Vector.Ext ( priorM
-                       , prior
+module Data.Vector.Ext ( priorM_
                        ) where
 
 import qualified Data.Vector as V
 
-priorM :: Monad m => (a -> a -> m a) -> V.Vector a -> m (V.Vector a)
-priorM op xs = V.zipWithM op (V.tail xs) xs
-
-prior :: (a -> a -> a) -> V.Vector a -> V.Vector a
-prior op xs = V.zipWith op (V.tail xs) xs
+priorM_ :: Monad m => (a -> a -> m b) -> V.Vector a -> m ()
+priorM_ op xs = V.zipWithM_ op (V.tail xs) xs

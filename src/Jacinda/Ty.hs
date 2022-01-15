@@ -21,6 +21,7 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
+import qualified Data.Vector.Ext            as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -534,7 +535,12 @@ tyE0 (OptionVal _ Nothing) = do
     a <- dummyName "a"
     let a' = var a
     pure $ OptionVal (tyOpt a') Nothing
-tyE0 (Arr _ v) | V.null v = do
+tyE0 (Arr l v) | V.null v = do
     a <- dummyName "a"
     let a' = var a
     pure $ Arr (mkVec a') V.empty
+               | otherwise = do
+    v' <- traverse tyE0 v
+    let x = V.head v'
+    V.priorM_ (\y y' -> pushConstraint l (eLoc y) (eLoc y')) v'
+    pure $ Arr (eLoc x) v'
