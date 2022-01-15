@@ -103,6 +103,7 @@ data BUn = Tally -- length of string field
          | Parse
          | Floor
          | Ceiling
+         | Some
          deriving (Eq)
 
 instance Pretty BUn where
@@ -116,6 +117,7 @@ instance Pretty BUn where
     pretty Floor      = "floor"
     pretty Ceiling    = "ceil"
     pretty Parse      = ":"
+    pretty Some       = "Some"
 
 -- ternary
 data BTer = ZipW
@@ -192,6 +194,7 @@ instance Pretty DfnVar where
 
 -- 0-ary
 data N = Ix
+       | None
        deriving (Eq)
 
 -- expression
@@ -267,6 +270,7 @@ type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix   = "ix"
+    pretty None = "None"
 
 instance Pretty (E a) where
     pretty (Column _ i)                                            = "$" <> pretty i
@@ -317,7 +321,7 @@ instance Pretty (E a) where
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                             = parens (pretty e)
     pretty (Arr _ es)                                              = tupledByFunky "," (V.toList $ pretty <$> es)
-    pretty (OptionVal  _ (Just e))                                 = "Some" <+> pretty e
+    pretty (OptionVal _ (Just e))                                  = "Some" <+> pretty e
     pretty (OptionVal _ Nothing)                                   = "None"
 
 instance Show (E a) where

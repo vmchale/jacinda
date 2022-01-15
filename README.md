@@ -29,7 +29,7 @@ ls -l | ja '(+)|0 {ix>1}{`5:i}'
 
 ```
 curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | \
-    ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F,
+    ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F,
 ```
 
 # Documentation
@@ -60,6 +60,7 @@ imperative/scoping defects.
   * Type system is questionable
   * Postfix `:f` and `:i` are handled poorly
   * File imports/includes
+  * Various bugs in evaluation with regular expressions
 
 Intentionally missing features:
 

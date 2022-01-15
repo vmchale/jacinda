@@ -21,6 +21,7 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
+import qualified Data.Vector.Ext            as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -37,11 +38,13 @@ infixr 6 <#>
 data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C
              | IllScoped a (Name a)
+             | Ambiguous (E ())
 
 instance Pretty a => Pretty (Error a) where
     pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
     pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
     pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
+    pretty (Ambiguous e)                = "type of" <+> squotes (pretty e) <+> "is ambiguous"
 
 instance Pretty a => Show (Error a) where
     show = show . pretty
@@ -263,6 +266,28 @@ tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
     pure $ FunDecl (n $> ty) [] e'
 tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
 
+isAmbiguous :: T K -> Bool
+isAmbiguous TyVar{}          = True
+isAmbiguous (TyArr _ ty ty') = isAmbiguous ty || isAmbiguous ty'
+isAmbiguous (TyApp _ ty ty') = isAmbiguous ty || isAmbiguous ty'
+isAmbiguous (TyTup _ tys)    = any isAmbiguous tys
+isAmbiguous TyNamed{}        = False
+isAmbiguous TyB{}            = False
+
+checkAmb :: E (T K) -> TypeM a ()
+checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need it anyway... better error messages
+checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb (Implicit _ e') = checkAmb e'
+checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
+checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet! (if they aren't ambiguous, it shouldn't be
+checkAmb (Tup _ es) = traverse_ checkAmb es
+checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
+checkAmb (Lam _ _ e) = checkAmb e -- I think
+checkAmb _ = pure ()
+
 tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
 tyProgram (Program ds e) = do
     ds' <- traverse tyD0 ds
@@ -272,7 +297,8 @@ tyProgram (Program ds e) = do
     traverse_ (uncurry (checkClass backNames)) toCheck
     backNames' <- unifyM =<< gets constraints
     -- FIXME: not sure if termination/whatever is guaranteed, need 2 think..
-    pure (fmap (substConstraints backNames') (Program ds' e'))
+    let res = fmap (substConstraints backNames') (Program ds' e')
+    checkAmb (expr res) $> res
 
 -- FIXME kind check
 tyE :: Ord a => E a -> TypeM a (E (T K))
@@ -373,6 +399,13 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
+tyE0 (UBuiltin _ Some) = do
+    a <- dummyName "a"
+    let a' = var a
+    pure $ UBuiltin (tyArr a' (tyOpt a')) Some
+tyE0 (NBuiltin _ None) = do
+    a <- dummyName "a"
+    pure $ NBuiltin (tyOpt $ var a) None
 tyE0 (UBuiltin l Parse) = do
     a <- dummyName "a"
     let a' = var a
@@ -509,7 +542,12 @@ tyE0 (OptionVal _ Nothing) = do
     a <- dummyName "a"
     let a' = var a
     pure $ OptionVal (tyOpt a') Nothing
-tyE0 (Arr _ v) | V.null v = do
+tyE0 (Arr l v) | V.null v = do
     a <- dummyName "a"
     let a' = var a
     pure $ Arr (mkVec a') V.empty
+               | otherwise = do
+    v' <- traverse tyE0 v
+    let x = V.head v'
+    V.priorM_ (\y y' -> pushConstraint l (eLoc y) (eLoc y')) v'
+    pure $ Arr (eLoc x) v'

@@ -135,6 +135,8 @@ tokens :-
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
         match                    { mkBuiltin BuiltinMatch }
+        Some                     { mkBuiltin BuiltinSome }
+        None                     { mkBuiltin BuiltinNone }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -345,6 +347,8 @@ data Builtin = BuiltinIParse
              | BuiltinFloor
              | BuiltinCeil
              | BuiltinMatch
+             | BuiltinSome
+             | BuiltinNone
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
@@ -357,6 +361,8 @@ instance Pretty Builtin where
     pretty BuiltinFloor   = "floor"
     pretty BuiltinCeil    = "ceil"
     pretty BuiltinMatch   = "match"
+    pretty BuiltinSome    = "Some"
+    pretty BuiltinNone    = "None"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
