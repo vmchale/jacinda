@@ -9,7 +9,7 @@ curl -sL https://data.cdc.gov/api/views/9mfq-cb36/rows.csv | sort | csvformat -D
 
 ```
 curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv -o /tmp/now-weekly-breakthrough.csv
-ja ',[1.0-x%y] {ix>1}{`5:f {ix>1}{`11:}' -F, -i /tmp/now-weekly-breakthrough.csv
+ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F, -i /tmp/now-weekly-breakthrough.csv
 ```
 
 # Ctags
