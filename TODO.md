@@ -19,7 +19,7 @@
 - [ ] unicode/apl for floor+ceiling
 # Features
 - [ ] `fail : a` builtin (unicode bottom?)
-- [ ] Operator syntax for floor/ceiling?
+- [x] Operator syntax for floor/ceiling?
 - [ ] Witherable typeclass, vectors/lists should be a member!
 - [x] `match`
 - [x] `splitc` - split on char! (easier/faster)
