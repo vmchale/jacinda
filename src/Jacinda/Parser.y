@@ -52,6 +52,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     backslashdot { TokSym $$ BackslashDot }
     at { $$@(TokAccess _ _) }
     select { $$@(TokSelect _ _) }
+    floorSym { TokSym $$ FloorSym }
+    ceilSym { TokSym $$ CeilSym }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -226,6 +228,8 @@ E :: { E AlexPosn }
   | option { TBuiltin $1 Option }
   | floor { UBuiltin $1 Floor }
   | ceil { UBuiltin $1 Ceiling }
+  | floorSym { UBuiltin $1 Floor }
+  | ceilSym { UBuiltin $1 Ceiling }
   | ix { NBuiltin $1 Ix }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
