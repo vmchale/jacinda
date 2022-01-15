@@ -143,10 +143,11 @@ The syntax is:
 One could (for instance) calculate population density:
 
 ```
-, (%) $5:f $6:f
+, (%) $5: $6:
 ```
 
-The postfix `:f` parses the column as an integer. 
+The postfix `:` parses the column based on inferred type; here it parses as
+a float.
 
 ### Scans
 
@@ -266,7 +267,7 @@ curl -L https://raw.githubusercontent.com/nychealth/coronavirus-data/master/late
 And then process its columns with `ja`
 
 ```
-ja ',[1.0-x%y] {ix>1}{`5:f} {ix>1}{`11:f}' -F, -i /tmp/now-weekly-breakthrough.csv
+ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F, -i /tmp/now-weekly-breakthrough.csv
 ```
 
 As of writing:

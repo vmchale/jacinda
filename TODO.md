@@ -18,6 +18,12 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 # Features
+- [ ] `$0:` etc. parseable columns
+- [ ] 0 literal could be a float
+- [ ] `fail : a` builtin (unicode bottom?)
+- [x] Operator syntax for floor/ceiling?
+  - [x] `|.` for instance? `|'`?
+- [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
 - [x] Operator syntax for floor/ceiling?
@@ -37,7 +43,7 @@
   - [ ] that introduced a bug w/ nested dfns (euh)
 - [x] better error messages ja: ./Data/Vector/Generic.hs:257 ((!)): index out of bounds (5,2)
 - [ ] `NR` - number of records (per line) also `-1 (last)
-- [ ] printf
+- [x] printf
   - [x] array/vector type (integer indexed)
 - [x] `[:` as shorthand for `const`
 - [x] `.1` etc. to extract tuples (arrays?)
@@ -63,6 +69,7 @@
 - [ ] mve.awk
 # Bugs
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
+- [ ] e "[x+' '+y]|' ' split '01-23-1987' /-/"
 # Performance
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example

@@ -264,8 +264,9 @@ syntax is</p>
 <p>The syntax is:</p>
 <pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>One could (for instance) calculate population density:</p>
-<pre><code>, (%) $5:f $6:f</code></pre>
-<p>The postfix <code>:f</code> parses the column as an integer.</p>
+<pre><code>, (%) $5: $6:</code></pre>
+<p>The postfix <code>:</code> parses the column based on inferred type;
+here it parses as a float.</p>
 <h3 id="scans">Scans</h3>
 <p>The syntax is:</p>
 <pre><code>&lt;expr&gt; ^ &lt;expr&gt; &lt;expr&gt;</code></pre>
@@ -333,7 +334,7 @@ breakthroughs</a>.</p>
 <p>We can download it:</p>
 <pre><code>curl -L https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv -o /tmp/now-weekly-breakthrough.csv</code></pre>
 <p>And then process its columns with <code>ja</code></p>
-<pre><code>ja &#39;,[1.0-x%y] {ix&gt;1}{`5:f} {ix&gt;1}{`11:f}&#39; -F, -i /tmp/now-weekly-breakthrough.csv</code></pre>
+<pre><code>ja &#39;,[1.0-x%y] {ix&gt;1}{`5:} {ix&gt;1}{`11:}&#39; -F, -i /tmp/now-weekly-breakthrough.csv</code></pre>
 <p>As of writing:</p>
 <pre><code>0.8793436293436293
 0.8524501884760366

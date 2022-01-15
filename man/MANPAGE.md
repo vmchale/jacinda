@@ -111,6 +111,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **match**
 :   Str -> Regex -> Option (Int . Int)
 
+**fp** Filename
+
 ## SYNTAX
 
 **`n** nth field

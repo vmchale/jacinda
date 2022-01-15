@@ -44,7 +44,7 @@ $latin = [a-zA-Z]
 
 $str_special = [\\\']
 
-@escape_str = \\ [$str_special n]
+@escape_str = \\ [$str_special nt]
 
 @string = \' ([^ $str_special] | @escape_str)* \'
 
@@ -133,6 +133,7 @@ tokens :-
         match                    { mkBuiltin BuiltinMatch }
         Some                     { mkBuiltin BuiltinSome }
         None                     { mkBuiltin BuiltinNone }
+        fp                       { mkBuiltin BuiltinFp }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -189,7 +190,7 @@ escReplace :: T.Text -> T.Text
 escReplace =
       T.replace "\\\"" "\""
     . T.replace "\\n" "\n"
-    . T.replace "\\$" "$"
+    . T.replace "\\t" "\t"
 
 mkText :: BSL.ByteString -> T.Text
 mkText = decodeUtf8 . BSL.toStrict
@@ -345,6 +346,7 @@ data Builtin = BuiltinIParse
              | BuiltinMatch
              | BuiltinSome
              | BuiltinNone
+             | BuiltinFp
 
 instance Pretty Builtin where
     pretty BuiltinIParse  = ":i"
@@ -359,6 +361,7 @@ instance Pretty Builtin where
     pretty BuiltinMatch   = "match"
     pretty BuiltinSome    = "Some"
     pretty BuiltinNone    = "None"
+    pretty BuiltinFp      = "fp"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

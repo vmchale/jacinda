@@ -1,3 +1,10 @@
+# 0.2.1.0
+
+  * Add `fp` builtin
+  * Add `:` unary operator
+  * Floor/ceiling operators
+  * `Some` and `None` literals
+
 # 0.2.0.0
 
   * Complete implementation of folds/maps for lists
