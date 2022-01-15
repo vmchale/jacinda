@@ -11,6 +11,7 @@ import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Char8      as ASCII
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.ByteString.Lazy.Char8 as ASCIIL
 import           Data.Functor               (void)
@@ -42,16 +43,17 @@ compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
 compileFS Nothing   = defaultRurePtr
 
-runOnBytes :: BSL.ByteString -- ^ Program
+runOnBytes :: FilePath
+           -> BSL.ByteString -- ^ Program
            -> Maybe BS.ByteString -- ^ Field separator
            -> BSL.ByteString
            -> IO ()
-runOnBytes src cliFS contents =
+runOnBytes fp src cliFS contents =
     case parseWithMax' src of
         Left err -> throwIO err
         Right (ast, m) -> do
             (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
-            cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i typed
+            cont <- yeetIO $ runJac (ASCII.pack fp) (compileFS (cliFS <|> getFS ast)) i typed
             cont $ fmap BSL.toStrict (ASCIIL.lines contents)
             -- see: BSL.split, BSL.splitWith
 
@@ -59,13 +61,13 @@ runOnHandle :: BSL.ByteString -- ^ Program
             -> Maybe BS.ByteString -- ^ Field separator
             -> Handle
             -> IO ()
-runOnHandle src cliFS = runOnBytes src cliFS <=< BSL.hGetContents
+runOnHandle src cliFS = runOnBytes "(runOnBytes)" src cliFS <=< BSL.hGetContents
 
 runOnFile :: BSL.ByteString
           -> Maybe BS.ByteString
           -> FilePath
           -> IO ()
-runOnFile e fs = runOnBytes e fs <=< BSL.readFile
+runOnFile e fs fp = runOnBytes fp e fs =<< BSL.readFile fp
 
 tcIO :: BSL.ByteString -> IO ()
 tcIO = yeetIO . tyCheck

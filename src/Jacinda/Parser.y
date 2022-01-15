@@ -112,6 +112,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     match { TokBuiltin $$ BuiltinMatch }
     some { TokBuiltin $$ BuiltinSome }
     none { TokBuiltin $$ BuiltinNone }
+    fp { TokBuiltin $$ BuiltinFp }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -235,6 +236,7 @@ E :: { E AlexPosn }
   | some { UBuiltin $1 Some }
   | ix { NBuiltin $1 Ix }
   | none { NBuiltin $1 None }
+  | fp { NBuiltin $1 Fp }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
