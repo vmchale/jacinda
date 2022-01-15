@@ -47,6 +47,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **:f** Postfix operator: parse float
 
+**:** Postfix operator: parse, inferring type
+
 **#** Prefix operator: tally (count bytes in string)
 
 **,** Ternary operator: zip with
@@ -67,7 +69,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **#.** Binary operator: filter
 :   (a -> Bool) -> Stream a -> Stream a
 
-**\.** Binary operator: prior
+**\\.** Binary operator: prior
 :   (a -> a -> a) -> Stream a -> Stream a
 
 **max** Maximum of two values
@@ -95,10 +97,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **splitc** Split a string on a single character
 :   Str -> Str -> List Str
 
-**floor** Floor function
+**|.** Floor function
 :   Float -> Int
 
-**ceil** Ceiling function
+**|`** Ceiling function
 :   Float -> Int
 
 **sprintf** Convert an expression to a string using the format string

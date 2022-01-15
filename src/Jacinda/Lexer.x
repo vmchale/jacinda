@@ -108,6 +108,8 @@ tokens :-
         ";"                      { mkSym Semicolon }
         "\."                     { mkSym BackslashDot }
         \\                       { mkSym Backslash }
+        "|`"                     { mkSym CeilSym }
+        "|."                     { mkSym FloorSym }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -147,11 +149,10 @@ tokens :-
         $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ ASCII.unpack s)) }
         _$digit+\.$digit+        { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
 
-        -- TODO: allow chars to be escaped
-        -- TODO: consider dropping this syntax for strings?
         @string                  { tok (\p s -> alex $ TokStr p (escReplace' $ BSL.init $ BSL.tail s)) }
 
-        "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (BSL.init $ BSL.tail s)) } -- TODO: allow slashes that are escaped
+        -- TODO: allow chars to be escaped
+        "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (BSL.init $ BSL.tail s)) }
 
         @name                    { tok (\p s -> TokName p <$> newIdentAlex p (mkText s)) }
         @tyname                  { tok (\p s -> TokTyName p <$> newIdentAlex p (mkText s)) }
@@ -254,6 +255,8 @@ data Sym = PlusTok
          | Backslash
          | BackslashDot
          | FilterTok
+         | FloorSym
+         | CeilSym
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -293,6 +296,8 @@ instance Pretty Sym where
     pretty Backslash     = "\\"
     pretty BackslashDot  = "\\."
     pretty FilterTok     = "#."
+    pretty FloorSym      = "|."
+    pretty CeilSym       = "|`"
 
 data Keyword = KwLet
              | KwIn

@@ -68,6 +68,16 @@ All lines >110 bytes:
 {#`0>110}{`0}'
 ```
 
+```
+[#x>110] #. $0
+```
+
+Find all Haskell code >80 bytes wide
+
+```
+fd '\.hs$' -x ja '[#x>80] #. $0' -i
+```
+
 Is there a line >110 bytes?
 
 ```
