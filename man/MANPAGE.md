@@ -113,6 +113,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **fp** Filename
 
+**nf** Number of fields
+
 ## SYNTAX
 
 **`n** nth field

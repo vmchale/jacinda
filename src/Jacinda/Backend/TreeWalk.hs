@@ -86,6 +86,7 @@ eEval (fp, ix, line, ctx) = go where
     go op@BBuiltin{} = op
     go op@UBuiltin{} = op
     go op@TBuiltin{} = op
+    go (NBuiltin _ Nf) = mkI (fromIntegral $ V.length ctx)
     go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
     go (NBuiltin _ Ix) = mkI (fromIntegral ix)
     go (NBuiltin _ Fp) = mkStr fp

@@ -194,6 +194,7 @@ instance Pretty DfnVar where
 
 -- 0-ary
 data N = Ix
+       | Nf
        | None
        | Fp
        deriving (Eq)
@@ -271,6 +272,7 @@ type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix   = "ix"
+    pretty Nf   = "nf"
     pretty None = "None"
     pretty Fp   = "fp"
 
