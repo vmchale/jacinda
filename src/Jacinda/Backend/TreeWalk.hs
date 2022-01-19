@@ -7,6 +7,7 @@ module Jacinda.Backend.TreeWalk ( runJac
 import           Control.Exception         (Exception, throw)
 import           Control.Recursion         (cata, embed)
 import qualified Data.ByteString           as BS
+import           Data.Containers.ListUtils (nubOrdOn)
 import           Data.Foldable             (foldl', traverse_)
 import           Data.List                 (scanl')
 import           Data.List.Ext
@@ -332,6 +333,14 @@ ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \line
     in zipWith (applyOp (withFp fp op)) irl irr
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
     scanl' (applyOp (withFp fp op)) seed . ir fp re xs
+ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
+    nubOrdOn asStr . ir fp re e
+ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
+    nubOrdOn asInt . ir fp re e
+ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
+    nubOrdOn asFloat . ir fp re e
+ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
+    nubOrdOn asBool . ir fp re e
 
 -- | Output stream that prints each entry (expression)
 printStream :: [E (T K)] -> IO ()
@@ -385,19 +394,21 @@ fileProcessor _ re (IParseCol _ i) = Right $ \inp -> do
     printStream $ fmap (parseAsEInt . atField re i) inp
 fileProcessor _ re (FParseCol _ i) = Right $ \inp -> do
     printStream $ fmap (parseAsF . atField re i) inp
-fileProcessor fp re e@Guarded{} = Right $ \inp -> do
+fileProcessor fp re e@Guarded{} = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@Implicit{} = Right $ \inp -> do
+fileProcessor fp re e@Implicit{} = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp -> do
+fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp -> do
+fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp -> do
+fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp -> do
+fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp -> do
+fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
+    printStream $ ir fp re e inp
+fileProcessor fp re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor _ _ Var{} = error "Internal error?"
 fileProcessor _ _ e@IntLit{} = Right $ const (print e)

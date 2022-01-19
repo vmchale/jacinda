@@ -127,6 +127,7 @@ asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
 asTup (Just (RureMatch s e)) = OptionVal undefined (Just $ Tup undefined (mkI . fromIntegral <$> [s, e]))
 
+-- don't need to rename op because it's being used in a map, can't affect etc.
 applyUn :: E (T K)
         -> E (T K)
         -> EvalM (E (T K))
@@ -139,9 +140,7 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = do
-    op' <- renameE op
-    eNorm (EApp undefined (EApp undefined op' e) e')
+applyOp op e e' = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
@@ -385,6 +384,7 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Or) e) e') = do
         _                           -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = eNorm e
 eNorm (EApp ty op@(UBuiltin _ Const) e) = EApp ty op <$> eNorm e
+eNorm (EApp ty op@(UBuiltin _ Dedup) e) = EApp ty op <$> eNorm e
 eNorm (EApp ty op@(UBuiltin _ (At i)) e) = do
     eI <- eNorm e
     pure $ case eI of

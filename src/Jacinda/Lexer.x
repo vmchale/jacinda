@@ -111,6 +111,7 @@ tokens :-
         \\                       { mkSym Backslash }
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
+        "~."                     { mkSym DedupTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -265,6 +266,7 @@ data Sym = PlusTok
          | FilterTok
          | FloorSym
          | CeilSym
+         | DedupTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -306,6 +308,7 @@ instance Pretty Sym where
     pretty FilterTok     = "#."
     pretty FloorSym      = "|."
     pretty CeilSym       = "|`"
+    pretty DedupTok      = "~."
 
 data Keyword = KwLet
              | KwIn

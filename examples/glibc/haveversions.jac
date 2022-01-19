@@ -2,4 +2,4 @@
 fn printHaveVersion(s) :=
   sprintf 'have-%s = yes' s;
 
-printHaveVersion"{nf = 1 & `0 != '}'}{`1}
+printHaveVersion" ~.{nf = 1 & `0 != '}'}{`1}

@@ -104,6 +104,7 @@ data BUn = Tally -- length of string field
          | Floor
          | Ceiling
          | Some
+         | Dedup
          deriving (Eq)
 
 instance Pretty BUn where
@@ -118,6 +119,7 @@ instance Pretty BUn where
     pretty Ceiling    = "ceil"
     pretty Parse      = ":"
     pretty Some       = "Some"
+    pretty Dedup      = "~."
 
 -- ternary
 data BTer = ZipW

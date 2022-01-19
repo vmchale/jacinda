@@ -430,6 +430,12 @@ tyE0 (UBuiltin l (Select i)) = do
         b' = var b
     modifying classVarsLens (addC a (HasField i b', l))
     pure $ UBuiltin (tyArr a' b') (Select i)
+tyE0 (UBuiltin l Dedup) = do
+    a <- dummyName "a"
+    let a' = var a
+        fTy = tyArr (tyStream a') (tyStream a')
+    modifying classVarsLens (addC a (IsEq, l))
+    pure $ UBuiltin fTy Dedup
 tyE0 (UBuiltin _ Const) = do
     a <- dummyName "a"
     b <- dummyName "b"
