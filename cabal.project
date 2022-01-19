@@ -12,4 +12,4 @@ package jacinda
 source-repository-package
   location: git@github.com:vmchale/rure.git
   type: git
-  tag: 9f3bc534ce6ca2707b170235903a1e1c6b98c684
+  tag: 5ae27ddc954d252f0ffe1ecb638d07528f0d15df
