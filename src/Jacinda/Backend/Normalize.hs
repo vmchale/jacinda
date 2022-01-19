@@ -139,7 +139,9 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- TODO: undefined??
+applyOp op e e' = do
+    op' <- renameE op
+    eNorm (EApp undefined (EApp undefined op' e) e')
 
 foldE :: E (T K)
       -> E (T K)
@@ -195,7 +197,7 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') = d
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit _ s, StrLit _ s')       -> StrLit tyStr (s <> s')
+        (StrLit _ s, StrLit _ s')       -> StrLit tyStr (s <> s') -- TODO: copy?
         (RegexLit _ rr, RegexLit _ rr') -> RegexLit tyStr (rr <> rr')
         _                               -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') = do
@@ -418,7 +420,7 @@ eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) = do
     pure $ case eI of
         (StrLit _ str) -> parseAsEInt str
         _              -> EApp ty op eI
-eNorm (EApp ty op@(UBuiltin _ Some) e) = do
+eNorm (EApp ty (UBuiltin _ Some) e) = do
     eI <- eNorm e
     pure $ OptionVal ty (Just eI)
 eNorm Dfn{} = desugar

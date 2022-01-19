@@ -137,6 +137,7 @@ eEval (fp, ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
+            -- TODO: copy??
             in mkStr (eI <> eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
         let eI = asStr (go e)
