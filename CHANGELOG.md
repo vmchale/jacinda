@@ -1,3 +1,8 @@
+  * Fix renaming bug that was inveigling folds with lambdas
+  * Add `nf` builtin
+  * Add deduplication builtin (`~.`)
+  * Add anchor ability to print multiple streams
+
 # 0.2.1.0
 
   * Add `fp` builtin
