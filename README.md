@@ -67,12 +67,13 @@ Intentionally missing features:
   * No loops
   * No conditionals
 
-The latter in particular I may add if necessary
+The latter in particular I may add if necessary/requested
 
 # Further Advantages
 
   * [Rust's regular expressions](https://docs.rs/regex/)
     - extensively documented with Unicode support
+  * Deduplicate builtin
 
 # PERFORMANCE
 
