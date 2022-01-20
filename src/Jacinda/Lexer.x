@@ -110,6 +110,7 @@ tokens :-
         \\                       { mkSym Backslash }
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
+        "~."                     { mkSym DedupTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -120,6 +121,7 @@ tokens :-
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
+        nf                       { mkRes VarNf }
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 
@@ -260,6 +262,7 @@ data Sym = PlusTok
          | FilterTok
          | FloorSym
          | CeilSym
+         | DedupTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -301,6 +304,7 @@ instance Pretty Sym where
     pretty FilterTok     = "#."
     pretty FloorSym      = "|."
     pretty CeilSym       = "|`"
+    pretty DedupTok      = "~."
 
 data Keyword = KwLet
              | KwIn
@@ -316,12 +320,14 @@ data Var = VarX
          | VarIx
          | VarMin
          | VarMax
+         | VarNf
 
 instance Pretty Var where
     pretty VarX     = "x"
     pretty VarY     = "y"
     pretty VarFs    = "fs"
     pretty VarIx    = "ix"
+    pretty VarNf    = "nf"
     pretty VarMin   = "min"
     pretty VarMax   = "max"
     -- TODO: exp, log, sqrt, floor ...

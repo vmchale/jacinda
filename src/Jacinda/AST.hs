@@ -104,6 +104,7 @@ data BUn = Tally -- length of string field
          | Floor
          | Ceiling
          | Some
+         | Dedup
          deriving (Eq)
 
 instance Pretty BUn where
@@ -118,6 +119,7 @@ instance Pretty BUn where
     pretty Ceiling    = "ceil"
     pretty Parse      = ":"
     pretty Some       = "Some"
+    pretty Dedup      = "~."
 
 -- ternary
 data BTer = ZipW
@@ -194,6 +196,7 @@ instance Pretty DfnVar where
 
 -- 0-ary
 data N = Ix
+       | Nf
        | None
        | Fp
        deriving (Eq)
@@ -271,6 +274,7 @@ type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix   = "ix"
+    pretty Nf   = "nf"
     pretty None = "None"
     pretty Fp   = "fp"
 

@@ -24,6 +24,3 @@ fn id(x) := x;
 
 fn fromMaybe(a, x) :=
   option a [x] x;
-
-fn replace(re, t, str) :=
-  [x+t+y]|'' (split str re);

@@ -54,6 +54,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     select { $$@(TokSelect _ _) }
     floorSym { TokSym $$ FloorSym }
     ceilSym { TokSym $$ CeilSym }
+    dedup { TokSym $$ DedupTok }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -100,6 +101,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     min { TokResVar $$ VarMin }
     max { TokResVar $$ VarMax }
     ix { TokResVar $$ VarIx }
+    nf { TokResVar $$ VarNf }
     fs { TokResVar $$ VarFs }
 
     split { TokBuiltin $$ BuiltinSplit }
@@ -233,8 +235,10 @@ E :: { E AlexPosn }
   | ceil { UBuiltin $1 Ceiling }
   | floorSym { UBuiltin $1 Floor }
   | ceilSym { UBuiltin $1 Ceiling }
+  | dedup { UBuiltin $1 Dedup }
   | some { UBuiltin $1 Some }
   | ix { NBuiltin $1 Ix }
+  | nf { NBuiltin $1 Nf }
   | none { NBuiltin $1 None }
   | fp { NBuiltin $1 Fp }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
