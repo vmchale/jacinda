@@ -32,6 +32,26 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
     ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F,
 ```
 
+## Rosetta
+
+Replace
+
+```awk
+NF == 1 && $1 != "}" {
+  haveversion[$1] = 1
+}
+END {
+  for (i in haveversion)
+    printf "have-%s = yes\n", i
+}
+```
+
+with
+
+```
+(sprintf 'have-%s = yes')" ~.{nf=1 & `1 != '}'}{`1}
+```
+
 # Documentation
 
 See the [guide](https://vmchale.github.io/jacinda/), which contains a tutorial
@@ -67,12 +87,13 @@ Intentionally missing features:
   * No loops
   * No conditionals
 
-The latter in particular I may add if necessary
+The latter in particular I may add if necessary/requested
 
 # Further Advantages
 
   * [Rust's regular expressions](https://docs.rs/regex/)
     - extensively documented with Unicode support
+  * Deduplicate builtin
 
 # PERFORMANCE
 

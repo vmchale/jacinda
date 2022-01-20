@@ -95,6 +95,7 @@ tokens :-
         "||"                     { mkSym OrTok }
         "("                      { mkSym LParen }
         ")"                      { mkSym RParen }
+        "&("                     { mkSym LAnchor }
         "{%"                     { mkSym LBracePercent }
         "{|"                     { mkSym LBraceBar }
         "]"                      { mkSym RSqBracket `andBegin` 0 }
@@ -111,6 +112,7 @@ tokens :-
         \\                       { mkSym Backslash }
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
+        "~."                     { mkSym DedupTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -121,6 +123,7 @@ tokens :-
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
+        nf                       { mkRes VarNf }
         -- TODO: does this uncover an alex bug?
         -- ⍳                        { mkRes VarIx }
         -- ¨                        { mkSym Quot }
@@ -236,6 +239,7 @@ data Sym = PlusTok
          | LBrace
          | RBrace
          | LParen
+         | LAnchor
          | RParen
          | LSqBracket
          | RSqBracket
@@ -264,6 +268,7 @@ data Sym = PlusTok
          | FilterTok
          | FloorSym
          | CeilSym
+         | DedupTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -287,6 +292,7 @@ instance Pretty Sym where
     pretty OrTok         = "||"
     pretty LParen        = "("
     pretty RParen        = ")"
+    pretty LAnchor       = "&("
     pretty LSqBracket    = "["
     pretty RSqBracket    = "]"
     pretty Tilde         = "~"
@@ -305,6 +311,7 @@ instance Pretty Sym where
     pretty FilterTok     = "#."
     pretty FloorSym      = "|."
     pretty CeilSym       = "|`"
+    pretty DedupTok      = "~."
 
 data Keyword = KwLet
              | KwIn
@@ -320,12 +327,14 @@ data Var = VarX
          | VarIx
          | VarMin
          | VarMax
+         | VarNf
 
 instance Pretty Var where
     pretty VarX     = "x"
     pretty VarY     = "y"
     pretty VarFs    = "fs"
     pretty VarIx    = "ix"
+    pretty VarNf    = "nf"
     pretty VarMin   = "min"
     pretty VarMax   = "max"
     -- TODO: exp, log, sqrt, floor ...
