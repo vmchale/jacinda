@@ -9,6 +9,7 @@ module Jacinda.Ty ( TypeM
                   ) where
 
 import           Control.Exception          (Exception)
+import           Control.Monad              (forM)
 import           Control.Monad.Except       (throwError)
 import           Control.Monad.State.Strict (StateT, gets, runStateT)
 import           Data.Bifunctor             (first, second)
@@ -559,3 +560,10 @@ tyE0 (Arr l v) | V.null v = do
     let x = V.head v'
     V.priorM_ (\y y' -> pushConstraint l (eLoc y) (eLoc y')) v'
     pure $ Arr (eLoc x) v'
+tyE0 (Anchor l es) = do
+    es' <- forM es $ \e -> do
+        e' <- tyE0 e
+        a <- dummyName "a"
+        let a' = var a
+        pushConstraint l (tyStream a') (eLoc e') $> e'
+    pure $ Anchor (TyB Star TyUnit) es'

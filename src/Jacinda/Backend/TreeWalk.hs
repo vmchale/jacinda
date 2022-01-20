@@ -410,6 +410,8 @@ fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
     printStream $ ir fp re e inp
+fileProcessor fp re (Anchor _ es) = Right $ \inp ->
+    printStream $ concatMap (\e -> ir fp re e inp) es
 fileProcessor _ _ Var{} = error "Internal error?"
 fileProcessor _ _ e@IntLit{} = Right $ const (print e)
 fileProcessor _ _ e@BoolLit{} = Right $ const (print e)
