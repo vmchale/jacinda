@@ -18,6 +18,7 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 # Features
+- [ ] `drop` builtin/syntax?
 - [ ] `$(` `anchor`: evaluate multiple streams at once
 - [ ] `$0:` etc. parseable columns
 - [ ] 0 literal could be a float
