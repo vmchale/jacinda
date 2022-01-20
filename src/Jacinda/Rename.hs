@@ -150,5 +150,6 @@ renameE (Let l (n, eϵ) e') = do
     Let l (n', eϵ') <$> withRenames modR (renameE e')
 renameE (Paren _ e) = renameE e
 renameE (Arr l es) = Arr l <$> traverse renameE es
+renameE (Anchor l es) = Anchor l <$> traverse renameE es
 renameE (OptionVal l e) = OptionVal l <$> traverse renameE e
 renameE e = pure e -- literals &c.

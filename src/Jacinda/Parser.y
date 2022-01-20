@@ -37,6 +37,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
+    lanchor { TokSym $$ LAnchor }
     rparen { TokSym $$ RParen }
     semicolon { TokSym $$ Semicolon }
     backslash { TokSym $$ Backslash }
@@ -215,6 +216,7 @@ E :: { E AlexPosn }
   | lbraceBar E rbrace { Implicit $1 $2 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
+  | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
   | tally { UBuiltin $1 Tally }
   | const { UBuiltin $1 Const }

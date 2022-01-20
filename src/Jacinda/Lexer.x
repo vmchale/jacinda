@@ -94,6 +94,7 @@ tokens :-
         "||"                     { mkSym OrTok }
         "("                      { mkSym LParen }
         ")"                      { mkSym RParen }
+        "&("                     { mkSym LAnchor }
         "{%"                     { mkSym LBracePercent }
         "{|"                     { mkSym LBraceBar }
         "]"                      { mkSym RSqBracket `andBegin` 0 }
@@ -234,6 +235,7 @@ data Sym = PlusTok
          | LBrace
          | RBrace
          | LParen
+         | LAnchor
          | RParen
          | LSqBracket
          | RSqBracket
@@ -286,6 +288,7 @@ instance Pretty Sym where
     pretty OrTok         = "||"
     pretty LParen        = "("
     pretty RParen        = ")"
+    pretty LAnchor       = "&("
     pretty LSqBracket    = "["
     pretty RSqBracket    = "]"
     pretty Tilde         = "~"
