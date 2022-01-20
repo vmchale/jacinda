@@ -9,7 +9,7 @@ import           Control.Recursion         (cata, embed)
 import qualified Data.ByteString           as BS
 import           Data.Containers.ListUtils (nubOrdOn)
 import           Data.Foldable             (foldl', traverse_)
-import           Data.List                 (scanl')
+import           Data.List                 (scanl', transpose)
 import           Data.List.Ext
 import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
@@ -378,6 +378,9 @@ eWith fp re (OptionVal ty e)                                                    
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
 -- OR "compile" to [(Int, E (T K)] -> ...
 
+takeConcatMap :: (a -> [b]) -> [a] -> [b]
+takeConcatMap f = concat . transpose . fmap f
+
 -- | Given an expression, turn it into a function which will process the file.
 fileProcessor :: FileBS
               -> RurePtr
@@ -411,7 +414,7 @@ fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right
 fileProcessor fp re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re (Anchor _ es) = Right $ \inp ->
-    printStream $ concatMap (\e -> ir fp re e inp) es
+    printStream $ takeConcatMap (\e -> ir fp re e inp) es
 fileProcessor _ _ Var{} = error "Internal error?"
 fileProcessor _ _ e@IntLit{} = Right $ const (print e)
 fileProcessor _ _ e@BoolLit{} = Right $ const (print e)
