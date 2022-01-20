@@ -1,3 +1,13 @@
+# Deduplicate Lines
+
+```awk
+!a[$0]++
+```
+
+```
+~.$0
+```
+
 # Process Compiler Output
 
 ```awk
