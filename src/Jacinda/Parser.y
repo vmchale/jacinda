@@ -37,6 +37,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
+    lanchor { TokSym $$ LAnchor }
     rparen { TokSym $$ RParen }
     semicolon { TokSym $$ Semicolon }
     backslash { TokSym $$ Backslash }
@@ -54,6 +55,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     select { $$@(TokSelect _ _) }
     floorSym { TokSym $$ FloorSym }
     ceilSym { TokSym $$ CeilSym }
+    dedup { TokSym $$ DedupTok }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -100,6 +102,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     min { TokResVar $$ VarMin }
     max { TokResVar $$ VarMax }
     ix { TokResVar $$ VarIx }
+    nf { TokResVar $$ VarNf }
     fs { TokResVar $$ VarFs }
 
     split { TokBuiltin $$ BuiltinSplit }
@@ -112,6 +115,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     match { TokBuiltin $$ BuiltinMatch }
     some { TokBuiltin $$ BuiltinSome }
     none { TokBuiltin $$ BuiltinNone }
+    fp { TokBuiltin $$ BuiltinFp }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -212,6 +216,7 @@ E :: { E AlexPosn }
   | lbraceBar E rbrace { Implicit $1 $2 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
+  | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
   | tally { UBuiltin $1 Tally }
   | const { UBuiltin $1 Const }
@@ -232,9 +237,12 @@ E :: { E AlexPosn }
   | ceil { UBuiltin $1 Ceiling }
   | floorSym { UBuiltin $1 Floor }
   | ceilSym { UBuiltin $1 Ceiling }
+  | dedup { UBuiltin $1 Dedup }
   | some { UBuiltin $1 Some }
   | ix { NBuiltin $1 Ix }
+  | nf { NBuiltin $1 Nf }
   | none { NBuiltin $1 None }
+  | fp { NBuiltin $1 Fp }
   | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
   | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
   | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }

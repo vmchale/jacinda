@@ -127,6 +127,7 @@ asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
 asTup (Just (RureMatch s e)) = OptionVal undefined (Just $ Tup undefined (mkI . fromIntegral <$> [s, e]))
 
+-- don't need to rename op because it's being used in a map, can't affect etc.
 applyUn :: E (T K)
         -> E (T K)
         -> EvalM (E (T K))
@@ -139,7 +140,8 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e') -- TODO: undefined??
+applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
+applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
@@ -169,6 +171,7 @@ eNorm (Lam ty n e)    = Lam ty n <$> eNorm e
 eNorm e@BBuiltin{}    = pure e
 eNorm e@TBuiltin{}    = pure e
 eNorm (Tup tys es)    = Tup tys <$> traverse eNorm es
+eNorm (Anchor ty es)  = Anchor ty <$> traverse eNorm es
 eNorm e@NBuiltin{}    = pure e
 eNorm (EApp ty op@BBuiltin{} e) = EApp ty op <$> eNorm e
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
@@ -195,7 +198,7 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') = d
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit _ s, StrLit _ s')       -> StrLit tyStr (s <> s')
+        (StrLit _ s, StrLit _ s')       -> StrLit tyStr (s <> s') -- TODO: copy?
         (RegexLit _ rr, RegexLit _ rr') -> RegexLit tyStr (rr <> rr')
         _                               -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') = do
@@ -383,6 +386,7 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Or) e) e') = do
         _                           -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = eNorm e
 eNorm (EApp ty op@(UBuiltin _ Const) e) = EApp ty op <$> eNorm e
+eNorm (EApp ty op@(UBuiltin _ Dedup) e) = EApp ty op <$> eNorm e
 eNorm (EApp ty op@(UBuiltin _ (At i)) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -418,7 +422,7 @@ eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) = do
     pure $ case eI of
         (StrLit _ str) -> parseAsEInt str
         _              -> EApp ty op eI
-eNorm (EApp ty op@(UBuiltin _ Some) e) = do
+eNorm (EApp ty (UBuiltin _ Some) e) = do
     eI <- eNorm e
     pure $ OptionVal ty (Just eI)
 eNorm Dfn{} = desugar

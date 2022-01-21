@@ -18,6 +18,8 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 # Features
+- [ ] `drop` builtin/syntax?
+- [ ] `$(` `anchor`: evaluate multiple streams at once
 - [ ] `$0:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
@@ -65,10 +67,13 @@
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
+- [ ] Awk scripts for building glibc
 # Bugs
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
-- [ ] e "[x+' '+y]|' ' split '01-23-1987' /-/"
+- [ ] `echo $PATH | ja run examples/path.jac` (proper rename...)
+- [ ] '([:fp"$0)' -i LICENSE
 # Performance
+- [ ] bind let-stuff ... allow until later?
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)

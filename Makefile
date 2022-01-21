@@ -1,5 +1,7 @@
 HS_SRC := $(shell find src -type f) jacinda.cabal
 
+JAC_SRC := $(shell find prelude lib -type f)
+
 man/ja.1: man/MANPAGE.md
 	pandoc $< -s -t man -o $@
 
@@ -24,3 +26,6 @@ clean:
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
+
+tags: $(JAC_SRC)
+	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@

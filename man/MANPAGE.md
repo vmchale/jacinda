@@ -72,6 +72,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **\\.** Binary operator: prior
 :   (a -> a -> a) -> Stream a -> Stream a
 
+**~.** Unary deduplication (stream)
+:   Eq a :=> Stream a -> Stream a
+
 **max** Maximum of two values
 
 **min** Minimum of two values
@@ -110,6 +113,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **match**
 :   Str -> Regex -> Option (Int . Int)
+
+**fp** Filename
+
+**nf** Number of fields
 
 ## SYNTAX
 

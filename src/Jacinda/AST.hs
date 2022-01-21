@@ -47,6 +47,7 @@ data TB = TyInteger
         | TyVec
         | TyBool
         | TyOption
+        | TyUnit
         -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
@@ -80,6 +81,7 @@ instance Pretty TB where
     pretty TyDate    = "Date"
     pretty TyVec     = "List"
     pretty TyOption  = "Optional"
+    pretty TyUnit    = "𝟙"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
@@ -104,6 +106,7 @@ data BUn = Tally -- length of string field
          | Floor
          | Ceiling
          | Some
+         | Dedup
          deriving (Eq)
 
 instance Pretty BUn where
@@ -118,6 +121,7 @@ instance Pretty BUn where
     pretty Ceiling    = "ceil"
     pretty Parse      = ":"
     pretty Some       = "Some"
+    pretty Dedup      = "~."
 
 -- ternary
 data BTer = ZipW
@@ -194,7 +198,9 @@ instance Pretty DfnVar where
 
 -- 0-ary
 data N = Ix
+       | Nf
        | None
+       | Fp
        deriving (Eq)
 
 -- expression
@@ -226,6 +232,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RegexCompiled RurePtr -- holds compiled regex (after normalization)
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
+         | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          -- TODO: regex literal
@@ -262,6 +269,7 @@ data EF a x = ColumnF a Int
             | ResVarF a DfnVar
             | RegexCompiledF RurePtr
             | ArrF a (V.Vector x)
+            | AnchorF a [x]
             | ParenF a x
             | OptionValF a (Maybe x)
             deriving (Generic, Functor, Foldable, Traversable)
@@ -270,7 +278,9 @@ type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix   = "ix"
+    pretty Nf   = "nf"
     pretty None = "None"
+    pretty Fp   = "fp"
 
 instance Pretty (E a) where
     pretty (Column _ i)                                            = "$" <> pretty i
@@ -321,6 +331,7 @@ instance Pretty (E a) where
     pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                             = parens (pretty e)
     pretty (Arr _ es)                                              = tupledByFunky "," (V.toList $ pretty <$> es)
+    pretty (Anchor _ es)                                           = "&" <> tupledBy "." (pretty <$> es)
     pretty (OptionVal _ (Just e))                                  = "Some" <+> pretty e
     pretty (OptionVal _ Nothing)                                   = "None"
 
