@@ -49,30 +49,6 @@ fn path(x) :=
 path"$0
 ```
 
-# ?
-
-```awk
-BEGIN { calls="" }
-
-{
-  calls = calls " " $1;
-  print "sysno-" $1 " = " $2;
-  print "nargs-" $1 " = " $3;
-}
-
-END { print "mach-syscalls := " calls }
-```
-
-```
-fn printLines(lines) :=
-  [x+'\n'+y]|'' lines;
-
-let
-  val calls := [x+' '+y]|'' $1
-  val prologue := printLines {| sprintf 'sysno-%s = %s\nnargs-%s = %s' (`1 . `2 . `1 . `3)}
-in sprintf '%s\nmach-syscalls := %s' (prologue . calls) end
-```
-
 # Count Lines
 
 ```awk
