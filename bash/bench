@@ -3,22 +3,9 @@
 # curl https://www.gutenberg.org/files/4300/4300-0.txt -o /tmp/ulysses.txt
 
 bench "ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt" \
-    "original-awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
-    "gawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
-    "mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
-    "busybox awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" 
+    "awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
+    "mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt"
 
 bench "ja run examples/span.jac -i examples/span.txt" \
-    "original-awk -f examples/span.awk examples/span.txt" \
-    "gawk -f examples/span.awk examples/span.txt" \
-    "mawk -f examples/span.awk examples/span.txt" \
-    "busybox awk -f examples/span.awk examples/span.txt"
-
-bench 'echo $PATH | ja run examples/path.jac' \
-    'echo $PATH | original-awk -f examples/path.awk' \
-    'echo $PATH | gawk -f examples/path.awk' \
-    'echo $PATH | mawk -f examples/path.awk' \
-    'echo $PATH | busybox awk -f examples/path.awk'
-
-# ja run examples/glibc/haveversions.jac -i examples/data/Versions.all
-# awk -f examples/glibc/haveversions.awk examples/data/Versions.all
+    "awk -f examples/span.awk examples/span.txt" \
+    "mawk -f examples/span.awk examples/span.txt"

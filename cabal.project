@@ -8,3 +8,8 @@ program-options
 
 package jacinda
   ghc-options: -j +RTS -A32m
+
+source-repository-package
+  location: git@github.com:vmchale/rure.git
+  type: git
+  tag: 5ae27ddc954d252f0ffe1ecb638d07528f0d15df

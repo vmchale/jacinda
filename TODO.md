@@ -28,6 +28,8 @@
 - [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
+- [x] Operator syntax for floor/ceiling?
+- [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] mapMaybe, catMaybes? for `Witherable`...
   - [ ] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!

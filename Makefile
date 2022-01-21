@@ -17,7 +17,7 @@ doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
 install: man/ja.1
-	cabal install exe:ja --overwrite-policy=always -w ghc-8.10.7
+	cabal install exe:ja --overwrite-policy=always -w ghc-9.2.1
 	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
