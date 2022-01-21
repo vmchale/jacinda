@@ -140,7 +140,8 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
+applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
