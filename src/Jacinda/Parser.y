@@ -204,6 +204,7 @@ E :: { E AlexPosn }
   | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
+  | parens(colon) { UBuiltin $1 Parse }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen E BBin rparen { EApp $1 (BBuiltin $1 $3) $2 }
   | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Name.loc n) n)) $3)) } }
