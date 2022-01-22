@@ -14,7 +14,7 @@ import qualified Data.ByteString            as BS
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (foldl', traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', transpose)
+import           Data.List                  (scanl', transpose, unzip4)
 import           Data.List.Ext
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -371,12 +371,14 @@ foldAll :: FileBS
         -> [(Int, E (T K), E (T K), E (T K))]
         -> [BS.ByteString]
         -> [(Int, E (T K))]
-foldAll fp re foldExprs bs = evalStep . go <$> foldExprs where
+foldAll fp re foldExprs bs = withs (unzip4 (go <$> foldExprs)) where
     -- with the fourth of each foldExpr, compute ir
     go (i, op, seed, streamExpr) = {-# SCC "go" #-} (i, op, seed, ir fp re streamExpr bs)
-    evalStep (i, _, seed, [])    = (i, seed)
-    evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
-    -- foldAlls is ops seeds xss = zipWith4
+    withs (is, ops, seeds, irStreams) = zip is (evalStep ops seeds (transpose irStreams))
+    evalStep ops seeds []       = seeds
+    evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in es' `seq` evalStep ops es' ess
+    -- evalStep (i, _, seed, [])    = (i, seed)
+    -- evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
 
 runJac :: FileBS
        -> RurePtr -- ^ Record separator
@@ -426,7 +428,7 @@ gatherFoldsM e@BoolLit{} = pure e
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re e bs =
     let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
-        in ungather (IM.fromList $ foldAll fp re folds bs) eHoles
+        in eClosed undefined $ ungather (IM.fromList $ foldAll fp re folds bs) eHoles
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
 -- OR "compile" to [(Int, E (T K)] -> ...
 
