@@ -1,11 +1,13 @@
 # Deduplicate Lines
 
+As in this [StackOverflow answer](https://unix.stackexchange.com/a/281478).
+
 ```awk
-!a[$0]++
+!a[$0]++ && ! /^$/
 ```
 
 ```
-~.$0
+~.[#x>0] #. $0
 ```
 
 # Process Compiler Output
