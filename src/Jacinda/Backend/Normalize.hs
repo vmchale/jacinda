@@ -14,10 +14,14 @@ module Jacinda.Backend.Normalize ( compileR
                                  , parseAsF
                                  , the
                                  , asTup
+                                 -- * Monad
+                                 , runEvalM
+                                 , eNorm
                                  ) where
 
-import           Control.Monad.State.Strict (State, evalState, gets, modify)
+import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
 import           Control.Recursion          (cata, embed)
+import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
@@ -104,17 +108,24 @@ type EvalM = State LetCtx
 mkLetCtx :: Int -> LetCtx
 mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
 
+hoistEvalM :: Int -> EvalM a -> (a, Int)
+hoistEvalM i = second (max_ . renames_) . flip runState (mkLetCtx i)
+
+runEvalM :: Int
+         -> EvalM a
+         -> a
+runEvalM i = flip evalState (mkLetCtx i)
+
 eClosed :: Int
         -> E (T K)
         -> E (T K)
-eClosed i = flip evalState (mkLetCtx i) . eNorm
+eClosed i = runEvalM i . eNorm
 
 closedProgram :: Int
               -> Program (T K)
               -> E (T K)
-closedProgram i (Program ds e) = flip evalState (mkLetCtx i) $
-    traverse_ processDecl ds *>
-    eNorm e
+closedProgram i (Program ds e) = runEvalM i $
+    traverse_ processDecl ds *> eNorm e
 
 processDecl :: D (T K)
             -> EvalM ()
