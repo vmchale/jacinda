@@ -143,7 +143,7 @@ The syntax is:
 One could (for instance) calculate population density:
 
 ```
-, (%) $5: $6:
+, (%) $5:f $6:f
 ```
 
 The postfix `:` parses the column based on inferred type; here it parses as
