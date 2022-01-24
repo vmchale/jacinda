@@ -379,6 +379,7 @@ data C = IsNum
        | Foldable
        | IsPrintf
        | HasField Int (T K)
+       | Witherable
        -- TODO: witherable
        deriving (Eq, Ord)
 
@@ -392,6 +393,7 @@ instance Pretty C where
     pretty Foldable        = "Foldable"
     pretty IsPrintf        = "Printf"
     pretty (HasField i ty) = "HasField" <+> pretty i <+> "~" <+> pretty ty
+    pretty Witherable      = "Witherable"
 
 instance Show C where
     show = show . pretty
