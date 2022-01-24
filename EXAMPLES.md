@@ -1,3 +1,9 @@
+# Find all distinct language extensions used in a project
+
+```
+rg '\{-#.*LANGUAGE.*#-}' --no-filename | ja '~.$3'
+```
+
 # cdc
 
 ```
