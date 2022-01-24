@@ -24,7 +24,7 @@ There is a [vim plugin](https://github.com/vmchale/jacinda-vim).
 # SHOCK & AWE
 
 ```
-ls -l | ja '(+)|0 {ix>1}{`5:i}'
+ls -l | ja '(+)|0 {ix>1}{`5:}'
 ```
 
 ```
