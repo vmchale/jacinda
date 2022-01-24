@@ -107,6 +107,7 @@ data BUn = Tally -- length of string field
          | Ceiling
          | Some
          | Dedup
+         | CatMaybes
          deriving (Eq)
 
 instance Pretty BUn where
@@ -122,6 +123,7 @@ instance Pretty BUn where
     pretty Parse      = ":"
     pretty Some       = "Some"
     pretty Dedup      = "~."
+    pretty CatMaybes  = ".?"
 
 -- ternary
 data BTer = ZipW
@@ -164,6 +166,7 @@ data BBin = Plus
           | Filter
           | Sprintf
           | Match
+          | MapMaybe
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -191,6 +194,7 @@ instance Pretty BBin where
     pretty Splitc     = "splitc"
     pretty Sprintf    = "sprintf"
     pretty Match      = "match"
+    pretty MapMaybe   = ":?"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -382,6 +386,7 @@ data C = IsNum
        | Foldable
        | IsPrintf
        | HasField Int (T K)
+       | Witherable
        -- TODO: witherable
        deriving (Eq, Ord)
 
@@ -395,6 +400,7 @@ instance Pretty C where
     pretty Foldable        = "Foldable"
     pretty IsPrintf        = "Printf"
     pretty (HasField i ty) = "HasField" <+> pretty i <+> "~" <+> pretty ty
+    pretty Witherable      = "Witherable"
 
 instance Show C where
     show = show . pretty

@@ -151,7 +151,8 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
+applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
@@ -485,6 +486,12 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyV
     case y' of
         Arr _ es -> Arr undefined <$> traverse (applyUn x') es -- TODO: undefined?
         _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) = do
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        OptionVal _ e -> OptionVal undefined <$> traverse (applyUn x') e -- TODO: undefined?
+        _             -> pure $ EApp ty0 (EApp ty1 op x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) x) y) = do
     f' <- eNorm f
     x' <- eNorm x
@@ -507,6 +514,7 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
         -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ MapMaybe) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 -- FIXME: this will almost surely run into trouble; if the above pattern matches

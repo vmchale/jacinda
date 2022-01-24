@@ -62,7 +62,7 @@ Functor f :=> a -> b -> f a -> f b
 a -> b -> a
 .TP
 \f[B]#.\f[R] Binary operator: filter
-(a -> Bool) -> Stream a -> Stream a
+Witherable f :=> (a -> Bool) -> f a -> f a
 .TP
 \f[B]\[rs].\f[R] Binary operator: prior
 (a -> a -> a) -> Stream a -> Stream a
@@ -110,6 +110,9 @@ b -> (a -> b) -> Option a -> b
 \f[B]match\f[R]
 Str -> Regex -> Option (Int .
 Int)
+.TP
+\f[B]:?\f[R] mapMaybe
+Witherable f :=> (a -> Option b) -> f a -> f b
 .PP
 \f[B]fp\f[R] Filename
 .PP
@@ -142,9 +145,6 @@ List a -> a
 .PP
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
-.SS Limitations
-.PP
-Note that \f[C]Option\f[R] is not implemented as a functor.
 .SH COPYRIGHT
 .PP
 Copyright 2021-2022.

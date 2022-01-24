@@ -216,6 +216,9 @@ checkType ty@(TyB _ TyBool) (c@IsNum, l)       = throwError $ Doesn'tSatisfy l (
 checkType ty@TyArr{} (c, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
 checkType (TyB _ TyVec) (Functor, _)           = pure ()
 checkType (TyB _ TyStream) (Functor, _)        = pure ()
+checkType (TyB _ TyOption) (Functor, _)        = pure ()
+checkType (TyB _ TyStream) (Witherable, _)     = pure ()
+checkType ty (c@Witherable, l)                 = throwError $ Doesn'tSatisfy l (void ty) c
 checkType ty (c@Functor, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
 checkType (TyB _ TyVec) (Foldable, _)          = pure ()
 checkType (TyB _ TyStream) (Foldable, _)       = pure ()
@@ -442,11 +445,32 @@ tyE0 (UBuiltin _ Const) = do
         b' = var b
         fTy = tyArr a' (tyArr b' a')
     pure $ UBuiltin fTy Const
-tyE0 (BBuiltin _ Filter) = do
+tyE0 (UBuiltin l CatMaybes) = do
     a <- dummyName "a"
+    f <- higherOrder "f"
     let a' = var a
-        fTy = tyArr (tyArr a' tyBool) (tyArr (tyStream a') (tyStream a'))
+        f' = var f
+        fTy = tyArr (hkt f' $ tyOpt a') (hkt f' a')
+    modify (mapClassVars (addC f (Witherable, l)))
+    pure $ UBuiltin fTy CatMaybes
+tyE0 (BBuiltin l Filter) = do
+    a <- dummyName "a"
+    f <- higherOrder "f"
+    let a' = var a
+        f' = var f
+        fTy = tyArr (tyArr a' tyBool) (tyArr (hkt f' a') (hkt f' a'))
+    modify (mapClassVars (addC f (Witherable , l)))
     pure $ BBuiltin fTy Filter
+tyE0 (BBuiltin l MapMaybe) = do
+    a <- dummyName "a"
+    b <- dummyName "b"
+    f <- higherOrder "f"
+    let a' = var a
+        b' = var b
+        f' = var f
+        fTy = tyArr (tyArr a' (tyOpt b')) (tyArr (hkt f' a') (hkt f' b'))
+    modify (mapClassVars (addC f (Witherable, l)))
+    pure $ BBuiltin fTy MapMaybe
 tyE0 (BBuiltin l Map) = do
     a <- dummyName "a"
     b <- dummyName "b"

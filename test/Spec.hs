@@ -40,7 +40,13 @@ main = defaultMain $
         , testCase "typechecks dfn" (tyFile "test/examples/ab.jac")
         , testCase "parses parens" (tyFile "examples/lib.jac")
         , testCase "typechecks/parses correctly" (tyFile "test/examples/line.jac")
+        , testCase "split eval" (evalTo "[x+' '+y]|'' split '01-23-1987' /-/" " 01 23 1987")
         ]
+
+evalTo :: BSL.ByteString -> String -> Assertion
+evalTo bsl expected =
+    let actual = show (exprEval bsl)
+        in actual @?= expected
 
 pAst :: E ()
 pAst =

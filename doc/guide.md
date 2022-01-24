@@ -200,7 +200,7 @@ in awk.
 We can filter an extant stream with `#.`, viz.
 
 ```
-(>110) #. $0:i
+(>110) #. $1:i
 ```
 
 `#.` takes as its left argument a unary function returning a boolean.
@@ -305,3 +305,10 @@ effectiveness.
 
 Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to
 disambiguate operators and witness with an implementation.
+
+The language does not allow custom typeclasses.
+
+## Functor
+
+The map operator `"` is works on all functors, not just streams. `Stream`,
+`List`, and `Option` are instances.

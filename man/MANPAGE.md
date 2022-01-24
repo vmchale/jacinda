@@ -67,7 +67,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   a -> b -> a
 
 **#.** Binary operator: filter
-:   (a -> Bool) -> Stream a -> Stream a
+:   Witherable f :=> (a -> Bool) -> f a -> f a
 
 **\\.** Binary operator: prior
 :   (a -> a -> a) -> Stream a -> Stream a
@@ -114,6 +114,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **match**
 :   Str -> Regex -> Option (Int . Int)
 
+**:?** mapMaybe
+:   Witherable f :=> (a -> Option b) -> f a -> f b
+
 **fp** Filename
 
 **nf** Number of fields
@@ -146,10 +149,6 @@ a boolean expression.
 
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
-
-## Limitations
-
-Note that `Option` is not implemented as a functor.
 
 # COPYRIGHT
 
