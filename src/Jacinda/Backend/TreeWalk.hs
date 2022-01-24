@@ -7,7 +7,7 @@ module Jacinda.Backend.TreeWalk ( runJac
 import           Control.Exception         (Exception, throw)
 import           Control.Recursion         (cata, embed)
 import qualified Data.ByteString           as BS
-import           Data.Containers.ListUtils (nubOrdOn)
+import           Data.Containers.ListUtils (nubIntOn, nubOrdOn)
 import           Data.Foldable             (foldl', traverse_)
 import           Data.List                 (scanl', transpose)
 import           Data.List.Ext
@@ -355,11 +355,11 @@ ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
-    nubOrdOn asInt . ir fp re e
+    nubIntOn (fromIntegral . asInt) . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
-    nubOrdOn asFloat . ir fp re e
+    nubIntOn (fromEnum . asFloat) . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
-    nubOrdOn asBool . ir fp re e
+    nubIntOn (fromEnum . asBool) . ir fp re e
 
 -- | Output stream that prints each entry (expression)
 printStream :: [E (T K)] -> IO ()
