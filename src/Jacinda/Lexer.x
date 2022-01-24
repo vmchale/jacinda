@@ -114,6 +114,7 @@ tokens :-
         "~."                     { mkSym DedupTok }
         ".?"                     { mkSym CatMaybesTok }
         ":?"                     { mkSym MapMaybeTok }
+        "~*"                     { mkSym CapTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -269,6 +270,7 @@ data Sym = PlusTok
          | DedupTok
          | CatMaybesTok
          | MapMaybeTok
+         | CapTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -314,6 +316,7 @@ instance Pretty Sym where
     pretty DedupTok      = "~."
     pretty CatMaybesTok  = ".?"
     pretty MapMaybeTok   = ":?"
+    pretty CapTok        = "~*"
 
 data Keyword = KwLet
              | KwIn
