@@ -66,6 +66,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fold { TokSym $$ FoldTok }
     caret { TokSym $$ Caret }
     quot { TokSym $$ Quot }
+    mapMaybe { TokSym $$ MapMaybeTok }
 
     eq { TokSym $$ EqTok }
     neq { TokSym $$ NeqTok }
@@ -158,6 +159,7 @@ BBin :: { BBin }
      | eq { Eq }
      | neq { Neq }
      | quot { Map }
+     | mapMaybe { MapMaybe }
      | tilde { Matches }
      | notMatch { NotMatches }
      | and { And }

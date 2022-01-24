@@ -35,6 +35,18 @@ fn printSpan(str) :=
 printSpan"{% / *\^+/}{`2}
 ```
 
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  let
+    val p := match str /\^+/
+    val str := (sprintf '%i-%i')"p
+  in str end;
+
+printSpan:?{% /\|/}{`2}
+```
+
 # Present PATH
 
 ```awk

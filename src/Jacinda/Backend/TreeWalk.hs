@@ -11,6 +11,7 @@ import           Data.Containers.ListUtils (nubOrdOn)
 import           Data.Foldable             (foldl', traverse_)
 import           Data.List                 (scanl', transpose)
 import           Data.List.Ext
+import           Data.Maybe                (mapMaybe)
 import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
 import           Jacinda.AST
@@ -65,6 +66,10 @@ asRegex _                  = noRes
 asArr :: E a -> V.Vector (E a)
 asArr (Arr _ es) = es
 asArr _          = noRes
+
+asOpt :: E a -> Maybe (E a)
+asOpt (OptionVal _ e) = e
+asOpt _               = noRes
 
 -- just shove some big number into the renamer and hope it doesn't clash (bad,
 -- hack, this is why we got kicked out of the garden of Eden)
@@ -275,6 +280,12 @@ eEval (fp, ix, line, ctx) = go where
         in Arr undefined (applyUn' x' <$> y')
         where applyUn' :: E (T K) -> E (T K) -> E (T K)
               applyUn' e e' = go (EApp undefined e e')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) =
+        let x' = go x
+            y' = asOpt (go y)
+        in OptionVal undefined (applyUn' x' <$> y')
+        where applyUn' :: E (T K) -> E (T K) -> E (T K)
+              applyUn' e e' = go (EApp undefined e e')
     go (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) seed) xs) =
         let f' = go f
             seed' = go seed
@@ -330,6 +341,9 @@ ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (with
 ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR (withFp fp op)
         in filter (asBool . applyUn op') . ir fp re stream
+ir fp re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
+    let op' = compileR (withFp fp op)
+        in mapMaybe (asOpt . applyUn op') . ir fp re stream
 ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp op)) . ir fp re stream
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
@@ -371,13 +385,13 @@ runJac fp re i e = fileProcessor fp re (closedProgram i e)
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx fp re op seed stream
 eWith fp re (EApp ty e0 e1)                                                                                                            = \bs -> eClosed undefined (EApp ty (eWith fp re e0 bs) (eWith fp re e1 bs))
-eWith _ _ e@BBuiltin{}                                                                                                                = const e
-eWith _ _ e@UBuiltin{}                                                                                                                = const e
-eWith _ _ e@TBuiltin{}                                                                                                                = const e
-eWith _ _ e@StrLit{}                                                                                                                  = const e
-eWith _ _ e@FloatLit{}                                                                                                                = const e
-eWith _ _ e@IntLit{}                                                                                                                  = const e
-eWith _ _ e@BoolLit{}                                                                                                                 = const e
+eWith _ _ e@BBuiltin{}                                                                                                                 = const e
+eWith _ _ e@UBuiltin{}                                                                                                                 = const e
+eWith _ _ e@TBuiltin{}                                                                                                                 = const e
+eWith _ _ e@StrLit{}                                                                                                                   = const e
+eWith _ _ e@FloatLit{}                                                                                                                 = const e
+eWith _ _ e@IntLit{}                                                                                                                   = const e
+eWith _ _ e@BoolLit{}                                                                                                                  = const e
 eWith fp re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith fp re e bs) <$> es)
 eWith fp re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith fp re eϵ bs) <$> e)
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
@@ -409,6 +423,8 @@ fileProcessor fp re e@Implicit{} = Right $ \inp ->
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
+    printStream $ ir fp re e inp
+fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp

@@ -107,6 +107,7 @@ data BUn = Tally -- length of string field
          | Ceiling
          | Some
          | Dedup
+         | CatMaybes
          deriving (Eq)
 
 instance Pretty BUn where
@@ -122,6 +123,7 @@ instance Pretty BUn where
     pretty Parse      = ":"
     pretty Some       = "Some"
     pretty Dedup      = "~."
+    pretty CatMaybes  = ".?"
 
 -- ternary
 data BTer = ZipW
@@ -162,6 +164,7 @@ data BBin = Plus
           | Filter
           | Sprintf
           | Match
+          | MapMaybe
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -189,6 +192,7 @@ instance Pretty BBin where
     pretty Splitc     = "splitc"
     pretty Sprintf    = "sprintf"
     pretty Match      = "match"
+    pretty MapMaybe   = ":?"
 
 data DfnVar = X | Y deriving (Eq)
 
