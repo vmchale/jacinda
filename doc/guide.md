@@ -15,7 +15,7 @@ awk).
 
 Awk is oriented around patterns and actions. Jacinda has support for a similar
 style: one defines a pattern and an expression defined by the lines that this
-matches, viz. 
+matches, viz.
 
 ```
 {% <pattern>}{<expr>}
@@ -61,7 +61,7 @@ There is also a syntax that defines a stream on *all* lines,
 {|<expr>}
 ```
 
-So `{|``0}` would define a stream of text corresponding to the lines in the file. 
+So `{|``0}` would define a stream of text corresponding to the lines in the file.
 
 ### Fold
 
@@ -143,7 +143,7 @@ The syntax is:
 One could (for instance) calculate population density:
 
 ```
-, (%) $5: $6:
+, (%) $5:f $6:f
 ```
 
 The postfix `:` parses the column based on inferred type; here it parses as
@@ -183,6 +183,17 @@ Jacinda allows partially applied (curried) functions; one could write
 ```
 succDiff := ((-)\.)
 ```
+
+### Deduplicate
+
+Jacinda has stream deduplication built in with the `~.` operator.
+
+```
+~.$0
+```
+
+This is far better than `sort | uniq` as it preserves order; it is equivalent to `!a[$0]++`
+in awk.
 
 ### Filter
 

@@ -11,7 +11,7 @@ module Jacinda.Ty ( TypeM
 import           Control.Exception          (Exception)
 import           Control.Monad              (forM)
 import           Control.Monad.Except       (throwError)
-import           Control.Monad.State.Strict (StateT, gets, runStateT)
+import           Control.Monad.State.Strict (StateT, gets, modify, runStateT)
 import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
@@ -27,8 +27,6 @@ import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Ty.Const
-import           Lens.Micro                 (Lens')
-import           Lens.Micro.Mtl             (modifying)
 import           Prettyprinter              (Doc, Pretty (..), hardline, squotes, vsep, (<+>))
 
 infixr 6 <#>
@@ -72,17 +70,17 @@ prettyConstraints cs = vsep (prettyEq . go <$> S.toList cs) where
 prettyEq :: (T a, T a) -> Doc ann
 prettyEq (ty, ty') = pretty ty <+> "≡" <+> pretty ty'
 
-maxULens :: Lens' (TyState a) Int
-maxULens f s = fmap (\x -> s { maxU = x }) (f (maxU s))
+mapMaxU :: (Int -> Int) -> TyState a -> TyState a
+mapMaxU f (TyState u k c v cs) = TyState (f u) k c v cs
 
-classVarsLens :: Lens' (TyState a) (IM.IntMap (S.Set (C, a)))
-classVarsLens f s = fmap (\x -> s { classVars = x }) (f (classVars s))
+mapClassVars :: (IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))) -> TyState a -> TyState a
+mapClassVars f (TyState u k cvs v cs) = TyState u k (f cvs) v cs
 
-varEnvLens :: Lens' (TyState a) (IM.IntMap (T K))
-varEnvLens f s = fmap (\x -> s { varEnv = x }) (f (varEnv s))
+addVarEnv :: Int -> T K -> TyState a -> TyState a
+addVarEnv i ty (TyState u k cvs v cs) = TyState u k cvs (IM.insert i ty v) cs
 
-constraintsLens :: Lens' (TyState a) (S.Set (a, T K, T K))
-constraintsLens f s = fmap (\x -> s { constraints = x }) (f (constraints s))
+addConstraint :: Ord a => (a, T K, T K) -> TyState a -> TyState a
+addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 
 type TypeM a = StateT (TyState a) (Either (Error a))
 
@@ -166,7 +164,7 @@ freshName :: T.Text -> K -> TypeM a (Name K)
 freshName n k = do
     st <- gets maxU
     Name n (Unique $ st+1) k
-        <$ modifying maxULens (+1)
+        <$ modify (mapMaxU (+1))
 
 higherOrder :: T.Text -> TypeM a (Name K)
 higherOrder t = freshName t (KArr Star Star)
@@ -190,7 +188,7 @@ var = TyVar Star
 -- assumes they have been renamed...
 pushConstraint :: Ord a => a -> T K -> T K -> TypeM a ()
 pushConstraint l ty ty' =
-    modifying constraintsLens (S.insert (l, ty, ty'))
+    modify (addConstraint (l, ty, ty'))
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
@@ -265,7 +263,7 @@ tyD0 (SetFS bs) = pure $ SetFS bs
 tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
     e' <- tyE0 e
     let ty = eLoc e'
-    modifying varEnvLens (IM.insert i ty)
+    modify (addVarEnv i ty)
     pure $ FunDecl (n $> ty) [] e'
 tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
 
@@ -315,28 +313,28 @@ tyE e = do
 tyNumOp :: Ord a => a -> TypeM a (T K)
 tyNumOp l = do
     m <- dummyName "m"
-    modifying classVarsLens (addC m (IsNum, l))
+    modify (mapClassVars (addC m (IsNum, l)))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
 tySemiOp :: Ord a => a -> TypeM a (T K)
 tySemiOp l = do
     m <- dummyName "m"
-    modifying classVarsLens (addC m (IsSemigroup, l))
+    modify (mapClassVars (addC m (IsSemigroup, l)))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
 tyOrd :: Ord a => a -> TypeM a (T K)
 tyOrd l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a (IsOrd, l))
+    modify (mapClassVars (addC a (IsOrd, l)))
     let a' = var a
     pure $ tyArr a' (tyArr a' tyBool)
 
 tyEq :: Ord a => a -> TypeM a (T K)
 tyEq l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a (IsEq, l))
+    modify (mapClassVars (addC a (IsEq, l)))
     let a' = var a
     pure $ tyArr a' (tyArr a' tyBool)
 
@@ -344,7 +342,7 @@ tyEq l = do
 tyM :: Ord a => a -> TypeM a (T K)
 tyM l = do
     a <- dummyName "a"
-    modifying classVarsLens (addC a (IsOrd, l))
+    modify (mapClassVars (addC a (IsOrd, l)))
     let a' = var a
     pure $ tyArr a' (tyArr a' a')
 
@@ -414,12 +412,12 @@ tyE0 (NBuiltin _ None) = do
 tyE0 (UBuiltin l Parse) = do
     a <- dummyName "a"
     let a' = var a
-    modifying classVarsLens (addC a (IsParseable, l))
+    modify (mapClassVars (addC a (IsParseable, l)))
     pure $ UBuiltin (tyArr tyStr a') Parse
 tyE0 (BBuiltin l Sprintf) = do
     a <- dummyName "a"
     let a' = var a
-    modifying classVarsLens (addC a (IsPrintf, l))
+    modify (mapClassVars (addC a (IsPrintf, l)))
     pure $ BBuiltin (tyArr tyStr (tyArr a' tyStr)) Sprintf
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
@@ -431,13 +429,13 @@ tyE0 (UBuiltin l (Select i)) = do
     b <- dummyName "b"
     let a' = var a
         b' = var b
-    modifying classVarsLens (addC a (HasField i b', l))
+    modify (mapClassVars (addC a (HasField i b', l)))
     pure $ UBuiltin (tyArr a' b') (Select i)
 tyE0 (UBuiltin l Dedup) = do
     a <- dummyName "a"
     let a' = var a
         fTy = tyArr (tyStream a') (tyStream a')
-    modifying classVarsLens (addC a (IsEq, l))
+    modify (mapClassVars (addC a (IsEq, l)))
     pure $ UBuiltin fTy Dedup
 tyE0 (UBuiltin _ Const) = do
     a <- dummyName "a"
@@ -459,7 +457,7 @@ tyE0 (BBuiltin l Map) = do
         b' = var b
         f' = var f
         fTy = tyArr (tyArr a' b') (tyArr (hkt f' a') (hkt f' b'))
-    modifying classVarsLens (addC f (Functor, l))
+    modify (mapClassVars (addC f (Functor, l)))
     pure $ BBuiltin fTy Map
 -- (b -> a -> b) -> b -> Stream a -> b
 tyE0 (TBuiltin l Fold) = do
@@ -470,7 +468,7 @@ tyE0 (TBuiltin l Fold) = do
         a' = var a
         f' = var f
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (hkt f' a') b'))
-    modifying classVarsLens (addC f (Foldable, l))
+    modify (mapClassVars (addC f (Foldable, l)))
     pure $ TBuiltin fTy Fold
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
@@ -526,13 +524,13 @@ tyE0 (EApp _ e0 e1) = do
 tyE0 (Lam _ n@(Name _ (Unique i) _) e) = do
     a <- dummyName "a"
     let a' = var a
-    modifying varEnvLens (IM.insert i a')
+    modify (addVarEnv i a')
     e' <- tyE0 e
     pure $ Lam (tyArr a' (eLoc e')) (n $> a') e'
 tyE0 (Let _ (n@(Name _ (Unique i) _), eϵ) e) = do
     eϵ' <- tyE0 eϵ
     let bTy = eLoc eϵ'
-    modifying varEnvLens (IM.insert i bTy)
+    modify (addVarEnv i bTy)
     e' <- tyE0 e
     pure $ Let (eLoc e') (n $> bTy, eϵ') e'
 tyE0 (Tup _ es) = do

@@ -66,6 +66,11 @@ asArr :: E a -> V.Vector (E a)
 asArr (Arr _ es) = es
 asArr _          = noRes
 
+-- just shove some big number into the renamer and hope it doesn't clash (bad,
+-- hack, this is why we got kicked out of the garden of Eden)
+reprehensible :: Int
+reprehensible = (maxBound :: Int) `div` 2
+
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 withFp :: FileBS -> E (T K) -> E (T K)
@@ -283,7 +288,7 @@ applyOp :: E (T K) -- ^ Operator
         -> E (T K)
         -> E (T K)
         -> E (T K)
-applyOp op e e' = eClosed undefined (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
+applyOp op e e' = eClosed reprehensible (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
 atField :: RurePtr
         -> Int
@@ -299,7 +304,7 @@ applyUn :: E (T K)
         -> E (T K)
 applyUn unOp e =
     case eLoc unOp of
-        TyArr _ _ res -> eClosed undefined (EApp res unOp e)
+        TyArr _ _ res -> eClosed reprehensible (EApp res unOp e)
         _             -> error "Internal error?"
 
 -- | Turn an expression representing a stream into a stream of expressions (using line as context)

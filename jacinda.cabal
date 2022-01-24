@@ -62,7 +62,7 @@ library jacinda-lib
         array,
         mtl,
         transformers,
-        regex-rure,
+        regex-rure >=0.1.2.0,
         microlens,
         microlens-mtl,
         vector,
