@@ -129,7 +129,7 @@ ls -l | awk '{ total += $5; } END { print total; }'
 ```
 
 ```
-ls -l | ja '(+)|0 {ix>1}{`5:i}'
+ls -l | ja '(+)|0 {ix>1}{`5:}'
 ```
 
 # Discard First Line
