@@ -460,6 +460,13 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Captures) e0) e1) e2) = do
+    e0' <- eNorm e0
+    e1' <- eNorm e1
+    e2' <- eNorm e2
+    pure $ case (e0', e1', e2') of
+        (StrLit _ str, IntLit _ ix, RegexCompiled re) -> OptionVal (tyOpt tyStr) (mkStr <$> findCapture re str (fromIntegral ix))
+        _                                             -> EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
