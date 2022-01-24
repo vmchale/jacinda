@@ -16,14 +16,12 @@ import qualified Data.ByteString.Internal as BS
 import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureMatch (..), RurePtr, compile, find, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureMatch (..), RurePtr, compile, find, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- see: https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
-
--- also ls -l | ja '{ix>1}{`5:i}'
 
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
@@ -47,7 +45,7 @@ splitBy :: RurePtr
         -> V.Vector BS.ByteString
 splitBy re haystack@(BS.BS fp l) =
     (\sp -> V.fromList [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- sp]) slicePairs
-    where ixes = unsafeDupablePerformIO $ do { reIptr <- mkIter re; matches reIptr haystack }
+    where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
                 rms                 -> mkMiddle 0 rms
