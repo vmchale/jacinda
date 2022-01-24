@@ -206,6 +206,8 @@ E :: { E AlexPosn }
   | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
+  | parens(iParse) { UBuiltin $1 IParse }
+  | parens(fParse) { UBuiltin $1 FParse }
   | parens(colon) { UBuiltin $1 Parse }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen E BBin rparen { EApp $1 (BBuiltin $1 $3) $2 }
