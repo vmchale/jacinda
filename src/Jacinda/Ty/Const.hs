@@ -3,6 +3,8 @@ module Jacinda.Ty.Const ( tyStream
                         , tyI
                         , tyF
                         , tyBool
+                        , hkt
+                        , tyOpt
                         ) where
 
 import           Jacinda.AST
@@ -22,3 +24,9 @@ tyF = TyB Star TyFloat
 
 tyStr :: T K
 tyStr = TyB Star TyStr
+
+hkt :: T K -> T K -> T K
+hkt = TyApp Star
+
+tyOpt :: T K -> T K
+tyOpt = hkt (TyB (KArr Star Star) TyOption)

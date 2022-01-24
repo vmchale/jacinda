@@ -67,6 +67,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     caret { TokSym $$ Caret }
     quot { TokSym $$ Quot }
     mapMaybe { TokSym $$ MapMaybeTok }
+    catMaybes { TokSym $$ CatMaybesTok }
+    capture { TokSym $$ CapTok }
 
     eq { TokSym $$ EqTok }
     neq { TokSym $$ NeqTok }
@@ -214,6 +216,7 @@ E :: { E AlexPosn }
   | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Name.loc n) n)) $3)) } }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
+  | E capture E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Captures) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
@@ -244,6 +247,7 @@ E :: { E AlexPosn }
   | ceilSym { UBuiltin $1 Ceiling }
   | dedup { UBuiltin $1 Dedup }
   | some { UBuiltin $1 Some }
+  | catMaybes { UBuiltin $1 CatMaybes }
   | ix { NBuiltin $1 Ix }
   | nf { NBuiltin $1 Nf }
   | none { NBuiltin $1 None }

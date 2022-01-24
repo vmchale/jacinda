@@ -350,17 +350,11 @@ tyM l = do
 desugar :: a
 desugar = error "Should have been de-sugared in an earlier stage!"
 
-hkt :: T K -> T K -> T K
-hkt = TyApp Star
-
 tyVec :: T K
 tyVec = TyB (KArr Star Star) TyVec
 
 mkVec :: T K -> T K
 mkVec = hkt tyVec
-
-tyOpt :: T K -> T K
-tyOpt = hkt (TyB (KArr Star Star) TyOption)
 
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
 tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
@@ -492,6 +486,8 @@ tyE0 (TBuiltin l Fold) = do
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (hkt f' a') b'))
     modify (mapClassVars (addC f (Foldable, l)))
     pure $ TBuiltin fTy Fold
+tyE0 (TBuiltin _ Captures) =
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (tyOpt tyStr)))) Captures
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
     a <- dummyName "a"

@@ -38,8 +38,12 @@ substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` be
                                | otherwise = "error: invalid substring indices."
 
 {-# NOINLINE findCapture #-}
-findCapture :: RurePtr -> BS.ByteString -> CSize -> Maybe RureMatch
-findCapture re haystack ix = unsafeDupablePerformIO $ findCaptures re haystack ix 0
+findCapture :: RurePtr -> BS.ByteString -> CSize -> Maybe BS.ByteString
+findCapture re haystack@(BS.BS fp l) ix = unsafeDupablePerformIO $ fmap go <$> findCaptures re haystack ix 0
+    where go (RureMatch s e) =
+            let e' = fromIntegral e
+                s' = fromIntegral s
+                in BS.BS (fp `plusForeignPtr` s') (e'-s')
 
 {-# NOINLINE find' #-}
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
