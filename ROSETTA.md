@@ -1,3 +1,14 @@
+# Sum Population
+
+```
+wget https://burntsushi.net/stuff/worldcitiespop_mil.csv -O /tmp/worldcitiespop_mil.csv
+ja -F, '(+)|0 {`5 ~ /^\d+$/}{`5:}' -i /tmp/worldcitiespop_mil.csv
+```
+
+```
+awk -F, '{ sum += $5 }; END { print sum }' /tmp/worldcitiespop_mil.csv
+```
+
 # Deduplicate Lines
 
 As in this [StackOverflow answer](https://unix.stackexchange.com/a/281478).
@@ -33,6 +44,18 @@ fn printSpan(str) :=
   in str end;
 
 printSpan"{% / *\^+/}{`2}
+```
+
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  let
+    val p := match str /\^+/
+    val str := (sprintf '%i-%i')"p
+  in str end;
+
+printSpan:?{% /\|/}{`2}
 ```
 
 # Present PATH

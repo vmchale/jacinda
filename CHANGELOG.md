@@ -2,6 +2,8 @@
   * Add `nf` builtin
   * Add deduplication builtin (`~.`)
   * Add anchor ability to print multiple streams
+  * Make `Option` a functor
+  * Add `Witherable` class, `:?` (mapMaybe)
 
 # 0.2.1.0
 
