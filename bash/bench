@@ -8,11 +8,12 @@ bench "ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt" \
     "mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
     "busybox awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" 
 
-bench "ja run examples/span.jac -i examples/span.txt" \
-    "original-awk -f examples/span.awk examples/span.txt" \
-    "gawk -f examples/span.awk examples/span.txt" \
-    "mawk -f examples/span.awk examples/span.txt" \
-    "busybox awk -f examples/span.awk examples/span.txt"
+make bench/data/span.txt
+bench "ja run examples/span.jac -i bench/data/span.txt" \
+    "original-awk -f examples/span.awk bench/data/span.txt" \
+    "gawk -f examples/span.awk bench/data/span.txt" \
+    "mawk -f examples/span.awk bench/data/span.txt" \
+    "busybox awk -f examples/span.awk bench/data/span.txt"
 
 bench 'echo $PATH | ja run examples/path.jac' \
     'echo $PATH | original-awk -f examples/path.awk' \
