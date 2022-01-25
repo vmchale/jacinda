@@ -19,18 +19,17 @@
 - [ ] unicode/apl for floor+ceiling
 # Features
 - [ ] `drop` builtin/syntax?
-- [ ] `$(` `anchor`: evaluate multiple streams at once
-- [ ] `$0:` etc. parseable columns
+- [x] `$(` `anchor`: evaluate multiple streams at once
+- [ ] `$1:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
-- [x] Operator syntax for floor/ceiling?
-  - [x] `|.` for instance? `|'`?
+- [x] Operator syntax for floor/ceiling?  - [x] `|.` for instance? `|'`?
 - [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
 - [x] Operator syntax for floor/ceiling?
 - [ ] Witherable typeclass, vectors/lists should be a member!
-- [ ] mapMaybe, catMaybes? for `Witherable`...
+- [x] mapMaybe, catMaybes? for `Witherable`...
   - [ ] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!
 - [x] `match`
@@ -52,11 +51,12 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
-- [ ] `Parseable` class - implement
+- [x] `Parseable` class - implement
 - [½] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
-- [ ] `Option` is not a functor
+- [x] `Option` is not a functor
+- [ ] Expose captures
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
@@ -66,6 +66,7 @@
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
 # Examples
+- [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
@@ -75,6 +76,9 @@
 - [ ] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] '([:fp"$0)' -i LICENSE
 # Performance
+- [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
+- [ ] https://github.com/petewarden/dstkdata
+- [ ]  http://awka.sourceforge.net/compare.html
 - [ ] bind let-stuff ... allow until later?
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example
