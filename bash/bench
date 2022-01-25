@@ -10,10 +10,21 @@ bench "ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt" \
 
 make bench/data/span.txt
 bench "ja run examples/span.jac -i bench/data/span.txt" \
+    "ja run examples/span2.jac -i bench/data/span.txt" \
     "original-awk -f examples/span.awk bench/data/span.txt" \
+    "original-awk -f examples/span2.awk bench/data/span.txt" \
     "gawk -f examples/span.awk bench/data/span.txt" \
+    "gawk -f examples/span2.awk bench/data/span.txt" \
     "mawk -f examples/span.awk bench/data/span.txt" \
-    "busybox awk -f examples/span.awk bench/data/span.txt"
+    "mawk -f examples/span2.awk bench/data/span.txt" \
+    "busybox awk -f examples/span.awk bench/data/span.txt" \
+    "busybox awk -f examples/span2.awk bench/data/span.txt"
+
+bench "ja '~.\$0' -i bench/data/span.txt" \
+    "original-awk '!a[\$0]++' bench/data/span.txt" \
+    "gawk '!a[\$0]++' bench/data/span.txt" \
+    "mawk '!a[\$0]++' bench/data/span.txt" \
+    "busybox awk '!a[\$0]++' bench/data/span.txt"
 
 bench 'echo $PATH | ja run examples/path.jac' \
     'echo $PATH | original-awk -f examples/path.awk' \
