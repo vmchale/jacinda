@@ -6,9 +6,10 @@ bench "ja '(+)|0 {%/Bloom/}{1}' -i /tmp/ulysses.txt" \
     "awk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt" \
     "mawk '/Bloom/ { total += 1; } END { print total }' /tmp/ulysses.txt"
 
-bench "ja run examples/span.jac -i examples/span.txt" \
-    "awk -f examples/span.awk examples/span.txt" \
-    "mawk -f examples/span.awk examples/span.txt"
+bench "ja run examples/span.jac -i bench/data/span.txt" \
+    "ja run examples/span2.jac -i bench/data/span.txt" \
+    "awk -f examples/span.awk bench/data/span.txt" \
+    "mawk -f examples/span.awk bench/data/span.txt"
 
 bench 'echo $PATH | ja run examples/path.jac' \
     'echo $PATH | awk -f examples/path.awk' \
