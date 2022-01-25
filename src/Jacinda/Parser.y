@@ -2,8 +2,8 @@
     {-# LANGUAGE OverloadedStrings #-}
     module Jacinda.Parser ( parse
                           , parseWithMax
-                          , parseWithCtx
                           , parseWithInitCtx
+                          , parseLibWithCtx
                           , ParseError (..)
                           ) where
 
@@ -12,6 +12,7 @@ import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as BSL
+import qualified Data.ByteString.Char8 as ASCII
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
 import qualified Intern.Name as Name
@@ -22,7 +23,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
 }
 
-%name parseP Program
+%name parseF File
+%name parseLib Library
 %tokentype { Token AlexPosn }
 %error { parseError }
 %monad { Parse } { (>>=) } { pure }
@@ -98,6 +100,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     end { TokKeyword $$ KwEnd }
     set { TokKeyword $$ KwSet }
     fn { TokKeyword $$ KwFn }
+    include { TokKeyword $$ KwInclude }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -181,6 +184,15 @@ D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
 
+Include :: { FilePath }
+        : include strLit { ASCII.unpack (strTok $2) }
+
+File :: { ([FilePath], Program AlexPosn) }
+     : many(Include) Program { (reverse $1, $2) }
+
+Library :: { ([FilePath], [D AlexPosn]) }
+        : many(Include) many(D) { (reverse $1, reverse $2) }
+
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
 
@@ -261,6 +273,8 @@ E :: { E AlexPosn }
 
 {
 
+type File = ([FilePath], Program AlexPosn)
+
 parseError :: Token AlexPosn -> Parse a
 parseError = throwError . Unexpected
 
@@ -284,18 +298,21 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-parse :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn)
-parse = fmap snd . runParse parseP
+parse :: BSL.ByteString -> Either (ParseError AlexPosn) File
+parse = fmap snd . runParse parseF
 
-parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, Program AlexPosn)
+parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . parseWithInitCtx
     where fst3 (x, _, _) = x
 
-parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
+parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 
-parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Program AlexPosn)
-parseWithCtx = parseWithInitSt parseP
+parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithCtx = parseWithInitSt parseF
+
+parseLibWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseLibWithCtx = parseWithInitSt parseF
 
 runParse :: Parse a -> BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, a)
 runParse parser str = liftErr $ runAlexSt str (runExceptT parser)

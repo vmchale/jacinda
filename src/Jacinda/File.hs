@@ -29,7 +29,7 @@ import           System.IO                  (Handle)
 
 -- | Parse + rename (globally)
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry renamePGlobal . second rewriteProgram) . parseWithMax
+parseWithMax' = fmap (uncurry renamePGlobal . second (rewriteProgram . snd)) . parseWithMax
 
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =
