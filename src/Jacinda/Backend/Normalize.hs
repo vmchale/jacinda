@@ -436,6 +436,8 @@ eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) = do
 eNorm (EApp ty (UBuiltin _ Some) e) = do
     eI <- eNorm e
     pure $ OptionVal ty (Just eI)
+-- catMaybes only works for streams atm
+eNorm (EApp ty op@(UBuiltin _ CatMaybes) e) = EApp ty op <$> eNorm e
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do

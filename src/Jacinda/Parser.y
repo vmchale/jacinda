@@ -67,6 +67,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     caret { TokSym $$ Caret }
     quot { TokSym $$ Quot }
     mapMaybe { TokSym $$ MapMaybeTok }
+    catMaybes { TokSym $$ CatMaybesTok }
     capture { TokSym $$ CapTok }
 
     eq { TokSym $$ EqTok }
@@ -246,6 +247,7 @@ E :: { E AlexPosn }
   | ceilSym { UBuiltin $1 Ceiling }
   | dedup { UBuiltin $1 Dedup }
   | some { UBuiltin $1 Some }
+  | catMaybes { UBuiltin $1 CatMaybes }
   | ix { NBuiltin $1 Ix }
   | nf { NBuiltin $1 Nf }
   | none { NBuiltin $1 None }
