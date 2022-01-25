@@ -117,6 +117,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **:?** mapMaybe
 :   Witherable f :=> (a -> Option b) -> f a -> f b
 
+**.?** catMaybes
+:   Witherable f :=> f (Option a) -> f a
+
 **fp** Filename
 
 **nf** Number of fields
