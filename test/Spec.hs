@@ -93,7 +93,7 @@ tyOfT src expected =
 
 parseTo :: BSL.ByteString -> E () -> Assertion
 parseTo src e =
-    case rewriteProgram <$> parse src of
+    case rewriteProgram . snd <$> parse src of
         Left err     -> assertFailure (show err)
         Right actual -> void (expr actual) @?= e
 

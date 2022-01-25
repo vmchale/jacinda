@@ -31,8 +31,17 @@ import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
 import           Intern.Name
-import           Prettyprinter      (Doc, Pretty (..), braces, brackets, encloseSep, flatAlt, group, parens, (<+>))
+import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, tupled, (<+>))
 import           Regex.Rure         (RurePtr)
+
+infixr 6 <#>
+infixr 6 <##>
+
+(<#>) :: Doc a -> Doc a -> Doc a
+(<#>) x y = x <> hardline <> y
+
+(<##>) :: Doc a -> Doc a -> Doc a
+(<##>) x y = x <> hardline <> hardline <> y
 
 -- kind
 data K = Star
@@ -410,8 +419,18 @@ data D a = SetFS BS.ByteString
          | FunDecl (Name a) [Name a] (E a)
          deriving (Functor)
 
+instance Pretty (D a) where
+    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/"
+    pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
+
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
+
+instance Pretty (Program a) where
+    pretty (Program ds e) = concatWith (<##>) (pretty <$> ds) <##> pretty e
+
+instance Show (Program a) where
+    show = show . pretty
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where

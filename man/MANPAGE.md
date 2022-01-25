@@ -9,11 +9,11 @@ ja - Jacinda: data filtering, processing, reporting
 
   ja run src.jac -i data.txt
 
-  cat FILE1 FILE2 | ja '#"$0'
+  cat FILE1 FILE2 | ja \'#"$0'
 
   ja tc script.jac
 
-  ja e '11.67\*1.2'
+  ja e \'11.67\*1.2'
 
 # DESCRIPTION
 
@@ -147,6 +147,8 @@ a boolean expression.
 **->n** Get the nth element of a tuple
 
 **{.** Line comment
+
+**@include\'/path/file.jac'** File include
 
 # BUGS
 

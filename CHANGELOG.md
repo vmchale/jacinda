@@ -4,6 +4,8 @@
   * Add anchor ability to print multiple streams
   * Make `Option` a functor
   * Add `Witherable` class, `:?` (mapMaybe)
+  * Allow file `@include`s (crude library capability)
+  * Fix typos in manpage
 
 # 0.2.1.0
 

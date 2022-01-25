@@ -19,6 +19,7 @@ extra-source-files:
     doc/guide.pdf
     test/examples/*.jac
     lib/*.jac
+    prelude/*.jac
 
 source-repository head
     type:     git
@@ -48,6 +49,7 @@ library jacinda-lib
         Jacinda.Backend.Normalize
         Jacinda.Backend.TreeWalk
         Jacinda.Backend.Printf
+        Jacinda.Env
         Data.List.Ext
         Data.Vector.Ext
 
@@ -66,7 +68,8 @@ library jacinda-lib
         microlens,
         microlens-mtl,
         vector,
-        recursion >=1.0.0.0
+        recursion >=1.0.0.0,
+        split
 
     if !flag(cross)
         build-tool-depends: alex:alex, happy:happy

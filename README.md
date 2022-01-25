@@ -79,7 +79,6 @@ imperative/scoping defects.
   * Typeclasses are not documented
   * Type system is questionable
   * Postfix `:f` and `:i` are handled poorly
-  * File imports/includes
   * Various bugs in evaluation with regular expressions
 
 Intentionally missing features:
