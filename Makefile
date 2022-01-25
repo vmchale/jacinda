@@ -22,7 +22,7 @@ install: man/ja.1
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
-	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof
+	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@

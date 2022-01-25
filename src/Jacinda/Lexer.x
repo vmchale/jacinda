@@ -122,6 +122,7 @@ tokens :-
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
         fn                       { mkKw KwFn }
+        "@include"               { mkKw KwInclude }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -324,6 +325,7 @@ data Keyword = KwLet
              | KwEnd
              | KwSet
              | KwFn
+             | KwInclude
 
 -- | Reserved/special variables
 data Var = VarX
@@ -345,12 +347,13 @@ instance Pretty Var where
     -- TODO: exp, log, sqrt, floor ...
 
 instance Pretty Keyword where
-    pretty KwLet = "let"
-    pretty KwIn  = "in"
-    pretty KwVal = "val"
-    pretty KwEnd = "end"
-    pretty KwSet = ":set"
-    pretty KwFn  = "fn"
+    pretty KwLet     = "let"
+    pretty KwIn      = "in"
+    pretty KwVal     = "val"
+    pretty KwEnd     = "end"
+    pretty KwSet     = ":set"
+    pretty KwFn      = "fn"
+    pretty KwInclude = "@include"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse
