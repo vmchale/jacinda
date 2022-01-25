@@ -31,4 +31,5 @@ tags: $(JAC_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@
 
 bench/data/span.txt: examples/span.txt
+	mkdir -p $(dir $@)
 	perl -0777pe '$$_=$$_ x 10000' $^ > $@
