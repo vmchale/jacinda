@@ -133,6 +133,11 @@ eEval (fp, ix, line, ctx) = go where
         let eI = asRegex (go e)
             eI' = asStr (go e')
         in asTup (find' eI eI')
+    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Captures) e0) e1) e2) =
+        let e0' = asStr (go e0)
+            e1' = asInt (go e1)
+            e2' = asRegex (go e2)
+            in OptionVal (tyOpt tyStr) (mkStr <$> findCapture e2' e0' (fromIntegral e1'))
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
@@ -344,6 +349,8 @@ ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
 ir fp re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
     let op' = compileR (withFp fp op)
         in mapMaybe (asOpt . applyUn op') . ir fp re stream
+ir fp re (EApp _ (UBuiltin _ CatMaybes) stream) =
+    mapMaybe asOpt . ir fp re stream
 ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp op)) . ir fp re stream
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
@@ -421,6 +428,9 @@ fileProcessor fp re e@Guarded{} = Right $ \inp ->
 fileProcessor fp re e@Implicit{} = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
+    printStream $ ir fp re e inp
+-- at the moment, catMaybes only works on streams
+fileProcessor fp re e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
