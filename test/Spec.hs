@@ -85,7 +85,7 @@ sumBytesAST =
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
-tyFile = tcIO <=< BSL.readFile
+tyFile = tcIO [] <=< BSL.readFile
 
 tyOfT :: BSL.ByteString -> T K -> Assertion
 tyOfT src expected =

@@ -1,5 +1,4 @@
-module Jacinda.File ( tyCheck
-                    , tcIO
+module Jacinda.File ( tcIO
                     , tySrc
                     , runOnHandle
                     , runOnFile
@@ -21,6 +20,7 @@ import           Data.Tuple                 (swap)
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.TreeWalk
+import           Jacinda.Include
 import           Jacinda.Lexer
 import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
@@ -30,28 +30,28 @@ import           Jacinda.Ty
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (Handle)
 
-parseLib :: FilePath -> StateT AlexUserState IO [D AlexPosn]
-parseLib fp = do
-    contents <- liftIO $ BSL.readFile fp
+parseLib :: [FilePath] -> FilePath -> StateT AlexUserState IO [D AlexPosn]
+parseLib incls fp = do
+    contents <- liftIO $ BSL.readFile =<< resolveImport incls fp
     st <- get
     case parseLibWithCtx contents st of
         Left err              -> liftIO (throwIO err)
         Right (st', ([], ds)) -> put st' $> (rewriteD <$> ds)
-        Right (st', (is, ds)) -> do { put st' ; dss <- traverse parseLib is ; pure (concat dss ++ ds) }
+        Right (st', (is, ds)) -> do { put st' ; dss <- traverse (parseLib incls) is ; pure (concat dss ++ ds) }
 
-parseE :: BSL.ByteString -> StateT AlexUserState IO (Program AlexPosn)
-parseE bs = do
+parseE :: [FilePath] -> BSL.ByteString -> StateT AlexUserState IO (Program AlexPosn)
+parseE incls bs = do
     st <- get
     case parseWithCtx bs st of
         Left err -> liftIO $ throwIO err
         Right (st', (is, Program ds e)) -> do
             put st'
-            dss <- traverse parseLib is
+            dss <- traverse (parseLib incls) is
             pure $ Program (concat dss ++ fmap rewriteD ds) (rewriteE e)
 
 -- | Parse + rename (decls)
-parseEWithMax :: BSL.ByteString -> IO (Program AlexPosn, Int)
-parseEWithMax bsl = uncurry renamePGlobal . swap . second fst3 <$> runStateT (parseE bsl) alexInitUserState
+parseEWithMax :: [FilePath] -> BSL.ByteString -> IO (Program AlexPosn, Int)
+parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStateT (parseE incls bsl) alexInitUserState
     where fst3 (x, _, _) = x
 
 -- | Parse + rename (globally)
@@ -70,39 +70,39 @@ compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
 compileFS Nothing   = defaultRurePtr
 
-runOnBytes :: FilePath
+runOnBytes :: [FilePath]
+           -> FilePath -- ^ Data file name, for @nf@
            -> BSL.ByteString -- ^ Program
            -> Maybe BS.ByteString -- ^ Field separator
            -> BSL.ByteString
            -> IO ()
-runOnBytes fp src cliFS contents = do
-    (ast, m) <- parseEWithMax src
+runOnBytes incls fp src cliFS contents = do
+    incls' <- defaultIncludes <*> pure incls
+    (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
     cont <- yeetIO $ runJac (ASCII.pack fp) (compileFS (cliFS <|> getFS ast)) i typed
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
     -- see: BSL.split, BSL.splitWith
 
-runOnHandle :: BSL.ByteString -- ^ Program
+runOnHandle :: [FilePath]
+            -> BSL.ByteString -- ^ Program
             -> Maybe BS.ByteString -- ^ Field separator
             -> Handle
             -> IO ()
-runOnHandle src cliFS = runOnBytes "(runOnBytes)" src cliFS <=< BSL.hGetContents
+runOnHandle is src cliFS = runOnBytes is "(runOnBytes)" src cliFS <=< BSL.hGetContents
 
-runOnFile :: BSL.ByteString
+runOnFile :: [FilePath]
+          -> BSL.ByteString
           -> Maybe BS.ByteString
           -> FilePath
           -> IO ()
-runOnFile e fs fp = runOnBytes fp e fs =<< BSL.readFile fp
+runOnFile is e fs fp = runOnBytes is fp e fs =<< BSL.readFile fp
 
-tcIO :: BSL.ByteString -> IO ()
-tcIO = yeetIO . tyCheck
-
--- | Typecheck an expression
-tyCheck :: BSL.ByteString -> Either (Error AlexPosn) ()
-tyCheck src =
-    case parseWithMax' src of
-        Right (ast, m) -> void $ runTypeM m (tyProgram ast)
-        Left err       -> throw err
+tcIO :: [FilePath] -> BSL.ByteString -> IO ()
+tcIO incls src = do
+    incls' <- defaultIncludes <*> pure incls
+    (ast, m) <- parseEWithMax incls' src
+    yeetIO $ void $ runTypeM m (tyProgram ast)
 
 tySrc :: BSL.ByteString -> T K
 tySrc src =

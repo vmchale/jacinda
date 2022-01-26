@@ -35,6 +35,9 @@ ja - Jacinda: data filtering, processing, reporting
 **-V** **-\-version**
 :   Display version information
 
+**-I** **-\-include**
+:   Include directory for imports
+
 # LANGUAGE
 
 ## REGEX

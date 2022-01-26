@@ -9,7 +9,7 @@ import           Jacinda.File
 
 main :: IO ()
 main =
-    defaultMain [ bgroup "exprEval"
+    defaultMain [ bgroup "eval"
                       [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/"
                       ]
                 ]
