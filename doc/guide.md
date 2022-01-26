@@ -211,6 +211,19 @@ We can filter an extant stream with `#.`, viz.
 
 would filter to those lines >110 bytes wide.
 
+### Formatting Output
+
+One can format output with `sprintf`, which works like `printf` in Awk or C.
+
+As an example,
+
+```
+{|sprintf '%i: %s' (ix.`0)}
+```
+
+would display a file annotated with line numbers. Note the atypical syntax for
+tuples, we use `.` as a separator rather than `,`.
+
 ### Parting Shots
 
 ```
@@ -312,3 +325,20 @@ The language does not allow custom typeclasses.
 
 The map operator `"` is works on all functors, not just streams. `Stream`,
 `List`, and `Option` are instances.
+
+## IsPrintf
+
+The `IsPrintf` typeclass is used to type `sprintf`; strings, integers, floats, booleans, and
+tuples of such are members.
+
+```
+sprintf '%i' 3
+```
+
+and
+
+```
+sprintf '%s-%i' ('str' . 2)
+```
+
+are both valid.
