@@ -82,6 +82,7 @@ compileR :: E a
 compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
+    -- TODO: is cata performant enough?
 
 compileIn :: Program a -> Program a
 compileIn (Program ds e) = Program (compileD <$> ds) (compileR e)
@@ -151,8 +152,7 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
-applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e')
 
 foldE :: E (T K)
       -> E (T K)
@@ -454,7 +454,7 @@ eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
-    eNorm e
+    eNorm e <* modify (mapBinds (IM.delete i))
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
