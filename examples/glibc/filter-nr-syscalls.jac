@@ -1,6 +1,4 @@
-fn drop(n, str) :=
-  let val l := #str
-    in substr str n l end;
+@include'prelude/fn.jac'
 
 {`0 !~ /^#define __NR_(unused|reserved)[0-9]+ /
   & `0 !~ /^#define __NR_(syscalls|arch_specific_syscall|(OABI_)?SYSCALL_BASE) /
