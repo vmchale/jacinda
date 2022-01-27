@@ -1,3 +1,5 @@
+# 0.3.0.0
+
   * Fix renaming bug that was inveigling folds with lambdas
   * Add `nf` builtin
   * Add deduplication builtin (`~.`)
