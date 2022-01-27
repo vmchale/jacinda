@@ -1,5 +1,8 @@
 module Jacinda.Parser.Rewrite ( rewriteProgram
+                              , rewriteD
+                              , rewriteE
                               ) where
+
 
 import           Control.Recursion (cata, embed)
 import           Jacinda.AST

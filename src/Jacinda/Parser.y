@@ -3,8 +3,12 @@
     module Jacinda.Parser ( parse
                           , parseWithMax
                           , parseWithInitCtx
+                          , parseWithCtx
                           , parseLibWithCtx
                           , ParseError (..)
+                          -- * Type synonyms
+                          , File
+                          , Library
                           ) where
 
 import Control.Exception (Exception)
@@ -190,7 +194,7 @@ Include :: { FilePath }
 File :: { ([FilePath], Program AlexPosn) }
      : many(Include) Program { (reverse $1, $2) }
 
-Library :: { ([FilePath], [D AlexPosn]) }
+Library :: { Library }
         : many(Include) many(D) { (reverse $1, reverse $2) }
 
 Program :: { Program AlexPosn }
@@ -275,6 +279,8 @@ E :: { E AlexPosn }
 
 type File = ([FilePath], Program AlexPosn)
 
+type Library = ([FilePath], [D AlexPosn])
+
 parseError :: Token AlexPosn -> Parse a
 parseError = throwError . Unexpected
 
@@ -311,8 +317,8 @@ parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithCtx = parseWithInitSt parseF
 
-parseLibWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
-parseLibWithCtx = parseWithInitSt parseF
+parseLibWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)
+parseLibWithCtx = parseWithInitSt parseLib
 
 runParse :: Parse a -> BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, a)
 runParse parser str = liftErr $ runAlexSt str (runExceptT parser)

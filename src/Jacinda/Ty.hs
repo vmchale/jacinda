@@ -27,12 +27,7 @@ import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Ty.Const
-import           Prettyprinter              (Doc, Pretty (..), hardline, squotes, vsep, (<+>))
-
-infixr 6 <#>
-
-(<#>) :: Doc a -> Doc a -> Doc a
-(<#>) x y = x <> hardline <> y
+import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<+>))
 
 data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C
@@ -58,10 +53,6 @@ data TyState a = TyState { maxU        :: Int
                          , varEnv      :: IM.IntMap (T K)
                          , constraints :: S.Set (a, T K, T K)
                          }
-
-instance Pretty (TyState a) where
-    pretty (TyState _ _ _ _ cs) =
-        "constraints:" <#> prettyConstraints cs
 
 prettyConstraints :: S.Set (b, T a, T a) -> Doc ann
 prettyConstraints cs = vsep (prettyEq . go <$> S.toList cs) where

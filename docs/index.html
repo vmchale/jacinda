@@ -171,6 +171,7 @@ Streams</a></li>
 <li><a href="#prior">Prior</a></li>
 <li><a href="#deduplicate">Deduplicate</a></li>
 <li><a href="#filter">Filter</a></li>
+<li><a href="#formatting-output">Formatting Output</a></li>
 <li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
 </ul></li>
@@ -185,6 +186,7 @@ Streams</a></li>
 <li><a href="#machinery">Machinery</a>
 <ul>
 <li><a href="#functor">Functor</a></li>
+<li><a href="#isprintf">IsPrintf</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -304,6 +306,14 @@ order; it is equivalent to <code>!a[$0]++</code> in awk.</p>
 a boolean.</p>
 <pre><code>[#x&gt;110] #. $0</code></pre>
 <p>would filter to those lines &gt;110 bytes wide.</p>
+<h3 id="formatting-output">Formatting Output</h3>
+<p>One can format output with <code>sprintf</code>, which works like
+<code>printf</code> in Awk or C.</p>
+<p>As an example,</p>
+<pre><code>{|sprintf &#39;%i: %s&#39; (ix.`0)}</code></pre>
+<p>would display a file annotated with line numbers. Note the atypical
+syntax for tuples, we use <code>.</code> as a separator rather than
+<code>,</code>.</p>
 <h3 id="parting-shots">Parting Shots</h3>
 <pre><code>or := [(||)|#f x]
 
@@ -369,5 +379,13 @@ implementation.</p>
 <p>The map operator <code>"</code> is works on all functors, not just
 streams. <code>Stream</code>, <code>List</code>, and <code>Option</code>
 are instances.</p>
+<h2 id="isprintf">IsPrintf</h2>
+<p>The <code>IsPrintf</code> typeclass is used to type
+<code>sprintf</code>; strings, integers, floats, booleans, and tuples of
+such are members.</p>
+<pre><code>sprintf &#39;%i&#39; 3</code></pre>
+<p>and</p>
+<pre><code>sprintf &#39;%s-%i&#39; (&#39;str&#39; . 2)</code></pre>
+<p>are both valid.</p>
 </body>
 </html>
