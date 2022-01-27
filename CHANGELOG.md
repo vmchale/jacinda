@@ -1,3 +1,6 @@
+  * Performance improvements
+  * Bug fix, dfns are renamed properly
+
 # 0.3.0.0
 
   * Fix renaming bug that was inveigling folds with lambdas
