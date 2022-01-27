@@ -91,19 +91,24 @@ setMax i (Renames _ b) = Renames i b
 mkLam :: [Name a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
+-- TODO: investigate performance w/out cata
+
 -- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
-    a (ResVarF _ Y)    = True
-    a (TupF _ es)      = or es
-    a (EAppF _ e e')   = e || e'
-    a (LamF _ _ e)     = e
-    a DfnF{}           = error "Not supported yet."
-    a (LetF _ b e)     = e || snd b
-    a (GuardedF _ p b) = b || p
-    a (ImplicitF _ e)  = e
-    a (ParenF _ e)     = e
-    a _                = False
+    a (ResVarF _ Y)           = True
+    a (TupF _ es)             = or es
+    a (EAppF _ e e')          = e || e'
+    a (LamF _ _ e)            = e
+    a DfnF{}                  = error "Not supported yet."
+    a (LetF _ b e)            = e || snd b
+    a (GuardedF _ p b)        = b || p
+    a (ImplicitF _ e)         = e
+    a (ParenF _ e)            = e
+    a (ArrF _ es)             = or es
+    a (AnchorF _ es)          = or es
+    a (OptionValF _ (Just e)) = e
+    a _                       = False
 
 replaceXY :: (a -> Name a) -- ^ @x@
           -> (a -> Name a) -- ^ @y@

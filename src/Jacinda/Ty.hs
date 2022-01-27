@@ -129,7 +129,7 @@ unify :: [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unify = unifyPrep IM.empty
 
 unifyM :: S.Set (l, T a, T a) -> TypeM l (IM.IntMap (T a))
-unifyM s = unify (S.toList s)
+unifyM s = {-# SCC "unifyM" #-} unify (S.toList s)
 
 substInt :: IM.IntMap (T a) -> Int -> Maybe (T a)
 substInt tys k =
@@ -235,7 +235,7 @@ checkClass :: Ord a
            -> Int
            -> S.Set (C, a)
            -> TypeM a ()
-checkClass tys i cs =
+checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
         Nothing -> pure () -- FIXME: do we need to check var is well-kinded for constraint?
