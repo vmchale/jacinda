@@ -281,6 +281,7 @@ checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()
 
+-- FIXME kind check
 tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
 tyProgram (Program ds e) = do
     ds' <- traverse tyD0 ds
@@ -290,10 +291,9 @@ tyProgram (Program ds e) = do
     traverse_ (uncurry (checkClass backNames)) toCheck
     backNames' <- unifyM =<< gets constraints
     -- FIXME: not sure if termination/whatever is guaranteed, need 2 think..
-    let res = fmap (substConstraints backNames') (Program ds' e')
+    let res = {-# SCC "substConstraints" #-} fmap (substConstraints backNames') (Program ds' e')
     checkAmb (expr res) $> res
 
--- FIXME kind check
 tyE :: Ord a => E a -> TypeM a (E (T K))
 tyE e = do
     e' <- tyE0 e
