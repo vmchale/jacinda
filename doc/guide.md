@@ -262,6 +262,23 @@ fn all(p, xs) :=
   (&)|#t p"xs;
 ```
 
+## File Includes
+
+One can `@include` files.
+
+As an example, one could write:
+
+```
+@include'lib/string.jac'
+
+fn path(x) :=
+  intercalate '\n' (splitc x ':');
+
+path"$0
+```
+
+`intercalate` is defined in `lib/string.jac`.
+
 # Data Processing
 
 ## CSV Processing

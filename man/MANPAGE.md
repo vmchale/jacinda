@@ -153,6 +153,10 @@ a boolean expression.
 
 **@include\'/path/file.jac'** File include
 
+# INFLUENTIAL ENVIRONMENT VARIABLES
+
+`JAC_PATH` - colon-separated list of directories to search
+
 # BUGS
 
 Please report any bugs you may come across to
