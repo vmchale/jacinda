@@ -1,7 +1,5 @@
 packages: ./
 
-constraints: text <2.0
-
 haddock-internal: true
 
 program-options
