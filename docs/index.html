@@ -175,7 +175,10 @@ Streams</a></li>
 <li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#libraries">Libraries</a></li>
+<li><a href="#libraries">Libraries</a>
+<ul>
+<li><a href="#file-includes">File Includes</a></li>
+</ul></li>
 <li><a href="#data-processing">Data Processing</a>
 <ul>
 <li><a href="#csv-processing">CSV Processing</a>
@@ -338,6 +341,17 @@ write:</p>
 
 fn all(p, xs) :=
   (&amp;)|#t p&quot;xs;</code></pre>
+<h2 id="file-includes">File Includes</h2>
+<p>One can <code>@include</code> files.</p>
+<p>As an example, one could write:</p>
+<pre><code>@include&#39;lib/string.jac&#39;
+
+fn path(x) :=
+  intercalate &#39;\n&#39; (splitc x &#39;:&#39;);
+
+path&quot;$0</code></pre>
+<p><code>intercalate</code> is defined in
+<code>lib/string.jac</code>.</p>
 <h1 id="data-processing">Data Processing</h1>
 <h2 id="csv-processing">CSV Processing</h2>
 <p>We can process <code>.csv</code> data with the aid of <a
