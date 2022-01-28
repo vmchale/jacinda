@@ -138,14 +138,14 @@ renameE (Var l n)       = Var l <$> replaceVar n
 renameE (Lam l n e)     = do
     (n', modR) <- withName n
     Lam l n' <$> withRenames modR (renameE e)
-renameE (Dfn l e) | hasY e = do
+renameE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
     x@(Name nX uX _) <- dummyName l "x"
     y@(Name nY uY _) <- dummyName l "y"
-    Lam l x . Lam l y <$> renameE (replaceXY (Name nX uX) (Name nY uY) e)
+    Lam l x . Lam l y <$> renameE ({-# SCC "replaceXY" #-} replaceXY (Name nX uX) (Name nY uY) e)
                   | otherwise = do
     x@(Name n u _) <- dummyName l "x"
     -- no need for withName... withRenames because this is fresh/globally unique
-    Lam l x <$> renameE (replaceX (Name n u) e)
+    Lam l x <$> renameE ({-# SCC "replaceX" #-} replaceX (Name n u) e)
 renameE (Guarded l p e) = Guarded l <$> renameE p <*> renameE e
 renameE (Implicit l e) = Implicit l <$> renameE e
 renameE ResVar{} = error "Bare reserved variable."
