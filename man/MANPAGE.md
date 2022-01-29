@@ -9,7 +9,7 @@ ja - Jacinda: data filtering, processing, reporting
 
   ja run src.jac -i data.txt
 
-  cat FILE1 FILE2 | ja \'#"$0'
+  cat FILE1 FILE2 | ja \'#\"$0'
 
   ja tc script.jac
 
@@ -63,7 +63,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
-**"** Binary operator: map
+**\"** Binary operator: map
 :   Functor f :=> a -> b -> f a -> f b
 
 **[:** Unary operator: const 
@@ -109,6 +109,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **|`** Ceiling function
 :   Float -> Int
 
+**-.** Unary negate
+
 **sprintf** Convert an expression to a string using the format string
 
 **option** Option eliminator
@@ -116,6 +118,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **match**
 :   Str -> Regex -> Option (Int . Int)
+
+**~\*** Match, returning nth capture group
+:   Str -> Int -> Regex -> Option Str
 
 **:?** mapMaybe
 :   Witherable f :=> (a -> Option b) -> f a -> f b
@@ -156,6 +161,29 @@ a boolean expression.
 # INFLUENTIAL ENVIRONMENT VARIABLES
 
 `JAC_PATH` - colon-separated list of directories to search
+
+# EXAMPLES
+
+[#x>72] #. $0
+:   Print lines longer than 72 bytes
+
+{| sprintf \'%i %i\' (\`2 . \`1)}
+:   Print the first two fields in opposite order
+
+:set fs := /,[ \\t]*|[ \\t]+/; {| sprintf \'%i %i\' (\`2 . \`1)}
+:   Same, with input fields separated by comma and/or blanks and tabs.
+
+(+)|0 $1:i
+:   Sum first column
+
+(+)|0 [:1\"$0
+:   Count lines
+
+(+)|0 #\"$0
+:   Count bytes
+
+{|sprintf '%i: %s' (ix.`0)}
+:   Display with line numbers
 
 # BUGS
 
