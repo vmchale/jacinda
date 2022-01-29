@@ -1,5 +1,6 @@
   * Performance improvements
   * Bug fix, dfns are renamed properly
+  * Add `-.` negate function
 
 # 0.3.0.0
 
