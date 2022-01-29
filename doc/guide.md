@@ -236,6 +236,20 @@ count := [(+)|0 [:1"x]
 
 `#t` and `#f` are boolean literals.
 
+## System Interaction
+
+Jacinda ignores any line beginning with `#!`, thus one could write a script like
+so:
+
+```
+#!/usr/bin/env -S ja run
+
+fn path(x) :=
+  ([x+'\n'+y])|'' (splitc x ':');
+
+path"$0
+```
+
 # Libraries
 
 There is a syntax for functions:

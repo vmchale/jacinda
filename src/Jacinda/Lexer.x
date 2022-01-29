@@ -67,6 +67,7 @@ tokens :-
         $white+                  ;
 
         "{.".*                   ;
+        "#!".*                   ; -- shebang
 
         ":="                     { mkSym DefEq }
         "≔"                      { mkSym DefEq }
