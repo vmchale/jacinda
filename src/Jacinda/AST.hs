@@ -48,6 +48,10 @@ data K = Star
        | KArr K K
        deriving (Eq, Ord)
 
+instance Pretty K where
+    pretty Star         = "★"
+    pretty (KArr k0 k1) = parens (pretty k0 <+> "⟶" <+> pretty k1)
+
 data TB = TyInteger
         | TyFloat
         | TyDate
