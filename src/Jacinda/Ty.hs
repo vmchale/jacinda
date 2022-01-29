@@ -163,10 +163,12 @@ freshName n k = do
 
 higherOrder :: T.Text -> TypeM a (Name K)
 higherOrder t = freshName t (KArr Star Star)
+-- TODO: this should modify kind environment
 
 -- of kind 'Star'
 dummyName :: T.Text -> TypeM a (Name K)
 dummyName n = freshName n Star
+-- TODO: this should modify kind environment
 
 addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
@@ -282,7 +284,7 @@ checkClass :: Ord a
 checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
-        Nothing -> pure () -- FIXME: do we need to check var is well-kinded for constraint?
+        Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
 lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
@@ -325,7 +327,6 @@ checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()
 
--- FIXME kind check
 tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
 tyProgram (Program ds e) = do
     ds' <- traverse tyD0 ds
