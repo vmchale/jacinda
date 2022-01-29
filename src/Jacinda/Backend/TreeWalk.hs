@@ -106,6 +106,12 @@ eEval (fp, ix, line, ctx) = go where
     go (EApp _ (UBuiltin _ IParse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
+    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyInteger) _) Negate) e) =
+        let eI = asInt (go e)
+            in mkI (negate eI)
+    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyFloat) _) Negate) e) =
+        let eI = asFloat (go e)
+            in mkF (negate eI)
     go (EApp _ (UBuiltin _ FParse) e) =
         let eI = asStr (go e)
             in parseAsF eI

@@ -433,6 +433,11 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
+tyE0 (UBuiltin l Negate) = do
+    a <- dummyName "a"
+    modify (mapClassVars (addC a (IsNum, l)))
+    let a' = var a
+    pure $ UBuiltin (tyArr a' a') Negate
 tyE0 (UBuiltin _ Some) = do
     a <- dummyName "a"
     let a' = var a

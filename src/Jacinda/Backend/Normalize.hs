@@ -270,7 +270,7 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Times) e) e'
     pure $ case (eI, eI') of
         (IntLit _ i, IntLit _ j) -> i `seq` j `seq` IntLit tyI (i*j)
         _                        -> EApp ty (EApp ty' op eI) eI'
-eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') = do
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') = do -- TODO: don't match on type, do that below
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
@@ -408,6 +408,12 @@ eNorm (EApp ty op@(UBuiltin _ (Select i)) e) = do
     pure $ case eI of
         (Tup _ es) -> es !! (i-1)
         _          -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin _ Negate) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (FloatLit _ f) -> mkF $ negate f
+        (IntLit _ i)   -> mkI $ negate i
+        _              -> EApp ty op eI
 eNorm (EApp ty op@(UBuiltin _ Not) e) = do
     eI <- eNorm e
     pure $ case eI of

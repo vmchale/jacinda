@@ -121,6 +121,7 @@ data BUn = Tally -- length of string field
          | Some
          | Dedup
          | CatMaybes
+         | Negate
          deriving (Eq)
 
 instance Pretty BUn where
@@ -137,6 +138,7 @@ instance Pretty BUn where
     pretty Some       = "Some"
     pretty Dedup      = "~."
     pretty CatMaybes  = ".?"
+    pretty Negate     = "-."
 
 -- ternary
 data BTer = ZipW
