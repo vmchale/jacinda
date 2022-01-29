@@ -33,12 +33,16 @@ data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C
              | IllScoped a (Name a)
              | Ambiguous (E ())
+             | Expected K K
+             | IllScopedTyVar (TyName ())
 
 instance Pretty a => Pretty (Error a) where
     pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
     pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
     pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
     pretty (Ambiguous e)                = "type of" <+> squotes (pretty e) <+> "is ambiguous"
+    pretty (Expected k0 k1)             = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
+    pretty (IllScopedTyVar n)           = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
 
 instance Pretty a => Show (Error a) where
     show = show . pretty
@@ -159,10 +163,12 @@ freshName n k = do
 
 higherOrder :: T.Text -> TypeM a (Name K)
 higherOrder t = freshName t (KArr Star Star)
+-- TODO: this should modify kind environment
 
 -- of kind 'Star'
 dummyName :: T.Text -> TypeM a (Name K)
 dummyName n = freshName n Star
+-- TODO: this should modify kind environment
 
 addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
@@ -180,6 +186,46 @@ var = TyVar Star
 pushConstraint :: Ord a => a -> T K -> T K -> TypeM a ()
 pushConstraint l ty ty' =
     modify (addConstraint (l, ty, ty'))
+
+isStar :: K -> TypeM a ()
+isStar Star = pure ()
+isStar k    = throwError $ Expected k Star
+
+kind :: T K -> TypeM a ()
+kind (TyB Star TyStr)                  = pure ()
+kind (TyB Star TyInteger)              = pure ()
+kind (TyB Star TyFloat)                = pure ()
+kind (TyB (KArr Star Star) TyStream)   = pure ()
+kind (TyB (KArr Star Star) TyOption)   = pure ()
+kind (TyB Star TyBool)                 = pure ()
+kind (TyB (KArr Star Star) TyVec)      = pure ()
+kind (TyB Star TyUnit)                 = pure ()
+kind (TyB k TyStr)                     = throwError $ Expected Star k
+kind (TyB k TyInteger)                 = throwError $ Expected Star k
+kind (TyB k TyFloat)                   = throwError $ Expected Star k
+kind (TyB k TyUnit)                    = throwError $ Expected Star k
+kind (TyB k TyBool)                    = throwError $ Expected Star k
+kind (TyB k TyOption)                  = throwError $ Expected (KArr Star Star) k
+kind (TyB k TyStream)                  = throwError $ Expected (KArr Star Star) k
+kind (TyB k TyVec)                     = throwError $ Expected (KArr Star Star) k
+kind (TyVar _ n@(Name _ (Unique i) _)) = do
+    preK <- gets (IM.lookup i . kindEnv)
+    case preK of
+        Just{}  -> pure ()
+        Nothing -> throwError $ IllScopedTyVar (void n)
+kind (TyTup Star tys) =
+    traverse_  isStar (fmap tLoc tys)
+kind (TyTup k _) = throwError $ Expected Star k
+kind (TyArr Star ty0 ty1) =
+    isStar (tLoc ty0) *>
+    isStar (tLoc ty1)
+kind (TyArr k _ _) = throwError $ Expected Star k
+kind (TyApp k1 ty0 ty1) = do
+    case tLoc ty0 of
+        (KArr k0 k1') | k0 == (tLoc ty1) && k1' == k1 -> pure ()
+                      | k0 == (tLoc ty1) -> throwError $ Expected k1' k1
+                      | otherwise        -> throwError $ Expected (tLoc ty1) k0
+        k0                               -> throwError $ Expected (KArr Star Star) k0
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
@@ -238,7 +284,7 @@ checkClass :: Ord a
 checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
-        Nothing -> pure () -- FIXME: do we need to check var is well-kinded for constraint?
+        Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
 lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
@@ -281,7 +327,6 @@ checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()
 
--- FIXME kind check
 tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
 tyProgram (Program ds e) = do
     ds' <- traverse tyD0 ds
