@@ -33,12 +33,16 @@ data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C
              | IllScoped a (Name a)
              | Ambiguous (E ())
+             | Expected K K
+             | IllScopedTyVar (TyName ())
 
 instance Pretty a => Pretty (Error a) where
     pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
     pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
     pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
     pretty (Ambiguous e)                = "type of" <+> squotes (pretty e) <+> "is ambiguous"
+    pretty (Expected k0 k1)             = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
+    pretty (IllScopedTyVar n)           = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
 
 instance Pretty a => Show (Error a) where
     show = show . pretty
@@ -180,6 +184,46 @@ var = TyVar Star
 pushConstraint :: Ord a => a -> T K -> T K -> TypeM a ()
 pushConstraint l ty ty' =
     modify (addConstraint (l, ty, ty'))
+
+isStar :: K -> TypeM a ()
+isStar Star = pure ()
+isStar k    = throwError $ Expected k Star
+
+kind :: T K -> TypeM a ()
+kind (TyB Star TyStr)                  = pure ()
+kind (TyB Star TyInteger)              = pure ()
+kind (TyB Star TyFloat)                = pure ()
+kind (TyB (KArr Star Star) TyStream)   = pure ()
+kind (TyB (KArr Star Star) TyOption)   = pure ()
+kind (TyB Star TyBool)                 = pure ()
+kind (TyB (KArr Star Star) TyVec)      = pure ()
+kind (TyB Star TyUnit)                 = pure ()
+kind (TyB k TyStr)                     = throwError $ Expected Star k
+kind (TyB k TyInteger)                 = throwError $ Expected Star k
+kind (TyB k TyFloat)                   = throwError $ Expected Star k
+kind (TyB k TyUnit)                    = throwError $ Expected Star k
+kind (TyB k TyBool)                    = throwError $ Expected Star k
+kind (TyB k TyOption)                  = throwError $ Expected (KArr Star Star) k
+kind (TyB k TyStream)                  = throwError $ Expected (KArr Star Star) k
+kind (TyB k TyVec)                     = throwError $ Expected (KArr Star Star) k
+kind (TyVar _ n@(Name _ (Unique i) _)) = do
+    preK <- gets (IM.lookup i . kindEnv)
+    case preK of
+        Just{}  -> pure ()
+        Nothing -> throwError $ IllScopedTyVar (void n)
+kind (TyTup Star tys) =
+    traverse_  isStar (fmap tLoc tys)
+kind (TyTup k _) = throwError $ Expected Star k
+kind (TyArr Star ty0 ty1) =
+    isStar (tLoc ty0) *>
+    isStar (tLoc ty1)
+kind (TyArr k _ _) = throwError $ Expected Star k
+kind (TyApp k1 ty0 ty1) = do
+    case tLoc ty0 of
+        (KArr k0 k1') | k0 == (tLoc ty1) && k1' == k1 -> pure ()
+                      | k0 == (tLoc ty1) -> throwError $ Expected k1' k1
+                      | otherwise        -> throwError $ Expected (tLoc ty1) k0
+        k0                               -> throwError $ Expected (KArr Star Star) k0
 
 -- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
