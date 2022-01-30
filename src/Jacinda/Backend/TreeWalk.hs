@@ -326,7 +326,7 @@ applyOp :: E (T K) -- ^ Operator
         -> E (T K)
         -> E (T K)
         -> E (T K)
-applyOp op e e' = eClosed reprehensible (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
+applyOp op e e' = eClosed undefined (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
 atField :: RurePtr
         -> Int
@@ -415,7 +415,7 @@ foldAll fp re foldExprs bs = withs (unzip4 (go <$> foldExprs)) where
     -- with the fourth of each foldExpr, compute ir
     go (i, op, seed, streamExpr) = {-# SCC "go" #-} (i, op, seed, ir fp re streamExpr bs)
     withs (is, ops, seeds, irStreams) = zip is (evalStep ops seeds (transpose irStreams))
-    evalStep ops seeds []       = seeds
+    evalStep _ seeds []         = seeds
     evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in es' `seq` evalStep ops es' ess
     -- evalStep (i, _, seed, [])    = (i, seed)
     -- evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
