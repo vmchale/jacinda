@@ -1,4 +1,4 @@
-- inspiration: AWK, Haskell, J/APL, k, Dhall (expression imports), C (include), ATS... (some architectural decisions mime GHC)
+- inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
 - [ ] regex errors should include position of regex
 - [x] separate syntax for filtering a stream, e.g. {/pat/}[$0] or w/e
   - [x] still have {/pat/}{field}
@@ -30,13 +30,14 @@
 - [x] Operator syntax for floor/ceiling?
 - [ ] Witherable typeclass, vectors/lists should be a member!
 - [x] mapMaybe, catMaybes? for `Witherable`...
-  - [ ] `:?` or `.?` as `mapMaybe` and `catMaybes`??
+  - [x] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!
 - [x] `match`
 - [x] `splitc` - split on char! (easier/faster)
 - [ ] iota for vectors etc.
 - [x] SCANS
   - [x] backend
+- [ ] ignore case?
 - [x] dyadic infix/prior? Something for successive differences!
 - [x] string concatenation
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
@@ -73,12 +74,13 @@
 - [ ] Awk scripts for building glibc
 # Bugs
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
-- [ ] `echo $PATH | ja run examples/path.jac` (proper rename...)
+- [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] '([:fp"$0)' -i LICENSE
+- [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
 # Performance
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
-- [ ]  http://awka.sourceforge.net/compare.html
+- [ ] http://awka.sourceforge.net/compare.html
 - [ ] bind let-stuff ... allow until later?
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example
