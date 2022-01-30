@@ -182,8 +182,8 @@ a boolean expression.
 [y]|0 {|ix}
 :   Count lines
 
-(+)|0 #\"$0
-:   Count bytes
+(+)|0 [#x+1]\"$0
+:   Count bytes (+1 for newlines)
 
 {|sprintf '%i: %s' (ix.`0)}
 :   Display with line numbers
