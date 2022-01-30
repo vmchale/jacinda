@@ -406,6 +406,8 @@ foldWithCtx fp re op seed streamExpr = foldl' (applyOp op) seed . ir fp re strea
 takeConcatMap :: (a -> [b]) -> [a] -> [b]
 takeConcatMap f = concat . transpose . fmap f
 
+transposeMap f = transpose . fmap f
+
 foldAll :: FileBS
         -> RurePtr
         -> [(Int, E (T K), E (T K), E (T K))]
@@ -413,9 +415,9 @@ foldAll :: FileBS
         -> [(Int, E (T K))]
 foldAll fp re foldExprs bs = withs (unzip4 foldExprs) where
     -- with the fourth of each foldExpr, compute ir
-    withs (is, ops, seeds, streamExprs) = zip is (evalStep ops seeds (transpose ((\se -> ir fp re se bs) <$> streamExprs)))
+    withs (is, ops, seeds, streamExprs) = zip is (evalStep ops seeds (transposeMap (\se -> ir fp re se bs) streamExprs))
     evalStep _ seeds []         = seeds
-    evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in es' `seq` evalStep ops es' ess
+    evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in foldr seq (head es') es' `seq` evalStep ops es' ess
     -- evalStep (i, _, seed, [])    = (i, seed)
     -- evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
 
