@@ -7,6 +7,7 @@
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
+- [ ] Document `%i`, `%s` in manpages
 # Unicode
 - [ ] ∅ for monoidal identity
 - [x] defeq ≔
