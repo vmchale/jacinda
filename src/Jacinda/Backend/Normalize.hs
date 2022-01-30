@@ -383,6 +383,18 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') = do
     pure $ case (eI, eI') of
         (StrLit _ i, StrLit _ j) -> BoolLit tyBool (i /= j)
         _                        -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b == b')
+        _                           -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyBool) _) Neq) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b /= b')
+        _                           -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ And) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
