@@ -179,6 +179,9 @@ a boolean expression.
 (+)|0 [:1\"$0
 :   Count lines
 
+[y]|0 {|ix}
+:   Count lines
+
 (+)|0 #\"$0
 :   Count bytes
 
