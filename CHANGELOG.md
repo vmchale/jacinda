@@ -2,6 +2,7 @@
   * Bug fix, dfns are renamed properly
   * Add `-.` negate function
   * Work with shell shebangs
+  * Implement `=` for boolean
 
 # 0.3.0.0
 
