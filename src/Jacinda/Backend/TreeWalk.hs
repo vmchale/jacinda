@@ -411,10 +411,9 @@ foldAll :: FileBS
         -> [(Int, E (T K), E (T K), E (T K))]
         -> [BS.ByteString]
         -> [(Int, E (T K))]
-foldAll fp re foldExprs bs = withs (unzip4 (go <$> foldExprs)) where
+foldAll fp re foldExprs bs = withs (unzip4 foldExprs) where
     -- with the fourth of each foldExpr, compute ir
-    go (i, op, seed, streamExpr) = {-# SCC "go" #-} (i, op, seed, ir fp re streamExpr bs)
-    withs (is, ops, seeds, irStreams) = zip is (evalStep ops seeds (transpose irStreams))
+    withs (is, ops, seeds, streamExprs) = zip is (evalStep ops seeds (transpose ((\se -> ir fp re se bs) <$> streamExprs)))
     evalStep _ seeds []         = seeds
     evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in es' `seq` evalStep ops es' ess
     -- evalStep (i, _, seed, [])    = (i, seed)
