@@ -9,7 +9,7 @@ ja - Jacinda: data filtering, processing, reporting
 .PP
 ja run src.jac -i data.txt
 .PP
-cat FILE1 FILE2 | ja \[aq]#\[lq]$0\[cq]
+cat FILE1 FILE2 | ja \[aq]#\[dq]$0\[cq]
 .PP
 ja tc script.jac
 .PP
@@ -58,7 +58,7 @@ Foldable f :=> (b -> a -> b) -> b -> f a -> b
 \f[B]\[ha]\f[R] Ternary operator: scan
 (b -> a -> b) -> b -> Stream a -> Stream b
 .TP
-\f[B]\[lq]\f[R] Binary operator: map
+\f[B]\[dq]\f[R] Binary operator: map
 Functor f :=> a -> b -> f a -> f b
 .TP
 \f[B][:\f[R] Unary operator: const
@@ -104,6 +104,8 @@ Float -> Int
 \f[B]|\[ga]\f[R] Ceiling function
 Float -> Int
 .PP
+\f[B]-.\f[R] Unary negate
+.PP
 \f[B]sprintf\f[R] Convert an expression to a string using the format
 string
 .TP
@@ -113,6 +115,9 @@ b -> (a -> b) -> Option a -> b
 \f[B]match\f[R]
 Str -> Regex -> Option (Int .
 Int)
+.TP
+\f[B]\[ti]*\f[R] Match, returning nth capture group
+Str -> Int -> Regex -> Option Str
 .TP
 \f[B]:?\f[R] mapMaybe
 Witherable f :=> (a -> Option b) -> f a -> f b
@@ -152,6 +157,31 @@ List a -> a
 .SH INFLUENTIAL ENVIRONMENT VARIABLES
 .PP
 \f[C]JAC_PATH\f[R] - colon-separated list of directories to search
+.SH EXAMPLES
+.TP
+[#x>72] #. $0
+Print lines longer than 72 bytes
+.TP
+{| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
+Print the first two fields in opposite order
+.TP
+:set fs := /,[ \[rs]t]*|[ \[rs]t]+/; {| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
+Same, with input fields separated by comma and/or blanks and tabs.
+.TP
+(+)|0 $1:i
+Sum first column
+.TP
+(+)|0 [:1\[dq]$0
+Count lines
+.TP
+[y]|0 {|ix}
+Count lines
+.TP
+(+)|0 #\[dq]$0
+Count bytes
+.TP
+{|sprintf `%i: %s' (ix.\[ga]0)}
+Display with line numbers
 .SH BUGS
 .PP
 Please report any bugs you may come across to

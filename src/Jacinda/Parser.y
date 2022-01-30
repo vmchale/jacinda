@@ -75,6 +75,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     mapMaybe { TokSym $$ MapMaybeTok }
     catMaybes { TokSym $$ CatMaybesTok }
     capture { TokSym $$ CapTok }
+    neg { TokSym $$ NegTok }
 
     eq { TokSym $$ EqTok }
     neq { TokSym $$ NeqTok }
@@ -264,6 +265,7 @@ E :: { E AlexPosn }
   | dedup { UBuiltin $1 Dedup }
   | some { UBuiltin $1 Some }
   | catMaybes { UBuiltin $1 CatMaybes }
+  | neg { UBuiltin $1 Negate }
   | ix { NBuiltin $1 Ix }
   | nf { NBuiltin $1 Nf }
   | none { NBuiltin $1 None }
