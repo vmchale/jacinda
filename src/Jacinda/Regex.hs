@@ -8,6 +8,7 @@ module Jacinda.Regex ( splitBy
                      , find'
                      , compileDefault
                      , substr
+                     , findCapture
                      ) where
 
 import           Control.Exception        (Exception, throwIO)
@@ -15,15 +16,14 @@ import           Control.Monad            ((<=<))
 import qualified Data.ByteString.Internal as BS
 import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
+import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureMatch (..), RurePtr, compile, find, isMatch, matches, mkIter, rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- see: https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
-
--- also ls -l | ja '{ix>1}{`5:i}'
 
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
@@ -37,6 +37,14 @@ substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
                                | otherwise = "error: invalid substring indices."
 
+{-# NOINLINE findCapture #-}
+findCapture :: RurePtr -> BS.ByteString -> CSize -> Maybe BS.ByteString
+findCapture re haystack@(BS.BS fp l) ix = unsafeDupablePerformIO $ fmap go <$> findCaptures re haystack ix 0
+    where go (RureMatch s e) =
+            let e' = fromIntegral e
+                s' = fromIntegral s
+                in BS.BS (fp `plusForeignPtr` s') (e'-s')
+
 {-# NOINLINE find' #-}
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
 find' re str = unsafeDupablePerformIO $ find re str 0
@@ -47,7 +55,7 @@ splitBy :: RurePtr
         -> V.Vector BS.ByteString
 splitBy re haystack@(BS.BS fp l) =
     (\sp -> V.fromList [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- sp]) slicePairs
-    where ixes = unsafeDupablePerformIO $ do { reIptr <- mkIter re; matches reIptr haystack }
+    where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
                 rms                 -> mkMiddle 0 rms

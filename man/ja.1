@@ -9,11 +9,11 @@ ja - Jacinda: data filtering, processing, reporting
 .PP
 ja run src.jac -i data.txt
 .PP
-cat FILE1 FILE2 | ja `#\[lq]$0'
+cat FILE1 FILE2 | ja \[aq]#\[dq]$0\[cq]
 .PP
 ja tc script.jac
 .PP
-ja e `11.67*1.2'
+ja e \[aq]11.67*1.2\[cq]
 .SH DESCRIPTION
 .PP
 \f[B]Jacinda\f[R] is a data stream processing language \[`a] la AWK.
@@ -31,6 +31,9 @@ Display help
 .TP
 \f[B]-V\f[R] \f[B]--version\f[R]
 Display version information
+.TP
+\f[B]-I\f[R] \f[B]--include\f[R]
+Include directory for imports
 .SH LANGUAGE
 .SS REGEX
 .PP
@@ -55,14 +58,14 @@ Foldable f :=> (b -> a -> b) -> b -> f a -> b
 \f[B]\[ha]\f[R] Ternary operator: scan
 (b -> a -> b) -> b -> Stream a -> Stream b
 .TP
-\f[B]\[lq]\f[R] Binary operator: map
+\f[B]\[dq]\f[R] Binary operator: map
 Functor f :=> a -> b -> f a -> f b
 .TP
 \f[B][:\f[R] Unary operator: const
 a -> b -> a
 .TP
 \f[B]#.\f[R] Binary operator: filter
-(a -> Bool) -> Stream a -> Stream a
+Witherable f :=> (a -> Bool) -> f a -> f a
 .TP
 \f[B]\[rs].\f[R] Binary operator: prior
 (a -> a -> a) -> Stream a -> Stream a
@@ -101,6 +104,8 @@ Float -> Int
 \f[B]|\[ga]\f[R] Ceiling function
 Float -> Int
 .PP
+\f[B]-.\f[R] Unary negate
+.PP
 \f[B]sprintf\f[R] Convert an expression to a string using the format
 string
 .TP
@@ -110,6 +115,15 @@ b -> (a -> b) -> Option a -> b
 \f[B]match\f[R]
 Str -> Regex -> Option (Int .
 Int)
+.TP
+\f[B]\[ti]*\f[R] Match, returning nth capture group
+Str -> Int -> Regex -> Option Str
+.TP
+\f[B]:?\f[R] mapMaybe
+Witherable f :=> (a -> Option b) -> f a -> f b
+.TP
+\f[B].?\f[R] catMaybes
+Witherable f :=> f (Option a) -> f a
 .PP
 \f[B]fp\f[R] Filename
 .PP
@@ -138,13 +152,40 @@ List a -> a
 \f[B]->n\f[R] Get the nth element of a tuple
 .PP
 \f[B]{.\f[R] Line comment
+.PP
+\f[B]\[at]include\[aq]/path/file.jac\[cq]\f[R] File include
+.SH INFLUENTIAL ENVIRONMENT VARIABLES
+.PP
+\f[C]JAC_PATH\f[R] - colon-separated list of directories to search
+.SH EXAMPLES
+.TP
+[#x>72] #. $0
+Print lines longer than 72 bytes
+.TP
+{| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
+Print the first two fields in opposite order
+.TP
+:set fs := /,[ \[rs]t]*|[ \[rs]t]+/; {| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
+Same, with input fields separated by comma and/or blanks and tabs.
+.TP
+(+)|0 $1:i
+Sum first column
+.TP
+(+)|0 [:1\[dq]$0
+Count lines
+.TP
+[y]|0 {|ix}
+Count lines
+.TP
+(+)|0 [#x+1]\[dq]$0
+Count bytes (+1 for newlines)
+.TP
+{|sprintf \[aq]%i: %s\[aq] (ix.\[ga]0)}
+Display with line numbers
 .SH BUGS
 .PP
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
-.SS Limitations
-.PP
-Note that \f[C]Option\f[R] is not implemented as a functor.
 .SH COPYRIGHT
 .PP
 Copyright 2021-2022.

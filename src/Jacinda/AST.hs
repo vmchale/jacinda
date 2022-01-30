@@ -31,13 +31,26 @@ import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
 import           Intern.Name
-import           Prettyprinter      (Doc, Pretty (..), braces, brackets, encloseSep, flatAlt, group, parens, (<+>))
+import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, tupled, (<+>))
 import           Regex.Rure         (RurePtr)
+
+infixr 6 <#>
+infixr 6 <##>
+
+(<#>) :: Doc a -> Doc a -> Doc a
+(<#>) x y = x <> hardline <> y
+
+(<##>) :: Doc a -> Doc a -> Doc a
+(<##>) x y = x <> hardline <> hardline <> y
 
 -- kind
 data K = Star
        | KArr K K
        deriving (Eq, Ord)
+
+instance Pretty K where
+    pretty Star         = "★"
+    pretty (KArr k0 k1) = parens (pretty k0 <+> "⟶" <+> pretty k1)
 
 data TB = TyInteger
         | TyFloat
@@ -107,6 +120,8 @@ data BUn = Tally -- length of string field
          | Ceiling
          | Some
          | Dedup
+         | CatMaybes
+         | Negate
          deriving (Eq)
 
 instance Pretty BUn where
@@ -122,6 +137,8 @@ instance Pretty BUn where
     pretty Parse      = ":"
     pretty Some       = "Some"
     pretty Dedup      = "~."
+    pretty CatMaybes  = ".?"
+    pretty Negate     = "-."
 
 -- ternary
 data BTer = ZipW
@@ -129,14 +146,16 @@ data BTer = ZipW
           | Scan
           | Substr
           | Option
+          | Captures
           deriving (Eq)
 
 instance Pretty BTer where
-    pretty ZipW   = ","
-    pretty Fold   = "|"
-    pretty Scan   = "^"
-    pretty Substr = "substr"
-    pretty Option = "option"
+    pretty ZipW     = ","
+    pretty Fold     = "|"
+    pretty Scan     = "^"
+    pretty Substr   = "substr"
+    pretty Option   = "option"
+    pretty Captures = "~*"
 
 -- builtin
 data BBin = Plus
@@ -162,6 +181,7 @@ data BBin = Plus
           | Filter
           | Sprintf
           | Match
+          | MapMaybe
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -189,6 +209,7 @@ instance Pretty BBin where
     pretty Splitc     = "splitc"
     pretty Sprintf    = "sprintf"
     pretty Match      = "match"
+    pretty MapMaybe   = ":?"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -283,57 +304,58 @@ instance Pretty N where
     pretty Fp   = "fp"
 
 instance Pretty (E a) where
-    pretty (Column _ i)                                            = "$" <> pretty i
-    pretty AllColumn{}                                             = "$0"
-    pretty (IParseCol _ i)                                         = "$" <> pretty i <> ":i"
-    pretty (FParseCol _ i)                                         = "$" <> pretty i <> ":f"
-    pretty AllField{}                                              = "`0"
-    pretty (Field _ i)                                             = "`" <> pretty i
-    pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')               = pretty e <> "\\." <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                 = "max" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                 = "min" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')               = "split" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Splitc) e) e')              = "splitc" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Match) e) e')               = "match" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e')             = "sprintf" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                 = pretty e <> "\"" <> pretty e'
-    pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                   = pretty e <+> pretty b <+> pretty e'
-    pretty (EApp _ (BBuiltin _ b) e)                               = parens (pretty e <> pretty b)
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')   = pretty e <> "|" <> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')   = pretty e <> "^" <> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'')  = "," <> pretty op <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e) e') e'') = "substr" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e) e') e'') = "option" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (UBuiltin _ (At i)) e)                          = pretty e <> "." <> pretty i
-    pretty (EApp _ (UBuiltin _ (Select i)) e)                      = pretty e <> "->" <> pretty i
-    pretty (EApp _ (UBuiltin _ IParse) e')                         = pretty e' <> ":i"
-    pretty (EApp _ (UBuiltin _ FParse) e')                         = pretty e' <> ":f"
-    pretty (EApp _ (UBuiltin _ Parse) e')                          = pretty e' <> ":"
-    pretty (EApp _ e@UBuiltin{} e')                                = pretty e <> pretty e'
-    pretty (EApp _ e e')                                           = pretty e <+> pretty e'
-    pretty (Var _ n)                                               = pretty n
-    pretty (IntLit _ i)                                            = pretty i
-    pretty (RegexLit _ rr)                                         = "/" <> pretty (decodeUtf8 rr) <> "/"
-    pretty (FloatLit _ f)                                          = pretty f
-    pretty (BoolLit _ True)                                        = "#t"
-    pretty (BoolLit _ False)                                       = "#f"
-    pretty (BBuiltin _ b)                                          = parens (pretty b)
-    pretty (UBuiltin _ u)                                          = pretty u
-    pretty (StrLit _ bstr)                                         = pretty (decodeUtf8 bstr)
-    pretty (ResVar _ x)                                            = pretty x
-    pretty (Tup _ es)                                              = jacTup es
-    pretty (Lam _ n e)                                             = parens ("λ" <> pretty n <> "." <+> pretty e)
-    pretty (Dfn _ e)                                               = brackets (pretty e)
-    pretty (Guarded _ p e)                                         = braces (pretty p) <> braces (pretty e)
-    pretty (Implicit _ e)                                          = braces ("|" <+> pretty e)
-    pretty (NBuiltin _ n)                                          = pretty n
-    pretty RegexCompiled{}                                         = error "Nonsense."
-    pretty (Let _ (n, b) e)                                        = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
-    pretty (Paren _ e)                                             = parens (pretty e)
-    pretty (Arr _ es)                                              = tupledByFunky "," (V.toList $ pretty <$> es)
-    pretty (Anchor _ es)                                           = "&" <> tupledBy "." (pretty <$> es)
-    pretty (OptionVal _ (Just e))                                  = "Some" <+> pretty e
-    pretty (OptionVal _ Nothing)                                   = "None"
+    pretty (Column _ i)                                              = "$" <> pretty i
+    pretty AllColumn{}                                               = "$0"
+    pretty (IParseCol _ i)                                           = "$" <> pretty i <> ":i"
+    pretty (FParseCol _ i)                                           = "$" <> pretty i <> ":f"
+    pretty AllField{}                                                = "`0"
+    pretty (Field _ i)                                               = "`" <> pretty i
+    pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')                 = pretty e <> "\\." <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                   = "max" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                   = "min" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Split) e) e')                 = "split" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Splitc) e) e')                = "splitc" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Match) e) e')                 = "match" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e')               = "sprintf" <+> pretty e <+> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ Map) e) e')                   = pretty e <> "\"" <> pretty e'
+    pretty (EApp _ (EApp _ (BBuiltin _ b) e) e')                     = pretty e <+> pretty b <+> pretty e'
+    pretty (EApp _ (BBuiltin _ b) e)                                 = parens (pretty e <> pretty b)
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Fold) e) e') e'')     = pretty e <> "|" <> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) e) e') e'')     = pretty e <> "^" <> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) e') e'')    = "," <> pretty op <+> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e) e') e'')   = "substr" <+> pretty e <+> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e) e') e'')   = "option" <+> pretty e <+> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TBuiltin _ Captures) e) e') e'') = pretty e <+> "~*" <+> pretty e' <+> pretty e''
+    pretty (EApp _ (UBuiltin _ (At i)) e)                            = pretty e <> "." <> pretty i
+    pretty (EApp _ (UBuiltin _ (Select i)) e)                        = pretty e <> "->" <> pretty i
+    pretty (EApp _ (UBuiltin _ IParse) e')                           = pretty e' <> ":i"
+    pretty (EApp _ (UBuiltin _ FParse) e')                           = pretty e' <> ":f"
+    pretty (EApp _ (UBuiltin _ Parse) e')                            = pretty e' <> ":"
+    pretty (EApp _ e@UBuiltin{} e')                                  = pretty e <> pretty e'
+    pretty (EApp _ e e')                                             = pretty e <+> pretty e'
+    pretty (Var _ n)                                                 = pretty n
+    pretty (IntLit _ i)                                              = pretty i
+    pretty (RegexLit _ rr)                                           = "/" <> pretty (decodeUtf8 rr) <> "/"
+    pretty (FloatLit _ f)                                            = pretty f
+    pretty (BoolLit _ True)                                          = "#t"
+    pretty (BoolLit _ False)                                         = "#f"
+    pretty (BBuiltin _ b)                                            = parens (pretty b)
+    pretty (UBuiltin _ u)                                            = pretty u
+    pretty (StrLit _ bstr)                                           = pretty (decodeUtf8 bstr)
+    pretty (ResVar _ x)                                              = pretty x
+    pretty (Tup _ es)                                                = jacTup es
+    pretty (Lam _ n e)                                               = parens ("λ" <> pretty n <> "." <+> pretty e)
+    pretty (Dfn _ e)                                                 = brackets (pretty e)
+    pretty (Guarded _ p e)                                           = braces (pretty p) <> braces (pretty e)
+    pretty (Implicit _ e)                                            = braces ("|" <+> pretty e)
+    pretty (NBuiltin _ n)                                            = pretty n
+    pretty RegexCompiled{}                                           = error "Nonsense."
+    pretty (Let _ (n, b) e)                                          = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
+    pretty (Paren _ e)                                               = parens (pretty e)
+    pretty (Arr _ es)                                                = tupledByFunky "," (V.toList $ pretty <$> es)
+    pretty (Anchor _ es)                                             = "&" <> tupledBy "." (pretty <$> es)
+    pretty (OptionVal _ (Just e))                                    = "Some" <+> pretty e
+    pretty (OptionVal _ Nothing)                                     = "None"
 
 instance Show (E a) where
     show = show . pretty
@@ -403,8 +425,18 @@ data D a = SetFS BS.ByteString
          | FunDecl (Name a) [Name a] (E a)
          deriving (Functor)
 
+instance Pretty (D a) where
+    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/"
+    pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
+
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
+
+instance Pretty (Program a) where
+    pretty (Program ds e) = concatWith (<##>) (pretty <$> ds) <##> pretty e
+
+instance Show (Program a) where
+    show = show . pretty
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where

@@ -40,7 +40,14 @@ main = defaultMain $
         , testCase "typechecks dfn" (tyFile "test/examples/ab.jac")
         , testCase "parses parens" (tyFile "examples/lib.jac")
         , testCase "typechecks/parses correctly" (tyFile "test/examples/line.jac")
+        , testCase "split eval" (evalTo "[x+' '+y]|'' split '01-23-1987' /-/" " 01 23 1987")
+        , testCase "captureE" (evalTo "'01-23-1987' ~* 3 /(\\d{2})-(\\d{2})-(\\d{4})/" "Some 1987")
         ]
+
+evalTo :: BSL.ByteString -> String -> Assertion
+evalTo bsl expected =
+    let actual = show (exprEval bsl)
+        in actual @?= expected
 
 pAst :: E ()
 pAst =
@@ -78,7 +85,7 @@ sumBytesAST =
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
-tyFile = tcIO <=< BSL.readFile
+tyFile = tcIO [] <=< BSL.readFile
 
 tyOfT :: BSL.ByteString -> T K -> Assertion
 tyOfT src expected =
@@ -86,7 +93,7 @@ tyOfT src expected =
 
 parseTo :: BSL.ByteString -> E () -> Assertion
 parseTo src e =
-    case rewriteProgram <$> parse src of
+    case rewriteProgram . snd <$> parse src of
         Left err     -> assertFailure (show err)
         Right actual -> void (expr actual) @?= e
 

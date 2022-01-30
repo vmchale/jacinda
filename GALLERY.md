@@ -91,7 +91,7 @@ Is there a line >110 bytes?
 # Count Bytes in Directory
 
 ```
-ls -l | ja '(+)|0 {ix>1}{`5:i}'
+ls -l | ja '(+)|0 {ix>1}{`5:}'
 ```
 
 # Library Functions

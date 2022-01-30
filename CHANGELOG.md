@@ -1,7 +1,19 @@
+  * Performance improvements
+  * Bug fix, dfns are renamed properly
+  * Add `-.` negate function
+  * Work with shell shebangs
+  * Implement `=` for boolean
+
+# 0.3.0.0
+
   * Fix renaming bug that was inveigling folds with lambdas
   * Add `nf` builtin
   * Add deduplication builtin (`~.`)
   * Add anchor ability to print multiple streams
+  * Make `Option` a functor
+  * Add `Witherable` class, `:?` (mapMaybe)
+  * Allow file `@include`s (crude library capability)
+  * Fix typos in manpage
 
 # 0.2.1.0
 

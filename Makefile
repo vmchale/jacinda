@@ -17,15 +17,19 @@ doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
 install: man/ja.1
-	cabal install exe:ja --overwrite-policy=always -w ghc-8.10.7
+	cabal install exe:ja --overwrite-policy=always -w ghc-9.0.2
 	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
-	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof
+	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
 
 tags: $(JAC_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@
+
+bench/data/span.txt: examples/span.txt
+	mkdir -p $(dir $@)
+	perl -0777pe '$$_=$$_ x 10000' $^ > $@

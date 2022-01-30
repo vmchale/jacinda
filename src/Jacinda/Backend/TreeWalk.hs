@@ -11,15 +11,16 @@ import           Control.Monad.State.Strict (State, get, modify, runState)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
-import           Data.Containers.ListUtils  (nubOrdOn)
+import           Data.Containers.ListUtils  (nubIntOn, nubOrdOn)
 import           Data.Foldable              (foldl', traverse_)
 import qualified Data.IntMap                as IM
 import           Data.List                  (scanl', transpose)
 import           Data.List.Ext
+import           Data.Maybe                 (mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
-import           Intern.Name                (Name (Name))
-import           Intern.Unique              (Unique (Unique))
+import           Intern.Name
+import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
@@ -74,6 +75,15 @@ asArr :: E a -> V.Vector (E a)
 asArr (Arr _ es) = es
 asArr _          = noRes
 
+asOpt :: E a -> Maybe (E a)
+asOpt (OptionVal _ e) = e
+asOpt _               = noRes
+
+-- just shove some big number into the renamer and hope it doesn't clash (bad,
+-- hack, this is why we got kicked out of the garden of Eden)
+reprehensible :: Int
+reprehensible = (maxBound :: Int) `div` 2
+
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
 withFp :: FileBS -> E (T K) -> E (T K)
@@ -104,6 +114,12 @@ eEval (fp, ix, line, ctx) = go where
     go (EApp _ (UBuiltin _ IParse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
+    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyInteger) _) Negate) e) =
+        let eI = asInt (go e)
+            in mkI (negate eI)
+    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyFloat) _) Negate) e) =
+        let eI = asFloat (go e)
+            in mkF (negate eI)
     go (EApp _ (UBuiltin _ FParse) e) =
         let eI = asStr (go e)
             in parseAsF eI
@@ -131,6 +147,11 @@ eEval (fp, ix, line, ctx) = go where
         let eI = asRegex (go e)
             eI' = asStr (go e')
         in asTup (find' eI eI')
+    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Captures) e0) e1) e2) =
+        let e0' = asStr (go e0)
+            e1' = asInt (go e1)
+            e2' = asRegex (go e2)
+            in OptionVal (tyOpt tyStr) (mkStr <$> findCapture e2' e0' (fromIntegral e1'))
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
@@ -200,6 +221,14 @@ eEval (fp, ix, line, ctx) = go where
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in FloatLit tyF (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
+        let eI = asBool (go e)
+            eI' = asBool (go e')
+            in BoolLit tyBool (eI == eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Neq) e) e') =
+        let eI = asBool (go e)
+            eI' = asBool (go e')
+            in BoolLit tyBool (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin _ Div) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
@@ -278,6 +307,12 @@ eEval (fp, ix, line, ctx) = go where
         in Arr undefined (applyUn' x' <$> y')
         where applyUn' :: E (T K) -> E (T K) -> E (T K)
               applyUn' e e' = go (EApp undefined e e')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) =
+        let x' = go x
+            y' = asOpt (go y)
+        in OptionVal undefined (applyUn' x' <$> y')
+        where applyUn' :: E (T K) -> E (T K) -> E (T K)
+              applyUn' e e' = go (EApp undefined e e')
     go (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) seed) xs) =
         let f' = go f
             seed' = go seed
@@ -291,7 +326,7 @@ applyOp :: E (T K) -- ^ Operator
         -> E (T K)
         -> E (T K)
         -> E (T K)
-applyOp op e e' = eClosed undefined (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
+applyOp op e e' = eClosed reprehensible (EApp undefined (EApp undefined op e) e') -- FIXME: undefined is ??
 
 atField :: RurePtr
         -> Int
@@ -307,7 +342,7 @@ applyUn :: E (T K)
         -> E (T K)
 applyUn unOp e =
     case eLoc unOp of
-        TyArr _ _ res -> eClosed undefined (EApp res unOp e)
+        TyArr _ _ res -> eClosed reprehensible (EApp res unOp e)
         _             -> error "Internal error?"
 
 -- | Turn an expression representing a stream into a stream of expressions (using line as context)
@@ -333,6 +368,11 @@ ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (with
 ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR (withFp fp op)
         in filter (asBool . applyUn op') . ir fp re stream
+ir fp re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
+    let op' = compileR (withFp fp op)
+        in mapMaybe (asOpt . applyUn op') . ir fp re stream
+ir fp re (EApp _ (UBuiltin _ CatMaybes) stream) =
+    mapMaybe asOpt . ir fp re stream
 ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp op)) . ir fp re stream
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
@@ -344,11 +384,11 @@ ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
-    nubOrdOn asInt . ir fp re e
+    nubIntOn (fromIntegral . asInt) . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
-    nubOrdOn asFloat . ir fp re e
+    nubIntOn (fromEnum . asFloat) . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
-    nubOrdOn asBool . ir fp re e
+    nubIntOn (fromEnum . asBool) . ir fp re e
 
 -- | Output stream that prints each entry (expression)
 printStream :: [E (T K)] -> IO ()
@@ -452,7 +492,12 @@ fileProcessor fp re e@Implicit{} = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
+-- at the moment, catMaybes only works on streams
+fileProcessor fp re e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
+    printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
+    printStream $ ir fp re e inp
+fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp
 fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
     printStream $ ir fp re e inp

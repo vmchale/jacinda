@@ -1,3 +1,9 @@
+# Find all distinct language extensions used in a project
+
+```
+rg '\{-#.*LANGUAGE.*#-}' --no-filename | ja '~.$3'
+```
+
 # cdc
 
 ```
@@ -16,4 +22,11 @@ ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F, -i /tmp/now-weekly-breakthrough.csv
 
 ```
 ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(ix.`1)}' -i /development/dhall/dhall-kitty/conf.dhall
+```
+
+# Sum Total Population
+
+```
+wget https://burntsushi.net/stuff/worldcitiespop_mil.csv -O /tmp/worldcitiespop_mil.csv
+ja -F, '(+)|0 {`5 ~ /\d+/}{`5:}' -i /tmp/worldcitiespop_mil.csv
 ```

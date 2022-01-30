@@ -1,4 +1,4 @@
-- inspiration: AWK, Haskell, J/APL, k, Dhall (expression imports), C (include), ATS... (some architectural decisions mime GHC)
+- inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
 - [ ] regex errors should include position of regex
 - [x] separate syntax for filtering a stream, e.g. {/pat/}[$0] or w/e
   - [x] still have {/pat/}{field}
@@ -7,6 +7,7 @@
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
+- [ ] Document `%i`, `%s` in manpages
 # Unicode
 - [ ] ∅ for monoidal identity
 - [x] defeq ≔
@@ -19,23 +20,23 @@
 - [ ] unicode/apl for floor+ceiling
 # Features
 - [ ] `drop` builtin/syntax?
-- [ ] `$(` `anchor`: evaluate multiple streams at once
-- [ ] `$0:` etc. parseable columns
+- [x] `$(` `anchor`: evaluate multiple streams at once
+- [ ] `$1:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
-- [x] Operator syntax for floor/ceiling?
-  - [x] `|.` for instance? `|'`?
+- [x] Operator syntax for floor/ceiling?  - [x] `|.` for instance? `|'`?
 - [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
-- [ ] mapMaybe, catMaybes? for `Witherable`...
-  - [ ] `:?` or `.?` as `mapMaybe` and `catMaybes`??
+- [x] mapMaybe, catMaybes? for `Witherable`...
+  - [x] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!
 - [x] `match`
 - [x] `splitc` - split on char! (easier/faster)
 - [ ] iota for vectors etc.
 - [x] SCANS
   - [x] backend
+- [ ] ignore case?
 - [x] dyadic infix/prior? Something for successive differences!
 - [x] string concatenation
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
@@ -50,11 +51,12 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
-- [ ] `Parseable` class - implement
+- [x] `Parseable` class - implement
 - [½] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
-- [ ] `Option` is not a functor
+- [x] `Option` is not a functor
+- [ ] Expose captures
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
@@ -64,15 +66,20 @@
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
 # Examples
+- [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
 # Bugs
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
-- [ ] `echo $PATH | ja run examples/path.jac` (proper rename...)
+- [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] '([:fp"$0)' -i LICENSE
+- [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
 # Performance
+- [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
+- [ ] https://github.com/petewarden/dstkdata
+- [ ] http://awka.sourceforge.net/compare.html
 - [ ] bind let-stuff ... allow until later?
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example

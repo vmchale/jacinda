@@ -67,6 +67,7 @@ tokens :-
         $white+                  ;
 
         "{.".*                   ;
+        "#!".*                   ; -- shebang
 
         ":="                     { mkSym DefEq }
         "≔"                      { mkSym DefEq }
@@ -113,6 +114,10 @@ tokens :-
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
         "~."                     { mkSym DedupTok }
+        ".?"                     { mkSym CatMaybesTok }
+        ":?"                     { mkSym MapMaybeTok }
+        "~*"                     { mkSym CapTok }
+        "-."                     { mkSym NegTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -120,6 +125,7 @@ tokens :-
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
         fn                       { mkKw KwFn }
+        "@include"               { mkKw KwInclude }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -269,6 +275,10 @@ data Sym = PlusTok
          | FloorSym
          | CeilSym
          | DedupTok
+         | CatMaybesTok
+         | MapMaybeTok
+         | CapTok
+         | NegTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -312,6 +322,10 @@ instance Pretty Sym where
     pretty FloorSym      = "|."
     pretty CeilSym       = "|`"
     pretty DedupTok      = "~."
+    pretty CatMaybesTok  = ".?"
+    pretty MapMaybeTok   = ":?"
+    pretty CapTok        = "~*"
+    pretty NegTok        = "-."
 
 data Keyword = KwLet
              | KwIn
@@ -319,6 +333,7 @@ data Keyword = KwLet
              | KwEnd
              | KwSet
              | KwFn
+             | KwInclude
 
 -- | Reserved/special variables
 data Var = VarX
@@ -340,12 +355,13 @@ instance Pretty Var where
     -- TODO: exp, log, sqrt, floor ...
 
 instance Pretty Keyword where
-    pretty KwLet = "let"
-    pretty KwIn  = "in"
-    pretty KwVal = "val"
-    pretty KwEnd = "end"
-    pretty KwSet = ":set"
-    pretty KwFn  = "fn"
+    pretty KwLet     = "let"
+    pretty KwIn      = "in"
+    pretty KwVal     = "val"
+    pretty KwEnd     = "end"
+    pretty KwSet     = ":set"
+    pretty KwFn      = "fn"
+    pretty KwInclude = "@include"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse

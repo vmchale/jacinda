@@ -169,11 +169,17 @@ Streams</a></li>
 <li><a href="#zips">Zips</a></li>
 <li><a href="#scans">Scans</a></li>
 <li><a href="#prior">Prior</a></li>
+<li><a href="#deduplicate">Deduplicate</a></li>
 <li><a href="#filter">Filter</a></li>
+<li><a href="#formatting-output">Formatting Output</a></li>
 <li><a href="#parting-shots">Parting Shots</a></li>
 </ul></li>
+<li><a href="#system-interaction">System Interaction</a></li>
 </ul></li>
-<li><a href="#libraries">Libraries</a></li>
+<li><a href="#libraries">Libraries</a>
+<ul>
+<li><a href="#file-includes">File Includes</a></li>
+</ul></li>
 <li><a href="#data-processing">Data Processing</a>
 <ul>
 <li><a href="#csv-processing">CSV Processing</a>
@@ -181,7 +187,11 @@ Streams</a></li>
 <li><a href="#vaccine-effectiveness">Vaccine Effectiveness</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#machinery">Machinery</a></li>
+<li><a href="#machinery">Machinery</a>
+<ul>
+<li><a href="#functor">Functor</a></li>
+<li><a href="#isprintf">IsPrintf</a></li>
+</ul></li>
 </ul>
 </nav>
 <h1 id="tutorial">Tutorial</h1>
@@ -194,7 +204,7 @@ derivative of J or APL.</p>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>Awk is oriented around patterns and actions. Jacinda has support for
 a similar style: one defines a pattern and an expression defined by the
-lines that this matches, viz. </p>
+lines that this matches, viz.</p>
 <pre><code>{% &lt;pattern&gt;}{&lt;expr&gt;}</code></pre>
 <p>This defines a stream of expressions.</p>
 <p>One can search a file for all occurrences of a string:</p>
@@ -264,7 +274,7 @@ syntax is</p>
 <p>The syntax is:</p>
 <pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>One could (for instance) calculate population density:</p>
-<pre><code>, (%) $5: $6:</code></pre>
+<pre><code>, (%) $5:f $6:f</code></pre>
 <p>The postfix <code>:</code> parses the column based on inferred type;
 here it parses as a float.</p>
 <h3 id="scans">Scans</h3>
@@ -287,13 +297,27 @@ infix</a>. One could write:</p>
 <p>Jacinda allows partially applied (curried) functions; one could
 write</p>
 <pre><code>succDiff := ((-)\.)</code></pre>
+<h3 id="deduplicate">Deduplicate</h3>
+<p>Jacinda has stream deduplication built in with the <code>~.</code>
+operator.</p>
+<pre><code>~.$0</code></pre>
+<p>This is far better than <code>sort | uniq</code> as it preserves
+order; it is equivalent to <code>!a[$0]++</code> in awk.</p>
 <h3 id="filter">Filter</h3>
 <p>We can filter an extant stream with <code>#.</code>, viz.</p>
-<pre><code>(&gt;110) #. $0:i</code></pre>
+<pre><code>(&gt;110) #. $1:i</code></pre>
 <p><code>#.</code> takes as its left argument a unary function returning
 a boolean.</p>
 <pre><code>[#x&gt;110] #. $0</code></pre>
 <p>would filter to those lines &gt;110 bytes wide.</p>
+<h3 id="formatting-output">Formatting Output</h3>
+<p>One can format output with <code>sprintf</code>, which works like
+<code>printf</code> in Awk or C.</p>
+<p>As an example,</p>
+<pre><code>{|sprintf &#39;%i: %s&#39; (ix.`0)}</code></pre>
+<p>would display a file annotated with line numbers. Note the atypical
+syntax for tuples, we use <code>.</code> as a separator rather than
+<code>,</code>.</p>
 <h3 id="parting-shots">Parting Shots</h3>
 <pre><code>or := [(||)|#f x]
 
@@ -301,6 +325,15 @@ and := [(&amp;)|#t x]
 
 count := [(+)|0 [:1&quot;x]</code></pre>
 <p><code>#t</code> and <code>#f</code> are boolean literals.</p>
+<h2 id="system-interaction">System Interaction</h2>
+<p>Jacinda ignores any line beginning with <code>#!</code>, thus one
+could write a script like so:</p>
+<pre><code>#!/usr/bin/env -S ja run
+
+fn path(x) :=
+  ([x+&#39;\n&#39;+y])|&#39;&#39; (splitc x &#39;:&#39;);
+
+path&quot;$0</code></pre>
 <h1 id="libraries">Libraries</h1>
 <p>There is a syntax for functions:</p>
 <pre><code>fn sum(x) :=
@@ -318,6 +351,17 @@ write:</p>
 
 fn all(p, xs) :=
   (&amp;)|#t p&quot;xs;</code></pre>
+<h2 id="file-includes">File Includes</h2>
+<p>One can <code>@include</code> files.</p>
+<p>As an example, one could write:</p>
+<pre><code>@include&#39;lib/string.jac&#39;
+
+fn path(x) :=
+  intercalate &#39;\n&#39; (splitc x &#39;:&#39;);
+
+path&quot;$0</code></pre>
+<p><code>intercalate</code> is defined in
+<code>lib/string.jac</code>.</p>
 <h1 id="data-processing">Data Processing</h1>
 <h2 id="csv-processing">CSV Processing</h2>
 <p>We can process <code>.csv</code> data with the aid of <a
@@ -354,5 +398,18 @@ computes effectiveness.</p>
 <p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These
 are used to disambiguate operators and witness with an
 implementation.</p>
+<p>The language does not allow custom typeclasses.</p>
+<h2 id="functor">Functor</h2>
+<p>The map operator <code>"</code> is works on all functors, not just
+streams. <code>Stream</code>, <code>List</code>, and <code>Option</code>
+are instances.</p>
+<h2 id="isprintf">IsPrintf</h2>
+<p>The <code>IsPrintf</code> typeclass is used to type
+<code>sprintf</code>; strings, integers, floats, booleans, and tuples of
+such are members.</p>
+<pre><code>sprintf &#39;%i&#39; 3</code></pre>
+<p>and</p>
+<pre><code>sprintf &#39;%s-%i&#39; (&#39;str&#39; . 2)</code></pre>
+<p>are both valid.</p>
 </body>
 </html>

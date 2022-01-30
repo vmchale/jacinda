@@ -24,7 +24,7 @@ There is a [vim plugin](https://github.com/vmchale/jacinda-vim).
 # SHOCK & AWE
 
 ```
-ls -l | ja '(+)|0 {ix>1}{`5:i}'
+ls -l | ja '(+)|0 {ix>1}{`5:}'
 ```
 
 ```
@@ -79,7 +79,6 @@ imperative/scoping defects.
   * Typeclasses are not documented
   * Type system is questionable
   * Postfix `:f` and `:i` are handled poorly
-  * File imports/includes
   * Various bugs in evaluation with regular expressions
 
 Intentionally missing features:

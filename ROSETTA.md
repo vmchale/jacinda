@@ -1,11 +1,34 @@
+# Filter Users
+
+```
+cat /etc/passwd | ja -F: '{`7 !~/false|nologin/}{`1}'
+```
+
+```
+cat /etc/passwd | awk -F: '$7 !~/false|nologin/ { print $1 }'
+```
+
+# Sum Population
+
+```
+wget https://burntsushi.net/stuff/worldcitiespop_mil.csv -O /tmp/worldcitiespop_mil.csv
+ja -F, '(+)|0 {`5 ~ /^\d+$/}{`5:}' -i /tmp/worldcitiespop_mil.csv
+```
+
+```
+awk -F, '{ sum += $5 }; END { print sum }' /tmp/worldcitiespop_mil.csv
+```
+
 # Deduplicate Lines
 
+As in this [StackOverflow answer](https://unix.stackexchange.com/a/281478).
+
 ```awk
-!a[$0]++
+!a[$0]++ && ! /^$/
 ```
 
 ```
-~.$0
+~.[#x>0] #. $0
 ```
 
 # Process Compiler Output
@@ -33,6 +56,18 @@ fn printSpan(str) :=
 printSpan"{% / *\^+/}{`2}
 ```
 
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  let
+    val p := match str /\^+/
+    val str := (sprintf '%i-%i')"p
+  in str end;
+
+printSpan:?{% /\|/}{`2}
+```
+
 # Present PATH
 
 ```awk
@@ -47,30 +82,6 @@ fn path(x) :=
   ([x+'\n'+y])|'' (splitc x ':');
 
 path"$0
-```
-
-# ?
-
-```awk
-BEGIN { calls="" }
-
-{
-  calls = calls " " $1;
-  print "sysno-" $1 " = " $2;
-  print "nargs-" $1 " = " $3;
-}
-
-END { print "mach-syscalls := " calls }
-```
-
-```
-fn printLines(lines) :=
-  [x+'\n'+y]|'' lines;
-
-let
-  val calls := [x+' '+y]|'' $1
-  val prologue := printLines {| sprintf 'sysno-%s = %s\nnargs-%s = %s' (`1 . `2 . `1 . `3)}
-in sprintf '%s\nmach-syscalls := %s' (prologue . calls) end
 ```
 
 # Count Lines
@@ -128,7 +139,7 @@ ls -l | awk '{ total += $5; } END { print total; }'
 ```
 
 ```
-ls -l | ja '(+)|0 {ix>1}{`5:i}'
+ls -l | ja '(+)|0 {ix>1}{`5:}'
 ```
 
 # Discard First Line

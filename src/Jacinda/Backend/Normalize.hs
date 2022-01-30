@@ -14,10 +14,14 @@ module Jacinda.Backend.Normalize ( compileR
                                  , parseAsF
                                  , the
                                  , asTup
+                                 -- * Monad
+                                 , runEvalM
+                                 , eNorm
                                  ) where
 
-import           Control.Monad.State.Strict (State, evalState, gets, modify)
+import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
 import           Control.Recursion          (cata, embed)
+import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
@@ -78,6 +82,7 @@ compileR :: E a
 compileR = cata a where -- TODO: combine with eNorm pass?
     a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
     a x                = embed x
+    -- TODO: is cata performant enough?
 
 compileIn :: Program a -> Program a
 compileIn (Program ds e) = Program (compileD <$> ds) (compileR e)
@@ -104,17 +109,24 @@ type EvalM = State LetCtx
 mkLetCtx :: Int -> LetCtx
 mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
 
+hoistEvalM :: Int -> EvalM a -> (a, Int)
+hoistEvalM i = second (max_ . renames_) . flip runState (mkLetCtx i)
+
+runEvalM :: Int
+         -> EvalM a
+         -> a
+runEvalM i = flip evalState (mkLetCtx i)
+
 eClosed :: Int
         -> E (T K)
         -> E (T K)
-eClosed i = flip evalState (mkLetCtx i) . eNorm
+eClosed i = runEvalM i . eNorm
 
 closedProgram :: Int
               -> Program (T K)
               -> E (T K)
-closedProgram i (Program ds e) = flip evalState (mkLetCtx i) $
-    traverse_ processDecl ds *>
-    eNorm e
+closedProgram i (Program ds e) = runEvalM i $
+    traverse_ processDecl ds *> eNorm e
 
 processDecl :: D (T K)
             -> EvalM ()
@@ -140,8 +152,7 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
-applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e')
 
 foldE :: E (T K)
       -> E (T K)
@@ -259,7 +270,7 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Times) e) e'
     pure $ case (eI, eI') of
         (IntLit _ i, IntLit _ j) -> i `seq` j `seq` IntLit tyI (i*j)
         _                        -> EApp ty (EApp ty' op eI) eI'
-eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') = do
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') = do -- TODO: don't match on type, do that below
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
@@ -372,6 +383,18 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') = do
     pure $ case (eI, eI') of
         (StrLit _ i, StrLit _ j) -> BoolLit tyBool (i /= j)
         _                        -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b == b')
+        _                           -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyBool) _) Neq) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (BoolLit _ b, BoolLit _ b') -> BoolLit tyBool (b /= b')
+        _                           -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ And) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
@@ -397,6 +420,12 @@ eNorm (EApp ty op@(UBuiltin _ (Select i)) e) = do
     pure $ case eI of
         (Tup _ es) -> es !! (i-1)
         _          -> EApp ty op eI
+eNorm (EApp ty op@(UBuiltin _ Negate) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (FloatLit _ f) -> mkF $ negate f
+        (IntLit _ i)   -> mkI $ negate i
+        _              -> EApp ty op eI
 eNorm (EApp ty op@(UBuiltin _ Not) e) = do
     eI <- eNorm e
     pure $ case eI of
@@ -425,6 +454,8 @@ eNorm (EApp ty op@(UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) = do
 eNorm (EApp ty (UBuiltin _ Some) e) = do
     eI <- eNorm e
     pure $ OptionVal ty (Just eI)
+-- catMaybes only works for streams atm
+eNorm (EApp ty op@(UBuiltin _ CatMaybes) e) = EApp ty op <$> eNorm e
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
 eNorm (Let _ (Name _ (Unique i) _, b) e) = do
@@ -441,7 +472,7 @@ eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
-    eNorm e
+    eNorm e <* modify (mapBinds (IM.delete i))
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
@@ -449,6 +480,13 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     pure $ case (e0', e1', e2') of
         (StrLit _ str, IntLit _ i, IntLit _ j) -> mkStr (substr str (fromIntegral i) (fromIntegral j))
         _                                      -> EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0') e1') e2'
+eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Captures) e0) e1) e2) = do
+    e0' <- eNorm e0
+    e1' <- eNorm e1
+    e2' <- eNorm e2
+    pure $ case (e0', e1', e2') of
+        (StrLit _ str, IntLit _ ix, RegexCompiled re) -> OptionVal (tyOpt tyStr) (mkStr <$> findCapture re str (fromIntegral ix))
+        _                                             -> EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
@@ -475,6 +513,12 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyV
     case y' of
         Arr _ es -> Arr undefined <$> traverse (applyUn x') es -- TODO: undefined?
         _        -> pure $ EApp ty0 (EApp ty1 op x') y'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) = do
+    x' <- eNorm x
+    y' <- eNorm y
+    case y' of
+        OptionVal _ e -> OptionVal undefined <$> traverse (applyUn x') e -- TODO: undefined?
+        _             -> pure $ EApp ty0 (EApp ty1 op x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) x) y) = do
     f' <- eNorm f
     x' <- eNorm x
@@ -497,6 +541,7 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
         -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ MapMaybe) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 -- FIXME: this will almost surely run into trouble; if the above pattern matches

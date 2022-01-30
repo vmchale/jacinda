@@ -9,11 +9,11 @@ ja - Jacinda: data filtering, processing, reporting
 
   ja run src.jac -i data.txt
 
-  cat FILE1 FILE2 | ja '#"$0'
+  cat FILE1 FILE2 | ja \'#\"$0'
 
   ja tc script.jac
 
-  ja e '11.67\*1.2'
+  ja e \'11.67\*1.2'
 
 # DESCRIPTION
 
@@ -34,6 +34,9 @@ ja - Jacinda: data filtering, processing, reporting
 
 **-V** **-\-version**
 :   Display version information
+
+**-I** **-\-include**
+:   Include directory for imports
 
 # LANGUAGE
 
@@ -60,14 +63,14 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
-**"** Binary operator: map
+**\"** Binary operator: map
 :   Functor f :=> a -> b -> f a -> f b
 
 **[:** Unary operator: const 
 :   a -> b -> a
 
 **#.** Binary operator: filter
-:   (a -> Bool) -> Stream a -> Stream a
+:   Witherable f :=> (a -> Bool) -> f a -> f a
 
 **\\.** Binary operator: prior
 :   (a -> a -> a) -> Stream a -> Stream a
@@ -106,6 +109,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **|`** Ceiling function
 :   Float -> Int
 
+**-.** Unary negate
+
 **sprintf** Convert an expression to a string using the format string
 
 **option** Option eliminator
@@ -113,6 +118,15 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **match**
 :   Str -> Regex -> Option (Int . Int)
+
+**~\*** Match, returning nth capture group
+:   Str -> Int -> Regex -> Option Str
+
+**:?** mapMaybe
+:   Witherable f :=> (a -> Option b) -> f a -> f b
+
+**.?** catMaybes
+:   Witherable f :=> f (Option a) -> f a
 
 **fp** Filename
 
@@ -142,14 +156,42 @@ a boolean expression.
 
 **{.** Line comment
 
+**@include\'/path/file.jac'** File include
+
+# INFLUENTIAL ENVIRONMENT VARIABLES
+
+`JAC_PATH` - colon-separated list of directories to search
+
+# EXAMPLES
+
+[#x>72] #. $0
+:   Print lines longer than 72 bytes
+
+{| sprintf \'%i %i\' (\`2 . \`1)}
+:   Print the first two fields in opposite order
+
+:set fs := /,[ \\t]*|[ \\t]+/; {| sprintf \'%i %i\' (\`2 . \`1)}
+:   Same, with input fields separated by comma and/or blanks and tabs.
+
+(+)|0 $1:i
+:   Sum first column
+
+(+)|0 [:1\"$0
+:   Count lines
+
+[y]|0 {|ix}
+:   Count lines
+
+(+)|0 [#x+1]\"$0
+:   Count bytes (+1 for newlines)
+
+{|sprintf \'%i: %s\' (ix.`0)}
+:   Display with line numbers
+
 # BUGS
 
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
-
-## Limitations
-
-Note that `Option` is not implemented as a functor.
 
 # COPYRIGHT
 

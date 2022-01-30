@@ -15,7 +15,7 @@ awk).
 
 Awk is oriented around patterns and actions. Jacinda has support for a similar
 style: one defines a pattern and an expression defined by the lines that this
-matches, viz. 
+matches, viz.
 
 ```
 {% <pattern>}{<expr>}
@@ -61,7 +61,7 @@ There is also a syntax that defines a stream on *all* lines,
 {|<expr>}
 ```
 
-So `{|``0}` would define a stream of text corresponding to the lines in the file. 
+So `{|``0}` would define a stream of text corresponding to the lines in the file.
 
 ### Fold
 
@@ -143,7 +143,7 @@ The syntax is:
 One could (for instance) calculate population density:
 
 ```
-, (%) $5: $6:
+, (%) $5:f $6:f
 ```
 
 The postfix `:` parses the column based on inferred type; here it parses as
@@ -184,12 +184,23 @@ Jacinda allows partially applied (curried) functions; one could write
 succDiff := ((-)\.)
 ```
 
+### Deduplicate
+
+Jacinda has stream deduplication built in with the `~.` operator.
+
+```
+~.$0
+```
+
+This is far better than `sort | uniq` as it preserves order; it is equivalent to `!a[$0]++`
+in awk.
+
 ### Filter
 
 We can filter an extant stream with `#.`, viz.
 
 ```
-(>110) #. $0:i
+(>110) #. $1:i
 ```
 
 `#.` takes as its left argument a unary function returning a boolean.
@@ -199,6 +210,19 @@ We can filter an extant stream with `#.`, viz.
 ```
 
 would filter to those lines >110 bytes wide.
+
+### Formatting Output
+
+One can format output with `sprintf`, which works like `printf` in Awk or C.
+
+As an example,
+
+```
+{|sprintf '%i: %s' (ix.`0)}
+```
+
+would display a file annotated with line numbers. Note the atypical syntax for
+tuples, we use `.` as a separator rather than `,`.
 
 ### Parting Shots
 
@@ -211,6 +235,20 @@ count := [(+)|0 [:1"x]
 ```
 
 `#t` and `#f` are boolean literals.
+
+## System Interaction
+
+Jacinda ignores any line beginning with `#!`, thus one could write a script like
+so:
+
+```
+#!/usr/bin/env -S ja run
+
+fn path(x) :=
+  ([x+'\n'+y])|'' (splitc x ':');
+
+path"$0
+```
 
 # Libraries
 
@@ -237,6 +275,23 @@ fn any(p, xs) :=
 fn all(p, xs) :=
   (&)|#t p"xs;
 ```
+
+## File Includes
+
+One can `@include` files.
+
+As an example, one could write:
+
+```
+@include'lib/string.jac'
+
+fn path(x) :=
+  intercalate '\n' (splitc x ':');
+
+path"$0
+```
+
+`intercalate` is defined in `lib/string.jac`.
 
 # Data Processing
 
@@ -294,3 +349,27 @@ effectiveness.
 
 Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to
 disambiguate operators and witness with an implementation.
+
+The language does not allow custom typeclasses.
+
+## Functor
+
+The map operator `"` is works on all functors, not just streams. `Stream`,
+`List`, and `Option` are instances.
+
+## IsPrintf
+
+The `IsPrintf` typeclass is used to type `sprintf`; strings, integers, floats, booleans, and
+tuples of such are members.
+
+```
+sprintf '%i' 3
+```
+
+and
+
+```
+sprintf '%s-%i' ('str' . 2)
+```
+
+are both valid.

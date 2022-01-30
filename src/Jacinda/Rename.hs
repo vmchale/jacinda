@@ -91,19 +91,24 @@ setMax i (Renames _ b) = Renames i b
 mkLam :: [Name a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
+-- TODO: investigate performance w/out cata
+
 -- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
-    a (ResVarF _ Y)    = True
-    a (TupF _ es)      = or es
-    a (EAppF _ e e')   = e || e'
-    a (LamF _ _ e)     = e
-    a DfnF{}           = error "Not supported yet."
-    a (LetF _ b e)     = e || snd b
-    a (GuardedF _ p b) = b || p
-    a (ImplicitF _ e)  = e
-    a (ParenF _ e)     = e
-    a _                = False
+    a (ResVarF _ Y)           = True
+    a (TupF _ es)             = or es
+    a (EAppF _ e e')          = e || e'
+    a (LamF _ _ e)            = e
+    a DfnF{}                  = error "Not supported yet."
+    a (LetF _ b e)            = e || snd b
+    a (GuardedF _ p b)        = b || p
+    a (ImplicitF _ e)         = e
+    a (ParenF _ e)            = e
+    a (ArrF _ es)             = or es
+    a (AnchorF _ es)          = or es
+    a (OptionValF _ (Just e)) = e
+    a _                       = False
 
 replaceXY :: (a -> Name a) -- ^ @x@
           -> (a -> Name a) -- ^ @y@
@@ -133,14 +138,14 @@ renameE (Var l n)       = Var l <$> replaceVar n
 renameE (Lam l n e)     = do
     (n', modR) <- withName n
     Lam l n' <$> withRenames modR (renameE e)
-renameE (Dfn l e) | hasY e = do
+renameE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
     x@(Name nX uX _) <- dummyName l "x"
     y@(Name nY uY _) <- dummyName l "y"
-    Lam l x . Lam l y <$> renameE (replaceXY (Name nX uX) (Name nY uY) e)
+    Lam l x . Lam l y <$> renameE ({-# SCC "replaceXY" #-} replaceXY (Name nX uX) (Name nY uY) e)
                   | otherwise = do
     x@(Name n u _) <- dummyName l "x"
     -- no need for withName... withRenames because this is fresh/globally unique
-    Lam l x <$> renameE (replaceX (Name n u) e)
+    Lam l x <$> renameE ({-# SCC "replaceX" #-} replaceX (Name n u) e)
 renameE (Guarded l p e) = Guarded l <$> renameE p <*> renameE e
 renameE (Implicit l e) = Implicit l <$> renameE e
 renameE ResVar{} = error "Bare reserved variable."
