@@ -27,7 +27,12 @@ import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Ty.Const
-import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<+>))
+import           Prettyprinter              (Doc, Pretty (..), hardline, squotes, vsep, (<+>))
+
+infixr 6 <#>
+
+(<#>) :: Doc a -> Doc a -> Doc a
+(<#>) x y = x <> hardline <> y
 
 data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C

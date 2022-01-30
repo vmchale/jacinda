@@ -70,7 +70,6 @@ tokens :-
         "#!".*                   ; -- shebang
 
         ":="                     { mkSym DefEq }
-        "≔"                      { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
 
@@ -130,9 +129,6 @@ tokens :-
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
         nf                       { mkRes VarNf }
-        -- TODO: does this uncover an alex bug?
-        -- ⍳                        { mkRes VarIx }
-        -- ¨                        { mkSym Quot }
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 

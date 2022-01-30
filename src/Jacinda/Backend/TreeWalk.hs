@@ -14,7 +14,7 @@ import qualified Data.ByteString            as BS
 import           Data.Containers.ListUtils  (nubIntOn, nubOrdOn)
 import           Data.Foldable              (foldl', traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', transpose)
+import           Data.List                  (scanl', transpose, unzip4)
 import           Data.List.Ext
 import           Data.Maybe                 (mapMaybe)
 import           Data.Semigroup             ((<>))
@@ -101,7 +101,7 @@ eEval (fp, ix, line, ctx) = go where
     go f@FloatLit{} = f
     go str@StrLit{} = str
     go rr@RegexLit{} = rr
-    go reϵ@RegexCompiled{} = reϵ
+    go re@RegexCompiled{} = re
     go op@BBuiltin{} = op
     go op@UBuiltin{} = op
     go op@TBuiltin{} = op
@@ -411,12 +411,14 @@ foldAll :: FileBS
         -> [(Int, E (T K), E (T K), E (T K))]
         -> [BS.ByteString]
         -> [(Int, E (T K))]
-foldAll fp re foldExprs bs = evalStep . go <$> foldExprs where
+foldAll fp re foldExprs bs = withs (unzip4 (go <$> foldExprs)) where
     -- with the fourth of each foldExpr, compute ir
     go (i, op, seed, streamExpr) = {-# SCC "go" #-} (i, op, seed, ir fp re streamExpr bs)
-    evalStep (i, _, seed, [])    = (i, seed)
-    evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
-    -- foldAlls is ops seeds xss = zipWith4
+    withs (is, ops, seeds, irStreams) = zip is (evalStep ops seeds (transpose irStreams))
+    evalStep ops seeds []       = seeds
+    evalStep ops seeds (es:ess) = let es' = zipWith3 applyOp ops seeds es in es' `seq` evalStep ops es' ess
+    -- evalStep (i, _, seed, [])    = (i, seed)
+    -- evalStep (i, op, seed, x:xs) = let x' = applyOp op seed x in x' `seq` evalStep (i, op, x', xs)
 
 runJac :: FileBS
        -> RurePtr -- ^ Record separator

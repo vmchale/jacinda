@@ -31,6 +31,8 @@
 - [x] mapMaybe, catMaybes? for `Witherable`...
   - [x] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!
+- [x] Operator syntax for floor/ceiling?
+- [ ] Witherable typeclass, vectors/lists should be a member!
 - [x] `match`
 - [x] `splitc` - split on char! (easier/faster)
 - [ ] iota for vectors etc.
