@@ -466,7 +466,7 @@ gatherFoldsM e@BoolLit{} = pure e
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re e bs =
     let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
-        in ungather (IM.fromList $ foldAll fp re folds bs) eHoles
+        in eClosed undefined $ ungather (IM.fromList $ foldAll fp re folds bs) eHoles
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
 -- OR "compile" to [(Int, E (T K)] -> ...
 
