@@ -1,3 +1,13 @@
+# Filter Users
+
+```
+cat /etc/passwd | ja -F: '{`7 !~/false|nologin/}{`1}'
+```
+
+```
+cat /etc/passwd | awk -F: '$7 !~/false|nologin/ { print $1 }'
+```
+
 # Sum Population
 
 ```
