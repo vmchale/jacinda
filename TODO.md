@@ -57,6 +57,8 @@
 - [ ] list comprehensions or w/e
 - [x] `Option` is not a functor
 - [ ] Expose captures
+- [ ] fold without seed
+  - [ ] `seq 10 | ja "[x+','+y]|'' \$0"`
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
