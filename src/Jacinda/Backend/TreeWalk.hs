@@ -144,6 +144,11 @@ eEval (fp, ix, line, ctx) = go where
             e1' = asInt (go e1)
             e2' = asRegex (go e2)
             in OptionVal (tyOpt tyStr) (mkStr <$> findCapture e2' e0' (fromIntegral e1'))
+    go (EApp _ (EApp _ (EApp _ (TBuiltin _ AllCaptures) e0) e1) e2) =
+        let e0' = asStr (go e0)
+            e1' = asInt (go e1)
+            e2' = asRegex (go e2)
+            in Arr (mkVec tyStr) (mkStr <$> V.fromList (captures' e2' e0' (fromIntegral e1')))
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
