@@ -386,12 +386,6 @@ tyM l = do
 desugar :: a
 desugar = error "Should have been de-sugared in an earlier stage!"
 
-tyVec :: T K
-tyVec = TyB (KArr Star Star) TyVec
-
-mkVec :: T K -> T K
-mkVec = hkt tyVec
-
 tyE0 :: Ord a => E a -> TypeM a (E (T K))
 tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
 tyE0 (IntLit _ i)            = pure $ IntLit tyI i
@@ -458,7 +452,7 @@ tyE0 (BBuiltin l Sprintf) = do
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
     let a' = var a
-        tyV = hkt tyVec a'
+        tyV = mkVec a'
     pure $ UBuiltin (tyArr tyV a') (At i)
 tyE0 (UBuiltin l (Select i)) = do
     a <- dummyName "a"
@@ -560,6 +554,8 @@ tyE0 (TBuiltin _ Option) = do
         a' = var a
         fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (tyOpt a') b'))
     pure $ TBuiltin fTy Option
+tyE0 (TBuiltin _ AllCaptures) =
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (mkVec tyStr)))) AllCaptures
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e
     pure $ Implicit (tyStream (eLoc e')) e'

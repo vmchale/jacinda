@@ -122,6 +122,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
+**captures** Return all captures
+:   Str -> Int -> Regex -> List Str
+
 **:?** mapMaybe
 :   Witherable f :=> (a -> Option b) -> f a -> f b
 

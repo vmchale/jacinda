@@ -47,4 +47,6 @@ rewriteE = cata a where
     a (EAppF l e0@(TBuiltin _ Substr) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                                = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TBuiltin _ Option) (EApp lϵ (EApp lϵϵ e1 e2) e3))                                = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TBuiltin _ Option) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                                = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
+    a (EAppF l e0@(TBuiltin _ AllCaptures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                           = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
+    a (EAppF l e0@(TBuiltin _ AllCaptures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                           = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a x                                                                                             = embed x

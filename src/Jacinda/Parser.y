@@ -127,6 +127,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     some { TokBuiltin $$ BuiltinSome }
     none { TokBuiltin $$ BuiltinNone }
     fp { TokBuiltin $$ BuiltinFp }
+    captures { TokBuiltin $$ BuiltinCaptures }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -258,6 +259,7 @@ E :: { E AlexPosn }
   | substr { TBuiltin $1 Substr }
   | sprintf { BBuiltin $1 Sprintf }
   | option { TBuiltin $1 Option }
+  | captures { TBuiltin $1 AllCaptures }
   | floor { UBuiltin $1 Floor }
   | ceil { UBuiltin $1 Ceiling }
   | floorSym { UBuiltin $1 Floor }
