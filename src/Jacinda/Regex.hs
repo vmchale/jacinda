@@ -9,6 +9,7 @@ module Jacinda.Regex ( splitBy
                      , compileDefault
                      , substr
                      , findCapture
+                     , captures'
                      ) where
 
 import           Control.Exception        (Exception, throwIO)
@@ -37,9 +38,16 @@ substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
                                | otherwise = "error: invalid substring indices."
 
+captures' :: RurePtr -> BS.ByteString -> CSize -> [BS.ByteString]
+captures' re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> captures re haystack ix
+    where go (RureMatch s e) =
+            let e' = fromIntegral e
+                s' = fromIntegral s
+                in BS.BS (fp `plusForeignPtr` s') (e'-s')
+
 {-# NOINLINE findCapture #-}
 findCapture :: RurePtr -> BS.ByteString -> CSize -> Maybe BS.ByteString
-findCapture re haystack@(BS.BS fp l) ix = unsafeDupablePerformIO $ fmap go <$> findCaptures re haystack ix 0
+findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> findCaptures re haystack ix 0
     where go (RureMatch s e) =
             let e' = fromIntegral e
                 s' = fromIntegral s

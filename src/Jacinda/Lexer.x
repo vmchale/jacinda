@@ -144,6 +144,7 @@ tokens :-
         floor                    { mkBuiltin BuiltinFloor }
         ceil                     { mkBuiltin BuiltinCeil }
         match                    { mkBuiltin BuiltinMatch }
+        captures                 { mkBuiltin BuiltinCaptures }
         Some                     { mkBuiltin BuiltinSome }
         None                     { mkBuiltin BuiltinNone }
         fp                       { mkBuiltin BuiltinFp }
@@ -373,24 +374,26 @@ data Builtin = BuiltinIParse
              | BuiltinFloor
              | BuiltinCeil
              | BuiltinMatch
+             | BuiltinCaptures
              | BuiltinSome
              | BuiltinNone
              | BuiltinFp
 
 instance Pretty Builtin where
-    pretty BuiltinIParse  = ":i"
-    pretty BuiltinFParse  = ":f"
-    pretty BuiltinSubstr  = "substr"
-    pretty BuiltinSplit   = "split"
-    pretty BuiltinOption  = "option"
-    pretty BuiltinSplitc  = "splitc"
-    pretty BuiltinSprintf = "sprintf"
-    pretty BuiltinFloor   = "floor"
-    pretty BuiltinCeil    = "ceil"
-    pretty BuiltinMatch   = "match"
-    pretty BuiltinSome    = "Some"
-    pretty BuiltinNone    = "None"
-    pretty BuiltinFp      = "fp"
+    pretty BuiltinIParse   = ":i"
+    pretty BuiltinFParse   = ":f"
+    pretty BuiltinSubstr   = "substr"
+    pretty BuiltinSplit    = "split"
+    pretty BuiltinOption   = "option"
+    pretty BuiltinSplitc   = "splitc"
+    pretty BuiltinSprintf  = "sprintf"
+    pretty BuiltinFloor    = "floor"
+    pretty BuiltinCeil     = "ceil"
+    pretty BuiltinMatch    = "match"
+    pretty BuiltinSome     = "Some"
+    pretty BuiltinNone     = "None"
+    pretty BuiltinFp       = "fp"
+    pretty BuiltinCaptures = "captures"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
