@@ -352,6 +352,51 @@ printSpan:?{% /\|/}{`2}
 
 which only collects when `printSpan` returns a `Some`.
 
+## Vim Tags
+
+Suppose we wish to generate vim tag files for our Jacinda programs.
+According to `:help tags-file-format` the desired format is
+
+```
+{tagname}       {TAB} {tagfile} {TAB} {tagaddress}
+```
+
+where `{tagaddress}` is an ex command. In fact, addresses defined by regular expressions are preferable
+as they become outdated less quickly.
+
+As an example, suppose we have the function declaration
+
+```
+fn sum(x) :=
+  (+)|0 x;
+```
+
+Then we need to extract `sum` and give a regex that points to where it is
+defined.
+
+To do so:
+
+```
+fn mkEx(s) :=
+  '/^' + s + '$/;';
+
+fn processStr(s) :=
+  let
+    val line := split s /[ \(]+/
+    val outLine := sprintf '%s\t%s\t%s' (line.2 . fp . mkEx s)
+  in outLine end;
+
+processStr"{%/fn +[[:lower:]][[:latin:]]*.*:=/}{`0}
+```
+
+Note the builtin `split`; according to the manpages it has type
+
+```
+split : Str -> Regex -> List Str
+```
+
+`line.2` accesses the second element of the list.
+
 # Data Processing
 
 ## CSV Processing
