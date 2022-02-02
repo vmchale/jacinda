@@ -3,3 +3,6 @@ fn intercalate(b) :=
 
 fn replace(re, t, str) :=
   [x+t+y] |> (split str re);
+
+fn empty(str) :=
+  #str = 0;
