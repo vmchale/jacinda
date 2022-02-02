@@ -9,7 +9,7 @@ functional programmers; the syntax in particular is derivative of J or APL.
 Jacinda is at its best when piped through other command-line tools (including
 awk).
 
-## Tour de Force
+## Language
 
 ### Patterns + Implicits, Streams
 
@@ -292,6 +292,110 @@ path"$0
 ```
 
 `intercalate` is defined in `lib/string.jac`.
+
+# Problem Solving
+
+## Error Span
+
+Suppose we wish to extract span information from compiler output for editor
+integration. Vim ships with a similar script, `mve.awk`, to present column information in a suitable format.
+
+```
+src/Jacinda/Backend/TreeWalk.hs:319:58: error:
+    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
+    • In the pattern:
+        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
+      In the pattern:
+        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
+      In the pattern:
+        TBuiltin (TyArr _ _
+                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
+                 Fold
+    |
+319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+To get what we want, we use `match`, which returns indices that match a regex
+- in our case, `/\^+/`, which spans the error location.
+
+From the manpages, we see it has type
+
+```
+match : Str -> Regex -> Option (Int . Int)
+```
+
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  (sprintf '%i-%i')"(match str /\^+/);
+
+printSpan:?{% /\|/}{`2}
+```
+
+Our program uses `|` as a file separator, thus ``2` will present us with:
+
+```
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+which is exactly the relevant bit.
+
+First, note that `"` is used to map `(sprintf '%i-%i')` over `(match ...)`. This
+works because `match` returns an `Option`, which is a functor. The builtin `:?`
+is [`mapMaybe`](https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe). Thus, we define a stream
+
+```
+printSpan:?{% /\|/}{`2}
+```
+
+which only collects when `printSpan` returns a `Some`.
+
+## Vim Tags
+
+Suppose we wish to generate vim tag files for our Jacinda programs.
+According to `:help tags-file-format` the desired format is
+
+```
+{tagname}       {TAB} {tagfile} {TAB} {tagaddress}
+```
+
+where `{tagaddress}` is an ex command. In fact, addresses defined by regular expressions are preferable
+as they become outdated less quickly.
+
+As an example, suppose we have the function declaration
+
+```
+fn sum(x) :=
+  (+)|0 x;
+```
+
+Then we need to extract `sum` and give a regex that points to where it is
+defined.
+
+To do so:
+
+```
+fn mkEx(s) :=
+  '/^' + s + '$/;';
+
+fn processStr(s) :=
+  let
+    val line := split s /[ \(]+/
+    val outLine := sprintf '%s\t%s\t%s' (line.2 . fp . mkEx s)
+  in outLine end;
+
+processStr"{%/fn +[[:lower:]][[:latin:]]*.*:=/}{`0}
+```
+
+Note the builtin `split`; according to the manpages it has type
+
+```
+split : Str -> Regex -> List Str
+```
+
+`line.2` accesses the second element of the list.
 
 # Data Processing
 

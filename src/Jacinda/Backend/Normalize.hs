@@ -1,6 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- TODO: test this module?
 module Jacinda.Backend.Normalize ( compileR
                                  , compileIn
                                  , eClosed
@@ -14,11 +13,13 @@ module Jacinda.Backend.Normalize ( compileR
                                  , parseAsF
                                  , the
                                  , asTup
+                                 , EvalError (..)
                                  -- * Monad
                                  , runEvalM
                                  , eNorm
                                  ) where
 
+import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
@@ -37,6 +38,12 @@ import           Jacinda.Regex
 import           Jacinda.Rename
 import           Jacinda.Ty.Const
 import           Regex.Rure                 (RureMatch (..))
+
+data EvalError = EmptyFold
+               | IndexOutOfBounds Int
+               deriving (Show)
+
+instance Exception EvalError where
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI
@@ -526,6 +533,12 @@ eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyO
     case y' of
         OptionVal _ e -> OptionVal undefined <$> traverse (applyUn x') e -- TODO: undefined?
         _             -> pure $ EApp ty0 (EApp ty1 op x') y'
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _)) Fold1) f) x) = do
+    f' <- eNorm f
+    x' <- eNorm x
+    case x' of
+        Arr _ es -> case V.uncons es of { Just (y, ys) -> foldE f' y ys ; Nothing -> throw EmptyFold }
+        _        -> pure $ EApp ty0 (EApp ty1 op f') x'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) x) y) = do
     f' <- eNorm f
     x' <- eNorm x
@@ -547,6 +560,7 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
         -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
         -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
+eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Fold1) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ MapMaybe) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
