@@ -70,6 +70,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
     comma { TokSym $$ Comma }
     fold { TokSym $$ FoldTok }
+    fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
     quot { TokSym $$ Quot }
     mapMaybe { TokSym $$ MapMaybeTok }
@@ -177,6 +178,7 @@ BBin :: { BBin }
      | or { Or }
      | backslashdot { Prior }
      | filter { Filter }
+     | fold1 { Fold1 }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }

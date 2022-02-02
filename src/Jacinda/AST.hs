@@ -184,6 +184,7 @@ data BBin = Plus
           | Sprintf
           | Match
           | MapMaybe
+          | Fold1
           -- TODO: floor functions, sqrt, sin, cos, exp. (power)
           deriving (Eq)
 
@@ -212,6 +213,7 @@ instance Pretty BBin where
     pretty Sprintf    = "sprintf"
     pretty Match      = "match"
     pretty MapMaybe   = ":?"
+    pretty Fold1      = "|>"
 
 data DfnVar = X | Y deriving (Eq)
 

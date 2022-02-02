@@ -85,6 +85,7 @@ tokens :-
         "|"                      { mkSym FoldTok }
         \"                       { mkSym Quot }
         "^"                      { mkSym Caret }
+        "|>"                     { mkSym Fold1Tok }
 
         "="                      { mkSym EqTok }
         "!="                     { mkSym NeqTok }
@@ -239,6 +240,7 @@ data Sym = PlusTok
          | MinusTok
          | PercentTok
          | FoldTok
+         | Fold1Tok
          | Quot
          | TimesTok
          | DefEq
@@ -286,6 +288,7 @@ instance Pretty Sym where
     pretty MinusTok      = "-"
     pretty PercentTok    = "%"
     pretty FoldTok       = "|"
+    pretty Fold1Tok      = "|>"
     pretty TimesTok      = "*"
     pretty DefEq         = ":="
     pretty Colon         = ":"

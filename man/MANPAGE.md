@@ -60,6 +60,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **|** Ternary operator: fold
 :   Foldable f :=> (b -> a -> b) -> b -> f a -> b
 
+**|>** Fold without seed
+:   Foldable f :=> (a -> a -> a) -> f a -> a
+
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 

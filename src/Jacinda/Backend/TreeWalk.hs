@@ -25,7 +25,6 @@ data StreamError = NakedField
                  | UnevalFun
                  | TupOfStreams -- ^ Reject a tuple of streams
                  | BadCtx
-                 | IndexOutOfBounds Int
                  deriving (Show)
 
 type FileBS = BS.ByteString
@@ -317,6 +316,15 @@ eEval (fp, ix, line, ctx) = go where
         in foldE f' seed' xs'
         where foldE op = V.foldl' (applyOp' op)
               applyOp' op e e' = go (EApp undefined (EApp undefined op e) e')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _)) Fold1) f) xs) =
+        let f' = go f
+            xs' = asArr (go xs)
+        in
+            case V.uncons xs' of
+                Just (y, ys) -> foldE f' y ys
+                Nothing      -> throw EmptyFold
+        where foldE op = V.foldl' (applyOp' op)
+              applyOp' op e e' = go (EApp undefined (EApp undefined op e) e')
     go (Arr ty es) = Arr ty (go <$> es)
 
 applyOp :: E (T K) -- ^ Operator
@@ -400,6 +408,17 @@ foldWithCtx :: FileBS
             -> E (T K)
 foldWithCtx fp re op seed streamExpr = foldl' (applyOp op) seed . ir fp re streamExpr
 
+fold1 :: FileBS
+      -> RurePtr
+      -> E (T K)
+      -> E (T K)
+      -> [BS.ByteString]
+      -> E (T K)
+fold1 fp re op streamExpr bs =
+    case ir fp re streamExpr bs of
+        e:es -> foldl' (applyOp op) e es
+        _    -> throw EmptyFold
+
 runJac :: FileBS
        -> RurePtr -- ^ Record separator
        -> Int
@@ -410,6 +429,7 @@ runJac fp re i e = fileProcessor fp re (closedProgram i e)
 -- evaluate something that has a fold nested in it
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx fp re op seed stream
+eWith fp re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 fp re op stream
 eWith fp re (EApp ty e0 e1)                                                                                                            = \bs -> eClosed undefined (EApp ty (eWith fp re e0 bs) (eWith fp re e1 bs))
 eWith _ _ e@BBuiltin{}                                                                                                                 = const e
 eWith _ _ e@UBuiltin{}                                                                                                                 = const e
