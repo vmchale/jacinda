@@ -41,6 +41,7 @@
 - [ ] ignore case?
 - [x] dyadic infix/prior? Something for successive differences!
 - [x] string concatenation
+- [ ] environment variables
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
   can be a variable!
   - [ ] that introduced a bug w/ nested dfns (euh)
@@ -59,6 +60,8 @@
 - [ ] list comprehensions or w/e
 - [x] `Option` is not a functor
 - [ ] Expose captures
+- [ ] fold without seed
+  - [ ] `seq 10 | ja "[x+','+y]|'' \$0"`
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
@@ -75,6 +78,7 @@
 - [ ] Awk scripts for building glibc
 # Bugs
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
+  - [ ] should be a type error
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] '([:fp"$0)' -i LICENSE
 - [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
