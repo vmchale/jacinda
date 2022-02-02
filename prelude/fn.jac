@@ -25,5 +25,8 @@ fn id(x) := x;
 fn fromMaybe(a, x) :=
   option a [x] x;
 
-fn last(stream) :=
-  [y]|'' stream;
+fn last() :=
+  ([y]|>);
+
+fn head() :=
+  ((\x.\y.x)|>);
