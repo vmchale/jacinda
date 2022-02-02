@@ -521,6 +521,14 @@ tyE0 (TBuiltin l Fold) = do
         fTy = tyArr (tyArr b' (tyArr a' b')) (tyArr b' (tyArr (hkt f' a') b'))
     modify (mapClassVars (addC f (Foldable, l)))
     pure $ TBuiltin fTy Fold
+tyE0 (BBuiltin l Fold1) = do
+    a <- dummyName "a"
+    f <- higherOrder "f"
+    let a' = var a
+        f' = var f
+        fTy = tyArr (tyArr a' (tyArr a' a')) (tyArr (hkt f' a') a')
+    modify (mapClassVars (addC f (Foldable, l)))
+    pure $ BBuiltin fTy Fold1
 tyE0 (TBuiltin _ Captures) =
     pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (tyOpt tyStr)))) Captures
 -- (a -> a -> a) -> Stream a -> Stream a
