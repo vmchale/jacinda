@@ -191,6 +191,9 @@ a boolean expression.
 (+)|0 [#x+1]\"$0
 :   Count bytes (+1 for newlines)
 
+(+)|0 {|#`0+1}
+:   Count bytes
+
 {|sprintf \'%i: %s\' (ix.`0)}
 :   Display with line numbers
 
