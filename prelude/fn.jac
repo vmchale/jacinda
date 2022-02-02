@@ -11,7 +11,7 @@ fn take(n, str) :=
 {. rounds down on .5
 fn round(x) := |. (x+0.5);
 
-fn itostring() :=
+fn itostring :=
   sprintf '%i';
 
 fn any(p, xs) :=
@@ -25,8 +25,8 @@ fn id(x) := x;
 fn fromMaybe(a, x) :=
   option a [x] x;
 
-fn last() :=
+fn last :=
   ([y]|>);
 
-fn head() :=
+fn head :=
   ((\x.\y.x)|>);
