@@ -224,33 +224,7 @@ As an example,
 would display a file annotated with line numbers. Note the atypical syntax for
 tuples, we use `.` as a separator rather than `,`.
 
-### Parting Shots
-
-```
-or := [(||)|#f x]
-
-and := [(&)|#t x]
-
-count := [(+)|0 [:1"x]
-```
-
-`#t` and `#f` are boolean literals.
-
-## System Interaction
-
-Jacinda ignores any line beginning with `#!`, thus one could write a script like
-so:
-
-```
-#!/usr/bin/env -S ja run
-
-fn path(x) :=
-  ([x+'\n'+y])|'' (splitc x ':');
-
-path"$0
-```
-
-# Libraries
+### Libraries
 
 There is a syntax for functions:
 
@@ -276,7 +250,7 @@ fn all(p, xs) :=
   (&)|#t p"xs;
 ```
 
-## File Includes
+#### File Includes
 
 One can `@include` files.
 
@@ -293,7 +267,33 @@ path"$0
 
 `intercalate` is defined in `lib/string.jac`.
 
-# Problem Solving
+#### Parting Shots
+
+```
+or := [(||)|#f x]
+
+and := [(&)|#t x]
+
+count := [(+)|0 [:1"x]
+```
+
+`#t` and `#f` are boolean literals.
+
+## System Interaction
+
+Jacinda ignores any line beginning with `#!`, thus one could write a script like
+so:
+
+```
+#!/usr/bin/env -S ja run
+
+fn path(x) :=
+  ([x+'\n'+y])|'' (splitc x ':');
+
+path"$0
+```
+
+# Examples
 
 ## Error Span
 
@@ -395,11 +395,55 @@ Note the builtin `split`; according to the manpages it has type
 split : Str -> Regex -> List Str
 ```
 
-`line.2` accesses the second element of the list.
+`.2` is the syntax for accessing a list - `line.2` extracts the second element.
 
-# Data Processing
+## Unix Command-Line Tools
 
-## CSV Processing
+To get a flavor of Jacinda, see how it can be used in place of familiar tools:
+
+### Grep
+
+```
+ja '{%/the/}{`0}' -i FILE
+```
+
+### Wc
+
+To count lines:
+
+```
+(+)|0 [:1"$0
+```
+
+or
+
+```
+[y]|0 {|ix}
+```
+
+To count bytes in a file:
+
+```
+(+)|0 [#x+1]"$0
+```
+
+or
+
+```
+(+)|0 {|#`0+1}
+```
+
+### Head
+
+To emulate `head -n60`, for instance:
+
+```
+{ix<=60}{`0}
+```
+
+## Data Processing
+
+### CSV Processing
 
 We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html), viz.
 
@@ -413,7 +457,7 @@ For "well-behaved" csv data, we can simply split on `,`:
 ja -F, '$1'
 ```
 
-### Vaccine Effectiveness
+#### Vaccine Effectiveness
 
 As an example, NYC publishes weighted data on [vaccine breakthroughs](https://github.com/nychealth/coronavirus-data/blob/master/latest/now-weekly-breakthrough.csv).
 
