@@ -57,6 +57,7 @@
 - [ ] list comprehensions or w/e
 - [x] `Option` is not a functor
 - [ ] Expose captures
+- [ ] `dedupBy` builtin
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
@@ -77,6 +78,7 @@
 - [ ] '([:fp"$0)' -i LICENSE
 - [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
 # Performance
+- [ ] don't bother with `imap` if `ix` isn't used?
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
 - [ ] http://awka.sourceforge.net/compare.html
