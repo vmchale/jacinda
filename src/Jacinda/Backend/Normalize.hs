@@ -30,6 +30,7 @@ import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
+import           Debug.Trace                (traceShow)
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -159,7 +160,8 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op e e' = eNorm (EApp undefined (EApp undefined op e) e')
+applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
+applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
@@ -479,7 +481,7 @@ eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
-    eNorm e <* modify (mapBinds (IM.delete i))
+    eNorm e
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 (TBuiltin ty3 Substr) e0) e1) e2) = do
     e0' <- eNorm e0
     e1' <- eNorm e1
@@ -571,3 +573,9 @@ eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es
 eNorm (OptionVal ty e) = OptionVal ty <$> traverse eNorm e
+eNorm (Cond ty p e0 e1) = do
+    p' <- eNorm p
+    case p' of
+        BoolLit _ True  -> eNorm e0
+        BoolLit _ False -> eNorm e1
+        _               -> pure $ Cond ty p' e0 e1 -- don't eval further, might bottom?

@@ -630,3 +630,11 @@ tyE0 (Anchor l es) = do
         let a' = var a
         pushConstraint l (tyStream a') (eLoc e') $> e'
     pure $ Anchor (TyB Star TyUnit) es'
+tyE0 (Cond l p e0 e1) = do
+    p' <- tyE0 p
+    e0' <- tyE0 e0
+    e1' <- tyE0 e1
+    let ty0 = eLoc e0'
+    pushConstraint l tyBool (eLoc p')
+    pushConstraint (eLoc e0) ty0 (eLoc e1')
+    pure $ Cond ty0 p' e0' e1'

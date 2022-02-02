@@ -108,6 +108,7 @@ hasY = cata a where
     a (ArrF _ es)             = or es
     a (AnchorF _ es)          = or es
     a (OptionValF _ (Just e)) = e
+    a (CondF _ p e e')        = p || e || e'
     a _                       = False
 
 replaceXY :: (a -> Name a) -- ^ @x@
@@ -157,4 +158,5 @@ renameE (Paren _ e) = renameE e
 renameE (Arr l es) = Arr l <$> traverse renameE es
 renameE (Anchor l es) = Anchor l <$> traverse renameE es
 renameE (OptionVal l e) = OptionVal l <$> traverse renameE e
+renameE (Cond l p e e') = Cond l <$> renameE p <*> renameE e <*> renameE e'
 renameE e = pure e -- literals &c.

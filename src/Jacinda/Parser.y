@@ -107,6 +107,9 @@ import Prettyprinter (Pretty (pretty), (<+>))
     set { TokKeyword $$ KwSet }
     fn { TokKeyword $$ KwFn }
     include { TokKeyword $$ KwInclude }
+    if { TokKeyword $$ KwIf }
+    then { TokKeyword $$ KwThen }
+    else { TokKeyword $$ KwElse }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -281,6 +284,7 @@ E :: { E AlexPosn }
   | E select { EApp (eLoc $1) (UBuiltin (loc $2) (Select $ field $2)) $1 }
   | backslash name dot E { Lam $1 $2 $4 }
   | parens(E) { Paren (eLoc $1) $1 }
+  | if E then E else E { Cond $1 $2 $4 $6 }
 
 {
 

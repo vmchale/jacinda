@@ -14,6 +14,7 @@ import           Data.List.Ext
 import           Data.Maybe                (mapMaybe)
 import           Data.Semigroup            ((<>))
 import qualified Data.Vector               as V
+import           Debug.Trace               (traceShow, traceShowId)
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
@@ -69,11 +70,6 @@ asArr _          = noRes
 asOpt :: E a -> Maybe (E a)
 asOpt (OptionVal _ e) = e
 asOpt _               = noRes
-
--- just shove some big number into the renamer and hope it doesn't clash (bad,
--- hack, this is why we got kicked out of the garden of Eden)
-reprehensible :: Int
-reprehensible = (maxBound :: Int) `div` 2
 
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
@@ -326,6 +322,15 @@ eEval (fp, ix, line, ctx) = go where
         where foldE op = V.foldl' (applyOp' op)
               applyOp' op e e' = go (EApp undefined (EApp undefined op e) e')
     go (Arr ty es) = Arr ty (go <$> es)
+    go (Cond _ p e0 e1) =
+        let p' = asBool (go p)
+            in if p' then go e0 else go e1
+
+
+-- just shove some big number into the renamer and hope it doesn't clash (bad,
+-- hack, this is why we got kicked out of the garden of Eden)
+reprehensible :: Int
+reprehensible = (maxBound :: Int) `div` 2
 
 applyOp :: E (T K) -- ^ Operator
         -> E (T K)
