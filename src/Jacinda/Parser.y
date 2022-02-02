@@ -191,6 +191,7 @@ Args :: { [(Name AlexPosn)] }
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
+  | fn name defEq E semicolon { FunDecl $2 [] $4 }
 
 Include :: { FilePath }
         : include strLit { ASCII.unpack (strTok $2) }

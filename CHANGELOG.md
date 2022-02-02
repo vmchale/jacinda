@@ -5,6 +5,7 @@
   * Implement `=` for boolean
   * Add `captures` as a builtin
   * Add `|>`, fold without seed
+  * Allow `fn...` declarations with no arguments and no parentheses
 
 # 0.3.0.0
 
