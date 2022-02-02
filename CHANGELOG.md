@@ -3,6 +3,7 @@
   * Add `-.` negate function
   * Work with shell shebangs
   * Implement `=` for boolean
+  * Add `captures` as a builtin
 
 # 0.3.0.0
 
