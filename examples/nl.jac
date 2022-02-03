@@ -8,7 +8,7 @@ fn step(acc, line) :=
 
 fn process(x) :=
   if !empty (x->2)
-    then sprintf '    %i  %s' x
+    then sprintf '    %i\t%s' x
     else '';
 
 process"step^(0 . '') $0
