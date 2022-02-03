@@ -260,6 +260,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
+         | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
          -- TODO: regex literal
          deriving (Functor, Generic)
          -- TODO: side effects: allow since it's strict?
@@ -297,6 +298,7 @@ data EF a x = ColumnF a Int
             | AnchorF a [x]
             | ParenF a x
             | OptionValF a (Maybe x)
+            | CondF a x x x
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -361,6 +363,7 @@ instance Pretty (E a) where
     pretty (Anchor _ es)                                                = "&" <> tupledBy "." (pretty <$> es)
     pretty (OptionVal _ (Just e))                                       = "Some" <+> pretty e
     pretty (OptionVal _ Nothing)                                        = "None"
+    pretty (Cond _ e0 e1 e2)                                            = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
 
 instance Show (E a) where
     show = show . pretty

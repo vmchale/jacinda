@@ -42,6 +42,7 @@ main = defaultMain $
         , testCase "typechecks/parses correctly" (tyFile "test/examples/line.jac")
         , testCase "split eval" (evalTo "[x+' '+y]|'' split '01-23-1987' /-/" " 01 23 1987")
         , testCase "captureE" (evalTo "'01-23-1987' ~* 3 /(\\d{2})-(\\d{2})-(\\d{4})/" "Some 1987")
+        , testCase "if...then...else" (evalTo "if #t then 0 else 1" "0")
         ]
 
 evalTo :: BSL.ByteString -> String -> Assertion

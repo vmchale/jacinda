@@ -126,6 +126,9 @@ tokens :-
         :set                     { mkKw KwSet }
         fn                       { mkKw KwFn }
         "@include"               { mkKw KwInclude }
+        if                       { mkKw KwIf }
+        then                     { mkKw KwThen }
+        else                     { mkKw KwElse }
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
@@ -334,6 +337,9 @@ data Keyword = KwLet
              | KwSet
              | KwFn
              | KwInclude
+             | KwIf
+             | KwThen
+             | KwElse
 
 -- | Reserved/special variables
 data Var = VarX
@@ -362,6 +368,9 @@ instance Pretty Keyword where
     pretty KwSet     = ":set"
     pretty KwFn      = "fn"
     pretty KwInclude = "@include"
+    pretty KwIf      = "if"
+    pretty KwThen    = "then"
+    pretty KwElse    = "else"
 
 data Builtin = BuiltinIParse
              | BuiltinFParse

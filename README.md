@@ -84,9 +84,6 @@ imperative/scoping defects.
 Intentionally missing features:
 
   * No loops
-  * No conditionals
-
-The latter in particular I may add if necessary/requested
 
 # Further Advantages
 

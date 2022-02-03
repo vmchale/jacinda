@@ -6,6 +6,7 @@
   * Add `captures` as a builtin
   * Add `|>`, fold without seed
   * Allow `fn...` declarations with no arguments and no parentheses
+  * Add conditionals
 
 # 0.3.0.0
 

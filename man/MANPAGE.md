@@ -173,6 +173,9 @@ a boolean expression.
 [#x>72] #. $0
 :   Print lines longer than 72 bytes
 
+{#\`0>72}{\`0}
+:   Print lines longer than 72 bytes
+
 {| sprintf \'%i %i\' (\`2 . \`1)}
 :   Print the first two fields in opposite order
 
@@ -190,6 +193,9 @@ a boolean expression.
 
 (+)|0 [#x+1]\"$0
 :   Count bytes (+1 for newlines)
+
+(+)|0 {|#`0+1}
+:   Count bytes
 
 {|sprintf \'%i: %s\' (ix.`0)}
 :   Display with line numbers
