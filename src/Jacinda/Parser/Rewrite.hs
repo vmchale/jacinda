@@ -34,6 +34,12 @@ rewriteE = cata a where
     a (EAppF l e0@(EApp _ (BBuiltin _ Matches) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Or) e2) e3))     = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@(EApp _ (BBuiltin _ NotMatches) _) (EApp l1 (EApp l2 e1@(BBuiltin _ And) e2) e3)) = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@(EApp _ (BBuiltin _ NotMatches) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Or) e2) e3))  = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Eq) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Neq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Gt) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Geq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Leq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Lt) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ (EApp lϵϵ e1 e2) e3))                                              = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     -- TODO rewrite dfn
     a (EAppF l e0@Var{} (EApp lϵ e1 e2))                                                            = EApp l (EApp lϵ e0 e1) e2
