@@ -441,6 +441,20 @@ To emulate `head -n60`, for instance:
 {ix<=60}{`0}
 ```
 
+### uniq
+
+```
+fn step(acc, this) :=
+  if this = acc->1
+    then (this . None)
+    else (this . Some this);
+
+(->2):?step^(''.None) $0
+```
+
+This tracks the previous line in a state and only adds the current line to the stream if it
+is different.
+
 ### nl
 
 We can emulate `nl -b a` with:
