@@ -69,7 +69,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **\"** Binary operator: map
 :   Functor f :=> a -> b -> f a -> f b
 
-**[:** Unary operator: const 
+**[:** Unary operator: const
 :   a -> b -> a
 
 **#.** Binary operator: filter
