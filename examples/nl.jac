@@ -1,0 +1,17 @@
+{. FIXME: figure out @include'lib/string.jac'??
+{. @include'lib/string.jac'
+
+fn empty(str) :=
+  #str = 0;
+
+fn step(acc, line) :=
+  if empty line
+    then (acc->1 . '')
+    else (acc->1 + 1 . line);
+
+fn process(x) :=
+  if !empty (x->2)
+    then sprintf '    %i  %s' x
+    else '';
+
+process"step^(0 . '') $0
