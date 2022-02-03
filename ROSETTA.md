@@ -1,3 +1,13 @@
+# Print Long Lines with Context
+
+```awk
+{ if (length($0) > 180) { printf "%s:%i %s\n", FILENAME, NR, $0 } }
+```
+
+```
+{#`0>180}{sprintf'%s:%i %s' (fp.ix.`0)}
+```
+
 # Filter Users
 
 ```
