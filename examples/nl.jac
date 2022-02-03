@@ -1,8 +1,5 @@
 {. FIXME: figure out @include'lib/string.jac'??
-{. @include'lib/string.jac'
-
-fn empty(str) :=
-  #str = 0;
+@include'lib/string.jac'
 
 fn step(acc, line) :=
   if empty line

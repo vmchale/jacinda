@@ -30,7 +30,6 @@ import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
-import           Debug.Trace                (traceShow)
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -562,13 +561,10 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
         -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
         -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Fold1) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Map) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ MapMaybe) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Prior) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
-eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Filter) x) y) = EApp ty0 <$> (EApp ty1 op <$> eNorm x) <*> eNorm y
--- FIXME: this will almost surely run into trouble; if the above pattern matches
--- are not complete it will bottom!
+-- we include this in case (+) has type (a->a->a) (for instance) if it is
+-- normalizing a decl (which can be ambiguous/general)
+eNorm (EApp ty0 (EApp ty1 op@BBuiltin{} e) e') = EApp ty0 <$> (EApp ty1 op <$> eNorm e) <*> eNorm e'
+-- FIXME: specialize types after inlining hm
 eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es
