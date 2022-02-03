@@ -401,13 +401,13 @@ split : Str -> Regex -> List Str
 
 To get a flavor of Jacinda, see how it can be used in place of familiar tools:
 
-### Grep
+### grep
 
 ```
 ja '{%/the/}{`0}' -i FILE
 ```
 
-### Wc
+### wc
 
 To count lines:
 
@@ -433,12 +433,39 @@ or
 (+)|0 {|#`0+1}
 ```
 
-### Head
+### head
 
 To emulate `head -n60`, for instance:
 
 ```
 {ix<=60}{`0}
+```
+
+### nl
+
+We can emulate `nl -b a` with:
+
+```
+{|sprintf '    %i  %s' (ix.`0)}
+```
+
+To count only non-blank lines:
+
+```
+fn empty(str) :=
+  #str = 0;
+
+fn step(acc, line) :=
+  if empty line
+    then (acc->1 . '')
+    else (acc->1 + 1 . line);
+
+fn process(x) :=
+  if !empty (x->2)
+    then sprintf '    %i  %s' x
+    else '';
+
+process"step^(0 . '') $0
 ```
 
 ## Data Processing
