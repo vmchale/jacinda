@@ -449,6 +449,8 @@ eWith _ _ e@IntLit{}                                                            
 eWith _ _ e@BoolLit{}                                                                                                                  = const e
 eWith fp re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith fp re e bs) <$> es)
 eWith fp re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith fp re eϵ bs) <$> e)
+eWith fp re (Cond ty p e e')                                                                                                           = \bs -> eClosed undefined (Cond ty (eWith fp re p bs) (eWith fp re e bs) (eWith fp re e' bs))
+eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
 -- OR "compile" to [(Int, E (T K)] -> ...
 
