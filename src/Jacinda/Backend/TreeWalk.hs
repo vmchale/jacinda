@@ -377,7 +377,7 @@ ir fp re (Guarded _ pe e) =
         e' = compileR e
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval (mkCtx fp re ix line) e') . ifilter (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
+        in fmap (uncurry (\ix line -> eEval (mkCtx fp re ix line) e')) . ifilter' (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
 ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (withFp fp op) in fmap (applyUn op') . ir fp re stream
 ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR (withFp fp op)
