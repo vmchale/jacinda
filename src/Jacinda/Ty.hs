@@ -222,8 +222,8 @@ kind (TyArr Star ty0 ty1) =
 kind (TyArr k _ _) = throwError $ Expected Star k
 kind (TyApp k1 ty0 ty1) = do
     case tLoc ty0 of
-        (KArr k0 k1') | k0 == (tLoc ty1) && k1' == k1 -> pure ()
-                      | k0 == (tLoc ty1) -> throwError $ Expected k1' k1
+        (KArr k0 k1') | k0 == tLoc ty1 && k1' == k1 -> pure ()
+                      | k0 == tLoc ty1 -> throwError $ Expected k1' k1
                       | otherwise        -> throwError $ Expected (tLoc ty1) k0
         k0                               -> throwError $ Expected (KArr Star Star) k0
 
