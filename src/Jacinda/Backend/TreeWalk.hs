@@ -37,39 +37,39 @@ v ! ix = case v V.!? ix of
     Just x  -> x
     Nothing -> throw $ IndexOutOfBounds ix
 
-noRes :: a
-noRes = error "Internal error: did not normalize to appropriate type."
+noRes :: E b -> String -> a
+noRes e ty = error ("Internal error: " ++ show e ++ " did not normalize to appropriate type, expected " ++ ty)
 
 badSugar :: a
 badSugar = error "Internal error: dfn syntactic sugar at a stage where it should not be."
 
 asInt :: E a -> Integer
 asInt (IntLit _ i) = i
-asInt _            = noRes
+asInt e            = noRes e "Int"
 
 asBool :: E a -> Bool
 asBool (BoolLit _ b) = b
-asBool _             = noRes
+asBool e             = noRes e "Bool"
 
 asStr :: E a -> BS.ByteString
 asStr (StrLit _ str) = str
-asStr _              = noRes
+asStr e              = noRes e "Str"
 
 asFloat :: E a -> Double
 asFloat (FloatLit _ f) = f
-asFloat _              = noRes
+asFloat e              = noRes e "Float"
 
 asRegex :: E a -> RurePtr
 asRegex (RegexCompiled re) = re
-asRegex _                  = noRes
+asRegex e                  = noRes e "Regex"
 
 asArr :: E a -> V.Vector (E a)
 asArr (Arr _ es) = es
-asArr _          = noRes
+asArr e          = noRes e "List"
 
 asOpt :: E a -> Maybe (E a)
 asOpt (OptionVal _ e) = e
-asOpt _               = noRes
+asOpt e               = noRes e "Option"
 
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
@@ -96,6 +96,10 @@ eEval (fp, ix, line, ctx) = go where
     go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
     go (NBuiltin _ Ix) = mkI (fromIntegral ix)
     go (NBuiltin _ Fp) = mkStr fp
+    go (NBuiltin _ None) = OptionVal undefined Nothing
+    go (EApp ty (UBuiltin _ Some) e) =
+        let eI = go e
+            in OptionVal ty (Just eI)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx ! (i-1)) -- cause vector indexing starts at 0
     go (EApp _ (UBuiltin _ IParse) e) =
@@ -122,14 +126,14 @@ eEval (fp, ix, line, ctx) = go where
         in case (eI, eI') of
             (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
-            _                                  -> noRes
+            _                                  -> noRes eI "Regex or Str"
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
             (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
-            _                                  -> noRes
+            _                                  -> noRes eI "Regex or Str"
     go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
         let eI = asRegex (go e)
             eI' = asStr (go e')
@@ -281,12 +285,12 @@ eEval (fp, ix, line, ctx) = go where
         let eI = go e
             in case eI of
                 (Arr _ es) -> go (es V.! (i-1))
-                _          -> noRes
+                _          -> noRes eI "List"
     go (EApp _ (UBuiltin _ (Select i)) e) =
         let eI = go e
             in case eI of
                 (Tup _ es) -> go (es !! (i-1))
-                _          -> noRes
+                _          -> noRes eI "Tuple"
     go (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e') =
         let eI = asStr (go e)
             eI' = go e'
@@ -373,7 +377,7 @@ ir fp re (Guarded _ pe e) =
         e' = compileR e
     -- FIXME: compile e too?
     -- TODO: normalize before stream
-        in imap (\ix line -> eEval (mkCtx fp re ix line) e') . ifilter (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
+        in fmap (uncurry (\ix line -> eEval (mkCtx fp re ix line) e')) . ifilter' (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
 ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (withFp fp op) in fmap (applyUn op') . ir fp re stream
 ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     let op' = compileR (withFp fp op)
@@ -445,6 +449,8 @@ eWith _ _ e@IntLit{}                                                            
 eWith _ _ e@BoolLit{}                                                                                                                  = const e
 eWith fp re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith fp re e bs) <$> es)
 eWith fp re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith fp re eϵ bs) <$> e)
+eWith fp re (Cond ty p e e')                                                                                                           = \bs -> eClosed undefined (Cond ty (eWith fp re p bs) (eWith fp re e bs) (eWith fp re e' bs))
+eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
 -- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
 -- OR "compile" to [(Int, E (T K)] -> ...
 

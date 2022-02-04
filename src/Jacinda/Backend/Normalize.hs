@@ -191,6 +191,7 @@ eNorm e@BBuiltin{}    = pure e
 eNorm e@TBuiltin{}    = pure e
 eNorm (Tup tys es)    = Tup tys <$> traverse eNorm es
 eNorm (Anchor ty es)  = Anchor ty <$> traverse eNorm es
+eNorm (NBuiltin ty None) = pure $ OptionVal ty Nothing
 eNorm e@NBuiltin{}    = pure e
 eNorm (EApp ty op@BBuiltin{} e) = EApp ty op <$> eNorm e
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do

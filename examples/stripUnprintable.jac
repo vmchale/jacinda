@@ -1,3 +1,3 @@
-@include'lib/string.jac' 
+@include'lib/string.jac'
 
 (replace /[^[:print:]]/ '')"$0

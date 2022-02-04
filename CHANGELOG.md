@@ -7,6 +7,8 @@
   * Add `|>`, fold without seed
   * Allow `fn...` declarations with no arguments and no parentheses
   * Add conditionals
+  * Fix bug in normalizing `Some` and `None`
+  * Fix bug in indexing + filter
 
 # 0.3.0.0
 
