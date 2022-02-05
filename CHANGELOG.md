@@ -6,6 +6,10 @@
   * Add `captures` as a builtin
   * Add `|>`, fold without seed
   * Allow `fn...` declarations with no arguments and no parentheses
+  * Add conditionals
+  * Fix bug in normalizing `Some` and `None`
+  * Fix bug in indexing + filter
+  * Fix bug in polymorphic functions used at multiple sites
 
 # 0.3.0.0
 
