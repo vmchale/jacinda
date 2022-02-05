@@ -101,7 +101,7 @@ executable ja
     other-modules:    Paths_jacinda
     autogen-modules:  Paths_jacinda
     default-language: Haskell2010
-    ghc-options:      -Wall -rtsopts -with-rtsopts=-A200k
+    ghc-options:      -Wall -rtsopts "-with-rtsopts=-A200k -k32k"
     build-depends:
         base,
         jacinda-lib,
@@ -155,7 +155,7 @@ benchmark jacinda-bench
     main-is:          Bench.hs
     hs-source-dirs:   bench
     default-language: Haskell2010
-    ghc-options:      -Wall -rtsopts -with-rtsopts=-A200k
+    ghc-options:      -Wall -rtsopts "-with-rtsopts=-A200k -k32k"
     build-depends:
         base,
         criterion,
