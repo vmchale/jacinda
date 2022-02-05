@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Ty ( TypeM
@@ -11,7 +12,7 @@ module Jacinda.Ty ( TypeM
 import           Control.Exception          (Exception)
 import           Control.Monad              (forM)
 import           Control.Monad.Except       (throwError)
-import           Control.Monad.State.Strict (StateT, gets, modify, runStateT)
+import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT)
 import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
@@ -51,7 +52,7 @@ instance (Typeable a, Pretty a) => Exception (Error a) where
 
 -- solve, unify etc. THEN check that all constraints are satisfied?
 -- (after accumulating classVar membership...)
-data TyState a = TyState { maxU        :: Int
+data TyState a = TyState { maxU        :: !Int
                          , kindEnv     :: IM.IntMap K
                          , classVars   :: IM.IntMap (S.Set (C, a))
                          , varEnv      :: IM.IntMap (T K)
@@ -67,6 +68,10 @@ prettyEq (ty, ty') = pretty ty <+> "≡" <+> pretty ty'
 
 mapMaxU :: (Int -> Int) -> TyState a -> TyState a
 mapMaxU f (TyState u k c v cs) = TyState (f u) k c v cs
+
+setMaxU :: Int -> TyState a -> TyState a
+-- setMaxU i = mapMaxU (const i)
+setMaxU i (TyState _ k c v cs) = TyState i k c v cs
 
 mapClassVars :: (IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))) -> TyState a -> TyState a
 mapClassVars f (TyState u k cvs v cs) = TyState u k (f cvs) v cs
@@ -191,6 +196,28 @@ isStar :: K -> TypeM a ()
 isStar Star = pure ()
 isStar k    = throwError $ Expected k Star
 
+liftCloneTy :: T a -> TypeM b (T a)
+liftCloneTy ty = do
+    i <- gets maxU
+    let (ty', j) = cloneTy i ty
+    ty <$ modify (setMaxU i)
+
+cloneTy :: Int -> T a -> (T a, Int)
+cloneTy i ty = second fst $ flip runState (i, IM.empty) $ cloneTyM ty
+    where cloneTyM (TyVar l (Name n (Unique j) l')) = do
+                st <- gets snd
+                case IM.lookup j st of
+                    Just k -> pure k
+                    Nothing -> do
+                        k <- gets fst
+                        let ty' = TyVar l (Name n (Unique $ k+1) l')
+                        ty' <$ modify (\(u, s) -> (u+1, IM.insert j ty' s))
+          cloneTyM (TyArr l tyϵ ty')               = TyArr l <$> cloneTyM tyϵ <*> cloneTyM ty'
+          cloneTyM (TyApp l tyϵ ty')               = TyApp l <$> cloneTyM tyϵ <*> cloneTyM ty'
+          cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
+          cloneTyM ty@TyNamed{}                    = pure ty
+          cloneTyM ty@TyB{}                        = pure ty
+
 kind :: T K -> TypeM a ()
 kind (TyB Star TyStr)                  = pure ()
 kind (TyB Star TyInteger)              = pure ()
@@ -290,7 +317,7 @@ lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
     st <- gets varEnv
     case IM.lookup i st of
-        Just ty -> pure ty
+        Just ty -> liftCloneTy ty
         Nothing -> throwError $ IllScoped l n
 
 tyOf :: Ord a => E a -> TypeM a (T K)
