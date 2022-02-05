@@ -26,9 +26,7 @@ import qualified Data.Vector.Ext            as V
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
-import           Jacinda.Rename
 import           Jacinda.Ty.Const
-import           Lens.Micro.Mtl             (modifying)
 import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<+>))
 
 data Error a = UnificationFailed a (T ()) (T ())
@@ -53,15 +51,12 @@ instance (Typeable a, Pretty a) => Exception (Error a) where
 
 -- solve, unify etc. THEN check that all constraints are satisfied?
 -- (after accumulating classVar membership...)
-data TyState a = TyState { renames     :: !Renames
+data TyState a = TyState { maxU        :: Int
                          , kindEnv     :: IM.IntMap K
                          , classVars   :: IM.IntMap (S.Set (C, a))
                          , varEnv      :: IM.IntMap (T K)
                          , constraints :: S.Set (a, T K, T K)
                          }
-
-instance HasRenames (TyState a) where
-    rename f s = fmap (\x -> s { renames = x }) (f (renames s))
 
 prettyConstraints :: S.Set (b, T a, T a) -> Doc ann
 prettyConstraints cs = vsep (prettyEq . go <$> S.toList cs) where
@@ -69,6 +64,9 @@ prettyConstraints cs = vsep (prettyEq . go <$> S.toList cs) where
 
 prettyEq :: (T a, T a) -> Doc ann
 prettyEq (ty, ty') = pretty ty <+> "≡" <+> pretty ty'
+
+mapMaxU :: (Int -> Int) -> TyState a -> TyState a
+mapMaxU f (TyState u k c v cs) = TyState (f u) k c v cs
 
 mapClassVars :: (IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))) -> TyState a -> TyState a
 mapClassVars f (TyState u k cvs v cs) = TyState u k (f cvs) v cs
@@ -82,7 +80,7 @@ addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 type TypeM a = StateT (TyState a) (Either (Error a))
 
 runTypeM :: Int -> TypeM a b -> Either (Error a) (b, Int)
-runTypeM i = fmap (second (max_.renames)) . flip runStateT (TyState (Renames i IM.empty) IM.empty IM.empty IM.empty S.empty)
+runTypeM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.empty S.empty)
 
 type UnifyMap a = IM.IntMap (T a)
 
@@ -159,9 +157,9 @@ substConstraints tys (TyArr l ty ty')                   =
 
 freshName :: T.Text -> K -> TypeM a (Name K)
 freshName n k = do
-    st <- gets (max_.renames)
+    st <- gets maxU
     Name n (Unique $ st+1) k
-        <$ modifying (rename.maxLens) (+1)
+        <$ modify (mapMaxU (+1))
 
 higherOrder :: T.Text -> TypeM a (Name K)
 higherOrder t = freshName t (KArr Star Star)
@@ -288,7 +286,6 @@ checkClass tys i cs = {-# SCC "checkClass" #-}
         Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
         Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
--- FIXME: clone/rename if it's a global
 lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
     st <- gets varEnv
