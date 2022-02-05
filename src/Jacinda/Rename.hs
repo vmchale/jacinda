@@ -7,6 +7,7 @@ module Jacinda.Rename ( renameE
                       , RenameM
                       , Renames (..)
                       , HasRenames (..)
+                      , maxLens
                       ) where
 
 import           Control.Monad.State.Strict (MonadState, State, runState)
@@ -20,7 +21,7 @@ import           Jacinda.AST
 import           Lens.Micro                 (Lens')
 import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
 
-data Renames = Renames { max_ :: Int, bound :: IM.IntMap Int }
+data Renames = Renames { max_ :: !Int, bound :: IM.IntMap Int }
 
 -- TODO: instance Pretty Renames for debug?
 
