@@ -84,6 +84,7 @@
 - [ ] '([:fp"$0)' -i LICENSE
 - [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
 # Performance
+- [ ] Is `-O2` better?
 - [ ] don't bother with `imap` if `ix` isn't used?
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
