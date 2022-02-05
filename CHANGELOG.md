@@ -9,6 +9,7 @@
   * Add conditionals
   * Fix bug in normalizing `Some` and `None`
   * Fix bug in indexing + filter
+  * Fix bug in polymorphic functions used at multiple sites
 
 # 0.3.0.0
 
