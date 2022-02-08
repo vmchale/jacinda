@@ -42,6 +42,7 @@ rewriteE = cata a where
     a (EAppF l e0@(EApp _ (BBuiltin _ Fold1) _) (EApp l1 (EApp l2 e1@(BBuiltin _ Lt) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ (EApp lϵϵ e1 e2) e3))                                              = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     -- TODO rewrite dfn
+    a (EAppF l e0@Var{} (EApp l0 e1 (EApp l1 (EApp l2 op@BBuiltin{} e2) e3)))                       = EApp l1 (EApp l2 op (EApp l (EApp l0 e0 e1) e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ e1 e2))                                                            = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Max) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(BBuiltin _ Min) (EApp lϵ e1 e2))                                                 = EApp l (EApp lϵ e0 e1) e2
