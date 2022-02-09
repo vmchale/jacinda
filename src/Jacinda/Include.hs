@@ -7,7 +7,7 @@ import           Control.Monad      (filterM)
 import           Data.List.Split    (splitWhen)
 import           Data.Maybe         (listToMaybe)
 import           Paths_jacinda      (getDataDir)
-import           System.Directory   (doesFileExist)
+import           System.Directory   (doesFileExist, getCurrentDirectory)
 import           System.Environment (lookupEnv)
 import           System.FilePath    ((</>))
 
@@ -19,7 +19,8 @@ defaultIncludes :: IO ([FilePath] -> [FilePath])
 defaultIncludes = do
     path <- jacPath
     d <- getDataDir
-    pure $ (d:) . (++path)
+    dot <- getCurrentDirectory
+    pure $ (dot:) . (d:) . (++path)
 
 -- | Parsed @JAC_PATH@
 jacPath :: IO [FilePath]
