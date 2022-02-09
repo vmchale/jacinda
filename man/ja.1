@@ -182,6 +182,9 @@ List a -> a
 [#x>72] #. $0
 Print lines longer than 72 bytes
 .TP
+{#\[ga]0>72}{\[ga]0}
+Print lines longer than 72 bytes
+.TP
 {| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
 Print the first two fields in opposite order
 .TP
@@ -199,6 +202,9 @@ Count lines
 .TP
 (+)|0 [#x+1]\[dq]$0
 Count bytes (+1 for newlines)
+.TP
+(+)|0 {|#\[ga]0+1}
+Count bytes
 .TP
 {|sprintf \[aq]%i: %s\[aq] (ix.\[ga]0)}
 Display with line numbers

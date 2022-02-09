@@ -31,6 +31,9 @@
         font-size: 0.9em;
         padding: 1em;
       }
+      h1 {
+        font-size: 1.8em;
+      }
     }
     @media print {
       body {
@@ -135,6 +138,12 @@
     #TOC li {
       list-style: none;
     }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
     #TOC a:not(:hover) {
       text-decoration: none;
     }
@@ -159,7 +168,7 @@
 <ul>
 <li><a href="#tutorial">Tutorial</a>
 <ul>
-<li><a href="#tour-de-force">Tour de Force</a>
+<li><a href="#language">Language</a>
 <ul>
 <li><a href="#patterns-implicits-streams">Patterns + Implicits,
 Streams</a></li>
@@ -172,19 +181,25 @@ Streams</a></li>
 <li><a href="#deduplicate">Deduplicate</a></li>
 <li><a href="#filter">Filter</a></li>
 <li><a href="#formatting-output">Formatting Output</a></li>
-<li><a href="#parting-shots">Parting Shots</a></li>
+<li><a href="#libraries">Libraries</a></li>
 </ul></li>
 <li><a href="#system-interaction">System Interaction</a></li>
 </ul></li>
-<li><a href="#libraries">Libraries</a>
+<li><a href="#examples">Examples</a>
 <ul>
-<li><a href="#file-includes">File Includes</a></li>
+<li><a href="#error-span">Error Span</a></li>
+<li><a href="#vim-tags">Vim Tags</a></li>
+<li><a href="#unix-command-line-tools">Unix Command-Line Tools</a>
+<ul>
+<li><a href="#grep">grep</a></li>
+<li><a href="#wc">wc</a></li>
+<li><a href="#head">head</a></li>
+<li><a href="#uniq">uniq</a></li>
+<li><a href="#nl">nl</a></li>
 </ul></li>
 <li><a href="#data-processing">Data Processing</a>
 <ul>
-<li><a href="#csv-processing">CSV Processing</a>
-<ul>
-<li><a href="#vaccine-effectiveness">Vaccine Effectiveness</a></li>
+<li><a href="#csv-processing">CSV Processing</a></li>
 </ul></li>
 </ul></li>
 <li><a href="#machinery">Machinery</a>
@@ -200,7 +215,7 @@ familiar to functional programmers; the syntax in particular is
 derivative of J or APL.</p>
 <p>Jacinda is at its best when piped through other command-line tools
 (including awk).</p>
-<h2 id="tour-de-force">Tour de Force</h2>
+<h2 id="language">Language</h2>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>Awk is oriented around patterns and actions. Jacinda has support for
 a similar style: one defines a pattern and an expression defined by the
@@ -237,6 +252,7 @@ as arguments. The general syntax is:</p>
 <pre><code>&lt;expr&gt;|&lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>It takes a binary operator, a seed, and a stream and returns an
 expression.</p>
+<p>There is also <code>|&gt;</code>, which folds without a seed.</p>
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file. We have nearly all the
 tools to do so:</p>
@@ -318,23 +334,7 @@ a boolean.</p>
 <p>would display a file annotated with line numbers. Note the atypical
 syntax for tuples, we use <code>.</code> as a separator rather than
 <code>,</code>.</p>
-<h3 id="parting-shots">Parting Shots</h3>
-<pre><code>or := [(||)|#f x]
-
-and := [(&amp;)|#t x]
-
-count := [(+)|0 [:1&quot;x]</code></pre>
-<p><code>#t</code> and <code>#f</code> are boolean literals.</p>
-<h2 id="system-interaction">System Interaction</h2>
-<p>Jacinda ignores any line beginning with <code>#!</code>, thus one
-could write a script like so:</p>
-<pre><code>#!/usr/bin/env -S ja run
-
-fn path(x) :=
-  ([x+&#39;\n&#39;+y])|&#39;&#39; (splitc x &#39;:&#39;);
-
-path&quot;$0</code></pre>
-<h1 id="libraries">Libraries</h1>
+<h3 id="libraries">Libraries</h3>
 <p>There is a syntax for functions:</p>
 <pre><code>fn sum(x) :=
   (+)|0 x;
@@ -351,7 +351,7 @@ write:</p>
 
 fn all(p, xs) :=
   (&amp;)|#t p&quot;xs;</code></pre>
-<h2 id="file-includes">File Includes</h2>
+<h4 id="file-includes">File Includes</h4>
 <p>One can <code>@include</code> files.</p>
 <p>As an example, one could write:</p>
 <pre><code>@include&#39;lib/string.jac&#39;
@@ -362,8 +362,140 @@ fn path(x) :=
 path&quot;$0</code></pre>
 <p><code>intercalate</code> is defined in
 <code>lib/string.jac</code>.</p>
-<h1 id="data-processing">Data Processing</h1>
-<h2 id="csv-processing">CSV Processing</h2>
+<h4 id="parting-shots">Parting Shots</h4>
+<pre><code>or := [(||)|#f x]
+
+and := [(&amp;)|#t x]
+
+count := [(+)|0 [:1&quot;x]</code></pre>
+<p><code>#t</code> and <code>#f</code> are boolean literals.</p>
+<h2 id="system-interaction">System Interaction</h2>
+<p>Jacinda ignores any line beginning with <code>#!</code>, thus one
+could write a script like so:</p>
+<pre><code>#!/usr/bin/env -S ja run
+
+fn path(x) :=
+  ([x+&#39;\n&#39;+y])|&#39;&#39; (splitc x &#39;:&#39;);
+
+path&quot;$0</code></pre>
+<h1 id="examples">Examples</h1>
+<h2 id="error-span">Error Span</h2>
+<p>Suppose we wish to extract span information from compiler output for
+editor integration. Vim ships with a similar script,
+<code>mve.awk</code>, to present column information in a suitable
+format.</p>
+<pre><code>src/Jacinda/Backend/TreeWalk.hs:319:58: error:
+    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
+    • In the pattern:
+        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
+      In the pattern:
+        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
+      In the pattern:
+        TBuiltin (TyArr _ _
+                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
+                 Fold
+    |
+319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+<p>To get what we want, we use <code>match</code>, which returns indices
+that match a regex - in our case, <code>/\^+/</code>, which spans the
+error location.</p>
+<p>From the manpages, we see it has type</p>
+<pre><code>match : Str -&gt; Regex -&gt; Option (Int . Int)</code></pre>
+<pre><code>:set fs:=/\|/;
+
+fn printSpan(str) :=
+  (sprintf &#39;%i-%i&#39;)&quot;(match str /\^+/);
+
+printSpan:?{% /\|/}{`2}</code></pre>
+<p>Our program uses <code>|</code> as a file separator, thus
+`<code>2</code> will present us with:</p>
+<pre><code>                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+<p>which is exactly the relevant bit.</p>
+<p>First, note that <code>"</code> is used to map
+<code>(sprintf '%i-%i')</code> over <code>(match ...)</code>. This works
+because <code>match</code> returns an <code>Option</code>, which is a
+functor. The builtin <code>:?</code> is <a
+href="https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe"><code>mapMaybe</code></a>.
+Thus, we define a stream</p>
+<pre><code>printSpan:?{% /\|/}{`2}</code></pre>
+<p>which only collects when <code>printSpan</code> returns a
+<code>Some</code>.</p>
+<h2 id="vim-tags">Vim Tags</h2>
+<p>Suppose we wish to generate vim tag files for our Jacinda programs.
+According to <code>:help tags-file-format</code> the desired format
+is</p>
+<pre><code>{tagname}       {TAB} {tagfile} {TAB} {tagaddress}</code></pre>
+<p>where <code>{tagaddress}</code> is an ex command. In fact, addresses
+defined by regular expressions are preferable as they become outdated
+less quickly.</p>
+<p>As an example, suppose we have the function declaration</p>
+<pre><code>fn sum(x) :=
+  (+)|0 x;</code></pre>
+<p>Then we need to extract <code>sum</code> and give a regex that points
+to where it is defined.</p>
+<p>To do so:</p>
+<pre><code>fn mkEx(s) :=
+  &#39;/^&#39; + s + &#39;$/;&#39;;
+
+fn processStr(s) :=
+  let
+    val line := split s /[ \(]+/
+    val outLine := sprintf &#39;%s\t%s\t%s&#39; (line.2 . fp . mkEx s)
+  in outLine end;
+
+processStr&quot;{%/fn +[[:lower:]][[:latin:]]*.*:=/}{`0}</code></pre>
+<p>Note the builtin <code>split</code>; according to the manpages it has
+type</p>
+<pre><code>split : Str -&gt; Regex -&gt; List Str</code></pre>
+<p><code>.2</code> is the syntax for accessing a list -
+<code>line.2</code> extracts the second element.</p>
+<h2 id="unix-command-line-tools">Unix Command-Line Tools</h2>
+<p>To get a flavor of Jacinda, see how it can be used in place of
+familiar tools:</p>
+<h3 id="grep">grep</h3>
+<pre><code>ja &#39;{%/the/}{`0}&#39; -i FILE</code></pre>
+<h3 id="wc">wc</h3>
+<p>To count lines:</p>
+<pre><code>(+)|0 [:1&quot;$0</code></pre>
+<p>or</p>
+<pre><code>[y]|0 {|ix}</code></pre>
+<p>To count bytes in a file:</p>
+<pre><code>(+)|0 [#x+1]&quot;$0</code></pre>
+<p>or</p>
+<pre><code>(+)|0 {|#`0+1}</code></pre>
+<h3 id="head">head</h3>
+<p>To emulate <code>head -n60</code>, for instance:</p>
+<pre><code>{ix&lt;=60}{`0}</code></pre>
+<h3 id="uniq">uniq</h3>
+<pre><code>fn step(acc, this) :=
+  if this = acc-&gt;1
+    then (this . None)
+    else (this . Some this);
+
+(-&gt;2):?step^(&#39;&#39;.None) $0</code></pre>
+<p>This tracks the previous line in a state and only adds the current
+line to the stream if it is different.</p>
+<h3 id="nl">nl</h3>
+<p>We can emulate <code>nl -b a</code> with:</p>
+<pre><code>{|sprintf &#39;    %i  %s&#39; (ix.`0)}</code></pre>
+<p>To count only non-blank lines:</p>
+<pre><code>fn empty(str) :=
+  #str = 0;
+
+fn step(acc, line) :=
+  if empty line
+    then (acc-&gt;1 . &#39;&#39;)
+    else (acc-&gt;1 + 1 . line);
+
+fn process(x) :=
+  if !empty (x-&gt;2)
+    then sprintf &#39;    %i\t%s&#39; x
+    else &#39;&#39;;
+
+process&quot;step^(0 . &#39;&#39;) $0</code></pre>
+<h2 id="data-processing">Data Processing</h2>
+<h3 id="csv-processing">CSV Processing</h3>
 <p>We can process <code>.csv</code> data with the aid of <a
 href="https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html">csvformat</a>,
 viz.</p>
@@ -371,7 +503,7 @@ viz.</p>
 <p>For “well-behaved” csv data, we can simply split on
 <code>,</code>:</p>
 <pre><code>ja -F, &#39;$1&#39;</code></pre>
-<h3 id="vaccine-effectiveness">Vaccine Effectiveness</h3>
+<h4 id="vaccine-effectiveness">Vaccine Effectiveness</h4>
 <p>As an example, NYC publishes weighted data on <a
 href="https://github.com/nychealth/coronavirus-data/blob/master/latest/now-weekly-breakthrough.csv">vaccine
 breakthroughs</a>.</p>

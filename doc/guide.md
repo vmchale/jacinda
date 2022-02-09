@@ -79,6 +79,8 @@ Note the *fold*, `|`. It is a ternary operator taking `(+)`, `0`, and `{% /Bloom
 
 It takes a binary operator, a seed, and a stream and returns an expression.
 
+There is also `|>`, which folds without a seed.
+
 ### Map
 
 Suppose we wish to count the lines in a file. We have nearly all the tools to do
