@@ -1,3 +1,5 @@
+# 0.3.1.0
+
   * Performance improvements
   * Bug fix, dfns are renamed properly
   * Add `-.` negate function
@@ -10,6 +12,9 @@
   * Fix bug in normalizing `Some` and `None`
   * Fix bug in indexing + filter
   * Fix bug in polymorphic functions used at multiple sites
+  * Change parsing/rewrite so `f a b + c` parses as `(f a b) + c` rather than `f a (b + c)`
+  * Fix bug in parser rewriting in `@include`d files
+  * Include searches current directory
 
 # 0.3.0.0
 

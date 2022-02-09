@@ -79,6 +79,8 @@ Note the *fold*, `|`. It is a ternary operator taking `(+)`, `0`, and `{% /Bloom
 
 It takes a binary operator, a seed, and a stream and returns an expression.
 
+There is also `|>`, which folds without a seed.
+
 ### Map
 
 Suppose we wish to count the lines in a file. We have nearly all the tools to do
@@ -266,6 +268,36 @@ path"$0
 ```
 
 `intercalate` is defined in `lib/string.jac`.
+
+#### Example
+
+Suppose we want to mimic some functionality of `sed` - we'd like to replace
+some regular expression with a string (no capture groups, only first replacement
+per line)
+
+```
+@include'prelude/fn.jac'
+
+fn replace1(re, str, line) :=
+  let 
+    val insert := \line. \str. \ixes.
+      take (ixes->1) line + str + drop (ixes->2) line
+  in option line (insert line str) (match line re) end;
+```
+
+Then we could trim whitespace from a file with
+
+```
+@include'lib/sed.jac'
+
+(replace1 /\s+$/ '')"$0
+```
+
+Jacinda does not modify files in-place so one would need to use [sponge](https://joeyh.name/code/moreutils/) perhaps:
+
+```
+ja run trimwhitespace.jac -i FILE | sponge FILE
+```
 
 #### Parting Shots
 
