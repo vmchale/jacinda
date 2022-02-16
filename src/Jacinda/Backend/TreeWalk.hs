@@ -205,6 +205,22 @@ eEval (fp, ix, line, ctx) = go where
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyBool (eI /= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Lt) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI < eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Gt) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI > eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Geq) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI >= eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Leq) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in BoolLit tyBool (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
