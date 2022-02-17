@@ -271,6 +271,7 @@ checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
 checkType (TyB _ TyFloat) (IsEq, _)            = pure ()
 checkType (TyB _ TyBool) (IsEq, _)             = pure ()
 checkType (TyB _ TyStr) (IsEq, _)              = pure ()
+checkType ty@(TyB _ TyStr) (c@IsOrd, l)        = throwError $ Doesn'tSatisfy l (void ty) c
 checkType (TyTup _ tys) (IsEq, l)              = traverse_ (`checkType` (IsEq, l)) tys
 checkType (TyTup _ tys) (IsOrd, l)             = traverse_ (`checkType` (IsOrd, l)) tys
 checkType (TyApp _ (TyB _ TyVec) ty) (IsEq, l) = checkType ty (IsEq, l)
@@ -561,8 +562,10 @@ tyE0 (TBuiltin _ Captures) =
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
     a <- dummyName "a"
+    b <- dummyName "b"
     let a' = var a
-        fTy = tyArr (tyArr a' (tyArr a' a')) (tyArr (tyStream a') (tyStream a'))
+        b' = var b
+        fTy = tyArr (tyArr a' (tyArr a' b')) (tyArr (tyStream a') (tyStream b'))
     pure $ BBuiltin fTy Prior
 -- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (TBuiltin _ ZipW) = do

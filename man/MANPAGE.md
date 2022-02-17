@@ -76,7 +76,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   Witherable f :=> (a -> Bool) -> f a -> f a
 
 **\\.** Binary operator: prior
-:   (a -> a -> a) -> Stream a -> Stream a
+:   (a -> a -> b) -> Stream a -> Stream b
 
 **~.** Unary deduplication (stream)
 :   Eq a :=> Stream a -> Stream a
@@ -199,6 +199,9 @@ a boolean expression.
 
 {|sprintf \'%i: %s\' (ix.`0)}
 :   Display with line numbers
+
+(&)|#t (>)\\. {|`1:f}
+:   Is the first column strictly increasing?
 
 # BUGS
 
