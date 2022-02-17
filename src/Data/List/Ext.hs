@@ -3,7 +3,7 @@ module Data.List.Ext ( imap
                      , prior
                      ) where
 
-prior :: (a -> a -> a) -> [a] -> [a]
+prior :: (a -> a -> b) -> [a] -> [b]
 prior op xs = zipWith op (tail xs) xs
 
 imap :: (Int -> a -> b) -> [a] -> [b]

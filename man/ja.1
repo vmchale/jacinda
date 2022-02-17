@@ -85,7 +85,7 @@ a -> b -> a
 Witherable f :=> (a -> Bool) -> f a -> f a
 .TP
 \f[B]\[rs].\f[R] Binary operator: prior
-(a -> a -> a) -> Stream a -> Stream a
+(a -> a -> b) -> Stream a -> Stream b
 .TP
 \f[B]\[ti].\f[R] Unary deduplication (stream)
 Eq a :=> Stream a -> Stream a
@@ -208,6 +208,9 @@ Count bytes
 .TP
 {|sprintf \[aq]%i: %s\[aq] (ix.\[ga]0)}
 Display with line numbers
+.TP
+(&)|#t (>)\[rs]. {|\[ga]1:f}
+Is the first column strictly increasing?
 .SH BUGS
 .PP
 Please report any bugs you may come across to
