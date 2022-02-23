@@ -1,4 +1,6 @@
   * Generalize type of `\.` (prior)
+  * Reintroduce monomorphism restriction (oops)
+  * Better errors for ambiguous types
 
 # 0.3.1.0
 
