@@ -33,7 +33,7 @@ import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<
 data Error a = UnificationFailed a (T ()) (T ())
              | Doesn'tSatisfy a (T ()) C
              | IllScoped a (Name a)
-             | Ambiguous (E ())
+             | Ambiguous (T K) (E ())
              | Expected K K
              | IllScopedTyVar (TyName ())
 
@@ -41,7 +41,7 @@ instance Pretty a => Pretty (Error a) where
     pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
     pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
     pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
-    pretty (Ambiguous e)                = "type of" <+> squotes (pretty e) <+> "is ambiguous"
+    pretty (Ambiguous ty e)             = "type" <+> squotes (pretty ty) <+> "of" <+> squotes (pretty e) <+> "is ambiguous"
     pretty (Expected k0 k1)             = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
     pretty (IllScopedTyVar n)           = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
 
@@ -199,24 +199,25 @@ isStar k    = throwError $ Expected k Star
 liftCloneTy :: T a -> TypeM b (T a)
 liftCloneTy ty = do
     i <- gets maxU
-    let (ty', j) = cloneTy i ty
-    ty <$ modify (setMaxU i)
+    let (ty', (j, iMaps)) = cloneTy i ty
+    -- FIXME: clone/propagate constraints
+    ty' <$ modify (setMaxU j)
 
-cloneTy :: Int -> T a -> (T a, Int)
-cloneTy i ty = second fst $ flip runState (i, IM.empty) $ cloneTyM ty
+cloneTy :: Int -> T a -> (T a, (Int, IM.IntMap Unique))
+cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
     where cloneTyM (TyVar l (Name n (Unique j) l')) = do
                 st <- gets snd
                 case IM.lookup j st of
-                    Just k -> pure k
+                    Just k -> pure (TyVar l (Name n k l'))
                     Nothing -> do
                         k <- gets fst
-                        let ty' = TyVar l (Name n (Unique $ k+1) l')
-                        ty' <$ modify (\(u, s) -> (u+1, IM.insert j ty' s))
+                        let j' = Unique $ k+1
+                        TyVar l (Name n j' l') <$ modify (\(u, s) -> (u+1, IM.insert j j' s))
           cloneTyM (TyArr l tyϵ ty')               = TyArr l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyApp l tyϵ ty')               = TyApp l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
-          cloneTyM ty@TyNamed{}                    = pure ty
-          cloneTyM ty@TyB{}                        = pure ty
+          cloneTyM tyϵ@TyNamed{}                   = pure tyϵ
+          cloneTyM tyϵ@TyB{}                       = pure tyϵ
 
 kind :: T K -> TypeM a ()
 kind (TyB Star TyStr)                  = pure ()
@@ -318,7 +319,7 @@ lookupVar :: Name a -> TypeM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
     st <- gets varEnv
     case IM.lookup i st of
-        Just ty -> liftCloneTy ty
+        Just ty -> pure ty -- liftCloneTy ty
         Nothing -> throwError $ IllScoped l n
 
 tyOf :: Ord a => E a -> TypeM a (T K)
@@ -342,15 +343,15 @@ isAmbiguous TyNamed{}        = False
 isAmbiguous TyB{}            = False
 
 checkAmb :: E (T K) -> TypeM a ()
-checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need it anyway... better error messages
-checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Implicit _ e') = checkAmb e'
 checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
 checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet! (if they aren't ambiguous, it shouldn't be
 checkAmb (Tup _ es) = traverse_ checkAmb es
-checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
-checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous (void e)
+checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
+checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()

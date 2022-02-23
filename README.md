@@ -80,6 +80,7 @@ imperative/scoping defects.
   * Type system is questionable
   * Postfix `:f` and `:i` are handled poorly
   * Various bugs in evaluation with regular expressions
+  * Polymorphic functions can't be instantiated with separate types
 
 Intentionally missing features:
 
