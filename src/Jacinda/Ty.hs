@@ -216,8 +216,8 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
           cloneTyM (TyArr l tyϵ ty')               = TyArr l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyApp l tyϵ ty')               = TyApp l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
-          cloneTyM tyϵ@TyNamed{}                   = pure tyϵ
-          cloneTyM tyϵ@TyB{}                       = pure tyϵ
+          cloneTyM tye@TyNamed{}                   = pure tye
+          cloneTyM tye@TyB{}                       = pure tye
 
 kind :: T K -> TypeM a ()
 kind (TyB Star TyStr)                  = pure ()
