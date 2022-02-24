@@ -1,6 +1,7 @@
   * Generalize type of `\.` (prior)
   * Reintroduce monomorphism restriction (oops)
   * Better errors for ambiguous types
+  * Multiple folds don't blow up memory
 
 # 0.3.1.0
 
