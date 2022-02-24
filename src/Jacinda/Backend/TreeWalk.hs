@@ -463,15 +463,16 @@ foldAll :: FileBS
         -> [(Int, E (T K), E (T K), E (T K))]
         -> [BS.ByteString]
         -> [(Int, E (T K))]
-foldAll fp re foldExprs bs = evalAll is ops seeds (mkStreams streamExprs) where
+foldAll fp re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
     (is, ops, seeds, streamExprs) = unzip4 foldExprs
     mkStreams = fmap (\streamExpr -> ir fp re streamExpr bs)
 
     -- FIXME: head is partial here, something might be longer
-    evalAll is ops seeds ess | not (any null ess) = let es' = zipWith3 applyOp ops seeds (head <$> ess) in es' `seqAll` evalAll is ops es' (tail <$> ess)
-                             | otherwise = zip is seeds
+    evalAll seedsϵ ess | not (any null ess) = let es' = zipWith3 applyOp ops seedsϵ (head <$> ess) in es' `seqAll` evalAll es' (tail <$> ess)
+                       | otherwise = zip is seedsϵ
 
     seqAll (e:es) z = foldr seq e es `seq` z
+    seqAll [] z     = z
 
 ungather :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
 ungather st (Var _ (Name _ (Unique i) _)) =
