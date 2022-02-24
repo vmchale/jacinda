@@ -72,8 +72,7 @@ imperative/scoping defects.
   * `sub`/`gsub` function equivalents
   * No nested dfns
   * Obscure renamer edge cases during evaluation
-  * Multiple folds are criminally inefficient
-  * Documentation for tuples, `Option` type
+  * Documentation for tuples
   * `printf` formatting for floats
   * No list literal syntax
   * Typeclasses are not documented
