@@ -1,31 +1,38 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 -- | Tree-walking interpreter
 module Jacinda.Backend.TreeWalk ( runJac
                                 ) where
 
 -- TODO: normalize before mapping?
 
-import           Control.Exception         (Exception, throw)
-import           Control.Recursion         (cata, embed)
-import qualified Data.ByteString           as BS
-import           Data.Containers.ListUtils (nubIntOn, nubOrdOn)
-import           Data.Foldable             (foldl', traverse_)
-import           Data.List                 (scanl', transpose)
+import           Control.Exception          (Exception, throw)
+import           Control.Monad.State.Strict (State, get, modify, runState)
+import           Control.Recursion          (cata, embed)
+import           Data.Bifunctor             (bimap)
+import qualified Data.ByteString            as BS
+import           Data.Containers.ListUtils  (nubIntOn, nubOrdOn)
+import           Data.Foldable              (foldl', traverse_)
+import qualified Data.IntMap                as IM
+import           Data.List                  (scanl', transpose, unzip4)
 import           Data.List.Ext
-import           Data.Maybe                (mapMaybe)
-import           Data.Semigroup            ((<>))
-import qualified Data.Vector               as V
-import           Debug.Trace               (traceShow, traceShowId)
+import           Data.Maybe                 (mapMaybe)
+import           Data.Semigroup             ((<>))
+import qualified Data.Vector                as V
+import           Intern.Name                (Name (Name))
+import           Intern.Unique              (Unique (Unique))
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Regex.Rure                (RurePtr)
+import           Regex.Rure                 (RurePtr)
 
 data StreamError = NakedField
                  | UnevalFun
                  | TupOfStreams -- ^ Reject a tuple of streams
                  | BadCtx
+                 | InternalError
                  deriving (Show)
 
 type FileBS = BS.ByteString
@@ -451,7 +458,65 @@ runJac :: FileBS
        -> Either StreamError ([BS.ByteString] -> IO ())
 runJac fp re i e = fileProcessor fp re (closedProgram i e)
 
+foldAll :: FileBS
+        -> RurePtr
+        -> [(Int, E (T K), E (T K), E (T K))]
+        -> [BS.ByteString]
+        -> [(Int, E (T K))]
+foldAll fp re foldExprs bs = evalAll is ops seeds (mkStreams streamExprs) where
+    (is, ops, seeds, streamExprs) = unzip4 foldExprs
+    mkStreams = fmap (\streamExpr -> ir fp re streamExpr bs)
+
+    -- FIXME: head is partial here, something might be longer
+    evalAll is ops seeds ess | not (any null ess) = let es' = zipWith3 applyOp ops seeds (head <$> ess) in es' `seqAll` evalAll is ops es' (tail <$> ess)
+                             | otherwise = zip is seeds
+
+    seqAll (e:es) z = foldr seq e es `seq` z
+
+ungather :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
+ungather st (Var _ (Name _ (Unique i) _)) =
+    case IM.lookup i st of
+        Just res -> res
+        Nothing  -> throw InternalError
+ungather st (EApp ty e0 e1)  = EApp ty (ungather st e0) (ungather st e1)
+ungather st (Tup ty es)      = Tup ty (ungather st <$> es)
+ungather st (Arr ty es)      = Arr ty (ungather st <$> es)
+ungather st (OptionVal ty e) = OptionVal ty (ungather st <$> e)
+ungather _ e@BBuiltin{}      = e
+ungather _ e@UBuiltin{}      = e
+ungather _ e@TBuiltin{}      = e
+ungather _ e@StrLit{}        = e
+ungather _ e@BoolLit{}       = e
+ungather _ e@FloatLit{}      = e
+ungather _ e@IntLit{}        = e
+
+mkFoldVar :: Int -> b -> E b
+mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
+
+gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
+gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+    (i,_) <- get
+    modify (bimap (+1) ((i, op, seed, stream) :))
+    pure $ mkFoldVar i undefined
+gatherFoldsM (EApp ty e0 e1) = EApp ty <$> gatherFoldsM e0 <*> gatherFoldsM e1
+gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
+gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
+gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
+gatherFoldsM e@BBuiltin{} = pure e
+gatherFoldsM e@TBuiltin{} = pure e
+gatherFoldsM e@UBuiltin{} = pure e
+gatherFoldsM e@StrLit{} = pure e
+gatherFoldsM e@FloatLit{} = pure e
+gatherFoldsM e@IntLit{} = pure e
+gatherFoldsM e@BoolLit{} = pure e
+
 -- evaluate something that has a fold nested in it
+eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
+eWith fp re e bs =
+    let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
+        in eClosed undefined $ ungather (IM.fromList $ foldAll fp re folds bs) eHoles
+
+{-
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx fp re op seed stream
 eWith fp re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 fp re op stream
@@ -467,8 +532,7 @@ eWith fp re (Tup ty es)                                                         
 eWith fp re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith fp re eϵ bs) <$> e)
 eWith fp re (Cond ty p e e')                                                                                                           = \bs -> eClosed undefined (Cond ty (eWith fp re p bs) (eWith fp re e bs) (eWith fp re e' bs))
 eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
--- TODO: rewrite tuple-of-folds as fold-of-tuples ... "compile" to E (T K) -> E (T K)
--- OR "compile" to [(Int, E (T K)] -> ...
+-}
 
 takeConcatMap :: (a -> [b]) -> [a] -> [b]
 takeConcatMap f = concat . transpose . fmap f
