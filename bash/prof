@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+seq 200000 | cabal run exe:ja -- run examples/avg.jac +RTS -hT
+hp2pretty ja.hp
