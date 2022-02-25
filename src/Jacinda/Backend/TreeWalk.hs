@@ -467,12 +467,25 @@ foldAll fp re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
     (is, ops, seeds, streamExprs) = unzip4 foldExprs
     mkStreams = fmap (\streamExpr -> ir fp re streamExpr bs)
 
-    -- FIXME: head is partial here, something might be longer
-    evalAll seedsϵ ess | not (any null ess) = let es' = zipWith3 applyOp ops seedsϵ (head <$> ess) in es' `seqAll` evalAll es' (tail <$> ess)
+    evalAll seedsϵ ess | not (any null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
+                       -- if I try to use the (all null ess) criterion it space
+                       -- leaks like crazy so... inspect only when we need?
+                       --
+                       -- (still leaks space... but less)
+                       | not (all null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
                        | otherwise = zip is seedsϵ
 
     seqAll (e:es) z = foldr seq e es `seq` z
     seqAll [] z     = z
+
+    applyOp' op seed (Just e) = applyOp op seed e
+    applyOp' _ seed Nothing   = seed
+
+    headMaybe []    = Nothing
+    headMaybe (x:_) = Just x
+
+    tail' []     = []
+    tail' (_:xs) = xs
 
 ungather :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
 ungather st (Var _ (Name _ (Unique i) _)) =
