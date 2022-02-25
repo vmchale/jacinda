@@ -1,4 +1,4 @@
-fn count(x) ≔
+fn count(x) :=
   (+)|0 [:1"x;
 
 fn isEven() :=
