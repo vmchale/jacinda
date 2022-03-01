@@ -8,3 +8,5 @@ program-options
 
 package jacinda
   ghc-options: -j +RTS -A32m
+
+constraints: bytestring>=0.11.3.0
