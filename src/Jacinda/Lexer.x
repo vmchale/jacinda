@@ -70,6 +70,7 @@ tokens :-
         "#!".*                   ; -- shebang
 
         ":="                     { mkSym DefEq }
+        "≔"                      { mkSym DefEq }
         "{"                      { mkSym LBrace }
         "}"                      { mkSym RBrace }
 
