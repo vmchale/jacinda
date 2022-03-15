@@ -159,7 +159,8 @@ benchmark jacinda-bench
         base,
         criterion,
         jacinda-lib,
-        deepseq
+        deepseq,
+        silently
 
     if impl(ghc >=8.0)
         ghc-options:
