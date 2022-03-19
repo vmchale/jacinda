@@ -69,6 +69,7 @@
 - [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
+- [ ] `0$` or something... line, split by field separator, 
 # Examples
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html

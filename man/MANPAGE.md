@@ -179,6 +179,9 @@ a boolean expression.
 {| sprintf \'%i %i\' (\`2 . \`1)}
 :   Print the first two fields in opposite order
 
+{ix=3}{`0}
+:   Select only the third line
+
 :set fs := /,[ \\t]*|[ \\t]+/; {| sprintf \'%i %i\' (\`2 . \`1)}
 :   Same, with input fields separated by comma and/or blanks and tabs.
 
