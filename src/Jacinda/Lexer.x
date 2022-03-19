@@ -112,6 +112,7 @@ tokens :-
         ";"                      { mkSym Semicolon }
         "\."                     { mkSym BackslashDot }
         \\                       { mkSym Backslash }
+        λ                        { mkSym Backslash }
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
         "~."                     { mkSym DedupTok }
