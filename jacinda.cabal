@@ -160,6 +160,7 @@ benchmark jacinda-bench
         criterion,
         jacinda-lib,
         deepseq,
+        bytestring,
         silently
 
     if impl(ghc >=8.0)
