@@ -71,6 +71,7 @@
 - [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
+- [ ] `0$` or something... line, split by field separator, 
 # Examples
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
@@ -78,6 +79,8 @@
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
 # Bugs
+- [x] `take n str + str2` parses as `take n (str + str2)`
+- [ ] When we inline, we need to specify a type!
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
   - [ ] should be a type error
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
@@ -93,3 +96,4 @@
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
+- [ ] not a fan of prettyprint
