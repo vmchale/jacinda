@@ -2,5 +2,5 @@
 fn presentLines(l) ≔
   [x+'\n'+y]|>(splitc l',');
 
-fn cols() ≔ 
+fn cols() ≔
   presentLines"{ix=1}{`0};

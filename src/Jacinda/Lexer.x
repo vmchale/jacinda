@@ -84,6 +84,7 @@ tokens :-
 
         "|"                      { mkSym FoldTok }
         \"                       { mkSym Quot }
+        ¨                        { mkSym Quot }
         "^"                      { mkSym Caret }
         "|>"                     { mkSym Fold1Tok }
 
@@ -134,6 +135,7 @@ tokens :-
 
         fs                       { mkRes VarFs }
         ix                       { mkRes VarIx }
+        ⍳                        { mkRes VarIx }
         nf                       { mkRes VarNf }
         -- TODO: does this uncover an alex bug?
         -- ⍳                        { mkRes VarIx }
