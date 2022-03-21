@@ -429,6 +429,17 @@ split : Str -> Regex -> List Str
 
 `.2` is the syntax for accessing a list - `line.2` extracts the second element.
 
+## Enforcing Style Rules
+
+Suppose our style guide says that lines can be at most 80 characters. We can
+show any such lines we've introduced with:
+
+```
+git diff origin/master | ja '[#x>81]#.{%/^\+/}{`}'
+```
+
+(81 to allow for the leading `+`)
+
 ## Unix Command-Line Tools
 
 To get a flavor of Jacinda, see how it can be used in place of familiar tools:

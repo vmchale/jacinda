@@ -189,6 +189,7 @@ Streams</a></li>
 <ul>
 <li><a href="#error-span">Error Span</a></li>
 <li><a href="#vim-tags">Vim Tags</a></li>
+<li><a href="#enforcing-style-rules">Enforcing Style Rules</a></li>
 <li><a href="#unix-command-line-tools">Unix Command-Line Tools</a>
 <ul>
 <li><a href="#grep">grep</a></li>
@@ -468,6 +469,11 @@ type</p>
 <pre><code>split : Str -&gt; Regex -&gt; List Str</code></pre>
 <p><code>.2</code> is the syntax for accessing a list -
 <code>line.2</code> extracts the second element.</p>
+<h2 id="enforcing-style-rules">Enforcing Style Rules</h2>
+<p>Suppose our style guide says that lines can be at most 80 characters.
+We can show any such lines we’ve introduced with:</p>
+<pre><code>git diff origin/master | ja &#39;[#x&gt;81]#.{%/^\+/}{`}&#39;</code></pre>
+<p>(81 to allow for the leading <code>+</code>)</p>
 <h2 id="unix-command-line-tools">Unix Command-Line Tools</h2>
 <p>To get a flavor of Jacinda, see how it can be used in place of
 familiar tools:</p>
