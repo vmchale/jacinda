@@ -441,6 +441,10 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) e2) = do
         (OptionVal _ Nothing)  -> pure e0'
         (OptionVal _ (Just e)) -> eNorm (EApp undefined e1' e)
         _                      -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2'
+eNorm (EApp ty1 (EApp ty2 op@(TBuiltin _ Option) e0) e1) = do
+    e0' <- eNorm e0
+    e1' <- eNorm e1
+    pure $ EApp ty1 (EApp ty2 op e0') e1'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Match) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'

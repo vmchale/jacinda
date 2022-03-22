@@ -1,8 +1,38 @@
+# Show All Lines Introduced in a Diff >80 Characters
+
+```
+git diff origin/master | ja '[#x>81]#.{%/^\+/}{`0}'
+```
+
+Note the `81` to account for the leading `+`.
+
 # Find all distinct language extensions used in a project
 
 ```
-rg '\{-#.*LANGUAGE.*#-}' --no-filename | ja '~.$3'
+fd '\.hs$' "$1" -x ja '~.{%/LANGUAGE\s*.*\s*#-/}{`3}' -i | ja '~.$0'
 ```
+
+One can make this more rigorous (allowing for `{-# LANGUAGE Xxx,Yyy #-}` with:
+
+```
+@include'lib/string.jac'
+
+fn findExtensions(line) :=
+  let
+    val extStr ≔ line ~* 1 /\{-#\s*LANGUAGE\s*(.*)#-\}/
+    val extList ≔ (\s.split s /,\s*/)"extStr
+  in extList end;
+
+~.(\x.(intercalate'\n')"(findExtensions x)):?$0
+```
+
+Which we can invoke with:
+
+```
+fd '\.hs$' . -x ja run hsExtensions.jac -i | ja '~.$0'
+```
+
+This can be used to populate the `other-extensions` field in a `.cabal` file.
 
 # cdc
 

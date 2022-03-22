@@ -2,6 +2,7 @@
   * Reintroduce monomorphism restriction (oops)
   * Better errors for ambiguous types
   * Multiple folds no longer blow up memory in some cases
+  * `option` can be curried (parse bug fixed)
 
 # 0.3.1.0
 
