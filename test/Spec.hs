@@ -28,6 +28,7 @@ main = defaultMain $
             "drwxr-xr-x  12 vanessa  staff   384 Dec 26 19:43 _darcs"
             ["drwxr-xr-x","12","vanessa","staff","384","Dec","26","19:43","_darcs"]
         , splitWhitespaceT "      55 ./src/Jacinda/File.hs" ["55", "./src/Jacinda/File.hs"]
+        , splitWhitespaceT "" []
         , testCase "type of" (tyOfT sumBytes (TyB Star TyInteger))
         , testCase "type of" (tyOfT krakRegex (TyApp Star (TyB (KArr Star Star) TyStream) (TyB Star TyStr))) -- stream of str
         , testCase "type of" (tyOfT krakCol (TyApp Star (TyB (KArr Star Star) TyStream) (TyB Star TyStr))) -- stream of str

@@ -423,7 +423,8 @@ ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \line
         irr = ir fp re streamr lineStream
     in zipWith (applyOp (withFp fp op)) irl irr
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
-    scanl' (applyOp (withFp fp op)) seed . ir fp re xs
+    scanl' (applyOp (withFp fp (compileR op))) seed . ir fp re xs
+    -- FIXME: compileR on folds, etc.
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
