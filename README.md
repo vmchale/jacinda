@@ -69,17 +69,16 @@ imperative/scoping defects.
 
 ## Missing Features & Bugs
 
-  * `sub`/`gsub` function equivalents
   * No nested dfns
   * Obscure renamer edge cases during evaluation
   * Documentation for tuples
   * `printf` formatting for floats
   * No list literal syntax
   * Typeclasses are not documented
-  * Type system is questionable
   * Postfix `:f` and `:i` are handled poorly
   * Various bugs in evaluation with regular expressions
   * Polymorphic functions can't be instantiated with separate types
+  * Multiple folds blow up when using `|>`
 
 Intentionally missing features:
 
