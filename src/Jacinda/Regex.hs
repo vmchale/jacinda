@@ -2,7 +2,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Regex ( splitBy
-                     , splitWhitespace
                      , defaultRurePtr
                      , isMatch'
                      , find'
@@ -30,9 +29,6 @@ defaultFs = "\\s+"
 defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yeetRureIO =<< compile genFlags defaultFs
     where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a weird custom record separator
-
-splitWhitespace :: BS.ByteString -> V.Vector BS.ByteString
-splitWhitespace = splitBy defaultRurePtr
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
