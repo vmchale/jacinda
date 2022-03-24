@@ -63,7 +63,7 @@ pAst =
 splitWhitespaceT :: BS.ByteString -> [BS.ByteString] -> TestTree
 splitWhitespaceT haystack expected =
     testCase "split col" $
-        toList (splitWhitespace haystack) @?= expected
+        toList (splitBy defaultRurePtr haystack) @?= expected
 
 -- example: ls -l | ja '(+)|0 $5:i'
 sumBytes :: BSL.ByteString
