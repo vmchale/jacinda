@@ -320,6 +320,13 @@ eEval (fp, ix, line, ctx) = go where
         in mkStr (sprintf eI eI')
     go (OptionVal ty e) =
         OptionVal ty (go <$> e)
+    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e0) e1) e2) =
+        let e0' = go e0
+            e1' = go e1
+            e2' = go e2
+        in case asOpt e2' of
+                Nothing -> e0'
+                Just e  -> go (EApp undefined e1' e)
     go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) =
         let x' = go x
             y' = asArr (go y)
@@ -352,7 +359,6 @@ eEval (fp, ix, line, ctx) = go where
     go (Cond _ p e0 e1) =
         let p' = asBool (go p)
             in if p' then go e0 else go e1
-
 
 -- just shove some big number into the renamer and hope it doesn't clash (bad,
 -- hack, this is why we got kicked out of the garden of Eden)
@@ -498,6 +504,8 @@ ungather st (Arr ty es)      = Arr ty (ungather st <$> es)
 ungather st (OptionVal ty e) = OptionVal ty (ungather st <$> e)
 ungather _ e@BBuiltin{}      = e
 ungather _ e@UBuiltin{}      = e
+ungather _ (NBuiltin _ None) = OptionVal undefined Nothing
+ungather _ e@NBuiltin{}      = e
 ungather _ e@TBuiltin{}      = e
 ungather _ e@StrLit{}        = e
 ungather _ e@BoolLit{}       = e
@@ -507,23 +515,26 @@ ungather _ e@IntLit{}        = e
 mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
 
-gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
-gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+gatherFoldsM :: FileBS -> E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
+gatherFoldsM _ (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
     (i,_) <- get
     modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i undefined
-gatherFoldsM (EApp ty e0 e1) = EApp ty <$> gatherFoldsM e0 <*> gatherFoldsM e1
-gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
-gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
-gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
-gatherFoldsM (Cond ty p e e') = Cond ty <$> gatherFoldsM p <*> gatherFoldsM e <*> gatherFoldsM e'
-gatherFoldsM e@BBuiltin{} = pure e
-gatherFoldsM e@TBuiltin{} = pure e
-gatherFoldsM e@UBuiltin{} = pure e
-gatherFoldsM e@StrLit{} = pure e
-gatherFoldsM e@FloatLit{} = pure e
-gatherFoldsM e@IntLit{} = pure e
-gatherFoldsM e@BoolLit{} = pure e
+gatherFoldsM fp (EApp ty e0 e1) = EApp ty <$> gatherFoldsM fp e0 <*> gatherFoldsM fp e1
+gatherFoldsM fp (Tup ty es) = Tup ty <$> traverse (gatherFoldsM fp) es
+gatherFoldsM fp (Arr ty es) = Arr ty <$> traverse (gatherFoldsM fp) es
+gatherFoldsM fp (OptionVal ty e) = OptionVal ty <$> traverse (gatherFoldsM fp) e
+gatherFoldsM fp (Cond ty p e e') = Cond ty <$> gatherFoldsM fp p <*> gatherFoldsM fp e <*> gatherFoldsM fp e'
+gatherFoldsM fp (NBuiltin _ Fp) = pure $ mkStr fp
+gatherFoldsM _ (NBuiltin _ None) = pure $ OptionVal undefined Nothing
+gatherFoldsM _ e@BBuiltin{} = pure e
+gatherFoldsM _ e@TBuiltin{} = pure e
+gatherFoldsM _ e@UBuiltin{} = pure e
+gatherFoldsM _ e@NBuiltin{} = pure e
+gatherFoldsM _ e@StrLit{} = pure e
+gatherFoldsM _ e@FloatLit{} = pure e
+gatherFoldsM _ e@IntLit{} = pure e
+gatherFoldsM _ e@BoolLit{} = pure e
 
 -- evaluate something that has a fold nested in it
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
@@ -538,7 +549,7 @@ eWith _ _ e@IntLit{}                                                            
 eWith _ _ e@BoolLit{}                                                                                                                  = const e
 eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
 eWith fp re e = \bs ->
-    let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
+    let (eHoles, (_, folds)) = runState (gatherFoldsM fp e) (0, []) -- 0 state, should contain no vars by now
         in eClosed undefined $ ungather (IM.fromList $ foldAll fp re folds bs) eHoles
 {-
 eWith fp re (EApp ty e0 e1)                                                                                                            = \bs -> eClosed undefined (EApp ty (eWith fp re e0 bs) (eWith fp re e1 bs)) -}
