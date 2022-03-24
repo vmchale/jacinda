@@ -509,4 +509,4 @@ eNorm (Cond ty p e0 e1) = do
     case p' of
         BoolLit _ True  -> eNorm e0
         BoolLit _ False -> eNorm e1
-        _               -> pure $ Cond ty p' e0 e1 -- don't eval further, might bottom?
+        _               -> Cond ty p' <$> eNorm e0 <*> eNorm e1 -- needed to perform substitutions
