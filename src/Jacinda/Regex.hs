@@ -57,6 +57,7 @@ findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> f
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
 find' re str = unsafeDupablePerformIO $ find re str 0
 
+-- FIXME: splitBy '\s+' '' should be [] not ['']
 {-# NOINLINE splitBy #-}
 splitBy :: RurePtr
         -> BS.ByteString
@@ -66,6 +67,7 @@ splitBy re haystack@(BS.BS fp l) =
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
+                []                  -> []
                 rms                 -> mkMiddle 0 rms
           mkMiddle begin' []        = [(begin', l)]
           mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) : mkMiddle (fromIntegral $ end rm0) rms
