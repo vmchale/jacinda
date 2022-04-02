@@ -71,14 +71,13 @@ imperative/scoping defects.
 
   * No nested dfns
   * Obscure renamer edge cases during evaluation
-  * Documentation for tuples
   * `printf` formatting for floats
   * No list literal syntax
   * Typeclasses are not documented
   * Postfix `:f` and `:i` are handled poorly
-  * Various bugs in evaluation with regular expressions
-  * Polymorphic functions can't be instantiated with separate types
-  * Multiple folds blow up when using `|>`
+  * Polymorphic functions can't be instantiated with separate types (global
+    monomorphism restriction)
+  * Expressions with multiple folds blow up in memory sometimes
 
 Intentionally missing features:
 
