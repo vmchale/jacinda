@@ -404,7 +404,6 @@ ir fp re (Implicit _ e) =
 ir fp re (Guarded _ pe e) =
     let pe' = compileR pe
         e' = compileR e
-    -- FIXME: compile e too?
     -- TODO: normalize before stream
         in fmap (uncurry (\ix line -> eEval (mkCtx fp re ix line) e')) . ifilter' (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
 ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (withFp fp op) in fmap (applyUn op') . ir fp re stream
@@ -416,15 +415,14 @@ ir fp re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
         in mapMaybe (asOpt . applyUn op') . ir fp re stream
 ir fp re (EApp _ (UBuiltin _ CatMaybes) stream) =
     mapMaybe asOpt . ir fp re stream
-ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp op)) . ir fp re stream
+ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp (compileR op))) . ir fp re stream
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
         irl = ir fp re streaml lineStream
         irr = ir fp re streamr lineStream
-    in zipWith (applyOp (withFp fp op)) irl irr
+    in zipWith (applyOp (withFp fp (compileR op))) irl irr
 ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
     scanl' (applyOp (withFp fp (compileR op))) seed . ir fp re xs
-    -- FIXME: compileR on folds, etc.
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir fp re e
 ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
@@ -445,7 +443,7 @@ foldWithCtx :: FileBS
             -> E (T K)
             -> [BS.ByteString]
             -> E (T K)
-foldWithCtx fp re op seed streamExpr = foldl' (applyOp op) seed . ir fp re streamExpr
+foldWithCtx fp re op seed streamExpr = foldl' (applyOp $ withFp fp (compileR op)) seed . ir fp re streamExpr
 
 fold1 :: FileBS
       -> RurePtr
@@ -517,9 +515,9 @@ mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
 
 gatherFoldsM :: FileBS -> E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
-gatherFoldsM _ (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+gatherFoldsM fp (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
     (i,_) <- get
-    modify (bimap (+1) ((i, op, seed, stream) :))
+    modify (bimap (+1) ((i, withFp fp (compileR op), seed, stream) :))
     pure $ mkFoldVar i undefined
 gatherFoldsM fp (EApp ty e0 e1) = EApp ty <$> gatherFoldsM fp e0 <*> gatherFoldsM fp e1
 gatherFoldsM fp (Tup ty es) = Tup ty <$> traverse (gatherFoldsM fp) es
@@ -540,7 +538,7 @@ gatherFoldsM _ e@BoolLit{} = pure e
 -- evaluate something that has a fold nested in it
 eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith fp re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx fp re op seed stream
-eWith fp re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 fp re op stream
+eWith fp re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 fp re (withFp fp $ compileR op) stream
 eWith _ _ e@BBuiltin{}                                                                                                                 = const e
 eWith _ _ e@UBuiltin{}                                                                                                                 = const e
 eWith _ _ e@TBuiltin{}                                                                                                                 = const e

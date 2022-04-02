@@ -83,6 +83,7 @@ the bs = case BS.uncons bs of
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
 
+-- TODO: do this on all expressions?
 -- fill in regex with compiled.
 compileR :: E a
          -> E a
