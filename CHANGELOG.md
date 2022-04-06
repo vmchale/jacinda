@@ -1,3 +1,5 @@
+# 1.0.0.0
+
   * Generalize type of `\.` (prior)
   * Reintroduce monomorphism restriction (oops)
   * Better errors for ambiguous types

@@ -30,6 +30,14 @@ moddeps.svg: $(HS_SRC)
 tags: $(JAC_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@
 
-bench/data/span.txt: examples/span.txt
-	mkdir -p $(dir $@)
+bench/data/:
+	mkdir -p $@
+
+bench/data/span.txt: examples/span.txt $(dir $@)
 	perl -0777pe '$$_=$$_ x 10000' $^ > $@
+
+bench/data/ulysses.txt: $(dir $@)
+	curl https://www.gutenberg.org/files/4300/4300-0.txt -o $@
+
+check:
+	fd .jac examples/ -x ja tc
