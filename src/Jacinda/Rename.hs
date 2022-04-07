@@ -132,6 +132,7 @@ renameD (FunDecl n ns e) = FunDecl n [] <$> renameE (mkLam ns e)
 renameProgram :: Program a -> RenameM (Program a)
 renameProgram (Program ds e) = Program <$> traverse renameD ds <*> renameE e
 
+{-# INLINABLE renameE #-}
 renameE :: (HasRenames s, MonadState s m) => E a -> m (E a)
 renameE (EApp l e e')   = EApp l <$> renameE e <*> renameE e'
 renameE (Tup l es)      = Tup l <$> traverse renameE es
