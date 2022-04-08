@@ -356,7 +356,7 @@ instance Pretty (E a) where
     pretty (Guarded _ p e)                                              = braces (pretty p) <> braces (pretty e)
     pretty (Implicit _ e)                                               = braces ("|" <+> pretty e)
     pretty (NBuiltin _ n)                                               = pretty n
-    pretty RegexCompiled{}                                              = error "Nonsense."
+    pretty RegexCompiled{}                                              = "(compiled regex)"
     pretty (Let _ (n, b) e)                                             = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                                  = parens (pretty e)
     pretty (Arr _ es)                                                   = tupledByFunky "," (V.toList $ pretty <$> es)

@@ -35,8 +35,6 @@ data StreamError = NakedField
                  | InternalError
                  deriving (Show)
 
-type FileBS = BS.ByteString
-
 instance Exception StreamError where
 
 (!) :: V.Vector a -> Int -> a
@@ -80,16 +78,11 @@ asOpt e               = noRes e "Option"
 
 -- TODO: do I want to interleave state w/ eNorm or w/e
 
-withFp :: FileBS -> E (T K) -> E (T K)
-withFp fp = cata a where
-    a (NBuiltinF _ Fp) = mkStr fp
-    a x                = embed x
-
 -- eval
-eEval :: (FileBS, Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
+eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
       -> E (T K)
-eEval (fp, ix, line, ctx) = go where
+eEval (ix, line, ctx) = go where
     go b@BoolLit{} = b
     go i@IntLit{} = i
     go f@FloatLit{} = f
@@ -102,7 +95,6 @@ eEval (fp, ix, line, ctx) = go where
     go (NBuiltin _ Nf) = mkI (fromIntegral $ V.length ctx)
     go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
     go (NBuiltin _ Ix) = mkI (fromIntegral ix)
-    go (NBuiltin _ Fp) = mkStr fp
     go (NBuiltin _ None) = OptionVal undefined Nothing
     go (EApp ty (UBuiltin _ Some) e) =
         let eI = go e
@@ -359,6 +351,7 @@ eEval (fp, ix, line, ctx) = go where
     go (Cond _ p e0 e1) =
         let p' = asBool (go p)
             in if p' then go e0 else go e1
+    go e = error ("Internal error: " ++ show e)
 
 -- just shove some big number into the renamer and hope it doesn't clash (bad,
 -- hack, this is why we got kicked out of the garden of Eden)
@@ -377,8 +370,8 @@ atField :: RurePtr
         -> BS.ByteString
 atField re i = (! (i-1)) . splitBy re
 
-mkCtx :: FileBS -> RurePtr -> Int -> BS.ByteString -> (FileBS, Int, BS.ByteString, V.Vector BS.ByteString)
-mkCtx fp re ix line = (fp, ix, line, splitBy re line)
+mkCtx :: RurePtr -> Int -> BS.ByteString -> (Int, BS.ByteString, V.Vector BS.ByteString)
+mkCtx re ix line = (ix, line, splitBy re line)
 
 applyUn :: E (T K)
         -> E (T K)
@@ -389,88 +382,78 @@ applyUn unOp e =
         _             -> error "Internal error?"
 
 -- | Turn an expression representing a stream into a stream of expressions (using line as context)
-ir :: FileBS
-   -> RurePtr
+ir :: RurePtr
    -> E (T K)
    -> [BS.ByteString]
    -> [E (T K)] -- TODO: include chunks/context too?
-ir _ _ AllColumn{} = fmap mkStr
-ir _ re (Column _ i) = fmap (mkStr . atField re i)
-ir _ re (IParseCol _ i) = fmap (parseAsEInt . atField re i)
-ir _ re (FParseCol _ i) = fmap (parseAsF . atField re i)
-ir fp re (Implicit _ e) =
-    let e' = compileR e
-        in imap (\ix line -> eEval (mkCtx fp re ix line) e')
-ir fp re (Guarded _ pe e) =
-    let pe' = compileR pe
-        e' = compileR e
+ir _ AllColumn{} = fmap mkStr
+ir re (Column _ i) = fmap (mkStr . atField re i)
+ir re (IParseCol _ i) = fmap (parseAsEInt . atField re i)
+ir re (FParseCol _ i) = fmap (parseAsF . atField re i)
+ir re (Implicit _ e) =
+    imap (\ix line -> eEval (mkCtx re ix line) e)
+ir re (Guarded _ pe e) =
     -- TODO: normalize before stream
-        in fmap (uncurry (\ix line -> eEval (mkCtx fp re ix line) e')) . ifilter' (\ix line -> asBool (eEval (mkCtx fp re ix line) pe'))
-ir fp re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = let op' = compileR (withFp fp op) in fmap (applyUn op') . ir fp re stream
-ir fp re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
-    let op' = compileR (withFp fp op)
-        in filter (asBool . applyUn op') . ir fp re stream
-ir fp re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
-    let op' = compileR (withFp fp op)
-        in mapMaybe (asOpt . applyUn op') . ir fp re stream
-ir fp re (EApp _ (UBuiltin _ CatMaybes) stream) =
-    mapMaybe asOpt . ir fp re stream
-ir fp re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp (withFp fp (compileR op))) . ir fp re stream
-ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
+    fmap (uncurry (\ix line -> eEval (mkCtx re ix line) e)) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
+ir re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re stream
+ir re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
+    filter (asBool . applyUn op) . ir re stream
+ir re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
+    mapMaybe (asOpt . applyUn op) . ir re stream
+ir re (EApp _ (UBuiltin _ CatMaybes) stream) =
+    mapMaybe asOpt . ir re stream
+ir re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp op) . ir re stream
+ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
     let
-        irl = ir fp re streaml lineStream
-        irr = ir fp re streamr lineStream
-    in zipWith (applyOp (withFp fp (compileR op))) irl irr
-ir fp re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
-    scanl' (applyOp (withFp fp (compileR op))) seed . ir fp re xs
-ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
-    nubOrdOn asStr . ir fp re e
-ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
-    nubIntOn (fromIntegral . asInt) . ir fp re e
-ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
-    nubIntOn (fromEnum . asFloat) . ir fp re e
-ir fp re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
-    nubIntOn (fromEnum . asBool) . ir fp re e
+        irl = ir re streaml lineStream
+        irr = ir re streamr lineStream
+    in zipWith (applyOp op) irl irr
+ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
+    scanl' (applyOp op) seed . ir re xs
+ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
+    nubOrdOn asStr . ir re e
+ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
+    nubIntOn (fromIntegral . asInt) . ir re e
+ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
+    nubIntOn (fromEnum . asFloat) . ir re e
+ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
+    nubIntOn (fromEnum . asBool) . ir re e
 
 -- | Output stream that prints each entry (expression)
 printStream :: [E (T K)] -> IO ()
 printStream = traverse_ print
 
-foldWithCtx :: FileBS
-            -> RurePtr
+foldWithCtx :: RurePtr
             -> E (T K)
             -> E (T K)
             -> E (T K)
             -> [BS.ByteString]
             -> E (T K)
-foldWithCtx fp re op seed streamExpr = foldl' (applyOp $ withFp fp (compileR op)) seed . ir fp re streamExpr
+foldWithCtx re op seed streamExpr = foldl' (applyOp op) seed . ir re streamExpr
 
-fold1 :: FileBS
-      -> RurePtr
+fold1 :: RurePtr
       -> E (T K)
       -> E (T K)
       -> [BS.ByteString]
       -> E (T K)
-fold1 fp re op streamExpr bs =
-    case ir fp re streamExpr bs of
+fold1 re op streamExpr bs =
+    case ir re streamExpr bs of
         e:es -> foldl' (applyOp op) e es
         _    -> throw EmptyFold
 
-runJac :: FileBS
-       -> RurePtr -- ^ Record separator
+runJac :: RurePtr -- ^ Record separator
        -> Int
        -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac fp re i e = fileProcessor fp re (closedProgram i e)
+runJac re i e = fileProcessor re (closedProgram i e)
 
-foldAll :: FileBS
-        -> RurePtr
+foldAll :: RurePtr
         -> [(Int, E (T K), E (T K), E (T K))]
         -> [BS.ByteString]
         -> [(Int, E (T K))]
-foldAll fp re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
+foldAll re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
     (is, ops, seeds, streamExprs) = unzip4 foldExprs
-    mkStreams = fmap (\streamExpr -> ir fp re streamExpr bs)
+    mkStreams = fmap (\streamExpr -> ir re streamExpr bs)
 
     evalAll seedsϵ ess | not (any null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
                        -- if I try to use the (all null ess) criterion it space
@@ -514,104 +497,92 @@ ungather _ e@IntLit{}        = e
 mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
 
-gatherFoldsM :: FileBS -> E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
-gatherFoldsM fp (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
+gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
     (i,_) <- get
-    modify (bimap (+1) ((i, withFp fp (compileR op), seed, stream) :))
+    modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i undefined
-gatherFoldsM fp (EApp ty e0 e1) = EApp ty <$> gatherFoldsM fp e0 <*> gatherFoldsM fp e1
-gatherFoldsM fp (Tup ty es) = Tup ty <$> traverse (gatherFoldsM fp) es
-gatherFoldsM fp (Arr ty es) = Arr ty <$> traverse (gatherFoldsM fp) es
-gatherFoldsM fp (OptionVal ty e) = OptionVal ty <$> traverse (gatherFoldsM fp) e
-gatherFoldsM fp (Cond ty p e e') = Cond ty <$> gatherFoldsM fp p <*> gatherFoldsM fp e <*> gatherFoldsM fp e'
-gatherFoldsM fp (NBuiltin _ Fp) = pure $ mkStr fp
-gatherFoldsM _ (NBuiltin _ None) = pure $ OptionVal undefined Nothing
-gatherFoldsM _ e@BBuiltin{} = pure e
-gatherFoldsM _ e@TBuiltin{} = pure e
-gatherFoldsM _ e@UBuiltin{} = pure e
-gatherFoldsM _ e@NBuiltin{} = pure e
-gatherFoldsM _ e@StrLit{} = pure e
-gatherFoldsM _ e@FloatLit{} = pure e
-gatherFoldsM _ e@IntLit{} = pure e
-gatherFoldsM _ e@BoolLit{} = pure e
+gatherFoldsM (EApp ty e0 e1) = EApp ty <$> gatherFoldsM e0 <*> gatherFoldsM e1
+gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
+gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
+gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
+gatherFoldsM (Cond ty p e e') = Cond ty <$> gatherFoldsM p <*> gatherFoldsM e <*> gatherFoldsM e'
+gatherFoldsM (NBuiltin _ None) = pure $ OptionVal undefined Nothing
+gatherFoldsM e@BBuiltin{} = pure e
+gatherFoldsM e@TBuiltin{} = pure e
+gatherFoldsM e@UBuiltin{} = pure e
+gatherFoldsM e@NBuiltin{} = pure e
+gatherFoldsM e@StrLit{} = pure e
+gatherFoldsM e@FloatLit{} = pure e
+gatherFoldsM e@IntLit{} = pure e
+gatherFoldsM e@BoolLit{} = pure e
 
 -- evaluate something that has a fold nested in it
-eWith :: FileBS -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
-eWith fp re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx fp re op seed stream
-eWith fp re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 fp re (withFp fp $ compileR op) stream
-eWith _ _ e@BBuiltin{}                                                                                                                 = const e
-eWith _ _ e@UBuiltin{}                                                                                                                 = const e
-eWith _ _ e@TBuiltin{}                                                                                                                 = const e
-eWith _ _ e@StrLit{}                                                                                                                   = const e
-eWith _ _ e@FloatLit{}                                                                                                                 = const e
-eWith _ _ e@IntLit{}                                                                                                                   = const e
-eWith _ _ e@BoolLit{}                                                                                                                  = const e
-eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
-eWith fp re e = \bs ->
-    let (eHoles, (_, folds)) = runState (gatherFoldsM fp e) (0, []) -- 0 state, should contain no vars by now
-        in eClosed undefined $ ungather (IM.fromList $ foldAll fp re folds bs) eHoles
-{-
-eWith fp re (EApp ty e0 e1)                                                                                                            = \bs -> eClosed undefined (EApp ty (eWith fp re e0 bs) (eWith fp re e1 bs)) -}
-{-
-eWith fp re (Tup ty es)                                                                                                                = \bs -> Tup ty ((\e -> eWith fp re e bs) <$> es)
-eWith fp re (OptionVal ty e)                                                                                                           = \bs -> OptionVal ty ((\eϵ -> eWith fp re eϵ bs) <$> e)
-eWith fp re (Cond ty p e e')                                                                                                           = \bs -> eClosed undefined (Cond ty (eWith fp re p bs) (eWith fp re e bs) (eWith fp re e' bs))
-eWith fp _ (NBuiltin _ Fp)                                                                                                             = const (mkStr fp)
--}
+eWith :: RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
+eWith re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
+eWith re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 re op stream
+eWith _ e@BBuiltin{}                                                                                                                 = const e
+eWith _ e@UBuiltin{}                                                                                                                 = const e
+eWith _ e@TBuiltin{}                                                                                                                 = const e
+eWith _ e@StrLit{}                                                                                                                   = const e
+eWith _ e@FloatLit{}                                                                                                                 = const e
+eWith _ e@IntLit{}                                                                                                                   = const e
+eWith _ e@BoolLit{}                                                                                                                  = const e
+eWith re e = \bs ->
+    let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
+        in eClosed undefined $ ungather (IM.fromList $ foldAll re folds bs) eHoles
 
 takeConcatMap :: (a -> [b]) -> [a] -> [b]
 takeConcatMap f = concat . transpose . fmap f
 
 -- | Given an expression, turn it into a function which will process the file.
-fileProcessor :: FileBS
-              -> RurePtr
+fileProcessor :: RurePtr
               -> E (T K)
               -> Either StreamError ([BS.ByteString] -> IO ())
-fileProcessor _ _ AllField{}    = Left NakedField
-fileProcessor _ _ Field{}       = Left NakedField
-fileProcessor _ _ (NBuiltin _ Ix) = Left NakedField
-fileProcessor _ _ AllColumn{} = Right $ \inp ->
+fileProcessor _ AllField{}    = Left NakedField
+fileProcessor _ Field{}       = Left NakedField
+fileProcessor _ (NBuiltin _ Ix) = Left NakedField
+fileProcessor _ AllColumn{} = Right $ \inp ->
     printStream $ fmap mkStr inp
-fileProcessor _ re (Column _ i) = Right $ \inp -> do
+fileProcessor re (Column _ i) = Right $ \inp -> do
     printStream $ fmap (mkStr . atField re i) inp
-fileProcessor _ re (IParseCol _ i) = Right $ \inp -> do
+fileProcessor re (IParseCol _ i) = Right $ \inp -> do
     printStream $ fmap (parseAsEInt . atField re i) inp
-fileProcessor _ re (FParseCol _ i) = Right $ \inp -> do
+fileProcessor re (FParseCol _ i) = Right $ \inp -> do
     printStream $ fmap (parseAsF . atField re i) inp
-fileProcessor fp re e@Guarded{} = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@Implicit{} = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
+fileProcessor re e@Guarded{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@Implicit{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
 -- at the moment, catMaybes only works on streams
-fileProcessor fp re e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
-    printStream $ ir fp re e inp
-fileProcessor fp re (Anchor _ es) = Right $ \inp ->
-    printStream $ takeConcatMap (\e -> ir fp re e inp) es
-fileProcessor _ _ Var{} = error "Internal error?"
-fileProcessor _ _ e@IntLit{} = Right $ const (print e)
-fileProcessor _ _ e@BoolLit{} = Right $ const (print e)
-fileProcessor _ _ e@StrLit{} = Right $ const (print e)
-fileProcessor _ _ e@FloatLit{} = Right $ const (print e)
-fileProcessor _ _ e@RegexLit{} = Right $ const (print e)
-fileProcessor fp _ (NBuiltin _ Fp) = Right $ const (print fp)
-fileProcessor _ _ Lam{} = Left UnevalFun
-fileProcessor _ _ Dfn{} = badSugar
-fileProcessor _ _ ResVar{} = badSugar
-fileProcessor _ _ BBuiltin{} = Left UnevalFun
-fileProcessor _ _ UBuiltin{} = Left UnevalFun
-fileProcessor _ _ TBuiltin{} = Left UnevalFun
-fileProcessor fp re e = Right $ print . eWith fp re e
+fileProcessor re e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re (Anchor _ es) = Right $ \inp ->
+    printStream $ takeConcatMap (\e -> ir re e inp) es
+fileProcessor _ Var{} = error "Internal error?"
+fileProcessor _ e@IntLit{} = Right $ const (print e)
+fileProcessor _ e@BoolLit{} = Right $ const (print e)
+fileProcessor _ e@StrLit{} = Right $ const (print e)
+fileProcessor _ e@FloatLit{} = Right $ const (print e)
+fileProcessor _ e@RegexLit{} = Right $ const (print e)
+fileProcessor _ Lam{} = Left UnevalFun
+fileProcessor _ Dfn{} = badSugar
+fileProcessor _ ResVar{} = badSugar
+fileProcessor _ BBuiltin{} = Left UnevalFun
+fileProcessor _ UBuiltin{} = Left UnevalFun
+fileProcessor _ TBuiltin{} = Left UnevalFun
+fileProcessor re e = Right $ print . eWith re e
