@@ -2,15 +2,21 @@ HS_SRC := $(shell find src -type f) jacinda.cabal
 
 JAC_SRC := $(shell find prelude lib -type f)
 
+VERSION := $(shell grep -o '[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' jacinda.cabal | head -n1)
+
+GR_OPTIONS := -u vmchale -r jacinda -t $(VERSION)
+
 man/ja.1: man/MANPAGE.md
 	pandoc $< -s -t man -o $@
 
 docs: doc/guide.pdf doc/guide.html docs/index.html
 
-bins: bin/x86_64-linux-ja \
+BINS := bin/x86_64-linux-ja \
     bin/arm-linux-gnueabihf-ja \
     bin/aarch64-linux-ja \
     bin/powerpc64le-linux-ja
+
+bins: $(BINS)
 
 docs/index.html: doc/guide.html
 	cp $^ $@
@@ -31,6 +37,13 @@ clean:
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
+
+release: $(BINS)
+	github-release release $(GR_OPTIONS)
+	for bin in $(notdir $^) ; do \
+	    github-release upload $(GR_OPTIONS) -n $$bin -f bin/$$bin --replace ; \
+	done
+	github-release upload $(GR_OPTIONS) -n ja.1 -f man/ja.1 --replace ; \
 
 bin/x86_64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
