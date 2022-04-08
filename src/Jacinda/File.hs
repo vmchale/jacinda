@@ -10,6 +10,7 @@ import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.State.Strict (StateT, get, put, runStateT)
+import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
@@ -58,13 +59,32 @@ parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStat
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
 parseWithMax' = fmap (uncurry renamePGlobal . second (rewriteProgram . snd)) . parseWithMax
 
+type FileBS = BS.ByteString
+
+-- fill in regex with compiled.
+compileR :: FileBS
+         -> E (T K)
+         -> E (T K)
+compileR fp = cata a where
+    a (RegexLitF _ rrϵ) = RegexCompiled (compileDefault rrϵ)
+    a (NBuiltinF _ Fp)  = mkStr fp
+    a x                 = embed x
+    -- TODO: is cata performant enough?
+
+compileIn :: FileBS -> Program (T K) -> Program (T K)
+compileIn fp (Program ds e) = Program (compileD fp <$> ds) (compileR fp e)
+
+compileD :: FileBS -> D (T K) -> D (T K)
+compileD _ d@SetFS{}        = d
+compileD fp (FunDecl n l e) = FunDecl n l (compileR fp e)
+
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =
     case parseWithMax' src of
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTypeM m (tyProgram ast)
-            in closedProgram i (compileIn typed)
+            in closedProgram i (compileIn undefined typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
@@ -80,7 +100,7 @@ runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
-    cont <- yeetIO $ runJac (ASCII.pack fp) (compileFS (cliFS <|> getFS ast)) i typed
+    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (ASCII.pack fp) typed)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
     -- see: BSL.split, BSL.splitWith
 
