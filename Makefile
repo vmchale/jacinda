@@ -43,7 +43,7 @@ release: $(BINS)
 	for bin in $(notdir $^) ; do \
 	    github-release upload $(GR_OPTIONS) -n $$bin -f bin/$$bin --replace ; \
 	done
-	github-release upload $(GR_OPTIONS) -n ja.1 -f man/ja.1 --replace ; \
+	github-release upload $(GR_OPTIONS) -n ja.1 -f man/ja.1 --replace
 
 bin/x86_64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
