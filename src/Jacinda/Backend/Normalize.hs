@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Backend.Normalize ( compileR
-                                 , compileIn
-                                 , eClosed
+module Jacinda.Backend.Normalize ( eClosed
                                  , closedProgram
                                  , readDigits
                                  , readFloat
@@ -21,7 +19,6 @@ module Jacinda.Backend.Normalize ( compileR
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
-import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
@@ -82,22 +79,6 @@ the bs = case BS.uncons bs of
 
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
-
--- TODO: do this on all expressions?
--- fill in regex with compiled.
-compileR :: E a
-         -> E a
-compileR = cata a where -- TODO: combine with eNorm pass?
-    a (RegexLitF _ rr) = RegexCompiled (compileDefault rr)
-    a x                = embed x
-    -- TODO: is cata performant enough?
-
-compileIn :: Program a -> Program a
-compileIn (Program ds e) = Program (compileD <$> ds) (compileR e)
-
-compileD :: D a -> D a
-compileD d@SetFS{}       = d
-compileD (FunDecl n l e) = FunDecl n l (compileR e)
 
 desugar :: a
 desugar = error "Should have been desugared by this stage."
@@ -511,3 +492,4 @@ eNorm (Cond ty p e0 e1) = do
         BoolLit _ True  -> eNorm e0
         BoolLit _ False -> eNorm e1
         _               -> Cond ty p' <$> eNorm e0 <*> eNorm e1 -- needed to perform substitutions
+eNorm e = error ("Internal error: " ++ show e)
