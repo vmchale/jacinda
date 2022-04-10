@@ -241,11 +241,11 @@ data E a = Column { eLoc :: a, col :: Int }
          | Let { eLoc :: a, eBind :: (Name a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: Name a }
-         | IntLit { eLoc :: a, eInt :: Integer }
-         | BoolLit { eLoc :: a, eBool :: Bool }
+         | IntLit { eLoc :: a, eInt :: !Integer }
+         | BoolLit { eLoc :: a, eBool :: !Bool }
          | StrLit { eLoc :: a, eStr :: BS.ByteString }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
-         | FloatLit { eLoc :: a, eFloat :: Double }
+         | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Name a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a } -- to be rewritten as a lambda...
          -- TODO: builtin sum type ? (makes pattern matching easier down the road)
