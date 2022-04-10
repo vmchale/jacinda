@@ -9,7 +9,7 @@ fn mMatch(str, re) :=
     else None;
 
 fn step(ctx, line) :=
-  let 
+  let
     val fpCtx := line ~* 1 /(.*\.o):$/
     val mSym := line ~* 1 /^[0-0a-f]{16}.{3}(.*)/
   in (alternative (ctx->1) fpCtx.mSym) end;
