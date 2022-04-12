@@ -1,3 +1,5 @@
+  * Performance improvements
+
 # 1.0.0.0
 
   * Generalize type of `\.` (prior)
