@@ -66,6 +66,8 @@
   - [ ] `~?` (maybe match)
 - [x] fold without seed
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
+- [ ] Builtins
+  - [x] Last field
 ## Syntax
 - [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
