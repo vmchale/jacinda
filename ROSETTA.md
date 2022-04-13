@@ -1,3 +1,13 @@
+# Last Field of First Line
+
+```awk
+NR==1{print $NF}
+```
+
+```
+{ix=1}{`*}
+```
+
 # Print Long Lines with Context
 
 ```awk
@@ -89,7 +99,7 @@ BEGIN { FS = ":" ;OFS = "\n" }
 ```
 {. echo $PATH | ja run examples/path.jac
 fn path(x) :=
-  ([x+'\n'+y])|'' (splitc x ':');
+  ([x+'\n'+y])|>(splitc x ':');
 
 path"$0
 ```
@@ -162,6 +172,18 @@ NR>1
 
 ```
 {ix>1}{`0}
+```
+
+# Print 7th Line of File
+
+From [StackOverflow](https://stackoverflow.com/a/6022441/11296354):
+
+```
+sed -n 7p FILE
+```
+
+```
+ja '{ix=7}{`0}' -i FILE
 ```
 
 # Data Science
