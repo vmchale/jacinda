@@ -54,6 +54,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **#** Prefix operator: tally (count bytes in string)
 
+**#\*** Prefix operator: list length
+:   List a  ->  a
+
 **,** Ternary operator: zip with
 :   (a -> b -> c) -> Stream a -> Stream b -> Stream c
 

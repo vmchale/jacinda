@@ -267,12 +267,12 @@ eEval (ix, line, ctx) = go where
         let str = asStr (go e)
             re = asRegex (go e')
             bss = splitBy re str
-            in Arr undefined (StrLit undefined <$> bss)
+            in Arr undefined (mkStr <$> bss)
     go (EApp _ (EApp _ (BBuiltin _ Splitc) e) e') =
         let str = asStr (go e)
             c = the (asStr (go e'))
             bss = BS.split c str
-            in Arr undefined (StrLit undefined <$> V.fromList bss)
+            in Arr undefined (mkStr <$> V.fromList bss)
     go (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) =
         let eI0 = asStr (go e0)
             eI1 = asInt (go e1)
@@ -352,6 +352,9 @@ eEval (ix, line, ctx) = go where
     go (Cond _ p e0 e1) =
         let p' = asBool (go p)
             in if p' then go e0 else go e1
+    go (EApp _ (UBuiltin _ TallyList) e) =
+        let xs = asArr (go e)
+            in mkI $ fromIntegral $ V.length xs
     go e = error ("Internal error: " ++ show e)
 
 -- just shove some big number into the renamer and hope it doesn't clash (bad,

@@ -107,6 +107,7 @@ tokens :-
         ","                      { mkSym Comma }
         "."                      { mkSym Dot }
         "#"                      { mkSym TallyTok }
+        "#*"                     { mkSym LengthTok }
         "[:"                     { mkSym ConstTok }
         "!"                      { mkSym Exclamation }
         ":"                      { mkSym Colon }
@@ -271,6 +272,7 @@ data Sym = PlusTok
          | Comma
          | Dot
          | TallyTok
+         | LengthTok
          | ConstTok
          | LBracePercent
          | LBraceBar
@@ -319,6 +321,7 @@ instance Pretty Sym where
     pretty Comma         = ","
     pretty Dot           = "."
     pretty TallyTok      = "#"
+    pretty LengthTok     = "#*"
     pretty Quot          = "\""
     pretty Caret         = "^"
     pretty ConstTok      = "[:"
