@@ -1,3 +1,12 @@
+# Display Name of Terminal
+
+Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
+using Awk.
+
+```
+ps -aux | rg "$(ps -p $$ -o ppid=)" | ja '{ix=1}{`*}'
+```
+
 # Show All Lines Introduced in a Diff >80 Characters
 
 ```

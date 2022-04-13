@@ -1,3 +1,4 @@
+  * Add builtin for last field
   * Performance improvements
 
 # 1.0.0.0

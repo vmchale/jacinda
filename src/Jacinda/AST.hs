@@ -233,6 +233,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
          | FParseCol { eLoc :: a, col :: Int }
          | Field { eLoc :: a, eField :: Int }
+         | LastField { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
@@ -273,6 +274,7 @@ data EF a x = ColumnF a Int
             | IParseColF a Int
             | FParseColF a Int
             | FieldF a Int
+            | LastFieldF a
             | AllFieldF a
             | AllColumnF a
             | EAppF a x x
@@ -316,6 +318,7 @@ instance Pretty (E a) where
     pretty (FParseCol _ i)                                              = "$" <> pretty i <> ":f"
     pretty AllField{}                                                   = "`0"
     pretty (Field _ i)                                                  = "`" <> pretty i
+    pretty LastField{}                                                  = "`*"
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')                    = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                      = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                      = "min" <+> pretty e <+> pretty e'
@@ -374,6 +377,7 @@ instance Eq (E a) where
     (==) (IParseCol _ i) (IParseCol _ j)        = i == j
     (==) (FParseCol _ i) (FParseCol _ j)        = i == j
     (==) (Field _ i) (Field _ j)                = i == j
+    (==) LastField{} LastField{}               = True
     (==) AllColumn{} AllColumn{}                = True
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'

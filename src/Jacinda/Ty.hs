@@ -425,6 +425,7 @@ tyE0 (Column _ i)            = pure $ Column (tyStream tyStr) i
 tyE0 (IParseCol _ i)         = pure $ IParseCol (tyStream tyI) i
 tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
 tyE0 (Field _ i)             = pure $ Field tyStr i
+tyE0 (LastField _)           = pure $ LastField tyStr
 tyE0 AllField{}              = pure $ AllField tyStr
 tyE0 AllColumn{}             = pure $ AllColumn (tyStream tyStr)
 tyE0 (NBuiltin _ Ix)         = pure $ NBuiltin tyI Ix

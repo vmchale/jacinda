@@ -101,6 +101,7 @@ eEval (ix, line, ctx) = go where
             in OptionVal ty (Just eI)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx ! (i-1)) -- cause vector indexing starts at 0
+    go LastField{} = StrLit tyStr (V.last ctx)
     go (EApp _ (UBuiltin _ IParse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
