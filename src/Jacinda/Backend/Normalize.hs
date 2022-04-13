@@ -272,6 +272,11 @@ eNorm (EApp ty (UBuiltin ty' Tally) e) = do
     pure $ case eI of
         StrLit _ str -> IntLit tyI (fromIntegral $ BS.length str)
         _            -> EApp ty (UBuiltin ty' Tally) eI
+eNorm (EApp ty op@(UBuiltin _ TallyList) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (Arr _ xs) -> mkI $ fromIntegral $ V.length xs
+        _          -> EApp ty op eI
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Lt) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'

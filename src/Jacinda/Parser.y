@@ -53,6 +53,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     lbracePercent { TokSym $$ LBracePercent }
     lbraceBar { TokSym $$ LBraceBar }
     tally { TokSym $$ TallyTok }
+    tallyL { TokSym $$ LengthTok }
     const { TokSym $$ ConstTok }
     filter { TokSym $$ FilterTok }
     exclamation { TokSym $$ Exclamation }
@@ -257,6 +258,7 @@ E :: { E AlexPosn }
   | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
   | tally { UBuiltin $1 Tally }
+  | tallyL { UBuiltin $1 TallyList }
   | const { UBuiltin $1 Const }
   | exclamation { UBuiltin $1 Not }
   | lsqbracket E rsqbracket { Dfn $1 $2 }

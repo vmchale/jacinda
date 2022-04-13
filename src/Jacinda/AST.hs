@@ -122,6 +122,7 @@ data BUn = Tally -- length of string field
          | Dedup
          | CatMaybes
          | Negate
+         | TallyList -- length of vector
          deriving (Eq)
 
 instance Pretty BUn where
@@ -139,6 +140,7 @@ instance Pretty BUn where
     pretty Dedup      = "~."
     pretty CatMaybes  = ".?"
     pretty Negate     = "-."
+    pretty TallyList  = "#*"
 
 -- ternary
 data BTer = ZipW
@@ -380,7 +382,7 @@ instance Eq (E a) where
     (==) (IParseCol _ i) (IParseCol _ j)        = i == j
     (==) (FParseCol _ i) (FParseCol _ j)        = i == j
     (==) (Field _ i) (Field _ j)                = i == j
-    (==) LastField{} LastField{}               = True
+    (==) LastField{} LastField{}                = True
     (==) AllColumn{} AllColumn{}                = True
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'

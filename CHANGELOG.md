@@ -4,6 +4,7 @@
   * Performance improvements
   * Fix bug in how fields were split
   * `:` works on column literals
+  * Add `#*` (list length) builtin
 
 # 1.0.0.0
 
