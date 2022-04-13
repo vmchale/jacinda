@@ -45,6 +45,17 @@ release: $(BINS)
 	done
 	github-release upload $(GR_OPTIONS) -n ja.1 -f man/ja.1 --replace
 
+darwin-release:
+	github-release upload $(GR_OPTIONS) -n aarch64-darwin-ja -f bin/aarch64-darwin-ja --replace
+	github-release upload $(GR_OPTIONS) -n librure.dylib -f /usr/local/lib/librure.dylib --replace
+
+bin/aarch64-darwin-ja: $(HS_SRC)
+	mkdir -p $(dir $@)
+	cabal build exe:ja
+	export BIN=$$(fd 'ja$$' -t x -I); \
+	    cp $$BIN $@ ; \
+	    strip $@
+
 bin/x86_64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
 	mold -run cabal build exe:ja --builddir=dist-newstyle/x86-linux --enable-executable-static
