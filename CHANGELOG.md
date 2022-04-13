@@ -1,5 +1,6 @@
   * Add builtin for last field
   * Performance improvements
+  * Fix bug in how fields were split
 
 # 1.0.0.0
 

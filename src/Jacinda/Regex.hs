@@ -58,12 +58,12 @@ find' re str = unsafeDupablePerformIO $ find re str 0
 splitBy :: RurePtr
         -> BS.ByteString
         -> V.Vector BS.ByteString
+splitBy _ "" = mempty
 splitBy re haystack@(BS.BS fp l) =
     (\sp -> V.fromList [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- sp]) slicePairs
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
-                []                  -> []
                 rms                 -> mkMiddle 0 rms
           mkMiddle begin' []        = [(begin', l)]
           mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) : mkMiddle (fromIntegral $ end rm0) rms
