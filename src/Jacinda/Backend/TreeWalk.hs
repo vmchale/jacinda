@@ -37,7 +37,7 @@ data StreamError = NakedField
 
 instance Exception StreamError where
 
-(!) :: V.Vector a -> Int -> a
+(!) :: Show a => V.Vector a -> Int -> a
 v ! ix = case v V.!? ix of
     Just x  -> x
     Nothing -> throw $ IndexOutOfBounds ix
@@ -391,6 +391,8 @@ ir _ AllColumn{} = fmap mkStr
 ir re (Column _ i) = fmap (mkStr . atField re i)
 ir re (IParseCol _ i) = fmap (parseAsEInt . atField re i)
 ir re (FParseCol _ i) = fmap (parseAsF . atField re i)
+ir re (ParseCol ty@(TyApp _ _ (TyB _ TyFloat)) i) = ir re (FParseCol ty i)
+ir re (ParseCol ty@(TyApp _ _ (TyB _ TyInteger)) i) = ir re (IParseCol ty i)
 ir re (Implicit _ e) =
     imap (\ix line -> eEval (mkCtx re ix line) e)
 ir re (Guarded _ pe e) =
@@ -542,14 +544,15 @@ fileProcessor :: RurePtr
 fileProcessor _ AllField{}    = Left NakedField
 fileProcessor _ Field{}       = Left NakedField
 fileProcessor _ (NBuiltin _ Ix) = Left NakedField
-fileProcessor _ AllColumn{} = Right $ \inp ->
-    printStream $ fmap mkStr inp
-fileProcessor re (Column _ i) = Right $ \inp -> do
-    printStream $ fmap (mkStr . atField re i) inp
-fileProcessor re (IParseCol _ i) = Right $ \inp -> do
-    printStream $ fmap (parseAsEInt . atField re i) inp
-fileProcessor re (FParseCol _ i) = Right $ \inp -> do
-    printStream $ fmap (parseAsF . atField re i) inp
+fileProcessor re e@AllColumn{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@Column{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@IParseCol{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@FParseCol{} = Right $ \inp ->
+    printStream $ ir re e inp
+fileProcessor re e@ParseCol{} = Right $ \inp -> printStream $ ir re e inp
 fileProcessor re e@Guarded{} = Right $ \inp ->
     printStream $ ir re e inp
 fileProcessor re e@Implicit{} = Right $ \inp ->

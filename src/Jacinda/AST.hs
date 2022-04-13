@@ -232,6 +232,7 @@ data N = Ix
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
          | FParseCol { eLoc :: a, col :: Int }
+         | ParseCol { eLoc :: a, col :: Int }
          | Field { eLoc :: a, eField :: Int }
          | LastField { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
@@ -273,6 +274,7 @@ instance Corecursive (E a) where
 data EF a x = ColumnF a Int
             | IParseColF a Int
             | FParseColF a Int
+            | ParseColF a Int
             | FieldF a Int
             | LastFieldF a
             | AllFieldF a
@@ -316,6 +318,7 @@ instance Pretty (E a) where
     pretty AllColumn{}                                                  = "$0"
     pretty (IParseCol _ i)                                              = "$" <> pretty i <> ":i"
     pretty (FParseCol _ i)                                              = "$" <> pretty i <> ":f"
+    pretty (ParseCol _ i)                                               = "$" <> pretty i <> ":"
     pretty AllField{}                                                   = "`0"
     pretty (Field _ i)                                                  = "`" <> pretty i
     pretty LastField{}                                                  = "`*"

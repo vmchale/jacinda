@@ -469,6 +469,11 @@ tyE0 (UBuiltin _ Some) = do
 tyE0 (NBuiltin _ None) = do
     a <- dummyName "a"
     pure $ NBuiltin (tyOpt $ var a) None
+tyE0 (ParseCol l i) = do
+    a <- dummyName "a"
+    let a' = var a
+    modify (mapClassVars (addC a (IsParseable, l)))
+    pure $ ParseCol (tyStream a') i
 tyE0 (UBuiltin l Parse) = do
     a <- dummyName "a"
     let a' = var a

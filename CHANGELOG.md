@@ -1,6 +1,7 @@
   * Add builtin for last field
   * Performance improvements
   * Fix bug in how fields were split
+  * `:` works on column literals
 
 # 1.0.0.0
 

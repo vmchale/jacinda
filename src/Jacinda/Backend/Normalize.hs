@@ -165,6 +165,7 @@ eNorm e@Column{}      = pure e
 eNorm e@AllColumn{}   = pure e
 eNorm e@IParseCol{}   = pure e
 eNorm e@FParseCol{}   = pure e
+eNorm e@ParseCol{}    = pure e
 eNorm e@AllField{}    = pure e
 eNorm e@LastField{}   = pure e
 eNorm (Guarded ty pe e) = Guarded ty <$> eNorm pe <*> eNorm e
