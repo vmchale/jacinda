@@ -145,7 +145,7 @@ The syntax is:
 One could (for instance) calculate population density:
 
 ```
-, (%) $5:f $6:f
+, (%) $5: $6:
 ```
 
 The postfix `:` parses the column based on inferred type; here it parses as
@@ -279,7 +279,7 @@ per line)
 @include'prelude/fn.jac'
 
 fn replace1(re, str, line) :=
-  let 
+  let
     val insert := \line. \str. \ixes.
       take (ixes->1) line + str + drop (ixes->2) line
   in option line (insert line str) (match line re) end;

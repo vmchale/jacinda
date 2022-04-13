@@ -142,6 +142,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **`n** nth field
 
+**`\*** last field
+
 **$n** nth column
 
 **{%\<pattern>}{\<expr>}** Filtered stream on lines matching \<pattern>, defined by \<expr>

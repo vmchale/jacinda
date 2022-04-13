@@ -121,6 +121,7 @@ tokens :-
         ":?"                     { mkSym MapMaybeTok }
         "~*"                     { mkSym CapTok }
         "-."                     { mkSym NegTok }
+        "`*"                     { mkSym LastFieldTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -285,6 +286,7 @@ data Sym = PlusTok
          | MapMaybeTok
          | CapTok
          | NegTok
+         | LastFieldTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -333,6 +335,7 @@ instance Pretty Sym where
     pretty MapMaybeTok   = ":?"
     pretty CapTok        = "~*"
     pretty NegTok        = "-."
+    pretty LastFieldTok  = "`*"
 
 data Keyword = KwLet
              | KwIn

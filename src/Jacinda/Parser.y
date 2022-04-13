@@ -99,6 +99,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     allField { TokFieldLit $$ 0 }
     column { $$@(TokStreamLit _ _) }
     field { $$@(TokFieldLit _ _) }
+    lastField { TokSym $$ LastFieldTok } -- TokSym is maybe insensible but whatever
 
     let { TokKeyword $$ KwLet }
     in { TokKeyword $$ KwIn }
@@ -218,12 +219,16 @@ E :: { E AlexPosn }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
+  | lastField { LastField $1 }
   | field iParse { EApp (loc $1) (UBuiltin $2 IParse) (Field (loc $1) (ix $1)) }
   | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
   | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
   | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
   | field colon { EApp (loc $1) (UBuiltin $2 Parse) (Field (loc $1) (ix $1)) }
   | name colon { EApp (Name.loc $1) (UBuiltin $2 Parse) (Var (Name.loc $1) $1) }
+  | lastField iParse { EApp $1 (UBuiltin $2 IParse) (LastField $1) }
+  | lastField fParse { EApp $1 (UBuiltin $2 FParse) (LastField $1) }
+  | lastField colon { EApp $1 (UBuiltin $2 Parse) (LastField $1) }
   | x colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 X) }
   | y colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 Y) }
   | x iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 X) }
@@ -232,6 +237,7 @@ E :: { E AlexPosn }
   | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
+  | column colon { ParseCol (loc $1) (ix $1) }
   | parens(iParse) { UBuiltin $1 IParse }
   | parens(fParse) { UBuiltin $1 FParse }
   | parens(colon) { UBuiltin $1 Parse }
