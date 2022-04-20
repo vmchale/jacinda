@@ -45,9 +45,9 @@ release: $(BINS)
 	done
 	github-release upload $(GR_OPTIONS) -n ja.1 -f man/ja.1 --replace
 
-darwin-release:
+darwin-release: bin/aarch64-darwin-ja
 	github-release upload $(GR_OPTIONS) -n aarch64-darwin-ja -f bin/aarch64-darwin-ja --replace
-	github-release upload $(GR_OPTIONS) -n librure.dylib -f /usr/local/lib/librure.dylib --replace
+	github-release upload $(GR_OPTIONS) -n aarch64-librure.dylib -f /usr/local/lib/librure.dylib --replace
 
 bin/aarch64-darwin-ja: $(HS_SRC)
 	mkdir -p $(dir $@)
