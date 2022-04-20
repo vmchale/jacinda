@@ -183,6 +183,10 @@ sed -n 7p FILE
 ```
 
 ```
+awk 'NR == 7' FILE
+```
+
+```
 ja '{ix=7}{`0}' -i FILE
 ```
 
