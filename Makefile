@@ -2,10 +2,22 @@ HS_SRC := $(shell find src -type f) jacinda.cabal
 
 JAC_SRC := $(shell find prelude lib -type f)
 
+VERSION := $(shell grep -o '[0-9]*\.[0-9]*\.[0-9]*\.[0-9]*' jacinda.cabal | head -n1)
+
+GR_OPTIONS := -u vmchale -r jacinda -t $(VERSION)
+
 man/ja.1: man/MANPAGE.md
 	pandoc $< -s -t man -o $@
 
 docs: doc/guide.pdf doc/guide.html docs/index.html
+
+BINS := bin/x86_64-linux-ja \
+    bin/arm-linux-gnueabihf-ja \
+    bin/aarch64-linux-ja \
+    bin/mips64-linux-ja \
+    bin/powerpc64le-linux-ja
+
+bins: $(BINS)
 
 docs/index.html: doc/guide.html
 	cp $^ $@
@@ -22,7 +34,7 @@ install: man/ja.1
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
-	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data
+	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data bin
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
@@ -65,6 +77,13 @@ bin/aarch64-linux-ja: $(HS_SRC)
 	export BIN=$$(fd 'aarch64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    aarch64-linux-gnu-strip $@
+
+bin/mips64-linux-ja: $(HS_SRC)
+	@mkdir -p $(dir $@)
+	@cabal build --with-ghc mips64-linux-gnuabi64-ghc-9.2.2 --with-ghc-pkg mips64-linux-gnuabi64-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/mips-linux
+	export BIN=$$(fd 'mips-linux.*ja$$' dist-newstyle -t x -p -I); \
+	    cp $$BIN $@ ; \
+	    mips64-linux-gnuabi64-strip $@
 
 bin/powerpc64le-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)

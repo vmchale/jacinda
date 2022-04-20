@@ -122,6 +122,7 @@ data BUn = Tally -- length of string field
          | Dedup
          | CatMaybes
          | Negate
+         | TallyList -- length of vector
          deriving (Eq)
 
 instance Pretty BUn where
@@ -139,6 +140,7 @@ instance Pretty BUn where
     pretty Dedup      = "~."
     pretty CatMaybes  = ".?"
     pretty Negate     = "-."
+    pretty TallyList  = "#*"
 
 -- ternary
 data BTer = ZipW
@@ -232,7 +234,9 @@ data N = Ix
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
          | FParseCol { eLoc :: a, col :: Int }
+         | ParseCol { eLoc :: a, col :: Int }
          | Field { eLoc :: a, eField :: Int }
+         | LastField { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
@@ -241,11 +245,11 @@ data E a = Column { eLoc :: a, col :: Int }
          | Let { eLoc :: a, eBind :: (Name a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: Name a }
-         | IntLit { eLoc :: a, eInt :: Integer }
-         | BoolLit { eLoc :: a, eBool :: Bool }
+         | IntLit { eLoc :: a, eInt :: !Integer }
+         | BoolLit { eLoc :: a, eBool :: !Bool }
          | StrLit { eLoc :: a, eStr :: BS.ByteString }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
-         | FloatLit { eLoc :: a, eFloat :: Double }
+         | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Name a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a } -- to be rewritten as a lambda...
          -- TODO: builtin sum type ? (makes pattern matching easier down the road)
@@ -272,7 +276,9 @@ instance Corecursive (E a) where
 data EF a x = ColumnF a Int
             | IParseColF a Int
             | FParseColF a Int
+            | ParseColF a Int
             | FieldF a Int
+            | LastFieldF a
             | AllFieldF a
             | AllColumnF a
             | EAppF a x x
@@ -314,8 +320,10 @@ instance Pretty (E a) where
     pretty AllColumn{}                                                  = "$0"
     pretty (IParseCol _ i)                                              = "$" <> pretty i <> ":i"
     pretty (FParseCol _ i)                                              = "$" <> pretty i <> ":f"
+    pretty (ParseCol _ i)                                               = "$" <> pretty i <> ":"
     pretty AllField{}                                                   = "`0"
     pretty (Field _ i)                                                  = "`" <> pretty i
+    pretty LastField{}                                                  = "`*"
     pretty (EApp _ (EApp _ (BBuiltin _ Prior) e) e')                    = pretty e <> "\\." <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Max) e) e')                      = "max" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BBuiltin _ Min) e) e')                      = "min" <+> pretty e <+> pretty e'
@@ -374,6 +382,7 @@ instance Eq (E a) where
     (==) (IParseCol _ i) (IParseCol _ j)        = i == j
     (==) (FParseCol _ i) (FParseCol _ j)        = i == j
     (==) (Field _ i) (Field _ j)                = i == j
+    (==) LastField{} LastField{}                = True
     (==) AllColumn{} AllColumn{}                = True
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'

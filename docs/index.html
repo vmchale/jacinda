@@ -166,47 +166,54 @@
 </header>
 <nav id="TOC" role="doc-toc">
 <ul>
-<li><a href="#tutorial">Tutorial</a>
+<li><a href="#tutorial" id="toc-tutorial">Tutorial</a>
 <ul>
-<li><a href="#language">Language</a>
+<li><a href="#language" id="toc-language">Language</a>
 <ul>
-<li><a href="#patterns-implicits-streams">Patterns + Implicits,
+<li><a href="#patterns-implicits-streams"
+id="toc-patterns-implicits-streams">Patterns + Implicits,
 Streams</a></li>
-<li><a href="#fold">Fold</a></li>
-<li><a href="#map">Map</a></li>
-<li><a href="#functions">Functions</a></li>
-<li><a href="#zips">Zips</a></li>
-<li><a href="#scans">Scans</a></li>
-<li><a href="#prior">Prior</a></li>
-<li><a href="#deduplicate">Deduplicate</a></li>
-<li><a href="#filter">Filter</a></li>
-<li><a href="#formatting-output">Formatting Output</a></li>
-<li><a href="#libraries">Libraries</a></li>
+<li><a href="#fold" id="toc-fold">Fold</a></li>
+<li><a href="#map" id="toc-map">Map</a></li>
+<li><a href="#functions" id="toc-functions">Functions</a></li>
+<li><a href="#zips" id="toc-zips">Zips</a></li>
+<li><a href="#scans" id="toc-scans">Scans</a></li>
+<li><a href="#prior" id="toc-prior">Prior</a></li>
+<li><a href="#deduplicate" id="toc-deduplicate">Deduplicate</a></li>
+<li><a href="#filter" id="toc-filter">Filter</a></li>
+<li><a href="#formatting-output" id="toc-formatting-output">Formatting
+Output</a></li>
+<li><a href="#libraries" id="toc-libraries">Libraries</a></li>
 </ul></li>
-<li><a href="#system-interaction">System Interaction</a></li>
+<li><a href="#system-interaction" id="toc-system-interaction">System
+Interaction</a></li>
 </ul></li>
-<li><a href="#examples">Examples</a>
+<li><a href="#examples" id="toc-examples">Examples</a>
 <ul>
-<li><a href="#error-span">Error Span</a></li>
-<li><a href="#vim-tags">Vim Tags</a></li>
-<li><a href="#enforcing-style-rules">Enforcing Style Rules</a></li>
-<li><a href="#unix-command-line-tools">Unix Command-Line Tools</a>
+<li><a href="#error-span" id="toc-error-span">Error Span</a></li>
+<li><a href="#vim-tags" id="toc-vim-tags">Vim Tags</a></li>
+<li><a href="#enforcing-style-rules"
+id="toc-enforcing-style-rules">Enforcing Style Rules</a></li>
+<li><a href="#unix-command-line-tools"
+id="toc-unix-command-line-tools">Unix Command-Line Tools</a>
 <ul>
-<li><a href="#grep">grep</a></li>
-<li><a href="#wc">wc</a></li>
-<li><a href="#head">head</a></li>
-<li><a href="#uniq">uniq</a></li>
-<li><a href="#nl">nl</a></li>
+<li><a href="#grep" id="toc-grep">grep</a></li>
+<li><a href="#wc" id="toc-wc">wc</a></li>
+<li><a href="#head" id="toc-head">head</a></li>
+<li><a href="#uniq" id="toc-uniq">uniq</a></li>
+<li><a href="#nl" id="toc-nl">nl</a></li>
 </ul></li>
-<li><a href="#data-processing">Data Processing</a>
+<li><a href="#data-processing" id="toc-data-processing">Data
+Processing</a>
 <ul>
-<li><a href="#csv-processing">CSV Processing</a></li>
+<li><a href="#csv-processing" id="toc-csv-processing">CSV
+Processing</a></li>
 </ul></li>
 </ul></li>
-<li><a href="#machinery">Machinery</a>
+<li><a href="#machinery" id="toc-machinery">Machinery</a>
 <ul>
-<li><a href="#functor">Functor</a></li>
-<li><a href="#isprintf">IsPrintf</a></li>
+<li><a href="#functor" id="toc-functor">Functor</a></li>
+<li><a href="#isprintf" id="toc-isprintf">IsPrintf</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -291,7 +298,7 @@ syntax is</p>
 <p>The syntax is:</p>
 <pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>One could (for instance) calculate population density:</p>
-<pre><code>, (%) $5:f $6:f</code></pre>
+<pre><code>, (%) $5: $6:</code></pre>
 <p>The postfix <code>:</code> parses the column based on inferred type;
 here it parses as a float.</p>
 <h3 id="scans">Scans</h3>
@@ -370,7 +377,7 @@ groups, only first replacement per line)</p>
 <pre><code>@include&#39;prelude/fn.jac&#39;
 
 fn replace1(re, str, line) :=
-  let 
+  let
     val insert := \line. \str. \ixes.
       take (ixes-&gt;1) line + str + drop (ixes-&gt;2) line
   in option line (insert line str) (match line re) end;</code></pre>

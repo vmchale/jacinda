@@ -1,0 +1,30 @@
+\documentclass{report}
+
+\usepackage{mathpartir}
+\usepackage{syntax}
+
+\begin{document}
+
+\title{Foundations and Limitations of Jacinda}
+\author {Vanessa McHale}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+Jacinda is an expression-oriented, functional language that performs a subset of Awk's function.
+
+\section{Type System}
+
+A signal defect of the Kempe type system is that it fails to distinguish expressions in the context of a line from expressions in general. In fact expressions in the context of a line form a monad but are not treated as such because explicit typing would be too burdensome and I did not know how to implement implicit coercions.
+
+Consider:
+
+\begin{verbatim}
+[y]|> {|`0~/^$/}
+\end{verbatim}
+
+This evaluates whether the last line is blank.
+
+\end{document}

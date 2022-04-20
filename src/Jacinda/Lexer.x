@@ -107,6 +107,7 @@ tokens :-
         ","                      { mkSym Comma }
         "."                      { mkSym Dot }
         "#"                      { mkSym TallyTok }
+        "#*"                     { mkSym LengthTok }
         "[:"                     { mkSym ConstTok }
         "!"                      { mkSym Exclamation }
         ":"                      { mkSym Colon }
@@ -121,6 +122,7 @@ tokens :-
         ":?"                     { mkSym MapMaybeTok }
         "~*"                     { mkSym CapTok }
         "-."                     { mkSym NegTok }
+        "`*"                     { mkSym LastFieldTok }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -273,6 +275,7 @@ data Sym = PlusTok
          | Comma
          | Dot
          | TallyTok
+         | LengthTok
          | ConstTok
          | LBracePercent
          | LBraceBar
@@ -288,6 +291,7 @@ data Sym = PlusTok
          | MapMaybeTok
          | CapTok
          | NegTok
+         | LastFieldTok
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -320,6 +324,7 @@ instance Pretty Sym where
     pretty Comma         = ","
     pretty Dot           = "."
     pretty TallyTok      = "#"
+    pretty LengthTok     = "#*"
     pretty Quot          = "\""
     pretty Caret         = "^"
     pretty ConstTok      = "[:"
@@ -336,6 +341,7 @@ instance Pretty Sym where
     pretty MapMaybeTok   = ":?"
     pretty CapTok        = "~*"
     pretty NegTok        = "-."
+    pretty LastFieldTok  = "`*"
 
 data Keyword = KwLet
              | KwIn

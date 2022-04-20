@@ -54,6 +54,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **#** Prefix operator: tally (count bytes in string)
 
+**#\*** Prefix operator: list length
+:   List a  ->  a
+
 **,** Ternary operator: zip with
 :   (a -> b -> c) -> Stream a -> Stream b -> Stream c
 
@@ -142,6 +145,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **`n** nth field
 
+**`\*** last field
+
 **$n** nth column
 
 **{%\<pattern>}{\<expr>}** Filtered stream on lines matching \<pattern>, defined by \<expr>
@@ -191,7 +196,7 @@ a boolean expression.
 (+)|0 [:1\"$0
 :   Count lines
 
-[y]|0 {|ix}
+[y]|> {|ix}
 :   Count lines
 
 (+)|0 [#x+1]\"$0
@@ -205,6 +210,9 @@ a boolean expression.
 
 (&)|#t (>)\\. {|`1:f}
 :   Is the first column strictly increasing?
+
+[y]|> {|`0~/^$/}
+:   Is the last line blank?
 
 # BUGS
 

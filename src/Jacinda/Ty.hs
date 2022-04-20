@@ -425,6 +425,7 @@ tyE0 (Column _ i)            = pure $ Column (tyStream tyStr) i
 tyE0 (IParseCol _ i)         = pure $ IParseCol (tyStream tyI) i
 tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
 tyE0 (Field _ i)             = pure $ Field tyStr i
+tyE0 (LastField _)           = pure $ LastField tyStr
 tyE0 AllField{}              = pure $ AllField tyStr
 tyE0 AllColumn{}             = pure $ AllColumn (tyStream tyStr)
 tyE0 (NBuiltin _ Ix)         = pure $ NBuiltin tyI Ix
@@ -456,6 +457,10 @@ tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
 tyE0 (UBuiltin _ Floor)      = pure $ UBuiltin (tyArr tyF tyI) Floor
 tyE0 (UBuiltin _ Ceiling)    = pure $ UBuiltin (tyArr tyF tyI) Ceiling
+tyE0 (UBuiltin _ TallyList) = do
+    a <- dummyName "a"
+    let a' = var a
+    pure $ UBuiltin (tyArr a' tyI) TallyList
 tyE0 (UBuiltin l Negate) = do
     a <- dummyName "a"
     modify (mapClassVars (addC a (IsNum, l)))
@@ -468,6 +473,11 @@ tyE0 (UBuiltin _ Some) = do
 tyE0 (NBuiltin _ None) = do
     a <- dummyName "a"
     pure $ NBuiltin (tyOpt $ var a) None
+tyE0 (ParseCol l i) = do
+    a <- dummyName "a"
+    let a' = var a
+    modify (mapClassVars (addC a (IsParseable, l)))
+    pure $ ParseCol (tyStream a') i
 tyE0 (UBuiltin l Parse) = do
     a <- dummyName "a"
     let a' = var a

@@ -165,7 +165,9 @@ eNorm e@Column{}      = pure e
 eNorm e@AllColumn{}   = pure e
 eNorm e@IParseCol{}   = pure e
 eNorm e@FParseCol{}   = pure e
+eNorm e@ParseCol{}    = pure e
 eNorm e@AllField{}    = pure e
+eNorm e@LastField{}   = pure e
 eNorm (Guarded ty pe e) = Guarded ty <$> eNorm pe <*> eNorm e
 eNorm (Implicit ty e) = Implicit ty <$> eNorm e
 eNorm (Lam ty n e)    = Lam ty n <$> eNorm e
@@ -270,6 +272,11 @@ eNorm (EApp ty (UBuiltin ty' Tally) e) = do
     pure $ case eI of
         StrLit _ str -> IntLit tyI (fromIntegral $ BS.length str)
         _            -> EApp ty (UBuiltin ty' Tally) eI
+eNorm (EApp ty op@(UBuiltin _ TallyList) e) = do
+    eI <- eNorm e
+    pure $ case eI of
+        (Arr _ xs) -> mkI $ fromIntegral $ V.length xs
+        _          -> EApp ty op eI
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Lt) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
