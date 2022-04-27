@@ -309,12 +309,10 @@ mkLet l (b:bs) e = Let l b (mkLet l bs e)
 
 data ParseError a = Unexpected (Token a)
                   | LexErr String
-                  | NoImpl (Name a)
 
 instance Pretty a => Pretty (ParseError a) where
     pretty (Unexpected tok)  = pretty (loc tok) <+> "Unexpected" <+> pretty tok
     pretty (LexErr str)      = pretty (T.pack str)
-    pretty (NoImpl n)        = pretty (Name.loc n) <+> "Signature for" <+> pretty n <+> "is not accompanied by an implementation"
 
 instance Pretty a => Show (ParseError a) where
     show = show . pretty
@@ -327,7 +325,7 @@ parse :: BSL.ByteString -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
 
 parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, File)
-parseWithMax = fmap (first fst3) . parseWithInitCtx
+parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
 
 parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, File)
