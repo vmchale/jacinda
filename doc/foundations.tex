@@ -2,6 +2,7 @@
 
 \usepackage{mathpartir}
 \usepackage{syntax}
+\usepackage{hyperref}
 
 \begin{document}
 
@@ -34,5 +35,12 @@ Consider:
 This evaluates whether the last line is blank.
 
 In a more principled world, we would have {\tt `0 : Ctx Str} and we would force {\tt \{| ... \}} to take an expression of type {\tt Ctx a}. Then we could do something like {\tt \{|()"`0\}}
+
+\subsection{Typeclasses}
+
+Type classes are used to witness implementations; we get ad-hoc polymorphism \cite{adhoc}
+
+\bibliographystyle{plain}
+\bibliography{foundations.bib}
 
 \end{document}
