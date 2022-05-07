@@ -22,6 +22,8 @@ In many ways it is unsatisfactory or even defective, but it is useful and so I p
 
 In order to stand toe-to-toe with Awk, Jacinda has some special facilities to work with streams filtered via regular expressions.
 
+To define a stream from a pattern: {\tt \{\%/Bloom/\}\{`0\}}. {\tt\{`0\}} is a line expression; we could write
+
 \section{Type System}
 
 A signal defect of the type system is that it fails to distinguish expressions in the context of a line from expressions in general. In fact expressions in the context of a line form a monad but are not treated as such because explicit typing would be too burdensome and I did not know how to implement implicit coercions.
@@ -34,11 +36,14 @@ Consider:
 
 This evaluates whether the last line is blank.
 
-In a more principled world, we would have {\tt `0 : Ctx Str} and we would force {\tt \{| ... \}} to take an expression of type {\tt Ctx a}. Then we could do something like {\tt \{|()"`0\}}
+\newcommand\Tilde{\char`\~}
+\newcommand\Caret{\char`\^}
+
+In a more principled world, we would have {\tt `0 : Ctx Str} and we would force {\tt \{| ... \}} to take an expression of type {\tt Ctx a}. Then we could do something like {\tt \{|(\Tilde/\Caret\$/)"`0\}}... of course this is more prolix.
 
 \subsection{Typeclasses}
 
-Type classes are used to witness implementations; we get ad-hoc polymorphism \cite{adhoc}
+Type classes are used to witness implementations \cite{adhoc}.
 
 \bibliographystyle{plain}
 \bibliography{foundations.bib}
