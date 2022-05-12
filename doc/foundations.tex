@@ -22,7 +22,7 @@ In many ways it is unsatisfactory or even defective, but it is useful and so I p
 
 In order to stand toe-to-toe with Awk, Jacinda has some special facilities to work with streams filtered via regular expressions.
 
-To define a stream from a pattern: {\tt \{\%/Bloom/\}\{`0\}}. {\tt\{`0\}} is a line expression; we could write
+To define a stream from a pattern: {\tt \{\%/Bloom/\}\{`0\}}. {\tt`0} is a line expression; we could write
 
 \section{Type System}
 
@@ -41,9 +41,52 @@ This evaluates whether the last line is blank.
 
 In a more principled world, we would have {\tt `0 : Ctx Str} and we would force {\tt \{| ... \}} to take an expression of type {\tt Ctx a}. Then we could do something like {\tt \{|(\Tilde/\Caret\$/)"`0\}}... of course this is more prolix.
 
+\subsection{Implementation}
+
+The implementation uses constraint-based typing, as in my Kempe compiler \cite{kempe}. 
+
+Due to various defects in my implementation, polymorphic values can only be instantiated with one type;
+
+\begin{verbatim}
+let val sum := [(+)|0 x]
+  in sum {|sum (let val l := splitc `0 ' ' in l:i end)} end
+\end{verbatim}
+
+is not accepted because {\tt sum} has type {\tt List Int -> Int} at one site and {\tt Stream Int -> Int} at another.
+
+\subsection{Static Typing}
+
+Static typing catches errors before runtime, however Jacinda programs are short, one-off and so the benefit is small.
+
+% editor feedback
+
+\subsubsection{Types as Documentation}
+
+The manpages specify type signatures, e.g.
+
+\begin{verbatim}
+\. Binary operator: prior
+        (a -> a -> b) -> Stream a -> Stream b
+\end{verbatim}
+
+This is more concise and less ambiguous than Awk documentation.
+
 \subsection{Typeclasses}
 
-Type classes are used to witness implementations \cite{adhoc}.
+Type classes are used to witness implementations \cite{adhoc}. Type assignment information is used in the interpreter;
+
+\section{Rewriting Folds}
+
+Often, it is most sensible to express programs in terms of several folds, e.g.
+
+\begin{verbatim}
+let
+  val tot := (+)|0.0 $1:
+  val n := (+)|0.0 [:1.0"$0
+in tot%n end
+\end{verbatim}
+
+However, it is more efficient if we compute this
 
 \bibliographystyle{plain}
 \bibliography{foundations.bib}
