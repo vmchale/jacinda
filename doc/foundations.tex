@@ -56,9 +56,7 @@ is not accepted because {\tt sum} has type {\tt List Int -> Int} at one site and
 
 \subsection{Static Typing}
 
-Static typing catches errors before runtime, however Jacinda programs are short, one-off and so the benefit is small.
-
-% editor feedback
+Static typing catches errors before runtime; in particular it gives feedback in one's text editor.
 
 \subsubsection{Types as Documentation}
 
@@ -86,7 +84,7 @@ let
 in tot%n end
 \end{verbatim}
 
-However, it is more efficient if we compute this
+We would like to pass over the file contents only once; thus we need to
 
 \bibliographystyle{plain}
 \bibliography{foundations.bib}
