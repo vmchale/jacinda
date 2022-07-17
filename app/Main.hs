@@ -26,6 +26,7 @@ jacFs = optional $ option str
     <> metavar "REGEXP"
     <> help "Field separator")
 
+-- FIXME: this seems to mishandle iota on the command-line..
 jacExpr :: Parser BSL.ByteString
 jacExpr = argument str
     (metavar "EXPR"
