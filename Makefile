@@ -14,6 +14,7 @@ docs: doc/guide.pdf doc/guide.html docs/index.html
 BINS := bin/x86_64-linux-ja \
     bin/arm-linux-gnueabihf-ja \
     bin/aarch64-linux-ja \
+    bin/mips64-linux-ja \
     bin/powerpc64le-linux-ja
 
 bins: $(BINS)
@@ -76,6 +77,13 @@ bin/aarch64-linux-ja: $(HS_SRC)
 	export BIN=$$(fd 'aarch64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    aarch64-linux-gnu-strip $@
+
+bin/mips64-linux-ja: $(HS_SRC)
+	@mkdir -p $(dir $@)
+	@cabal build --with-ghc mips64-linux-gnuabi64-ghc-9.2.2 --with-ghc-pkg mips64-linux-gnuabi64-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/mips-linux
+	export BIN=$$(fd 'mips-linux.*ja$$' dist-newstyle -t x -p -I); \
+	    cp $$BIN $@ ; \
+	    mips64-linux-gnuabi64-strip $@
 
 bin/powerpc64le-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)

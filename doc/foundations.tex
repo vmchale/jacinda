@@ -1,0 +1,92 @@
+\documentclass{report}
+
+\usepackage{mathpartir}
+\usepackage{syntax}
+\usepackage{hyperref}
+
+\begin{document}
+
+\title{Foundations and Limitations of Jacinda}
+\author {Vanessa McHale}
+\maketitle
+
+\tableofcontents
+
+\section{Introduction}
+
+Jacinda is an expression-oriented, functional language that performs a subset of Awk's function.
+
+In many ways it is unsatisfactory or even defective, but it is useful and so I present its
+
+\section{Core Approach}
+
+In order to stand toe-to-toe with Awk, Jacinda has some special facilities to work with streams filtered via regular expressions.
+
+To define a stream from a pattern: {\tt \{\%/Bloom/\}\{`0\}}. {\tt`0} is a line expression; we could write
+
+\section{Type System}
+
+A signal defect of the type system is that it fails to distinguish expressions in the context of a line from expressions in general. In fact expressions in the context of a line form a monad but are not treated as such because explicit typing would be too burdensome and I did not know how to implement implicit coercions.
+
+Consider:
+
+\begin{verbatim}
+[y]|> {|`0~/^$/}
+\end{verbatim}
+
+This evaluates whether the last line is blank.
+
+\newcommand\Tilde{\char`\~}
+\newcommand\Caret{\char`\^}
+
+In a more principled world, we would have {\tt `0 : Ctx Str} and we would force {\tt \{| ... \}} to take an expression of type {\tt Ctx a}. Then we could do something like {\tt \{|(\Tilde/\Caret\$/)"`0\}}... of course this is more prolix.
+
+\subsection{Implementation}
+
+The implementation uses constraint-based typing, as in my Kempe compiler \cite{kempe}. 
+
+Due to various defects in my implementation, polymorphic values can only be instantiated with one type;
+
+\begin{verbatim}
+let val sum := [(+)|0 x]
+  in sum {|sum (let val l := splitc `0 ' ' in l:i end)} end
+\end{verbatim}
+
+is not accepted because {\tt sum} has type {\tt List Int -> Int} at one site and {\tt Stream Int -> Int} at another.
+
+\subsection{Static Typing}
+
+Static typing catches errors before runtime; in particular it gives feedback in one's text editor.
+
+\subsubsection{Types as Documentation}
+
+The manpages specify type signatures, e.g.
+
+\begin{verbatim}
+\. Binary operator: prior
+        (a -> a -> b) -> Stream a -> Stream b
+\end{verbatim}
+
+This is more concise and less ambiguous than Awk documentation.
+
+\subsection{Typeclasses}
+
+Type classes are used to witness implementations \cite{adhoc}. Type assignment information is used in the interpreter;
+
+\section{Rewriting Folds}
+
+Often, it is most sensible to express programs in terms of several folds, e.g.
+
+\begin{verbatim}
+let
+  val tot := (+)|0.0 $1:
+  val n := (+)|0.0 [:1.0"$0
+in tot%n end
+\end{verbatim}
+
+We would like to pass over the file contents only once; thus we need to
+
+\bibliographystyle{plain}
+\bibliography{foundations.bib}
+
+\end{document}

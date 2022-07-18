@@ -63,6 +63,9 @@ https://docs.rs/regex/
 .PP
 \f[B]#\f[R] Prefix operator: tally (count bytes in string)
 .TP
+\f[B]#*\f[R] Prefix operator: list length
+List a -> a
+.TP
 \f[B],\f[R] Ternary operator: zip with
 (a -> b -> c) -> Stream a -> Stream b -> Stream c
 .TP
@@ -202,7 +205,7 @@ Sum first column
 (+)|0 [:1\[dq]$0
 Count lines
 .TP
-[y]|0 {|ix}
+[y]|> {|ix}
 Count lines
 .TP
 (+)|0 [#x+1]\[dq]$0
@@ -216,6 +219,9 @@ Display with line numbers
 .TP
 (&)|#t (>)\[rs]. {|\[ga]1:f}
 Is the first column strictly increasing?
+.TP
+[y]|> {|\[ga]0\[ti]/\[ha]$/}
+Is the last line blank?
 .SH BUGS
 .PP
 Please report any bugs you may come across to

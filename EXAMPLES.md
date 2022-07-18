@@ -1,3 +1,16 @@
+# Trim URL
+
+```
+echo 'https://soundcloud.com/ayeshaerotica-music/dead-babies?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing' \
+    | ja '.?{|`1 ~* 1 /([^\?]*)/}'
+```
+
+yields
+
+```
+https://soundcloud.com/ayeshaerotica-music/dead-babies
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
