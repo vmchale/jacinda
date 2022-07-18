@@ -1,3 +1,16 @@
+# Trim URL
+
+```
+echo 'https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school?utm_medium=text&utm_campaign=social_sharing' \
+    | ja '.?{|`1 ~* 1 /([^\?]*)/}'
+```
+
+yields
+
+```
+https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
