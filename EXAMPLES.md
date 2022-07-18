@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # All Compiler Instructions
 
 Improvement on a [shell one-liner](http://pepijndevos.nl/2016/08/24/x86-instruction-distribution.html)
@@ -41,6 +42,7 @@ https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school
 
 ```
 pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}' | pbcopy
+=======
 ```
 
 # Display Name of Terminal
