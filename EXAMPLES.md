@@ -1,3 +1,11 @@
+# All Compiler Instructions
+
+Improvement on a [shell one-liner](http://pepijndevos.nl/2016/08/24/x86-instruction-distribution.html)
+
+```
+objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
+```
+
 # Trim URL
 
 ```
