@@ -13,6 +13,12 @@ strings $(which ja) | ja '~.[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-
 (+)|'' (intercalate '\n')"{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
+# Get Library Versions
+
+```
+cabal-plan dot | ja '~.{%/"/}{`1}'
+```
+
 # Count lines of code
 
 ```
