@@ -30,3 +30,9 @@ fn last :=
 
 fn head :=
   ([[:x]|>);
+
+{. fold two on the same stream
+fn foldTwo(op0, op1, seed0, seed1, stream) :=
+  let
+    val go := \acc. \line. (op0 (acc->1) line . op1 (acc->2) line)
+  in go|(seed0.seed1) stream end;

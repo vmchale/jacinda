@@ -1,3 +1,7 @@
+# 1.2.0.0
+
+  * `~`, `!~` builtins require that the regex be the second argument.
+
 # 1.1.0.0
 
   * Add builtin for last field
