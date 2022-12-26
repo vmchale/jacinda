@@ -262,6 +262,7 @@ kind (TyApp k1 ty0 ty1) = do
 
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
 checkType TyVar{} _                            = pure () -- TODO: I think this is right
+checkType (TyB _ TyR) (IsSemigroup, _)         = pure ()
 checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
 checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
 checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
@@ -424,7 +425,7 @@ tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
 tyE0 (IntLit _ i)            = pure $ IntLit tyI i
 tyE0 (FloatLit _ f)          = pure $ FloatLit tyF f
 tyE0 (StrLit _ str)          = pure $ StrLit tyStr str
-tyE0 (RegexLit _ rr)         = pure $ RegexLit tyStr rr
+tyE0 (RegexLit _ rr)         = pure $ RegexLit tyR rr
 tyE0 (Column _ i)            = pure $ Column (tyStream tyStr) i
 tyE0 (IParseCol _ i)         = pure $ IParseCol (tyStream tyI) i
 tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
@@ -446,16 +447,16 @@ tyE0 (BBuiltin l Eq)         = BBuiltin <$> tyEq l <*> pure Eq
 tyE0 (BBuiltin l Neq)        = BBuiltin <$> tyEq l <*> pure Neq
 tyE0 (BBuiltin l Min)        = BBuiltin <$> tyM l <*> pure Min
 tyE0 (BBuiltin l Max)        = BBuiltin <$> tyM l <*> pure Max
-tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Split
+tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (mkVec tyStr))) Split
 tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Splitc
-tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
-tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
+tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) Matches
+tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) NotMatches
 tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally
 tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
 tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
 tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
 tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
-tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (tyOpt $ TyTup Star [tyI, tyI]))) Match
+tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (tyOpt $ TyTup Star [tyI, tyI]))) Match
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
@@ -572,7 +573,7 @@ tyE0 (BBuiltin l Fold1) = do
     modify (mapClassVars (addC f (Foldable, l)))
     pure $ BBuiltin fTy Fold1
 tyE0 (TBuiltin _ Captures) =
-    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (tyOpt tyStr)))) Captures
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (tyOpt tyStr)))) Captures
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
     a <- dummyName "a"
@@ -607,7 +608,7 @@ tyE0 (TBuiltin _ Option) = do
         fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (tyOpt a') b'))
     pure $ TBuiltin fTy Option
 tyE0 (TBuiltin _ AllCaptures) =
-    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (mkVec tyStr)))) AllCaptures
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (mkVec tyStr)))) AllCaptures
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e
     pure $ Implicit (tyStream (eLoc e')) e'

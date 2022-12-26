@@ -95,8 +95,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **!** Prefix boolean not
 
 **~** Matches regex
+:   Str -> Regex -> Bool
 
 **!~** Does not match
+:   Str -> Regex -> Bool
 
 **ix** Line number
 

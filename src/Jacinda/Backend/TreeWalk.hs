@@ -121,16 +121,16 @@ eEval (ix, line, ctx) = go where
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
-            _                                  -> noRes eI "Regex or Str"
+            (StrLit{}, _)                      -> noRes eI' "Regex"
+            _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
-            _                                  -> noRes eI "Regex or Str"
+            (StrLit{}, _)                      -> noRes eI' "Regex"
+            _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
         let eI = asRegex (go e)
             eI' = asStr (go e')
