@@ -178,14 +178,12 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
         (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ NotMatches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
         (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') = do
