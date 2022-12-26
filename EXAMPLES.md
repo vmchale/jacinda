@@ -1,3 +1,24 @@
+# All Compiler Instructions
+
+Improvement on a [shell one-liner](http://pepijndevos.nl/2016/08/24/x86-instruction-distribution.html)
+
+```
+objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
+```
+
+# Trim URL
+
+```
+echo 'https://soundcloud.com/ayeshaerotica-music/dead-babies?utm_source=clipboard&utm_medium=text&utm_campaign=social_sharing' \
+    | ja '.?{|`1 ~* 1 /([^\?]*)/}'
+```
+
+yields
+
+```
+https://soundcloud.com/ayeshaerotica-music/dead-babies
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
