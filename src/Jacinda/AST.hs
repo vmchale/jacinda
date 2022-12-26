@@ -55,13 +55,12 @@ instance Pretty K where
 data TB = TyInteger
         | TyFloat
         | TyDate
-        | TyStr
+        | TyStr | TyR
         | TyStream
         | TyVec
         | TyBool
         | TyOption
         | TyUnit
-        -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
 
@@ -95,6 +94,7 @@ instance Pretty TB where
     pretty TyVec     = "List"
     pretty TyOption  = "Optional"
     pretty TyUnit    = "𝟙"
+    pretty TyR       = "Regex"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
@@ -251,23 +251,20 @@ data E a = Column { eLoc :: a, col :: Int }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Name a, lamE :: E a }
-         | Dfn { eLoc :: a, eDfn :: E a } -- to be rewritten as a lambda...
-         -- TODO: builtin sum type ? (makes pattern matching easier down the road)
+         | Dfn { eLoc :: a, eDfn :: E a }
          | BBuiltin { eLoc :: a, eBin :: BBin }
          | TBuiltin { eLoc :: a, eTer :: BTer }
          | UBuiltin { eLoc :: a, eUn :: BUn }
          | NBuiltin { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
-         | RegexCompiled RurePtr -- holds compiled regex (after normalization)
+         | RegexCompiled RurePtr -- holds compiled regex after normalization
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
-         -- TODO: regex literal
          deriving (Functor, Generic)
-         -- TODO: side effects: allow since it's strict?
 
 instance Recursive (E a) where
 
@@ -419,7 +416,6 @@ data C = IsNum
        | IsPrintf
        | HasField Int (T K)
        | Witherable
-       -- TODO: witherable
        deriving (Eq, Ord)
 
 instance Pretty C where
