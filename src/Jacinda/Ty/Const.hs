@@ -1,5 +1,5 @@
 module Jacinda.Ty.Const ( tyStream
-                        , tyStr
+                        , tyStr, tyR
                         , tyI
                         , tyF
                         , tyBool
@@ -25,6 +25,9 @@ tyF = TyB Star TyFloat
 
 tyStr :: T K
 tyStr = TyB Star TyStr
+
+tyR :: T K
+tyR = TyB Star TyR
 
 hkt :: T K -> T K -> T K
 hkt = TyApp Star

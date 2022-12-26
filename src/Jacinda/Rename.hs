@@ -91,8 +91,6 @@ setMax i (Renames _ b) = Renames i b
 mkLam :: [Name a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
--- TODO: investigate performance w/out cata
-
 -- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
