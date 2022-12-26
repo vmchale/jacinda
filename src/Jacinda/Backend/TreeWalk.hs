@@ -8,7 +8,6 @@ module Jacinda.Backend.TreeWalk ( runJac
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, get, modify, runState)
-import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
 import           Data.Containers.ListUtils  (nubIntOn, nubOrdOn)
@@ -24,7 +23,7 @@ import           Intern.Unique              (Unique (Unique))
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
-import           Jacinda.Regex
+import           Jacinda.Regex              (captures', find', findCapture, isMatch', splitBy, substr)
 import           Jacinda.Ty.Const
 import           Regex.Rure                 (RurePtr)
 
@@ -37,7 +36,7 @@ data StreamError = NakedField
 
 instance Exception StreamError where
 
-(!) :: Show a => V.Vector a -> Int -> a
+(!) :: V.Vector a -> Int -> a
 v ! ix = case v V.!? ix of
     Just x  -> x
     Nothing -> throw $ IndexOutOfBounds ix
@@ -75,8 +74,6 @@ asArr e          = noRes e "List"
 asOpt :: E a -> Maybe (E a)
 asOpt (OptionVal _ e) = e
 asOpt e               = noRes e "Option"
-
--- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
@@ -400,7 +397,7 @@ ir re (Implicit _ e) =
     imap (\ix line -> eEval (mkCtx re ix line) e)
 ir re (Guarded _ pe e) =
     -- TODO: normalize before stream
-    fmap (uncurry (\ix line -> eEval (mkCtx re ix line) e)) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
+    fmap (\(ix, line) -> eEval (mkCtx re ix line) e) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
 ir re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re stream
 ir re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     filter (asBool . applyUn op) . ir re stream

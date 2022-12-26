@@ -18,8 +18,7 @@ module Jacinda.Backend.Normalize ( eClosed
                                  ) where
 
 import           Control.Exception          (Exception, throw)
-import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
-import           Data.Bifunctor             (second)
+import           Control.Monad.State.Strict (State, evalState, gets, modify)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
@@ -97,9 +96,6 @@ type EvalM = State LetCtx
 
 mkLetCtx :: Int -> LetCtx
 mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
-
-hoistEvalM :: Int -> EvalM a -> (a, Int)
-hoistEvalM i = second (max_ . renames_) . flip runState (mkLetCtx i)
 
 runEvalM :: Int
          -> EvalM a
@@ -393,7 +389,7 @@ eNorm (Let _ (Name _ (Unique i) _, b) e) = do
 eNorm e@(Var _ (Name _ (Unique i) _)) = do
     st <- gets binds
     case IM.lookup i st of
-        Just e'@Var{} -> eNorm e' -- no cyclic binds!!
+        Just e'@Var{} -> eNorm e' -- no cyclic binds
         Just e'       -> renameE e' -- FIXME: set outermost type to be type of var...
         Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
@@ -471,24 +467,11 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
     case y' of
         Arr _ es -> foldE f' x' es
         _        -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
--- eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Prior) x) y) = do
-    -- x' <- eNorm x
-    -- y' <- eNorm y
-    -- case y' of
-        -- Arr _ es -> Arr undefined <$> V.priorM (applyOp x') es
-        -- _        -> pure $ EApp ty0 (EApp ty1 op x') y'
--- eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyApp _ _ (TyApp _ (TyB _ TyVec) _))) ZipW) f) x) y) = do
-    -- f' <- eNorm f
-    -- x' <- eNorm x
-    -- y' <- eNorm y
-    -- case (x', y') of
-        -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
-        -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 -- we include this in case (+) has type (a->a->a) (for instance) if it is
 -- normalizing a decl (which can be ambiguous/general)
 eNorm (EApp ty0 (EApp ty1 op@BBuiltin{} e) e') = EApp ty0 <$> (EApp ty1 op <$> eNorm e) <*> eNorm e'
--- FIXME: specialize types after inlining hm
+-- FIXME: monomorphize types after inlining
 eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es

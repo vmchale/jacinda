@@ -79,6 +79,9 @@ mapClassVars f (TyState u k cvs v cs) = TyState u k (f cvs) v cs
 addVarEnv :: Int -> T K -> TyState a -> TyState a
 addVarEnv i ty (TyState u k cvs v cs) = TyState u k cvs (IM.insert i ty v) cs
 
+addKindEnv :: Int -> K -> TyState a -> TyState a
+addKindEnv i k (TyState u ks cvs v cs) = TyState u (IM.insert i k ks) cvs v cs
+
 addConstraint :: Ord a => (a, T K, T K) -> TyState a -> TyState a
 addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 
@@ -130,7 +133,7 @@ unifyMatch um ((l, ty@(TyTup _ tys), ty'@(TyTup _ tys')):tyss)
     | length tys == length tys' = unifyPrep um (zip3 (repeat l) tys tys' ++ tyss)
     | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
 unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
-    | n == n' = unifyPrep um tys -- a type variable is always equal to itself, don't bother inserting this!
+    | n == n' = unifyPrep um tys
     | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch _ ((l, ty, ty'):_) = throwError (UnificationFailed l (void ty) (void ty'))
 
@@ -166,14 +169,16 @@ freshName n k = do
     Name n (Unique $ st+1) k
         <$ modify (mapMaxU (+1))
 
+namek :: Name K -> TypeM a (Name K)
+namek n =
+    modify (addKindEnv (unUnique$unique n) (loc n)) $> n
+
 higherOrder :: T.Text -> TypeM a (Name K)
-higherOrder t = freshName t (KArr Star Star)
--- TODO: this should modify kind environment
+higherOrder t = freshName t (KArr Star Star) >>= namek
 
 -- of kind 'Star'
 dummyName :: T.Text -> TypeM a (Name K)
-dummyName n = freshName n Star
--- TODO: this should modify kind environment
+dummyName n = freshName n Star >>= namek
 
 addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
@@ -255,7 +260,6 @@ kind (TyApp k1 ty0 ty1) = do
                       | otherwise        -> throwError $ Expected (tLoc ty1) k0
         k0                               -> throwError $ Expected (KArr Star Star) k0
 
--- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
 checkType TyVar{} _                            = pure () -- TODO: I think this is right
 checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
@@ -348,7 +352,7 @@ checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need i
 checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Implicit _ e') = checkAmb e'
 checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
-checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet! (if they aren't ambiguous, it shouldn't be
+checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet!
 checkAmb (Tup _ es) = traverse_ checkAmb es
 checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
@@ -549,7 +553,6 @@ tyE0 (BBuiltin l Map) = do
         fTy = tyArr (tyArr a' b') (tyArr (hkt f' a') (hkt f' b'))
     modify (mapClassVars (addC f (Functor, l)))
     pure $ BBuiltin fTy Map
--- (b -> a -> b) -> b -> Stream a -> b
 tyE0 (TBuiltin l Fold) = do
     b <- dummyName "b"
     a <- dummyName "a"
@@ -608,7 +611,6 @@ tyE0 (TBuiltin _ AllCaptures) =
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e
     pure $ Implicit (tyStream (eLoc e')) e'
--- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (Guarded l e streamE) = do
     streamE' <- tyE0 streamE
     e' <- tyE0 e
