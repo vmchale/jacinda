@@ -68,6 +68,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     minus { TokSym $$ MinusTok }
     times { TokSym $$ TimesTok }
     percent { TokSym $$ PercentTok }
+    exp { TokSym $$ ExpTok }
 
     comma { TokSym $$ Comma }
     fold { TokSym $$ FoldTok }
@@ -184,6 +185,7 @@ BBin :: { BBin }
      | backslashdot { Prior }
      | filter { Filter }
      | fold1 { Fold1 }
+     | exp { Exp }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
