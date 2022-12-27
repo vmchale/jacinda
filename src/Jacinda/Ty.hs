@@ -338,6 +338,7 @@ tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
     modify (addVarEnv i ty)
     pure $ FunDecl (n $> ty) [] e'
 tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
+tyD0 FlushDecl = pure FlushDecl
 
 isAmbiguous :: T K -> Bool
 isAmbiguous TyVar{}          = True

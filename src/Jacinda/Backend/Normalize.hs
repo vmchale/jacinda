@@ -115,10 +115,10 @@ closedProgram i (Program ds e) = runEvalM i $
 
 processDecl :: D (T K)
             -> EvalM ()
-processDecl SetFS{} = pure ()
 processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
     e' <- eNorm e
     modify (mapBinds (IM.insert i e'))
+processDecl _ = pure ()
 
 asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
