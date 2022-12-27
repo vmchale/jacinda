@@ -439,6 +439,7 @@ tyE0 (NBuiltin _ Nf)         = pure $ NBuiltin tyI Nf
 tyE0 (BBuiltin l Plus)       = BBuiltin <$> tySemiOp l <*> pure Plus
 tyE0 (BBuiltin l Minus)      = BBuiltin <$> tyNumOp l <*> pure Minus
 tyE0 (BBuiltin l Times)      = BBuiltin <$> tyNumOp l <*> pure Times
+tyE0 (BBuiltin l Exp)        = BBuiltin <$> tyNumOp l <*> pure Exp
 tyE0 (BBuiltin l Gt)         = BBuiltin <$> tyOrd l <*> pure Gt
 tyE0 (BBuiltin l Lt)         = BBuiltin <$> tyOrd l <*> pure Lt
 tyE0 (BBuiltin l Geq)        = BBuiltin <$> tyOrd l <*> pure Geq

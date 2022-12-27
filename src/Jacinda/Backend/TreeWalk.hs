@@ -157,6 +157,10 @@ eEval (ix, line, ctx) = go where
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Exp) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (eI ^ eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
@@ -229,7 +233,11 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in FloatLit tyF (eI * eI')
+            in mkF (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Exp) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in mkF (eI ** eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
