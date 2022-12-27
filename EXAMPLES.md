@@ -6,6 +6,24 @@ Improvement on a [shell one-liner](http://pepijndevos.nl/2016/08/24/x86-instruct
 objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
 ```
 
+# All packages on Hackage
+
+```
+cabal list --simple | ja '~.$1'
+```
+
+(one can download all packages from Hackage with:)
+
+```
+cabal list --simple | ja '~.$1' | xargs cabal get
+```
+
+This is simpler than:
+
+```
+cabal list --simple | cut -d' ' -f1 | sort -u
+```
+
 # Trim URL
 
 ```
