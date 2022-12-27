@@ -104,6 +104,26 @@ fn path(x) :=
 path"$0
 ```
 
+# Ttyplot
+
+In combination with [ttyplot](https://github.com/tenox7/ttyplot):
+
+```
+vm_stat 1 | awk '{ print int($2)*4096/1024^3; fflush(); }' | ttyplot -t "MacOS Memory Usage" -u GB
+```
+
+```
+vm_stat 1 | ja ':flush; {ix>3}{`2:f*4096.0%(1024.0**3.0)}' | ttyplot -t "MacOS Memory Usage" -u GB
+```
+
+```
+{ while true; do /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo | awk '/agrCtlRSSI/ {print -$2; fflush();}'; sleep 1; done } | ttyplot -t "wifi signal" -u "-dBm" -s 90
+```
+
+```
+{ while true; do /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo | ja ':flush; {%/agrCtlRSSI/}{`2}'; sleep 1; done } | ttyplot -t "wifi signal" -u "-dBm" -s 90
+```
+
 # Count Lines
 
 ```awk

@@ -18,7 +18,7 @@ module Jacinda.AST ( E (..)
                    , C (..)
                    , N (..)
                    , mapExpr
-                   , getFS
+                   , getFS, flushD
                    -- * Base functors
                    , EF (..)
                    ) where
@@ -437,11 +437,13 @@ instance Show C where
 -- decl
 data D a = SetFS BS.ByteString
          | FunDecl (Name a) [Name a] (E a)
+         | FlushDecl
          deriving (Functor)
 
 instance Pretty (D a) where
-    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/"
+    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/;"
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
+    pretty FlushDecl        = ":flush;"
 
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
@@ -451,6 +453,11 @@ instance Pretty (Program a) where
 
 instance Show (Program a) where
     show = show . pretty
+
+flushD :: Program a -> Bool
+flushD (Program ds _) = any p ds where
+    p FlushDecl = True
+    p _         = False
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where

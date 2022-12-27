@@ -124,8 +124,8 @@ replaceX n = cata a where
     a x             = embed x
 
 renameD :: D a -> RenameM (D a)
-renameD d@SetFS{}        = pure d
 renameD (FunDecl n ns e) = FunDecl n [] <$> renameE (mkLam ns e)
+renameD d                = pure d
 
 renameProgram :: Program a -> RenameM (Program a)
 renameProgram (Program ds e) = Program <$> traverse renameD ds <*> renameE e
