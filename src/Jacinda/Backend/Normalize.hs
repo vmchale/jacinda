@@ -246,6 +246,13 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Times) e) e') = do
         (IntLit _ i, IntLit _ j)     -> i `seq` j `seq` IntLit tyI (i*j)
         (FloatLit _ i, FloatLit _ j) -> i `seq` j `seq` FloatLit tyF (i*j)
         _                            -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin _ Exp) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (IntLit _ i, IntLit _ j)     -> i `seq` j `seq` IntLit tyI (i^j)
+        (FloatLit _ i, FloatLit _ j) -> i `seq` j `seq` FloatLit tyF (i**j)
+        _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Plus) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'

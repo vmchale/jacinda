@@ -165,7 +165,7 @@ instance Pretty BTer where
 data BBin = Plus
           | Times
           | Div
-          | Minus
+          | Minus | Exp
           | Eq
           | Neq
           | Geq
@@ -173,7 +173,7 @@ data BBin = Plus
           | Lt
           | Leq
           | Map
-          | Matches -- ^ @/pat/ ~ 'string'@
+          | Matches -- ^ @'string' ~ /pat/@
           | NotMatches
           | And
           | Or
@@ -187,7 +187,7 @@ data BBin = Plus
           | Match
           | MapMaybe
           | Fold1
-          -- TODO: floor functions, sqrt, sin, cos, exp. (power)
+          -- TODO: floor functions, sqrt, sin, cos
           deriving (Eq)
 
 instance Pretty BBin where
@@ -216,6 +216,7 @@ instance Pretty BBin where
     pretty Match      = "match"
     pretty MapMaybe   = ":?"
     pretty Fold1      = "|>"
+    pretty Exp        = "**"
 
 data DfnVar = X | Y deriving (Eq)
 

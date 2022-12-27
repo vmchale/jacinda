@@ -79,6 +79,7 @@ tokens :-
         -- symbols/operators
         "%"                      { mkSym PercentTok }
         "*"                      { mkSym TimesTok }
+        "**"                     { mkSym ExpTok }
         "+"                      { mkSym PlusTok }
         "-"                      { mkSym MinusTok }
 
@@ -247,6 +248,7 @@ alexEOF = EOF <$> get_pos
 data Sym = PlusTok
          | MinusTok
          | PercentTok
+         | ExpTok
          | FoldTok
          | Fold1Tok
          | Quot
@@ -297,6 +299,7 @@ instance Pretty Sym where
     pretty PlusTok       = "+"
     pretty MinusTok      = "-"
     pretty PercentTok    = "%"
+    pretty ExpTok        = "**"
     pretty FoldTok       = "|"
     pretty Fold1Tok      = "|>"
     pretty TimesTok      = "*"
