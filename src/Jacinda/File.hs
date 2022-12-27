@@ -74,8 +74,8 @@ compileIn :: FileBS -> Program (T K) -> Program (T K)
 compileIn fp (Program ds e) = Program (compileD fp <$> ds) (compileR fp e)
 
 compileD :: FileBS -> D (T K) -> D (T K)
-compileD _ d@SetFS{}        = d
 compileD fp (FunDecl n l e) = FunDecl n l (compileR fp e)
+compileD _ d                = d
 
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =

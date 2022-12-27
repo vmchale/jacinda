@@ -130,6 +130,7 @@ tokens :-
         val                      { mkKw KwVal }
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
+        :flush                   { mkKw KwFlush }
         fn                       { mkKw KwFn }
         "@include"               { mkKw KwInclude }
         if                       { mkKw KwIf }
@@ -351,6 +352,7 @@ data Keyword = KwLet
              | KwVal
              | KwEnd
              | KwSet
+             | KwFlush
              | KwFn
              | KwInclude
              | KwIf
@@ -382,6 +384,7 @@ instance Pretty Keyword where
     pretty KwVal     = "val"
     pretty KwEnd     = "end"
     pretty KwSet     = ":set"
+    pretty KwFlush   = ":flush"
     pretty KwFn      = "fn"
     pretty KwInclude = "@include"
     pretty KwIf      = "if"

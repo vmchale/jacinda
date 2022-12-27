@@ -108,6 +108,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
     set { TokKeyword $$ KwSet }
+    flush { TokKeyword $$ KwFlush }
     fn { TokKeyword $$ KwFn }
     include { TokKeyword $$ KwInclude }
     if { TokKeyword $$ KwIf }
@@ -197,6 +198,7 @@ Args :: { [(Name AlexPosn)] }
 
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
+  | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }
 
