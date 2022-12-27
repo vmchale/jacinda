@@ -57,7 +57,8 @@ parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
 
 readDigits :: BS.ByteString -> Integer
-readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
+readDigits b | Just (45, bs) <- BS.uncons b = negate $ readDigits bs
+readDigits b = ASCII.foldl' (\seed x -> 10 * seed + f x) 0 b
     where f '0' = 0
           f '1' = 1
           f '2' = 2

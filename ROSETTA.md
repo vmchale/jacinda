@@ -121,7 +121,7 @@ vm_stat 1 | ja ':flush; {ix>3}{`2:f*4096.0%(1024.0**3.0)}' | ttyplot -t "MacOS M
 ```
 
 ```
-{ while true; do /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo | ja ':flush; {%/agrCtlRSSI/}{`2}'; sleep 1; done } | ttyplot -t "wifi signal" -u "-dBm" -s 90
+{ while true; do /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo | ja ':flush; {%/agrCtlRSSI/}{-.`2:i}'; sleep 1; done } | ttyplot -t "wifi signal" -u "-dBm" -s 90
 ```
 
 # Count Lines
