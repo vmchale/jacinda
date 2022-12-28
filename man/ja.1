@@ -127,9 +127,9 @@ Float -> Int
 Float -> Int
 .PP
 \f[B]-.\f[R] Unary negate
-.PP
-\f[B]sprintf\f[R] Convert an expression to a string using the format
-string
+.TP
+\f[B]sprintf\f[R] Convert an expression to a string using the format string
+\f[B]%f\f[R] float \f[B]%i\f[R] integer \f[B]%s\f[R] string
 .TP
 \f[B]option\f[R] Option eliminator
 b -> (a -> b) -> Option a -> b
@@ -181,6 +181,11 @@ List a -> a
 \f[B]{.\f[R] Line comment
 .PP
 \f[B]\[at]include\[aq]/path/file.jac\[cq]\f[R] File include
+.SS DECLARATIONS
+.PP
+\f[B]:set fs=/REGEX/;\f[R] Set field separator
+.PP
+\f[B]:flush;\f[R] Flush stdout for every line
 .SH INFLUENTIAL ENVIRONMENT VARIABLES
 .PP
 \f[V]JAC_PATH\f[R] - colon-separated list of directories to search
