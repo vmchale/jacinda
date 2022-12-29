@@ -34,6 +34,7 @@ install: man/ja.1
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
+	make -C vscode clean
 	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data bin
 
 moddeps.svg: $(HS_SRC)
