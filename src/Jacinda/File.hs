@@ -69,14 +69,13 @@ compileR fp = cata a where
     a (RegexLitF _ rrϵ) = RegexCompiled (compileDefault rrϵ)
     a (NBuiltinF _ Fp)  = mkStr fp
     a x                 = embed x
-    -- TODO: is cata performant enough?
 
 compileIn :: FileBS -> Program (T K) -> Program (T K)
 compileIn fp (Program ds e) = Program (compileD fp <$> ds) (compileR fp e)
 
 compileD :: FileBS -> D (T K) -> D (T K)
-compileD _ d@SetFS{}        = d
 compileD fp (FunDecl n l e) = FunDecl n l (compileR fp e)
+compileD _ d                = d
 
 exprEval :: BSL.ByteString -> E (T K)
 exprEval src =
@@ -102,7 +101,7 @@ runOnBytes incls fp src cliFS contents = do
     (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
     cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (ASCII.pack fp) typed)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
-    -- see: BSL.split, BSL.splitWith
+    -- TODO: BSL.split, BSL.splitWith for arbitrary record separators
 
 runOnHandle :: [FilePath]
             -> BSL.ByteString -- ^ Program

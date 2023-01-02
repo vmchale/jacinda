@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 # seq 200000 | cabal run exe:ja -- run examples/avg.jac +RTS -hT
-seq 1000001 | shuf | cabal run exe:ja -- run test/examples/evenOdd.jac +RTS -hT
+seq 1000001 | cabal run exe:ja -- run test/examples/evenOdd.jac +RTS -hT
 hp2pretty ja.hp

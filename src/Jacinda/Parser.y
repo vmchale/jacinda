@@ -68,6 +68,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     minus { TokSym $$ MinusTok }
     times { TokSym $$ TimesTok }
     percent { TokSym $$ PercentTok }
+    exp { TokSym $$ ExpTok }
 
     comma { TokSym $$ Comma }
     fold { TokSym $$ FoldTok }
@@ -107,6 +108,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     val { TokKeyword $$ KwVal }
     end { TokKeyword $$ KwEnd }
     set { TokKeyword $$ KwSet }
+    flush { TokKeyword $$ KwFlush }
     fn { TokKeyword $$ KwFn }
     include { TokKeyword $$ KwInclude }
     if { TokKeyword $$ KwIf }
@@ -184,6 +186,7 @@ BBin :: { BBin }
      | backslashdot { Prior }
      | filter { Filter }
      | fold1 { Fold1 }
+     | exp { Exp }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
@@ -195,6 +198,7 @@ Args :: { [(Name AlexPosn)] }
 
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
+  | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }
 

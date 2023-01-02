@@ -95,8 +95,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **!** Prefix boolean not
 
 **~** Matches regex
+:   Str -> Regex -> Bool
 
 **!~** Does not match
+:   Str -> Regex -> Bool
 
 **ix** Line number
 
@@ -118,6 +120,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **-.** Unary negate
 
 **sprintf** Convert an expression to a string using the format string
+:   **%f** float **%i** integer **%s** string
 
 **option** Option eliminator
 :   b -> (a -> b) -> Option a -> b
@@ -168,6 +171,12 @@ a boolean expression.
 **{.** Line comment
 
 **@include\'/path/file.jac'** File include
+
+## DECLARATIONS
+
+**:set fs=/REGEX/;** Set field separator
+
+**:flush;** Flush stdout for every line
 
 # INFLUENTIAL ENVIRONMENT VARIABLES
 

@@ -8,7 +8,6 @@ module Jacinda.Backend.TreeWalk ( runJac
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, get, modify, runState)
-import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
 import           Data.Containers.ListUtils  (nubIntOn, nubOrdOn)
@@ -24,9 +23,10 @@ import           Intern.Unique              (Unique (Unique))
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
-import           Jacinda.Regex
+import           Jacinda.Regex              (captures', find', findCapture, isMatch', splitBy, substr)
 import           Jacinda.Ty.Const
 import           Regex.Rure                 (RurePtr)
+import           System.IO                  (hFlush, stdout)
 
 data StreamError = NakedField
                  | UnevalFun
@@ -37,7 +37,7 @@ data StreamError = NakedField
 
 instance Exception StreamError where
 
-(!) :: Show a => V.Vector a -> Int -> a
+(!) :: V.Vector a -> Int -> a
 v ! ix = case v V.!? ix of
     Just x  -> x
     Nothing -> throw $ IndexOutOfBounds ix
@@ -75,8 +75,6 @@ asArr e          = noRes e "List"
 asOpt :: E a -> Maybe (E a)
 asOpt (OptionVal _ e) = e
 asOpt e               = noRes e "Option"
-
--- TODO: do I want to interleave state w/ eNorm or w/e
 
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
@@ -124,16 +122,16 @@ eEval (ix, line, ctx) = go where
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
-            _                                  -> noRes eI "Regex or Str"
+            (StrLit{}, _)                      -> noRes eI' "Regex"
+            _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (RegexCompiled reϵ, StrLit _ strϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
-            _                                  -> noRes eI "Regex or Str"
+            (StrLit{}, _)                      -> noRes eI' "Regex"
+            _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
         let eI = asRegex (go e)
             eI' = asStr (go e')
@@ -160,6 +158,10 @@ eEval (ix, line, ctx) = go where
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Exp) e) e') =
+        let eI = asInt (go e)
+            eI' = asInt (go e')
+            in mkI (eI ^ eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
@@ -232,7 +234,11 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in FloatLit tyF (eI * eI')
+            in mkF (eI * eI')
+    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Exp) e) e') =
+        let eI = asFloat (go e)
+            eI' = asFloat (go e')
+            in mkF (eI ** eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
@@ -400,7 +406,7 @@ ir re (Implicit _ e) =
     imap (\ix line -> eEval (mkCtx re ix line) e)
 ir re (Guarded _ pe e) =
     -- TODO: normalize before stream
-    fmap (uncurry (\ix line -> eEval (mkCtx re ix line) e)) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
+    fmap (\(ix, line) -> eEval (mkCtx re ix line) e) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
 ir re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re stream
 ir re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
     filter (asBool . applyUn op) . ir re stream
@@ -426,8 +432,11 @@ ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
     nubIntOn (fromEnum . asBool) . ir re e
 
 -- | Output stream that prints each entry (expression)
-printStream :: [E (T K)] -> IO ()
-printStream = traverse_ print
+printStream :: Bool -- ^ Flush?
+            -> [E (T K)] -> IO ()
+printStream False = traverse_ print
+printStream True = traverse_ ((*> fflush) . print)
+    where fflush = hFlush stdout
 
 foldWithCtx :: RurePtr
             -> E (T K)
@@ -451,7 +460,7 @@ runJac :: RurePtr -- ^ Record separator
        -> Int
        -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = fileProcessor re (closedProgram i e)
+runJac re i e = fileProcessor re (flushD e) (closedProgram i e)
 
 foldAll :: RurePtr
         -> [(Int, E (T K), E (T K), E (T K))]
@@ -542,53 +551,54 @@ takeConcatMap f = concat . transpose . fmap f
 
 -- | Given an expression, turn it into a function which will process the file.
 fileProcessor :: RurePtr
+              -> Bool -- ^ Flush output?
               -> E (T K)
               -> Either StreamError ([BS.ByteString] -> IO ())
-fileProcessor _ AllField{}    = Left NakedField
-fileProcessor _ Field{}       = Left NakedField
-fileProcessor _ (NBuiltin _ Ix) = Left NakedField
-fileProcessor re e@AllColumn{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@Column{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@IParseCol{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@FParseCol{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@ParseCol{} = Right $ \inp -> printStream $ ir re e inp
-fileProcessor re e@Guarded{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@Implicit{} = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
+fileProcessor _ _ AllField{}    = Left NakedField
+fileProcessor _ _ Field{}       = Left NakedField
+fileProcessor _ _ (NBuiltin _ Ix) = Left NakedField
+fileProcessor re f e@AllColumn{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@Column{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@IParseCol{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@FParseCol{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@ParseCol{} = Right $ \inp -> printStream f $ ir re e inp
+fileProcessor re f e@Guarded{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@Implicit{} = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
 -- at the moment, catMaybes only works on streams
-fileProcessor re e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
-    printStream $ ir re e inp
-fileProcessor re (Anchor _ es) = Right $ \inp ->
-    printStream $ takeConcatMap (\e -> ir re e inp) es
-fileProcessor _ Var{} = error "Internal error?"
-fileProcessor _ e@IntLit{} = Right $ const (print e)
-fileProcessor _ e@BoolLit{} = Right $ const (print e)
-fileProcessor _ e@StrLit{} = Right $ const (print e)
-fileProcessor _ e@FloatLit{} = Right $ const (print e)
-fileProcessor _ e@RegexLit{} = Right $ const (print e)
-fileProcessor _ Lam{} = Left UnevalFun
-fileProcessor _ Dfn{} = badSugar
-fileProcessor _ ResVar{} = badSugar
-fileProcessor _ BBuiltin{} = Left UnevalFun
-fileProcessor _ UBuiltin{} = Left UnevalFun
-fileProcessor _ TBuiltin{} = Left UnevalFun
-fileProcessor re e = Right $ print . eWith re e
+fileProcessor re f e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f (Anchor _ es) = Right $ \inp ->
+    printStream f $ takeConcatMap (\e -> ir re e inp) es
+fileProcessor _ _ Var{} = error "Internal error?"
+fileProcessor _ _ e@IntLit{} = Right $ const (print e)
+fileProcessor _ _ e@BoolLit{} = Right $ const (print e)
+fileProcessor _ _ e@StrLit{} = Right $ const (print e)
+fileProcessor _ _ e@FloatLit{} = Right $ const (print e)
+fileProcessor _ _ e@RegexLit{} = Right $ const (print e)
+fileProcessor _ _ Lam{} = Left UnevalFun
+fileProcessor _ _ Dfn{} = badSugar
+fileProcessor _ _ ResVar{} = badSugar
+fileProcessor _ _ BBuiltin{} = Left UnevalFun
+fileProcessor _ _ UBuiltin{} = Left UnevalFun
+fileProcessor _ _ TBuiltin{} = Left UnevalFun
+fileProcessor re _ e = Right $ print . eWith re e

@@ -91,8 +91,6 @@ setMax i (Renames _ b) = Renames i b
 mkLam :: [Name a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
--- TODO: investigate performance w/out cata
-
 -- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
@@ -126,8 +124,8 @@ replaceX n = cata a where
     a x             = embed x
 
 renameD :: D a -> RenameM (D a)
-renameD d@SetFS{}        = pure d
 renameD (FunDecl n ns e) = FunDecl n [] <$> renameE (mkLam ns e)
+renameD d                = pure d
 
 renameProgram :: Program a -> RenameM (Program a)
 renameProgram (Program ds e) = Program <$> traverse renameD ds <*> renameE e

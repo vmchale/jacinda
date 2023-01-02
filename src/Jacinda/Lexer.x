@@ -79,6 +79,7 @@ tokens :-
         -- symbols/operators
         "%"                      { mkSym PercentTok }
         "*"                      { mkSym TimesTok }
+        "**"                     { mkSym ExpTok }
         "+"                      { mkSym PlusTok }
         "-"                      { mkSym MinusTok }
 
@@ -129,6 +130,7 @@ tokens :-
         val                      { mkKw KwVal }
         end                      { mkKw KwEnd }
         :set                     { mkKw KwSet }
+        :flush                   { mkKw KwFlush }
         fn                       { mkKw KwFn }
         "@include"               { mkKw KwInclude }
         if                       { mkKw KwIf }
@@ -247,6 +249,7 @@ alexEOF = EOF <$> get_pos
 data Sym = PlusTok
          | MinusTok
          | PercentTok
+         | ExpTok
          | FoldTok
          | Fold1Tok
          | Quot
@@ -297,6 +300,7 @@ instance Pretty Sym where
     pretty PlusTok       = "+"
     pretty MinusTok      = "-"
     pretty PercentTok    = "%"
+    pretty ExpTok        = "**"
     pretty FoldTok       = "|"
     pretty Fold1Tok      = "|>"
     pretty TimesTok      = "*"
@@ -348,6 +352,7 @@ data Keyword = KwLet
              | KwVal
              | KwEnd
              | KwSet
+             | KwFlush
              | KwFn
              | KwInclude
              | KwIf
@@ -379,6 +384,7 @@ instance Pretty Keyword where
     pretty KwVal     = "val"
     pretty KwEnd     = "end"
     pretty KwSet     = ":set"
+    pretty KwFlush   = ":flush"
     pretty KwFn      = "fn"
     pretty KwInclude = "@include"
     pretty KwIf      = "if"

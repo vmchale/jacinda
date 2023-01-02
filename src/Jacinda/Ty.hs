@@ -79,6 +79,9 @@ mapClassVars f (TyState u k cvs v cs) = TyState u k (f cvs) v cs
 addVarEnv :: Int -> T K -> TyState a -> TyState a
 addVarEnv i ty (TyState u k cvs v cs) = TyState u k cvs (IM.insert i ty v) cs
 
+addKindEnv :: Int -> K -> TyState a -> TyState a
+addKindEnv i k (TyState u ks cvs v cs) = TyState u (IM.insert i k ks) cvs v cs
+
 addConstraint :: Ord a => (a, T K, T K) -> TyState a -> TyState a
 addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 
@@ -130,7 +133,7 @@ unifyMatch um ((l, ty@(TyTup _ tys), ty'@(TyTup _ tys')):tyss)
     | length tys == length tys' = unifyPrep um (zip3 (repeat l) tys tys' ++ tyss)
     | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
 unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
-    | n == n' = unifyPrep um tys -- a type variable is always equal to itself, don't bother inserting this!
+    | n == n' = unifyPrep um tys
     | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch _ ((l, ty, ty'):_) = throwError (UnificationFailed l (void ty) (void ty'))
 
@@ -166,14 +169,16 @@ freshName n k = do
     Name n (Unique $ st+1) k
         <$ modify (mapMaxU (+1))
 
+namek :: Name K -> TypeM a (Name K)
+namek n =
+    modify (addKindEnv (unUnique$unique n) (loc n)) $> n
+
 higherOrder :: T.Text -> TypeM a (Name K)
-higherOrder t = freshName t (KArr Star Star)
--- TODO: this should modify kind environment
+higherOrder t = freshName t (KArr Star Star) >>= namek
 
 -- of kind 'Star'
 dummyName :: T.Text -> TypeM a (Name K)
-dummyName n = freshName n Star
--- TODO: this should modify kind environment
+dummyName n = freshName n Star >>= namek
 
 addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
@@ -255,9 +260,9 @@ kind (TyApp k1 ty0 ty1) = do
                       | otherwise        -> throwError $ Expected (tLoc ty1) k0
         k0                               -> throwError $ Expected (KArr Star Star) k0
 
--- TODO: this will need some class context if we permit custom types (Optional)
 checkType :: Ord a => T K -> (C, a) -> TypeM a ()
 checkType TyVar{} _                            = pure () -- TODO: I think this is right
+checkType (TyB _ TyR) (IsSemigroup, _)         = pure ()
 checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
 checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
 checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
@@ -333,6 +338,7 @@ tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
     modify (addVarEnv i ty)
     pure $ FunDecl (n $> ty) [] e'
 tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
+tyD0 FlushDecl = pure FlushDecl
 
 isAmbiguous :: T K -> Bool
 isAmbiguous TyVar{}          = True
@@ -348,7 +354,7 @@ checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need i
 checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Implicit _ e') = checkAmb e'
 checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
-checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet! (if they aren't ambiguous, it shouldn't be
+checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet!
 checkAmb (Tup _ es) = traverse_ checkAmb es
 checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
@@ -420,7 +426,7 @@ tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
 tyE0 (IntLit _ i)            = pure $ IntLit tyI i
 tyE0 (FloatLit _ f)          = pure $ FloatLit tyF f
 tyE0 (StrLit _ str)          = pure $ StrLit tyStr str
-tyE0 (RegexLit _ rr)         = pure $ RegexLit tyStr rr
+tyE0 (RegexLit _ rr)         = pure $ RegexLit tyR rr
 tyE0 (Column _ i)            = pure $ Column (tyStream tyStr) i
 tyE0 (IParseCol _ i)         = pure $ IParseCol (tyStream tyI) i
 tyE0 (FParseCol _ i)         = pure $ FParseCol (tyStream tyF) i
@@ -434,6 +440,7 @@ tyE0 (NBuiltin _ Nf)         = pure $ NBuiltin tyI Nf
 tyE0 (BBuiltin l Plus)       = BBuiltin <$> tySemiOp l <*> pure Plus
 tyE0 (BBuiltin l Minus)      = BBuiltin <$> tyNumOp l <*> pure Minus
 tyE0 (BBuiltin l Times)      = BBuiltin <$> tyNumOp l <*> pure Times
+tyE0 (BBuiltin l Exp)        = BBuiltin <$> tyNumOp l <*> pure Exp
 tyE0 (BBuiltin l Gt)         = BBuiltin <$> tyOrd l <*> pure Gt
 tyE0 (BBuiltin l Lt)         = BBuiltin <$> tyOrd l <*> pure Lt
 tyE0 (BBuiltin l Geq)        = BBuiltin <$> tyOrd l <*> pure Geq
@@ -442,16 +449,16 @@ tyE0 (BBuiltin l Eq)         = BBuiltin <$> tyEq l <*> pure Eq
 tyE0 (BBuiltin l Neq)        = BBuiltin <$> tyEq l <*> pure Neq
 tyE0 (BBuiltin l Min)        = BBuiltin <$> tyM l <*> pure Min
 tyE0 (BBuiltin l Max)        = BBuiltin <$> tyM l <*> pure Max
-tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Split
+tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (mkVec tyStr))) Split
 tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Splitc
-tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) Matches
-tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyStr tyBool)) NotMatches
+tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) Matches
+tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) NotMatches
 tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally
 tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
 tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
 tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
 tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
-tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (tyOpt $ TyTup Star [tyI, tyI]))) Match
+tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (tyOpt $ TyTup Star [tyI, tyI]))) Match
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
 tyE0 (UBuiltin _ FParse)     = pure $ UBuiltin (tyArr tyStr tyF) FParse
@@ -549,7 +556,6 @@ tyE0 (BBuiltin l Map) = do
         fTy = tyArr (tyArr a' b') (tyArr (hkt f' a') (hkt f' b'))
     modify (mapClassVars (addC f (Functor, l)))
     pure $ BBuiltin fTy Map
--- (b -> a -> b) -> b -> Stream a -> b
 tyE0 (TBuiltin l Fold) = do
     b <- dummyName "b"
     a <- dummyName "a"
@@ -569,7 +575,7 @@ tyE0 (BBuiltin l Fold1) = do
     modify (mapClassVars (addC f (Foldable, l)))
     pure $ BBuiltin fTy Fold1
 tyE0 (TBuiltin _ Captures) =
-    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (tyOpt tyStr)))) Captures
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (tyOpt tyStr)))) Captures
 -- (a -> a -> a) -> Stream a -> Stream a
 tyE0 (BBuiltin _ Prior) = do
     a <- dummyName "a"
@@ -604,11 +610,10 @@ tyE0 (TBuiltin _ Option) = do
         fTy = tyArr b' (tyArr (tyArr a' b') (tyArr (tyOpt a') b'))
     pure $ TBuiltin fTy Option
 tyE0 (TBuiltin _ AllCaptures) =
-    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyStr (mkVec tyStr)))) AllCaptures
+    pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (mkVec tyStr)))) AllCaptures
 tyE0 (Implicit _ e) = do
     e' <- tyE0 e
     pure $ Implicit (tyStream (eLoc e')) e'
--- (a -> b -> c) -> Stream a -> Stream b -> Stream c
 tyE0 (Guarded l e streamE) = do
     streamE' <- tyE0 streamE
     e' <- tyE0 e

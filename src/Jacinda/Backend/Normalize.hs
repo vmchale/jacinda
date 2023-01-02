@@ -18,8 +18,7 @@ module Jacinda.Backend.Normalize ( eClosed
                                  ) where
 
 import           Control.Exception          (Exception, throw)
-import           Control.Monad.State.Strict (State, evalState, gets, modify, runState)
-import           Data.Bifunctor             (second)
+import           Control.Monad.State.Strict (State, evalState, gets, modify)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
@@ -58,7 +57,8 @@ parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
 
 readDigits :: BS.ByteString -> Integer
-readDigits = ASCII.foldl' (\seed x -> 10 * seed + f x) 0
+readDigits b | Just (45, bs) <- BS.uncons b = negate $ readDigits bs
+readDigits b = ASCII.foldl' (\seed x -> 10 * seed + f x) 0 b
     where f '0' = 0
           f '1' = 1
           f '2' = 2
@@ -98,9 +98,6 @@ type EvalM = State LetCtx
 mkLetCtx :: Int -> LetCtx
 mkLetCtx i = LetCtx IM.empty (Renames i IM.empty)
 
-hoistEvalM :: Int -> EvalM a -> (a, Int)
-hoistEvalM i = second (max_ . renames_) . flip runState (mkLetCtx i)
-
 runEvalM :: Int
          -> EvalM a
          -> a
@@ -119,10 +116,10 @@ closedProgram i (Program ds e) = runEvalM i $
 
 processDecl :: D (T K)
             -> EvalM ()
-processDecl SetFS{} = pure ()
 processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
     e' <- eNorm e
     modify (mapBinds (IM.insert i e'))
+processDecl _ = pure ()
 
 asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
@@ -182,14 +179,12 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (isMatch' re str)
         (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ NotMatches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (RegexCompiled re, StrLit _ str) -> BoolLit tyBool (not $ isMatch' re str)
         (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') = do
@@ -251,6 +246,13 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Times) e) e') = do
     pure $ case (eI, eI') of
         (IntLit _ i, IntLit _ j)     -> i `seq` j `seq` IntLit tyI (i*j)
         (FloatLit _ i, FloatLit _ j) -> i `seq` j `seq` FloatLit tyF (i*j)
+        _                            -> EApp ty (EApp ty' op eI) eI'
+eNorm (EApp ty (EApp ty' op@(BBuiltin _ Exp) e) e') = do
+    eI <- eNorm e
+    eI' <- eNorm e'
+    pure $ case (eI, eI') of
+        (IntLit _ i, IntLit _ j)     -> i `seq` j `seq` IntLit tyI (i^j)
+        (FloatLit _ i, FloatLit _ j) -> i `seq` j `seq` FloatLit tyF (i**j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Plus) e) e') = do
     eI <- eNorm e
@@ -393,7 +395,7 @@ eNorm (Let _ (Name _ (Unique i) _, b) e) = do
 eNorm e@(Var _ (Name _ (Unique i) _)) = do
     st <- gets binds
     case IM.lookup i st of
-        Just e'@Var{} -> eNorm e' -- no cyclic binds!!
+        Just e'@Var{} -> eNorm e' -- no cyclic binds
         Just e'       -> renameE e' -- FIXME: set outermost type to be type of var...
         Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
@@ -471,24 +473,11 @@ eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ 
     case y' of
         Arr _ es -> foldE f' x' es
         _        -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
--- eNorm (EApp ty0 (EApp ty1 op@(BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Prior) x) y) = do
-    -- x' <- eNorm x
-    -- y' <- eNorm y
-    -- case y' of
-        -- Arr _ es -> Arr undefined <$> V.priorM (applyOp x') es
-        -- _        -> pure $ EApp ty0 (EApp ty1 op x') y'
--- eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@(TBuiltin (TyArr _ _ (TyApp _ _ (TyApp _ (TyB _ TyVec) _))) ZipW) f) x) y) = do
-    -- f' <- eNorm f
-    -- x' <- eNorm x
-    -- y' <- eNorm y
-    -- case (x', y') of
-        -- (Arr _ es, Arr _ es') -> Arr undefined <$> V.zipWithM (applyOp f') es es'
-        -- _                     -> pure $ EApp ty0 (EApp ty1 (EApp ty2 op f') x') y'
 eNorm (EApp ty0 (EApp ty1 (EApp ty2 op@TBuiltin{} f) x) y) = EApp ty0 <$> (EApp ty1 <$> (EApp ty2 op <$> eNorm f) <*> eNorm x) <*> eNorm y
 -- we include this in case (+) has type (a->a->a) (for instance) if it is
 -- normalizing a decl (which can be ambiguous/general)
 eNorm (EApp ty0 (EApp ty1 op@BBuiltin{} e) e') = EApp ty0 <$> (EApp ty1 op <$> eNorm e) <*> eNorm e'
--- FIXME: specialize types after inlining hm
+-- FIXME: monomorphize types after inlining
 eNorm (EApp ty e@EApp{} e') =
     eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (Arr ty es) = Arr ty <$> traverse eNorm es

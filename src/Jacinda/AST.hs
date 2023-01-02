@@ -18,7 +18,7 @@ module Jacinda.AST ( E (..)
                    , C (..)
                    , N (..)
                    , mapExpr
-                   , getFS
+                   , getFS, flushD
                    -- * Base functors
                    , EF (..)
                    ) where
@@ -55,13 +55,12 @@ instance Pretty K where
 data TB = TyInteger
         | TyFloat
         | TyDate
-        | TyStr
+        | TyStr | TyR
         | TyStream
         | TyVec
         | TyBool
         | TyOption
         | TyUnit
-        -- TODO: tyRegex
         -- TODO: convert float to int
         deriving (Eq, Ord)
 
@@ -95,6 +94,7 @@ instance Pretty TB where
     pretty TyVec     = "List"
     pretty TyOption  = "Optional"
     pretty TyUnit    = "𝟙"
+    pretty TyR       = "Regex"
 
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
@@ -165,7 +165,7 @@ instance Pretty BTer where
 data BBin = Plus
           | Times
           | Div
-          | Minus
+          | Minus | Exp
           | Eq
           | Neq
           | Geq
@@ -173,7 +173,7 @@ data BBin = Plus
           | Lt
           | Leq
           | Map
-          | Matches -- ^ @/pat/ ~ 'string'@
+          | Matches -- ^ @'string' ~ /pat/@
           | NotMatches
           | And
           | Or
@@ -187,7 +187,7 @@ data BBin = Plus
           | Match
           | MapMaybe
           | Fold1
-          -- TODO: floor functions, sqrt, sin, cos, exp. (power)
+          -- TODO: floor functions, sqrt, sin, cos
           deriving (Eq)
 
 instance Pretty BBin where
@@ -216,6 +216,7 @@ instance Pretty BBin where
     pretty Match      = "match"
     pretty MapMaybe   = ":?"
     pretty Fold1      = "|>"
+    pretty Exp        = "**"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -251,23 +252,20 @@ data E a = Column { eLoc :: a, col :: Int }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Name a, lamE :: E a }
-         | Dfn { eLoc :: a, eDfn :: E a } -- to be rewritten as a lambda...
-         -- TODO: builtin sum type ? (makes pattern matching easier down the road)
+         | Dfn { eLoc :: a, eDfn :: E a }
          | BBuiltin { eLoc :: a, eBin :: BBin }
          | TBuiltin { eLoc :: a, eTer :: BTer }
          | UBuiltin { eLoc :: a, eUn :: BUn }
          | NBuiltin { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
-         | RegexCompiled RurePtr -- holds compiled regex (after normalization)
+         | RegexCompiled RurePtr -- holds compiled regex after normalization
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
-         -- TODO: regex literal
          deriving (Functor, Generic)
-         -- TODO: side effects: allow since it's strict?
 
 instance Recursive (E a) where
 
@@ -419,7 +417,6 @@ data C = IsNum
        | IsPrintf
        | HasField Int (T K)
        | Witherable
-       -- TODO: witherable
        deriving (Eq, Ord)
 
 instance Pretty C where
@@ -440,11 +437,13 @@ instance Show C where
 -- decl
 data D a = SetFS BS.ByteString
          | FunDecl (Name a) [Name a] (E a)
+         | FlushDecl
          deriving (Functor)
 
 instance Pretty (D a) where
-    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/"
+    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/;"
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
+    pretty FlushDecl        = ":flush;"
 
 -- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
@@ -454,6 +453,11 @@ instance Pretty (Program a) where
 
 instance Show (Program a) where
     show = show . pretty
+
+flushD :: Program a -> Bool
+flushD (Program ds _) = any p ds where
+    p FlushDecl = True
+    p _         = False
 
 getFS :: Program a -> Maybe BS.ByteString
 getFS (Program ds _) = listToMaybe (concatMap go ds) where
