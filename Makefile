@@ -13,9 +13,7 @@ docs: doc/guide.pdf doc/guide.html docs/index.html
 
 BINS := bin/x86_64-linux-ja \
     bin/arm-linux-gnueabihf-ja \
-    bin/aarch64-linux-ja \
-    bin/mips64-linux-ja \
-    bin/powerpc64le-linux-ja
+    bin/aarch64-linux-ja
 
 bins: $(BINS)
 
@@ -29,7 +27,7 @@ doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
 install: man/ja.1
-	cabal install exe:ja --overwrite-policy=always -w ghc-9.4.2
+	cabal install exe:ja --overwrite-policy=always -w ghc-9.4
 	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
@@ -73,7 +71,7 @@ bin/arm-linux-gnueabihf-ja: $(HS_SRC)
 
 bin/aarch64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc aarch64-linux-gnu-ghc-9.2.2 --with-ghc-pkg aarch64-linux-gnu-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/aarch64-linux
+	@cabal build --with-ghc aarch64-linux-gnu-ghc-9.2.4 --with-ghc-pkg aarch64-linux-gnu-ghc-pkg-9.2.4 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/aarch64-linux
 	export BIN=$$(fd 'aarch64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    aarch64-linux-gnu-strip $@
