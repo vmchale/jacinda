@@ -1,6 +1,6 @@
 { name = "jacinda"
 , displayName = "Jacinda Syntax Highlighting for VSCode"
-, publisher = "Vanessa McHale"
+, publisher = "vmchale"
 , version = "0.1.0"
 , engines.vscode = "^1.0.0"
 , description = "Syntax Highlighting for Jacinda"
