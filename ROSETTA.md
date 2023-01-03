@@ -108,6 +108,26 @@ path"$0
 
 In combination with [ttyplot](https://github.com/tenox7/ttyplot):
 
+## Linux
+
+```
+sar 1 | gawk '{ print 100-int($NF); fflush(); }' | ttyplot -s 100 -t "cpu usage" -u "%"
+```
+
+```
+sar 1 | ja ':flush; {ix>3}{100.0-`*:f}' | ttyplot -s 100 -t "cpu usage" -u "%"
+```
+
+```
+{ while true; do ja '{|`1:f%1000.0}' -i /sys/class/thermal/thermal_zone0/temp; sleep 1; done } | ttyplot -t "cpu temp" -u C
+```
+
+```
+{ while true; do awk '{ printf("%.1f\n", $1/1000) }' /sys/class/thermal/thermal_zone0/temp; sleep 1; done } | ttyplot -t "cpu temp" -u C
+```
+
+## Mac
+
 ```
 vm_stat 1 | awk '{ print int($2)*4096/1024^3; fflush(); }' | ttyplot -t "MacOS Memory Usage" -u GB
 ```
