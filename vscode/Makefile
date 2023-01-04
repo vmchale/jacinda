@@ -1,3 +1,7 @@
+.PHONY: clean
+
+MAKEFLAGS += --warn-undefined-variables --no-builtin-rules -j
+
 PKG_VER:=$(shell echo '(./package.dhall).version' | dhall text)
 
 jacinda-$(PKG_VER).vsix: syntaxes/jacinda.tmLanguage.json language-configuration.json package.json
