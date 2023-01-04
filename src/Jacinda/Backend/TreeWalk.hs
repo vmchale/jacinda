@@ -508,6 +508,7 @@ ungather _ e@StrLit{}        = e
 ungather _ e@BoolLit{}       = e
 ungather _ e@FloatLit{}      = e
 ungather _ e@IntLit{}        = e
+ungather _ e@RegexCompiled{} = e
 
 mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
@@ -522,6 +523,7 @@ gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
 gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
 gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
 gatherFoldsM (Cond ty p e e') = Cond ty <$> gatherFoldsM p <*> gatherFoldsM e <*> gatherFoldsM e'
+-- gatherFoldsM (Lam t n e) = Lam t n <$> gatherFoldsM e
 gatherFoldsM (NBuiltin _ None) = pure $ OptionVal undefined Nothing
 gatherFoldsM e@BBuiltin{} = pure e
 gatherFoldsM e@TBuiltin{} = pure e
@@ -531,10 +533,12 @@ gatherFoldsM e@StrLit{} = pure e
 gatherFoldsM e@FloatLit{} = pure e
 gatherFoldsM e@IntLit{} = pure e
 gatherFoldsM e@BoolLit{} = pure e
+gatherFoldsM e@RegexCompiled{} = pure e
 
 eWith :: RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
 eWith re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 re op stream
+-- TODO: function APPLIED to fold/fold1 res.
 eWith _ e@BBuiltin{}                                                                                                                 = const e
 eWith _ e@UBuiltin{}                                                                                                                 = const e
 eWith _ e@TBuiltin{}                                                                                                                 = const e
