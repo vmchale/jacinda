@@ -84,6 +84,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~.** Unary deduplication (stream)
 :   Eq a :=> Stream a -> Stream a
 
+**~.\*** Deduplicate on (stream)
+:   Eq b :=> (a -> b) -> Stream a -> Stream a
+
 **max** Maximum of two values
 
 **min** Minimum of two values

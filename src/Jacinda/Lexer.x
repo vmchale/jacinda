@@ -119,6 +119,7 @@ tokens :-
         "|`"                     { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
         "~."                     { mkSym DedupTok }
+        "~.*"                    { mkSym DedupOnTok }
         ".?"                     { mkSym CatMaybesTok }
         ":?"                     { mkSym MapMaybeTok }
         "~*"                     { mkSym CapTok }
@@ -290,6 +291,7 @@ data Sym = PlusTok
          | FloorSym
          | CeilSym
          | DedupTok
+         | DedupOnTok
          | CatMaybesTok
          | MapMaybeTok
          | CapTok
@@ -341,6 +343,7 @@ instance Pretty Sym where
     pretty FloorSym      = "|."
     pretty CeilSym       = "|`"
     pretty DedupTok      = "~."
+    pretty DedupOnTok    = "~.*"
     pretty CatMaybesTok  = ".?"
     pretty MapMaybeTok   = ":?"
     pretty CapTok        = "~*"

@@ -495,6 +495,13 @@ tyE0 (BBuiltin l Sprintf) = do
     let a' = var a
     modify (mapClassVars (addC a (IsPrintf, l)))
     pure $ BBuiltin (tyArr tyStr (tyArr a' tyStr)) Sprintf
+tyE0 (BBuiltin l DedupOn) = do
+    a <- dummyName "a"
+    b <- dummyName "b"
+    let a' = var a
+        b' = var b
+    modify (mapClassVars (addC b (IsEq, l)))
+    pure $ BBuiltin (tyArr (tyArr a' b') (tyArr (tyStream a') (tyStream a'))) DedupOn
 tyE0 (UBuiltin _ (At i)) = do
     a <- dummyName "a"
     let a' = var a
