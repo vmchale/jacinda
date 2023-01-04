@@ -422,6 +422,8 @@ ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStr
     in zipWith (applyOp op) irl irr
 ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
     scanl' (applyOp op) seed . ir re xs
+ir re (EApp _ (EApp _ (BBuiltin (TyArr _ (TyArr _ _ (TyB _ TyStr)) _) DedupOn) op) e) =
+    nubOrdOn (asStr . applyUn op) . ir re e
 ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir re e
 ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
@@ -584,6 +586,8 @@ fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (T
 fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
 fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
+    printStream f $ ir re e inp
+fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ DedupOn) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
 fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
     printStream f $ ir re e inp

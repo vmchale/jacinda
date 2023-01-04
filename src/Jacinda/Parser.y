@@ -63,6 +63,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     floorSym { TokSym $$ FloorSym }
     ceilSym { TokSym $$ CeilSym }
     dedup { TokSym $$ DedupTok }
+    dedupon { TokSym $$ DedupOnTok }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -187,6 +188,7 @@ BBin :: { BBin }
      | filter { Filter }
      | fold1 { Fold1 }
      | exp { Exp }
+     | dedupon { DedupOn }
 
 Bind :: { (Name AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }

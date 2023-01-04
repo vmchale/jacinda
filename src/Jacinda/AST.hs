@@ -187,6 +187,7 @@ data BBin = Plus
           | Match
           | MapMaybe
           | Fold1
+          | DedupOn
           -- TODO: floor functions, sqrt, sin, cos
           deriving (Eq)
 
@@ -217,6 +218,7 @@ instance Pretty BBin where
     pretty MapMaybe   = ":?"
     pretty Fold1      = "|>"
     pretty Exp        = "**"
+    pretty DedupOn    = "~.*"
 
 data DfnVar = X | Y deriving (Eq)
 
