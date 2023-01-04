@@ -1,4 +1,6 @@
 -- https://macromates.com/manual/en/language_grammars
+let map = https://prelude.dhall-lang.org/List/map
+
 let TextMate =
       < MatchRe : { match : Text, name : Text }
       | BeginEnd : { begin : Text, end : Text, name : Text }
@@ -28,26 +30,25 @@ in  { fileTypes = [ "jac" ]
     , name = "jacinda"
     , scopeName = "source.jacinda"
     , patterns =
-      [ mkTextMate
-          (TextMate.MatchRe { match = "{\\..*\$", name = "comment.line" })
-      , mkTextMate
-          (TextMate.MatchRe { match = "#(t|f)", name = "constant.language" })
-      , mkTextMate
-          ( TextMate.MatchRe
+        map
+          TextMate
+          { match : Optional Text
+          , begin : Optional Text
+          , end : Optional Text
+          , name : Text
+          }
+          mkTextMate
+          [ TextMate.MatchRe { match = "{\\..*\$", name = "comment.line" }
+          , TextMate.MatchRe { match = "#(t|f)", name = "constant.language" }
+          , TextMate.MatchRe
               { match =
                   "(:set|:flush|@include|(let|in|val|end|fn|if|then|else)[^a-zA-Z])"
               , name = "keyword"
               }
-          )
-      , mkTextMate
-          ( TextMate.MatchRe
+          , TextMate.MatchRe
               { match = "[a-z][a-zA-Z]*", name = "entity.name.function" }
-          )
-      , mkTextMate
-          ( TextMate.BeginEnd
+          , TextMate.BeginEnd
               { begin = "/", end = "[^\\\\]/", name = "string.regexp" }
-          )
-      , mkTextMate
-          (TextMate.BeginEnd { begin = "'", end = "[^\\\\]'", name = "string" })
-      ]
+          , TextMate.BeginEnd { begin = "'", end = "[^\\\\]'", name = "string" }
+          ]
     }

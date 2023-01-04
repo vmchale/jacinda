@@ -1,0 +1,35 @@
+{
+  "fileTypes": [
+    "jac"
+  ],
+  "name": "jacinda",
+  "patterns": [
+    {
+      "match": "{\\..*$",
+      "name": "comment.line"
+    },
+    {
+      "match": "#(t|f)",
+      "name": "constant.language"
+    },
+    {
+      "match": "(:set|:flush|@include|(let|in|val|end|fn|if|then|else)[^a-zA-Z])",
+      "name": "keyword"
+    },
+    {
+      "match": "[a-z][a-zA-Z]*",
+      "name": "entity.name.function"
+    },
+    {
+      "begin": "/",
+      "end": "[^\\\\]/",
+      "name": "string.regexp"
+    },
+    {
+      "begin": "'",
+      "end": "[^\\\\]'",
+      "name": "string"
+    }
+  ],
+  "scopeName": "source.jacinda"
+}
