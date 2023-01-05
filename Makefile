@@ -104,4 +104,5 @@ bench/data/ulysses.txt: $(dir $@)
 	curl https://www.gutenberg.org/files/4300/4300-0.txt -o $@
 
 check:
-	fd .jac examples/ -x ja tc
+	cabal build
+	fd .jac examples/ -x cabal run ja -- tc
