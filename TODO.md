@@ -82,6 +82,7 @@
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
 # Bugs
+- [ ] `{|[x+y] |> split `0 /,/}` fails b/c fold-vec with lambdas...
 - [x] `take n str + str2` parses as `take n (str + str2)`
 - [ ] When we inline, we need to specify a type!
 - [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
@@ -100,3 +101,5 @@
 - [x] 32m to normalize expression (eClosed) on chess example
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
 - [ ] not a fan of prettyprint
+# Examples
+- [ ] https://github.com/tenox7/ttyplot#examples
