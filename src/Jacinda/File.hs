@@ -82,7 +82,7 @@ exprEval src =
     case parseWithMax' src of
         Left err -> throw err
         Right (ast, m) ->
-            let (typed, i) = yeet $ runTypeM m (tyProgram ast)
+            let (typed, i) = yeet $ runTyM m (tyProgram ast)
             in closedProgram i (compileIn undefined typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
@@ -98,7 +98,7 @@ runOnBytes :: [FilePath]
 runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    (typed, i) <- yeetIO $ runTypeM m (tyProgram ast)
+    (typed, i) <- yeetIO $ runTyM m (tyProgram ast)
     cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (ASCII.pack fp) typed)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
     -- TODO: BSL.split, BSL.splitWith for arbitrary record separators
@@ -121,12 +121,12 @@ tcIO :: [FilePath] -> BSL.ByteString -> IO ()
 tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    yeetIO $ void $ runTypeM m (tyProgram ast)
+    yeetIO $ void $ runTyM m (tyProgram ast)
 
 tySrc :: BSL.ByteString -> T K
 tySrc src =
     case parseWithMax' src of
-        Right (ast, m) -> yeet $ fst <$> runTypeM m (tyOf (expr ast))
+        Right (ast, m) -> yeet $ fst <$> runTyM m (tyOf (expr ast))
         Left err       -> throw err
 
 yeetIO :: Exception e => Either e a -> IO a
