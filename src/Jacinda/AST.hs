@@ -75,8 +75,7 @@ jacTup :: Pretty a => [a] -> Doc ann
 jacTup = tupledBy " . " . fmap pretty
 
 -- type
-data T a = TyNamed { tLoc :: a, tyName :: TyName a }
-         | TyB { tLoc :: a, tyBuiltin :: TB }
+data T a = TyB { tLoc :: a, tyBuiltin :: TB }
          | TyApp { tLoc :: a, tyApp0 :: T a, tyApp1 :: T a }
          | TyArr { tLoc :: a, tyArr0 :: T a, tyArr1 :: T a }
          | TyVar { tLoc :: a, tyVar :: Name a }
@@ -102,7 +101,6 @@ instance Pretty (T a) where
     pretty (TyVar _ n)      = pretty n
     pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup _ tys)    = jacTup tys
-    pretty (TyNamed _ tn)   = pretty tn
 
 instance Show (T a) where
     show = show . pretty
