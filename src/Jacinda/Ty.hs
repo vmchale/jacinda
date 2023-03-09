@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Ty ( TypeM
-                  , Error (..)
+                  , Err (..)
                   , runTypeM
                   , tyProgram
                   -- * For debugging
@@ -30,25 +30,25 @@ import           Jacinda.AST
 import           Jacinda.Ty.Const
 import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<+>))
 
-data Error a = UnificationFailed a (T ()) (T ())
-             | Doesn'tSatisfy a (T ()) C
-             | IllScoped a (Name a)
-             | Ambiguous (T K) (E ())
-             | Expected K K
-             | IllScopedTyVar (TyName ())
+data Err a = UF a (T ()) (T ())
+           | Doesn'tSatisfy a (T ()) C
+           | IllScoped a (Name a)
+           | Ambiguous (T K) (E ())
+           | Expected K K
+           | IllScopedTyVar (TyName ())
 
-instance Pretty a => Pretty (Error a) where
-    pretty (UnificationFailed l ty ty') = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
-    pretty (Doesn'tSatisfy l ty c)      = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
-    pretty (IllScoped l n)              = pretty l <+> squotes (pretty n) <+> "is not in scope."
-    pretty (Ambiguous ty e)             = "type" <+> squotes (pretty ty) <+> "of" <+> squotes (pretty e) <+> "is ambiguous"
-    pretty (Expected k0 k1)             = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
-    pretty (IllScopedTyVar n)           = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
+instance Pretty a => Pretty (Err a) where
+    pretty (UF l ty ty')           = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
+    pretty (Doesn'tSatisfy l ty c) = pretty l <+> squotes (pretty ty) <+> "is not a member of class" <+> pretty c
+    pretty (IllScoped l n)         = pretty l <+> squotes (pretty n) <+> "is not in scope."
+    pretty (Ambiguous ty e)        = "type" <+> squotes (pretty ty) <+> "of" <+> squotes (pretty e) <+> "is ambiguous"
+    pretty (Expected k0 k1)        = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
+    pretty (IllScopedTyVar n)      = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
 
-instance Pretty a => Show (Error a) where
+instance Pretty a => Show (Err a) where
     show = show . pretty
 
-instance (Typeable a, Pretty a) => Exception (Error a) where
+instance (Typeable a, Pretty a) => Exception (Err a) where
 
 -- solve, unify etc. THEN check that all constraints are satisfied?
 -- (after accumulating classVar membership...)
@@ -85,57 +85,64 @@ addKindEnv i k (TyState u ks cvs v cs) = TyState u (IM.insert i k ks) cvs v cs
 addConstraint :: Ord a => (a, T K, T K) -> TyState a -> TyState a
 addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 
-type TypeM a = StateT (TyState a) (Either (Error a))
+type TypeM a = StateT (TyState a) (Either (Err a))
 
-runTypeM :: Int -> TypeM a b -> Either (Error a) (b, Int)
+runTypeM :: Int -> TypeM a b -> Either (Err a) (b, Int)
 runTypeM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.empty S.empty)
 
-type UnifyMap a = IM.IntMap (T a)
+type Subst a = IM.IntMap (T a)
 
-inContext :: UnifyMap a -> T a -> T a
-inContext um ty'@(TyVar _ (Name _ (Unique i) _)) =
+aT :: Subst a -> T a -> T a
+aT um ty'@(TyVar _ (Name _ (Unique i) _)) =
     case IM.lookup i um of
-        Just ty@TyVar{} -> inContext (IM.delete i um) ty -- prevent cyclic lookups
-        -- TODO: does this need a case for TyApp -> inContext?
+        Just ty@TyVar{} -> aT (IM.delete i um) ty -- prevent cyclic lookups
+        -- TODO: does this need a case for TyApp -> aT?
         Just ty         -> ty
         Nothing         -> ty'
-inContext _ ty'@TyB{} = ty'
-inContext _ ty'@TyNamed{} = ty'
-inContext um (TyApp l ty ty') = TyApp l (inContext um ty) (inContext um ty')
-inContext um (TyArr l ty ty') = TyArr l (inContext um ty) (inContext um ty')
-inContext um (TyTup l tys)    = TyTup l (inContext um <$> tys)
+aT _ ty'@TyB{} = ty'
+aT um (TyApp l ty ty') = TyApp l (aT um ty) (aT um ty')
+aT um (TyArr l ty ty') = TyArr l (aT um ty) (aT um ty')
+aT um (TyTup l tys)    = TyTup l (aT um <$> tys)
 
 -- | Perform substitutions before handing off to 'unifyMatch'
-unifyPrep :: UnifyMap a
+unifyPrep :: Subst a
           -> [(l, T a, T a)]
           -> TypeM l (IM.IntMap (T a))
 unifyPrep _ [] = pure mempty
 unifyPrep um ((l, ty, ty'):tys) =
-    let ty'' = inContext um ty
-        ty''' = inContext um ty'
+    let ty'' = aT um ty
+        ty''' = aT um ty'
     in unifyMatch um $ (l, ty'', ty'''):tys
 
-unifyMatch :: UnifyMap a -> [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
-unifyMatch _ [] = pure mempty
+mguPrep :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
+mguPrep l s t0 t1 =
+    let t0' = aT s t0; t1' = aT s t1 in mgu l s t0' t1'
+
+mgu :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
+mgu _ s (TyB _ b) (TyB _ b') | b == b' = Right s
+mgu _ s ty (TyVar _ (Name _ (Unique k) _)) = Right $ IM.insert k ty s
+mgu _ s (TyVar _ (Name _ (Unique k) _)) ty = Right $ IM.insert k ty s
+mgu l s (TyArr _ t0 t1) (TyArr _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
+mgu l s (TyApp _ t0 t1) (TyApp _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
+mgu l s (TyTup _ ts) (TyTup _ ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
+mgu l _ t t' = Left $ UF l (void t) (void t')
+
+zS _ s [] _           = pure s
+zS _ s _ []           = pure s
+zS op s (x:xs) (y:ys) = do{next <- op s x y; zS op next xs ys}
+
+unifyMatch :: Subst a -> [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
+unifyMatch _ [] = pure IM.empty
 unifyMatch um ((_, TyB _ b, TyB _ b'):tys) | b == b' = unifyPrep um tys
-unifyMatch um ((_, TyNamed _ n0, TyNamed _ n1):tys) | n0 == n1 = unifyPrep um tys
-unifyMatch um ((_, ty@TyB{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyB{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, ty@TyArr{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyArr{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, ty@TyApp{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyTup{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, ty@TyTup{}, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty@(TyApp{})):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, TyVar _ n, ty@(TyVar _ n')):tys)
+    | n == n' = unifyPrep um tys
+unifyMatch um ((_, ty, TyVar  _ (Name _ (Unique k) _)):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
+unifyMatch um ((_, TyVar _ (Name _ (Unique k) _), ty):tys) = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
 unifyMatch um ((l, TyApp _ ty ty', TyApp _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
 unifyMatch um ((l, TyArr _ ty ty', TyArr _ ty'' ty'''):tys) = unifyPrep um ((l, ty, ty'') : (l, ty', ty''') : tys)
-unifyMatch um ((l, ty@(TyTup _ tys), ty'@(TyTup _ tys')):tyss)
+unifyMatch um ((l, TyTup _ tys, TyTup _ tys'):tyss)
     | length tys == length tys' = unifyPrep um (zip3 (repeat l) tys tys' ++ tyss)
-    | otherwise = throwError (UnificationFailed l (void ty) (void ty'))
-unifyMatch um ((_, TyVar _ n@(Name _ (Unique k) _), ty@(TyVar _ n')):tys)
-    | n == n' = unifyPrep um tys
-    | otherwise = IM.insert k ty <$> unifyPrep (IM.insert k ty um) tys
-unifyMatch _ ((l, ty, ty'):_) = throwError (UnificationFailed l (void ty) (void ty'))
+unifyMatch _ ((l, ty, ty'):_) = throwError (UF l (void ty) (void ty'))
 
 unify :: [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
 unify = unifyPrep IM.empty
@@ -155,7 +162,6 @@ substInt tys k =
 
 substConstraints :: IM.IntMap (T a) -> T a -> T a
 substConstraints _ ty@TyB{}                             = ty
-substConstraints _ ty@TyNamed{}                         = ty
 substConstraints tys ty@(TyVar _ (Name _ (Unique k) _)) = fromMaybe ty (substInt tys k)
 substConstraints tys (TyTup l tysϵ)                     = TyTup l (substConstraints tys <$> tysϵ)
 substConstraints tys (TyApp l ty ty')                   =
@@ -221,7 +227,6 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
           cloneTyM (TyArr l tyϵ ty')               = TyArr l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyApp l tyϵ ty')               = TyApp l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
-          cloneTyM tyϵ@TyNamed{}                   = pure tyϵ
           cloneTyM tyϵ@TyB{}                       = pure tyϵ
 
 kind :: T K -> TypeM a ()
@@ -345,7 +350,6 @@ isAmbiguous TyVar{}          = True
 isAmbiguous (TyArr _ ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyApp _ ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyTup _ tys)    = any isAmbiguous tys
-isAmbiguous TyNamed{}        = False
 isAmbiguous TyB{}            = False
 
 checkAmb :: E (T K) -> TypeM a ()
