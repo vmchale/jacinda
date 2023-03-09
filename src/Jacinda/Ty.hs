@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Ty ( TypeM
+module Jacinda.Ty ( TyM
                   , Err (..)
-                  , runTypeM
+                  , runTyM
                   , tyProgram
                   -- * For debugging
                   , tyOf
@@ -85,10 +85,10 @@ addKindEnv i k (TyState u ks cvs v cs) = TyState u (IM.insert i k ks) cvs v cs
 addConstraint :: Ord a => (a, T K, T K) -> TyState a -> TyState a
 addConstraint c (TyState u k cvs v cs) = TyState u k cvs v (S.insert c cs)
 
-type TypeM a = StateT (TyState a) (Either (Err a))
+type TyM a = StateT (TyState a) (Either (Err a))
 
-runTypeM :: Int -> TypeM a b -> Either (Err a) (b, Int)
-runTypeM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.empty S.empty)
+runTyM :: Int -> TyM a b -> Either (Err a) (b, Int)
+runTyM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.empty S.empty)
 
 type Subst a = IM.IntMap (T a)
 
@@ -107,7 +107,7 @@ aT um (TyTup l tys)    = TyTup l (aT um <$> tys)
 -- | Perform substitutions before handing off to 'unifyMatch'
 unifyPrep :: Subst a
           -> [(l, T a, T a)]
-          -> TypeM l (IM.IntMap (T a))
+          -> TyM l (IM.IntMap (T a))
 unifyPrep _ [] = pure mempty
 unifyPrep um ((l, ty, ty'):tys) =
     let ty'' = aT um ty
@@ -131,7 +131,7 @@ zS _ s [] _           = pure s
 zS _ s _ []           = pure s
 zS op s (x:xs) (y:ys) = do{next <- op s x y; zS op next xs ys}
 
-unifyMatch :: Subst a -> [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
+unifyMatch :: Subst a -> [(l, T a, T a)] -> TyM l (IM.IntMap (T a))
 unifyMatch _ [] = pure IM.empty
 unifyMatch um ((_, TyB _ b, TyB _ b'):tys) | b == b' = unifyPrep um tys
 unifyMatch um ((_, TyVar _ n, ty@(TyVar _ n')):tys)
@@ -144,10 +144,10 @@ unifyMatch um ((l, TyTup _ tys, TyTup _ tys'):tyss)
     | length tys == length tys' = unifyPrep um (zip3 (repeat l) tys tys' ++ tyss)
 unifyMatch _ ((l, ty, ty'):_) = throwError (UF l (void ty) (void ty'))
 
-unify :: [(l, T a, T a)] -> TypeM l (IM.IntMap (T a))
+unify :: [(l, T a, T a)] -> TyM l (IM.IntMap (T a))
 unify = unifyPrep IM.empty
 
-unifyM :: S.Set (l, T a, T a) -> TypeM l (IM.IntMap (T a))
+unifyM :: S.Set (l, T a, T a) -> TyM l (IM.IntMap (T a))
 unifyM s = {-# SCC "unifyM" #-} unify (S.toList s)
 
 substInt :: IM.IntMap (T a) -> Int -> Maybe (T a)
@@ -169,21 +169,21 @@ substConstraints tys (TyApp l ty ty')                   =
 substConstraints tys (TyArr l ty ty')                   =
     TyArr l (substConstraints tys ty) (substConstraints tys ty')
 
-freshName :: T.Text -> K -> TypeM a (Name K)
+freshName :: T.Text -> K -> TyM a (Name K)
 freshName n k = do
     st <- gets maxU
     Name n (Unique $ st+1) k
         <$ modify (mapMaxU (+1))
 
-namek :: Name K -> TypeM a (Name K)
+namek :: Name K -> TyM a (Name K)
 namek n =
     modify (addKindEnv (unUnique$unique n) (loc n)) $> n
 
-higherOrder :: T.Text -> TypeM a (Name K)
+higherOrder :: T.Text -> TyM a (Name K)
 higherOrder t = freshName t (KArr Star Star) >>= namek
 
 -- of kind 'Star'
-dummyName :: T.Text -> TypeM a (Name K)
+dummyName :: T.Text -> TyM a (Name K)
 dummyName n = freshName n Star >>= namek
 
 addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
@@ -199,15 +199,15 @@ var :: Name K -> T K
 var = TyVar Star
 
 -- assumes they have been renamed...
-pushConstraint :: Ord a => a -> T K -> T K -> TypeM a ()
+pushConstraint :: Ord a => a -> T K -> T K -> TyM a ()
 pushConstraint l ty ty' =
     modify (addConstraint (l, ty, ty'))
 
-isStar :: K -> TypeM a ()
+isStar :: K -> TyM a ()
 isStar Star = pure ()
 isStar k    = throwError $ Expected k Star
 
-liftCloneTy :: T a -> TypeM b (T a)
+liftCloneTy :: T a -> TyM b (T a)
 liftCloneTy ty = do
     i <- gets maxU
     let (ty', (j, iMaps)) = cloneTy i ty
@@ -229,7 +229,7 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
           cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
           cloneTyM tyϵ@TyB{}                       = pure tyϵ
 
-kind :: T K -> TypeM a ()
+kind :: T K -> TyM a ()
 kind (TyB Star TyStr)                  = pure ()
 kind (TyB Star TyInteger)              = pure ()
 kind (TyB Star TyFloat)                = pure ()
@@ -265,7 +265,7 @@ kind (TyApp k1 ty0 ty1) = do
                       | otherwise        -> throwError $ Expected (tLoc ty1) k0
         k0                               -> throwError $ Expected (KArr Star Star) k0
 
-checkType :: Ord a => T K -> (C, a) -> TypeM a ()
+checkType :: Ord a => T K -> (C, a) -> TyM a ()
 checkType TyVar{} _                            = pure () -- TODO: I think this is right
 checkType (TyB _ TyR) (IsSemigroup, _)         = pure ()
 checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
@@ -319,23 +319,23 @@ checkClass :: Ord a
            => IM.IntMap (T K) -- ^ Unification result
            -> Int
            -> S.Set (C, a)
-           -> TypeM a ()
+           -> TyM a ()
 checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
         Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
-lookupVar :: Name a -> TypeM a (T K)
+lookupVar :: Name a -> TyM a (T K)
 lookupVar n@(Name _ (Unique i) l) = do
     st <- gets varEnv
     case IM.lookup i st of
         Just ty -> pure ty -- liftCloneTy ty
         Nothing -> throwError $ IllScoped l n
 
-tyOf :: Ord a => E a -> TypeM a (T K)
+tyOf :: Ord a => E a -> TyM a (T K)
 tyOf = fmap eLoc . tyE
 
-tyD0 :: Ord a => D a -> TypeM a (D (T K))
+tyD0 :: Ord a => D a -> TyM a (D (T K))
 tyD0 (SetFS bs) = pure $ SetFS bs
 tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
     e' <- tyE0 e
@@ -352,7 +352,7 @@ isAmbiguous (TyApp _ ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyTup _ tys)    = any isAmbiguous tys
 isAmbiguous TyB{}            = False
 
-checkAmb :: E (T K) -> TypeM a ()
+checkAmb :: E (T K) -> TyM a ()
 checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need it anyway... better error messages
 checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
@@ -366,7 +366,7 @@ checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()
 
-tyProgram :: Ord a => Program a -> TypeM a (Program (T K))
+tyProgram :: Ord a => Program a -> TyM a (Program (T K))
 tyProgram (Program ds e) = do
     ds' <- traverse tyD0 ds
     e' <- tyE0 e
@@ -378,7 +378,7 @@ tyProgram (Program ds e) = do
     let res = {-# SCC "substConstraints" #-} fmap (substConstraints backNames') (Program ds' e')
     checkAmb (expr res) $> res
 
-tyE :: Ord a => E a -> TypeM a (E (T K))
+tyE :: Ord a => E a -> TyM a (E (T K))
 tyE e = do
     e' <- tyE0 e
     backNames <- unifyM =<< gets constraints
@@ -386,36 +386,36 @@ tyE e = do
     traverse_ (uncurry (checkClass backNames)) toCheck
     pure (fmap (substConstraints backNames) e')
 
-tyNumOp :: Ord a => a -> TypeM a (T K)
+tyNumOp :: Ord a => a -> TyM a (T K)
 tyNumOp l = do
     m <- dummyName "m"
     modify (mapClassVars (addC m (IsNum, l)))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
-tySemiOp :: Ord a => a -> TypeM a (T K)
+tySemiOp :: Ord a => a -> TyM a (T K)
 tySemiOp l = do
     m <- dummyName "m"
     modify (mapClassVars (addC m (IsSemigroup, l)))
     let m' = var m
     pure $ tyArr m' (tyArr m' m')
 
-tyOrd :: Ord a => a -> TypeM a (T K)
+tyOrd :: Ord a => a -> TyM a (T K)
 tyOrd l = do
     a <- dummyName "a"
     modify (mapClassVars (addC a (IsOrd, l)))
     let a' = var a
-    pure $ tyArr a' (tyArr a' tyBool)
+    pure $ tyArr a' (tyArr a' tyB)
 
-tyEq :: Ord a => a -> TypeM a (T K)
+tyEq :: Ord a => a -> TyM a (T K)
 tyEq l = do
     a <- dummyName "a"
     modify (mapClassVars (addC a (IsEq, l)))
     let a' = var a
-    pure $ tyArr a' (tyArr a' tyBool)
+    pure $ tyArr a' (tyArr a' tyB)
 
 -- min/max
-tyM :: Ord a => a -> TypeM a (T K)
+tyM :: Ord a => a -> TyM a (T K)
 tyM l = do
     a <- dummyName "a"
     modify (mapClassVars (addC a (IsOrd, l)))
@@ -425,8 +425,13 @@ tyM l = do
 desugar :: a
 desugar = error "Should have been de-sugared in an earlier stage!"
 
-tyE0 :: Ord a => E a -> TypeM a (E (T K))
-tyE0 (BoolLit _ b)           = pure $ BoolLit tyBool b
+tyES :: Ord a => Subst a -> E a -> TyM a (E (T K), Subst a)
+tyES s (BoolLit _ b) = pure (BoolLit tyB b, s)
+tyES s (IntLit _ i) = pure (IntLit tyI i, s)
+tyES s (BBuiltin l Plus) = do {t <- tySemiOp l; pure (BBuiltin t Plus, s)}
+
+tyE0 :: Ord a => E a -> TyM a (E (T K))
+tyE0 (BoolLit _ b)           = pure $ BoolLit tyB b
 tyE0 (IntLit _ i)            = pure $ IntLit tyI i
 tyE0 (FloatLit _ f)          = pure $ FloatLit tyF f
 tyE0 (StrLit _ str)          = pure $ StrLit tyStr str
@@ -455,13 +460,13 @@ tyE0 (BBuiltin l Min)        = BBuiltin <$> tyM l <*> pure Min
 tyE0 (BBuiltin l Max)        = BBuiltin <$> tyM l <*> pure Max
 tyE0 (BBuiltin _ Split)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (mkVec tyStr))) Split
 tyE0 (BBuiltin _ Splitc)     = pure $ BBuiltin (tyArr tyStr (tyArr tyStr (mkVec tyStr))) Splitc
-tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) Matches
-tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyBool)) NotMatches
+tyE0 (BBuiltin _ Matches)    = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyB)) Matches
+tyE0 (BBuiltin _ NotMatches) = pure $ BBuiltin (tyArr tyStr (tyArr tyR tyB)) NotMatches
 tyE0 (UBuiltin _ Tally)      = pure $ UBuiltin (tyArr tyStr tyI) Tally
 tyE0 (BBuiltin _ Div)        = pure $ BBuiltin (tyArr tyF (tyArr tyF tyF)) Div
-tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyBool tyBool) Not
-tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) And
-tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyBool (tyArr tyBool tyBool)) Or
+tyE0 (UBuiltin _ Not)        = pure $ UBuiltin (tyArr tyB tyB) Not
+tyE0 (BBuiltin _ And)        = pure $ BBuiltin (tyArr tyB (tyArr tyB tyB)) And
+tyE0 (BBuiltin _ Or)         = pure $ BBuiltin (tyArr tyB (tyArr tyB tyB)) Or
 tyE0 (BBuiltin _ Match)      = pure $ BBuiltin (tyArr tyStr (tyArr tyR (tyOpt $ TyTup Star [tyI, tyI]))) Match
 tyE0 (TBuiltin _ Substr)     = pure $ TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr
 tyE0 (UBuiltin _ IParse)     = pure $ UBuiltin (tyArr tyStr tyI) IParse
@@ -544,7 +549,7 @@ tyE0 (BBuiltin l Filter) = do
     f <- higherOrder "f"
     let a' = var a
         f' = var f
-        fTy = tyArr (tyArr a' tyBool) (tyArr (hkt f' a') (hkt f' a'))
+        fTy = tyArr (tyArr a' tyB) (tyArr (hkt f' a') (hkt f' a'))
     modify (mapClassVars (addC f (Witherable , l)))
     pure $ BBuiltin fTy Filter
 tyE0 (BBuiltin l MapMaybe) = do
@@ -628,7 +633,7 @@ tyE0 (Implicit _ e) = do
 tyE0 (Guarded l e streamE) = do
     streamE' <- tyE0 streamE
     e' <- tyE0 e
-    pushConstraint l tyBool (eLoc e')
+    pushConstraint l tyB (eLoc e')
     pure $ Guarded (tyStream (eLoc streamE')) e' streamE'
 tyE0 (EApp _ e0 e1) = do
     e0' <- tyE0 e0
@@ -692,6 +697,6 @@ tyE0 (Cond l p e0 e1) = do
     e0' <- tyE0 e0
     e1' <- tyE0 e1
     let ty0 = eLoc e0'
-    pushConstraint l tyBool (eLoc p')
+    pushConstraint l tyB (eLoc p')
     pushConstraint (eLoc e0) ty0 (eLoc e1')
     pure $ Cond ty0 p' e0' e1'

@@ -179,13 +179,13 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Matches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (isMatch' re str)
+        (StrLit _ str, RegexCompiled re) -> BoolLit tyB (isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ NotMatches) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (StrLit _ str, RegexCompiled re) -> BoolLit tyBool (not $ isMatch' re str)
+        (StrLit _ str, RegexCompiled re) -> BoolLit tyB (not $ isMatch' re str)
         _                                -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') = do
     eI <- eNorm e
@@ -283,59 +283,59 @@ eNorm (EApp ty (EApp ty' op@(BBuiltin _ Lt) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i < j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i < j)
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i < j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i < j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Gt) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i > j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i > j)
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i > j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i > j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Eq) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i == j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i == j)
-        (BoolLit _ b, BoolLit _ b')  -> BoolLit tyBool (b == b')
-        (StrLit _ i, StrLit _ j)     -> BoolLit tyBool (i == j)
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i == j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i == j)
+        (BoolLit _ b, BoolLit _ b')  -> BoolLit tyB (b == b')
+        (StrLit _ i, StrLit _ j)     -> BoolLit tyB (i == j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Neq) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i /= j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i /= j)
-        (StrLit _ i, StrLit _ j)     -> BoolLit tyBool (i /= j)
-        (BoolLit _ b, BoolLit _ b')  -> BoolLit tyBool (b /= b')
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i /= j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i /= j)
+        (StrLit _ i, StrLit _ j)     -> BoolLit tyB (i /= j)
+        (BoolLit _ b, BoolLit _ b')  -> BoolLit tyB (b /= b')
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Leq) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i <= j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i <= j)
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i <= j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i <= j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty (EApp ty' op@(BBuiltin _ Geq) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (IntLit _ i, IntLit _ j)     -> BoolLit tyBool (i >= j)
-        (FloatLit _ i, FloatLit _ j) -> BoolLit tyBool (i >= j)
+        (IntLit _ i, IntLit _ j)     -> BoolLit tyB (i >= j)
+        (FloatLit _ i, FloatLit _ j) -> BoolLit tyB (i >= j)
         _                            -> EApp ty (EApp ty' op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ And) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (BoolLit _ b, BoolLit _ b') -> b `seq` b' `seq` BoolLit tyBool (b && b')
+        (BoolLit _ b, BoolLit _ b') -> b `seq` b' `seq` BoolLit tyB (b && b')
         _                           -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp ty0 (EApp ty1 op@(BBuiltin _ Or) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
-        (BoolLit _ b, BoolLit _ b') -> b `seq` b' `seq` BoolLit tyBool (b || b')
+        (BoolLit _ b, BoolLit _ b') -> b `seq` b' `seq` BoolLit tyB (b || b')
         _                           -> EApp ty0 (EApp ty1 op eI) eI'
 eNorm (EApp _ (EApp _ (UBuiltin _ Const) e) _) = eNorm e
 eNorm (EApp ty op@(UBuiltin _ Const) e) = EApp ty op <$> eNorm e
@@ -359,7 +359,7 @@ eNorm (EApp ty op@(UBuiltin _ Negate) e) = do
 eNorm (EApp ty op@(UBuiltin _ Not) e) = do
     eI <- eNorm e
     pure $ case eI of
-        (BoolLit _ b) -> BoolLit tyBool (not b)
+        (BoolLit _ b) -> BoolLit tyB (not b)
         _             -> EApp ty op eI
 eNorm (EApp ty op@(UBuiltin _ IParse) e) = do
     eI <- eNorm e

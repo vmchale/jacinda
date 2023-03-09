@@ -2,7 +2,7 @@ module Jacinda.Ty.Const ( tyStream
                         , tyStr, tyR
                         , tyI
                         , tyF
-                        , tyBool
+                        , tyB
                         , hkt
                         , tyOpt
                         , mkVec
@@ -14,8 +14,8 @@ import           Jacinda.AST
 tyStream :: T K -> T K
 tyStream = TyApp Star (TyB (KArr Star Star) TyStream)
 
-tyBool :: T K
-tyBool = TyB Star TyBool
+tyB :: T K
+tyB = TyB Star TyBool
 
 tyI :: T K
 tyI = TyB Star TyInteger

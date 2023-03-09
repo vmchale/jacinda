@@ -122,14 +122,14 @@ eEval (ix, line, ctx) = go where
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (isMatch' reϵ strϵ)
+            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyB (isMatch' reϵ strϵ)
             (StrLit{}, _)                      -> noRes eI' "Regex"
             _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
-            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyBool (not $ isMatch' reϵ strϵ)
+            (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyB (not $ isMatch' reϵ strϵ)
             (StrLit{}, _)                      -> noRes eI' "Regex"
             _                                  -> noRes eI "Str"
     go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
@@ -170,59 +170,59 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
-            in BoolLit tyBool (eI == eI')
+            in BoolLit tyB (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI > eI')
+            in BoolLit tyB (eI > eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI < eI')
+            in BoolLit tyB (eI < eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI == eI')
+            in BoolLit tyB (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI == eI')
+            in BoolLit tyB (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
-            in BoolLit tyBool (eI /= eI')
+            in BoolLit tyB (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Leq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI <= eI')
+            in BoolLit tyB (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Geq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
-            in BoolLit tyBool (eI <= eI')
+            in BoolLit tyB (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Eq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI == eI')
+            in BoolLit tyB (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Neq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI /= eI')
+            in BoolLit tyB (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Lt) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI < eI')
+            in BoolLit tyB (eI < eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Gt) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI > eI')
+            in BoolLit tyB (eI > eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Geq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI >= eI')
+            in BoolLit tyB (eI >= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Leq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
-            in BoolLit tyBool (eI <= eI')
+            in BoolLit tyB (eI <= eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
@@ -242,11 +242,11 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
-            in BoolLit tyBool (eI == eI')
+            in BoolLit tyB (eI == eI')
     go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Neq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
-            in BoolLit tyBool (eI /= eI')
+            in BoolLit tyB (eI /= eI')
     go (EApp _ (EApp _ (BBuiltin _ Div) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
@@ -254,11 +254,11 @@ eEval (ix, line, ctx) = go where
     go (EApp _ (EApp _ (BBuiltin _ And) e) e') =
         let b = asBool (go e)
             b' = asBool (go e')
-            in BoolLit tyBool (b && b')
+            in BoolLit tyB (b && b')
     go (EApp _ (EApp _ (BBuiltin _ Or) e) e') =
         let b = asBool e
             b' = asBool e'
-            in BoolLit tyBool (b || b')
+            in BoolLit tyB (b || b')
     go (EApp _ (UBuiltin _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
         where str = asStr (go e)
@@ -302,7 +302,7 @@ eEval (ix, line, ctx) = go where
             in mkI (min eI eI')
     go (EApp _ (UBuiltin _ Not) e) =
         let eI = asBool (go e)
-        in BoolLit tyBool (not eI)
+        in BoolLit tyB (not eI)
     go (EApp _ (UBuiltin _ (At i)) e) =
         let eI = go e
             in case eI of
