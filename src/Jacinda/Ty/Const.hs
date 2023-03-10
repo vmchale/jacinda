@@ -5,7 +5,7 @@ module Jacinda.Ty.Const ( tyStream
                         , tyB
                         , hkt
                         , tyOpt
-                        , mkVec
+                        , tyV
                         ) where
 
 import           Jacinda.AST
@@ -38,5 +38,5 @@ tyOpt = hkt (TyB (KArr Star Star) TyOption)
 tyVec :: T K
 tyVec = TyB (KArr Star Star) TyVec
 
-mkVec :: T K -> T K
-mkVec = hkt tyVec
+tyV :: T K -> T K
+tyV = hkt tyVec
