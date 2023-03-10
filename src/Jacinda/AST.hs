@@ -410,7 +410,7 @@ instance Eq (E a) where
 data C = IsNum
        | IsEq
        | IsOrd
-       | IsParseable
+       | IsParse
        | IsSemigroup
        | Functor -- ^ For map (@"@)
        | Foldable
@@ -423,7 +423,7 @@ instance Pretty C where
     pretty IsNum           = "Num"
     pretty IsEq            = "Eq"
     pretty IsOrd           = "Ord"
-    pretty IsParseable     = "Parseable"
+    pretty IsParse         = "Parseable"
     pretty IsSemigroup     = "Semigroup"
     pretty Functor         = "Functor"
     pretty Foldable        = "Foldable"
