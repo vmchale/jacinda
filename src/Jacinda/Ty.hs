@@ -335,15 +335,14 @@ lookupVar n@(Name _ (Unique i) l) = do
 tyOf :: Ord a => E a -> TyM a (T K)
 tyOf = fmap eLoc . tyE
 
-tyD0 :: Ord a => D a -> TyM a (D (T K))
-tyD0 (SetFS bs) = pure $ SetFS bs
-tyD0 (FunDecl n@(Name _ (Unique i) _) [] e) = do
-    e' <- tyE0 e
-    let ty = eLoc e'
-    modify (addVarEnv i ty)
-    pure $ FunDecl (n $> ty) [] e'
-tyD0 FunDecl{} = error "Internal error. Should have been desugared by now."
-tyD0 FlushDecl = pure FlushDecl
+tyDS :: Ord a => Subst K -> D a -> TyM a (D (T K), Subst K)
+tyDS s (SetFS bs) = pure (SetFS bs, s)
+tyDS s FlushDecl  = pure (FlushDecl, s)
+tyDS s (FunDecl n@(Name _ (Unique i) _) [] e) = do
+    (e', s') <- tyES s e
+    let t=eLoc e'
+    modify (addVarEnv i t) $> (FunDecl (n$>t) [] e', s')
+tyDS _ FunDecl{}   = error "Internal error. Should have been desugared by now."
 
 isAmbiguous :: T K -> Bool
 isAmbiguous TyVar{}          = True
@@ -366,16 +365,16 @@ checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
 checkAmb (Lam _ _ e) = checkAmb e -- I think
 checkAmb _ = pure ()
 
+tS _ s []     = pure ([], s)
+tS f s (t:ts) = do{(x, next) <- f s t; first (x:) <$> tS f next ts}
+
 tyProgram :: Ord a => Program a -> TyM a (Program (T K))
 tyProgram (Program ds e) = do
-    ds' <- traverse tyD0 ds
-    e' <- tyE0 e
-    backNames <- unifyM =<< gets constraints
+    (ds', s0) <- tS tyDS mempty ds
+    (e', s1) <- tyES s0 e
     toCheck <- gets (IM.toList . classVars)
-    traverse_ (uncurry (checkClass backNames)) toCheck
-    backNames' <- unifyM =<< gets constraints
-    -- FIXME: not sure if termination/whatever is guaranteed, need 2 think..
-    let res = {-# SCC "substConstraints" #-} fmap (substConstraints backNames') (Program ds' e')
+    traverse_ (uncurry (checkClass s1)) toCheck
+    let res = {-# SCC "substConstraints" #-} fmap (substConstraints s1) (Program ds' e')
     checkAmb (expr res) $> res
 
 tyNumOp :: Ord a => a -> TyM a (T K)
@@ -544,7 +543,21 @@ tyES s (Let _ (n@(Name _ (Unique i) _), eϵ) e) = do
     modify (addVarEnv i bTy)
     (e', s1) <- tyES s0 e
     pure (Let (eLoc e') (n$>bTy, eϵ') e', s1)
+tyES s (Tup _ es) = do {(es', s') <- tS tyES s es; pure (Tup (TyTup Star (fmap eLoc es')) es', s')}
 tyES s (Var _ n) = do {t <- lookupVar n; pure (Var t (n$>t), s)}
+tyES s (OptionVal _ (Just e)) = do {(e', s') <- tyES s e; pure (OptionVal (tyOpt (eLoc e')) (Just e'), s')}
+tyES s (OptionVal _ Nothing) = do {a <- var <$> dummyName "a"; pure (OptionVal (tyOpt a) Nothing, s)}
+tyES s (Arr l v) | V.null v = do
+    a <- var <$> dummyName "a"
+    pure (Arr (tyV a) V.empty, s)
+tyES s (Cond l p e0 e1) = do
+    (p', s0) <- tyES s p
+    (e0', s1) <- tyES s0 e0
+    (e1', s2) <- tyES s1 e1
+    let t=eLoc e0'
+    s3 <- liftEither $ mguPrep l s2 tyB (eLoc p')
+    s4 <- liftEither $ mguPrep l s3 t (eLoc e1')
+    pure (Cond t p' e0' e1', s4)
 
 tyE0 :: Ord a => E a -> TyM a (E (T K))
 tyE0 (BoolLit _ b)           = pure $ BoolLit tyB b
