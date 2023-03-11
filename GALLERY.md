@@ -25,6 +25,12 @@ cabal-plan dot | ja '~.{%/"/}{`1}'
 fd '\.(c|h)$' -x wc -l | ja '(+)|0 $1:i'
 ```
 
+# Long Lines in Source Code
+
+```
+fd '\.hs$' -x ja "{|sprintf '%i %s:%i %s' (#\`0.fp.ix.\`0)}" -i | sort -n
+```
+
 # Label lines
 
 ```
