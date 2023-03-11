@@ -25,13 +25,14 @@ module Jacinda.AST ( E (..)
 
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
+import qualified Data.IntMap        as IM
 import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
 import           Intern.Name
-import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, tupled, (<+>))
+import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, pipe, punctuate, tupled, (<+>))
 import           Regex.Rure         (RurePtr)
 
 infixr 6 <#>
@@ -79,9 +80,9 @@ data T a = TyB { tLoc :: a, tyBuiltin :: TB }
          | TyApp { tLoc :: a, tyApp0 :: T a, tyApp1 :: T a }
          | TyArr { tLoc :: a, tyArr0 :: T a, tyArr1 :: T a }
          | TyVar { tLoc :: a, tyVar :: Name a }
-         | TyTup { tLoc :: a, tyTups :: [T a] } -- in practice, parse only >1
-         deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set, not alpha-equiv. or anything
-         -- TODO: type vars, products...
+         | TyTup { tLoc :: a, tyTups :: [T a] }
+         | Rho { tLoc :: a, tyRho :: Name a, tyArms :: IM.IntMap (T a) }
+         deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set, not alpha-equiv.
 
 instance Pretty TB where
     pretty TyInteger = "Integer"
@@ -101,6 +102,10 @@ instance Pretty (T a) where
     pretty (TyVar _ n)      = pretty n
     pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup _ tys)    = jacTup tys
+    pretty (Rho _ n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
+
+prettyFields :: [(Int, T a)] -> Doc ann
+prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":" <+> pretty t
 
 instance Show (T a) where
     show = show . pretty
@@ -415,7 +420,6 @@ data C = IsNum
        | Functor -- ^ For map (@"@)
        | Foldable
        | IsPrintf
-       | HasField Int (T K)
        | Witherable
        deriving (Eq, Ord)
 
@@ -428,7 +432,6 @@ instance Pretty C where
     pretty Functor         = "Functor"
     pretty Foldable        = "Foldable"
     pretty IsPrintf        = "Printf"
-    pretty (HasField i ty) = "HasField" <+> pretty i <+> "~" <+> pretty ty
     pretty Witherable      = "Witherable"
 
 instance Show C where
