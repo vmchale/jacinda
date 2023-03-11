@@ -96,9 +96,15 @@ aT :: Subst a -> T a -> T a
 aT um ty'@(TyVar _ (Name _ (Unique i) _)) =
     case IM.lookup i um of
         Just ty@TyVar{} -> aT (IM.delete i um) ty -- prevent cyclic lookups
-        -- TODO: does this need a case for TyApp -> aT?
-        Just ty         -> ty
+        Just ty@Rho{}   -> aT (IM.delete i um) ty
+        Just ty         -> aT um ty
         Nothing         -> ty'
+aT um (Rho l n@(Name _ (Unique i) _) rs) =
+    case IM.lookup i um of
+        Just ty@Rho{}   -> aT (IM.delete i um) ty
+        Just ty@TyVar{} -> aT (IM.delete i um) ty
+        Just ty         -> aT um ty
+        Nothing         -> Rho l n (fmap (aT um) rs)
 aT _ ty'@TyB{} = ty'
 aT um (TyApp l ty ty') = TyApp l (aT um ty) (aT um ty')
 aT um (TyArr l ty ty') = TyArr l (aT um ty) (aT um ty')
@@ -125,7 +131,16 @@ mgu _ s (TyVar _ (Name _ (Unique k) _)) ty = Right $ IM.insert k ty s
 mgu l s (TyArr _ t0 t1) (TyArr _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyApp _ t0 t1) (TyApp _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup _ ts) (TyTup _ ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
+mgu l s (Rho _ n rs) t'@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = tS_ (\sϵ (i, tϵ) -> IM.insert (unUnique$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
+mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
+mgu l s (Rho k n rs) (Rho _ n' rs') = do
+    rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
+    pure (IM.insert (unUnique$unique n) (Rho k n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l (void t) (void t')
+
+tS_ :: Monad m => (Subst a -> b -> m (Subst a)) -> Subst a -> [b] -> m (Subst a)
+tS_ _ s []     = pure s
+tS_ f s (t:ts) = do{next <- f s t; tS_ f next ts}
 
 zS _ s [] _           = pure s
 zS _ s _ []           = pure s
@@ -153,21 +168,12 @@ unifyM s = {-# SCC "unifyM" #-} unify (S.toList s)
 substInt :: IM.IntMap (T a) -> Int -> Maybe (T a)
 substInt tys k =
     case IM.lookup k tys of
-        Just ty'@TyVar{}       -> Just $ substConstraints (IM.delete k tys) ty' -- TODO: this is to prevent cyclic lookups: is it right?
-        Just (TyApp l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyApp l (substConstraints tys' ty0) (substConstraints tys' ty1)
-        Just (TyArr l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyArr l (substConstraints tys' ty0) (substConstraints tys' ty1)
-        Just (TyTup l tysϵ)    -> Just $ let tys' = IM.delete k tys in TyTup l (substConstraints tys' <$> tysϵ)
+        Just ty'@TyVar{}       -> Just $ aT (IM.delete k tys) ty' -- TODO: this is to prevent cyclic lookups: is it right?
+        Just (TyApp l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyApp l (aT tys' ty0) (aT tys' ty1)
+        Just (TyArr l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyArr l (aT tys' ty0) (aT tys' ty1)
+        Just (TyTup l tysϵ)    -> Just $ let tys' = IM.delete k tys in TyTup l (aT tys' <$> tysϵ)
         Just ty'               -> Just ty'
         Nothing                -> Nothing
-
-substConstraints :: IM.IntMap (T a) -> T a -> T a
-substConstraints _ ty@TyB{}                             = ty
-substConstraints tys ty@(TyVar _ (Name _ (Unique k) _)) = fromMaybe ty (substInt tys k)
-substConstraints tys (TyTup l tysϵ)                     = TyTup l (substConstraints tys <$> tysϵ)
-substConstraints tys (TyApp l ty ty')                   =
-    TyApp l (substConstraints tys ty) (substConstraints tys ty')
-substConstraints tys (TyArr l ty ty')                   =
-    TyArr l (substConstraints tys ty) (substConstraints tys ty')
 
 freshName :: T.Text -> K -> TyM a (Name K)
 freshName n k = do
@@ -273,9 +279,9 @@ checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
 checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
 checkType (TyB _ TyInteger) (IsOrd, _)         = pure ()
 checkType (TyB _ TyInteger) (IsEq, _)          = pure ()
-checkType (TyB _ TyInteger) (IsParse, _)   = pure ()
-checkType (TyB _ TyFloat) (IsParse, _)     = pure ()
-checkType ty (IsParse, l)                  = throwError $ Doesn'tSatisfy l (void ty) IsParse
+checkType (TyB _ TyInteger) (IsParse, _)       = pure ()
+checkType (TyB _ TyFloat) (IsParse, _)         = pure ()
+checkType ty (IsParse, l)                      = throwError $ Doesn'tSatisfy l (void ty) IsParse
 checkType (TyB _ TyFloat) (IsSemigroup, _)     = pure ()
 checkType (TyB _ TyFloat) (IsNum, _)           = pure ()
 checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
@@ -304,16 +310,8 @@ checkType (TyB _ TyFloat) (IsPrintf, _)        = pure ()
 checkType (TyB _ TyInteger) (IsPrintf, _)      = pure ()
 checkType (TyB _ TyBool) (IsPrintf, _)         = pure ()
 checkType (TyTup _ tys) (IsPrintf, l)          = traverse_ (`checkType` (IsPrintf, l)) tys
+checkType (Rho _ _ rs) (IsPrintf, l)           = traverse_ (`checkType` (IsPrintf, l)) (IM.elems rs)
 checkType ty (c@IsPrintf, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty@(TyTup _ tys) (c@(HasField i ty'), l) | length tys >= i = pushConstraint l ty' (tys !! (i-1))
-                                                   | otherwise = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@HasField{}, l)                 = throwError $ Doesn'tSatisfy l (void ty) c
-
-substC :: IM.IntMap (T K) -- ^ Unification result
-       -> C
-       -> C
-substC um (HasField i ty) = HasField i (substConstraints um ty)
-substC _ c                = c
 
 checkClass :: Ord a
            => IM.IntMap (T K) -- ^ Unification result
@@ -322,7 +320,7 @@ checkClass :: Ord a
            -> TyM a ()
 checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
-        Just ty -> traverse_ (checkType ty) (first (substC tys) <$> S.toList cs)
+        Just ty -> traverse_ (checkType ty) (S.toList cs)
         Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
 lookupVar :: Name a -> TyM a (T K)
@@ -350,6 +348,7 @@ isAmbiguous (TyArr _ ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyApp _ ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyTup _ tys)    = any isAmbiguous tys
 isAmbiguous TyB{}            = False
+isAmbiguous Rho{}            = True
 
 checkAmb :: E (T K) -> TyM a ()
 checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
@@ -374,7 +373,7 @@ tyProgram (Program ds e) = do
     (e', s1) <- tyES s0 e
     toCheck <- gets (IM.toList . classVars)
     traverse_ (uncurry (checkClass s1)) toCheck
-    let res = {-# SCC "substConstraints" #-} fmap (substConstraints s1) (Program ds' e')
+    let res = {-# SCC "aT" #-} fmap (aT s1) (Program ds' e')
     checkAmb (expr res) $> res
 
 tyNumOp :: Ord a => a -> TyM a (T K)
@@ -421,7 +420,7 @@ tyE e = do
     (e', s) <- tyES mempty e
     cvs <- gets (IM.toList . classVars)
     traverse_ (uncurry (checkClass s)) cvs
-    pure (fmap (substConstraints s) e')
+    pure (fmap (aT s) e')
 
 tyES :: Ord a => Subst K -> E a -> TyM a (E (T K), Subst K)
 tyES s (BoolLit _ b)      = pure (BoolLit tyB b, s)
@@ -475,11 +474,13 @@ tyES s (UBuiltin l Parse) = do {a <- dummyName "a"; modify (mapCV (addC a (IsPar
 tyES s (BBuiltin l Sprintf) = do {a <- dummyName "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BBuiltin (tyArr tyStr (tyArr (var a) tyStr)) Sprintf, s)}
 tyES s (BBuiltin l DedupOn) = do {a <- var <$> dummyName "a"; b <- dummyName "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BBuiltin (tyArr (tyArr a b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
 tyES s (UBuiltin _ (At i)) = do {a <- var <$> dummyName "a"; pure (UBuiltin (tyArr (tyV a) a) (At i), s)}
-tyES s (UBuiltin l (Select i)) = do {a <- dummyName "a"; b <- var <$> dummyName "b"; modify (mapCV (addC a (HasField i b, l))); pure (UBuiltin (tyArr (var a) b) (Select i), s)}
 tyES s (UBuiltin l Dedup) = do {a <- dummyName "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UBuiltin (tyArr sA sA) Dedup, s)}
 tyES s (UBuiltin _ Const) = do {a <- var <$> dummyName "a"; b <- var <$> dummyName "b"; pure (UBuiltin (tyArr a (tyArr b a)) Const, s)}
 tyES s (UBuiltin l CatMaybes) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UBuiltin (tyArr (hkt f' (tyOpt a')) (hkt f' a')) CatMaybes, s)}
 tyES s (BBuiltin l Filter) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=hkt f' a' in pure (BBuiltin (tyArr (tyArr a' tyB) (tyArr w w)) Filter, s)}
+tyES s (UBuiltin l (Select i)) = do
+    ρ <- dummyName "ρ"; a <- var <$> dummyName "a"
+    pure (UBuiltin (tyArr (Rho Star ρ (IM.singleton i a)) a) (Select i), s)
 tyES s (BBuiltin l MapMaybe) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
     f <- higherOrder "f"
@@ -645,13 +646,6 @@ tyE0 (UBuiltin _ (At i)) = do
     let a' = var a
         tyVϵ = tyV a'
     pure $ UBuiltin (tyArr tyVϵ a') (At i)
-tyE0 (UBuiltin l (Select i)) = do
-    a <- dummyName "a"
-    b <- dummyName "b"
-    let a' = var a
-        b' = var b
-    modify (mapCV (addC a (HasField i b', l)))
-    pure $ UBuiltin (tyArr a' b') (Select i)
 tyE0 (UBuiltin l Dedup) = do
     a <- dummyName "a"
     let a' = var a
