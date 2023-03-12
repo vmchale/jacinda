@@ -1,21 +1,22 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Ty ( TyM
-                  , Err (..)
-                  , runTyM
+module Jacinda.Ty ( runTyM
                   , tyProgram
+                  , match
                   -- * For debugging
                   , tyOf
                   ) where
 
-import           Control.Exception          (Exception)
+import           Control.Exception          (Exception, throw)
+import           Control.Monad              (zipWithM)
 import           Control.Monad.Except       (liftEither, throwError)
 import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT)
 import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
+import qualified Data.IntSet                as IS
 import           Data.Semigroup             ((<>))
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
@@ -25,7 +26,7 @@ import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Ty.Const
-import           Prettyprinter              (Doc, Pretty (..), squotes, vsep, (<+>))
+import           Prettyprinter              (Pretty (..), squotes, (<+>))
 
 data Err a = UF a (T ()) (T ())
            | Doesn'tSatisfy a (T ()) C
@@ -33,6 +34,7 @@ data Err a = UF a (T ()) (T ())
            | Ambiguous (T K) (E ())
            | Expected K K
            | IllScopedTyVar (TyName ())
+           | MF (T ()) (T ())
 
 instance Pretty a => Pretty (Err a) where
     pretty (UF l ty ty')           = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
@@ -41,6 +43,7 @@ instance Pretty a => Pretty (Err a) where
     pretty (Ambiguous ty e)        = "type" <+> squotes (pretty ty) <+> "of" <+> squotes (pretty e) <+> "is ambiguous"
     pretty (Expected k0 k1)        = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
     pretty (IllScopedTyVar n)      = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
+    pretty (MF t t')               = "Failed to match" <+> squotes (pretty t) <+> "against type" <+> squotes (pretty t')
 
 instance Pretty a => Show (Err a) where
     show = show . pretty
@@ -99,6 +102,20 @@ aT um (TyTup l tys)    = TyTup l (aT um <$> tys)
 mguPrep :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
 mguPrep l s t0 t1 =
     let t0' = aT s t0; t1' = aT s t1 in mgu l s t0' t1'
+
+match :: T a -> T a -> Subst a
+match t t' = either (throw :: Err () -> Subst a) id (maM t t')
+
+maM :: T a -> T a -> Either (Err l) (Subst a)
+maM (TyB _ b) (TyB _ b') | b == b' = Right mempty
+maM (TyVar _ n) (TyVar _ n') | n == n' = Right mempty
+maM (TyVar _ (Name _ (Unique i) _)) t = Right (IM.singleton i t)
+maM (TyArr _ t0 t1) (TyArr _ t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- FIXME: I think <> is right
+maM (TyTup _ ts) (TyTup _ ts')        = fmap mconcat (zipWithM maM ts ts')
+maM (Rho _ n _) (Rho _ n' _) | n == n' = Right mempty
+maM (Rho _ n rs) t@(Rho _ _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unUnique$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
+maM (Rho _ n rs) t@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = IM.insert (unUnique$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
+maM t t'                              = Left $ MF (void t) (void t')
 
 mgu :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
 mgu _ s (TyB _ b) (TyB _ b') | b == b' = Right s
@@ -516,10 +533,10 @@ tyES s (Cond l p e0 e1) = do
     s3 <- liftEither $ mguPrep l s2 tyB (eLoc p')
     s4 <- liftEither $ mguPrep l s3 t (eLoc e1')
     pure (Cond t p' e0' e1', s4)
+tyES s (Anchor l es) = do
+    (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- var <$> dummyName "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
+    pure (Anchor (TyB Star TyUnit) es', s')
 tyES _ RegexCompiled{} = error "Regex should not be compiled at this stage."
 tyES _ Dfn{} = desugar
 tyES _ ResVar{} = desugar
 tyES _ Paren{} = desugar
-tyES s (Anchor l es) = do
-    (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- var <$> dummyName "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
-    pure (Anchor (TyB Star TyUnit) es', s')
