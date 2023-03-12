@@ -27,7 +27,7 @@ doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
 install: man/ja.1
-	cabal install exe:ja --overwrite-policy=always -w ghc-9.4
+	cabal install exe:ja --overwrite-policy=always -w ghc-9.6
 	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
@@ -58,14 +58,14 @@ bin/aarch64-darwin-ja: $(HS_SRC)
 
 bin/x86_64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	mold -run cabal build exe:ja --builddir=dist-newstyle/x86-linux --enable-executable-static
+	mold -run cabal build exe:ja -w ghc-9.2 --builddir=dist-newstyle/x86-linux --enable-executable-static
 	export BIN=$$(fd 'x86_64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    strip $@
 
 bin/arm-linux-gnueabihf-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc arm-linux-gnueabihf-ghc-9.2.2 --with-ghc-pkg arm-linux-gnueabihf-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/arm-linux
+	@cabal build --with-ghc arm-linux-gnueabihf-ghc-9.2.4 --with-ghc-pkg arm-linux-gnueabihf-ghc-pkg-9.2.4 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/arm-linux
 	export BIN=$$(fd 'arm-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    arm-linux-gnueabihf-strip $@
@@ -79,14 +79,14 @@ bin/aarch64-linux-ja: $(HS_SRC)
 
 bin/mips64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc mips64-linux-gnuabi64-ghc-9.2.2 --with-ghc-pkg mips64-linux-gnuabi64-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/mips-linux
+	@cabal build --with-ghc mips64-linux-gnuabi64-ghc-9.2.4 --with-ghc-pkg mips64-linux-gnuabi64-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/mips-linux
 	export BIN=$$(fd 'mips-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    mips64-linux-gnuabi64-strip $@
 
 bin/powerpc64le-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc powerpc64le-linux-gnu-ghc-9.2.2 --with-ghc-pkg powerpc64le-linux-gnu-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/powerpc64le-linux
+	@cabal build --with-ghc powerpc64le-linux-gnu-ghc-9.2.4 --with-ghc-pkg powerpc64le-linux-gnu-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/powerpc64le-linux
 	export BIN=$$(fd 'ppc64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    powerpc64le-linux-gnu-strip $@
