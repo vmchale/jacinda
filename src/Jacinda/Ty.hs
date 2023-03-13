@@ -4,6 +4,7 @@
 module Jacinda.Ty ( runTyM
                   , tyProgram
                   , match
+                  , aT
                   -- * For debugging
                   , tyOf
                   ) where
