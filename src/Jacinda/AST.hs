@@ -79,9 +79,9 @@ jacTup = tupledBy " . " . fmap pretty
 data T a = TyB { tLoc :: a, tyBuiltin :: TB }
          | TyApp { tLoc :: a, tyApp0 :: T a, tyApp1 :: T a }
          | TyArr { tLoc :: a, tyArr0 :: T a, tyArr1 :: T a }
-         | TyVar { tLoc :: a, tyVar :: Name a }
+         | TyVar { tLoc :: a, tyVar :: Nm a }
          | TyTup { tLoc :: a, tyTups :: [T a] }
-         | Rho { tLoc :: a, tyRho :: Name a, tyArms :: IM.IntMap (T a) }
+         | Rho { tLoc :: a, tyRho :: Nm a, tyArms :: IM.IntMap (T a) }
          deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set, not alpha-equiv.
 
 instance Pretty TB where
@@ -90,7 +90,6 @@ instance Pretty TB where
     pretty TyBool    = "Bool"
     pretty TyStr     = "Str"
     pretty TyFloat   = "Float"
-    pretty TyDate    = "Date"
     pretty TyVec     = "List"
     pretty TyOption  = "Optional"
     pretty TyUnit    = "𝟙"
@@ -248,15 +247,15 @@ data E a = Column { eLoc :: a, col :: Int }
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
          | Guarded { eLoc :: a, eP :: E a, eGuarded :: E a }
          | Implicit { eLoc :: a, eImplicit :: E a }
-         | Let { eLoc :: a, eBind :: (Name a, E a), eE :: E a }
+         | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
-         | Var { eLoc :: a, eVar :: Name a }
+         | Var { eLoc :: a, eVar :: Nm a }
          | IntLit { eLoc :: a, eInt :: !Integer }
          | BoolLit { eLoc :: a, eBool :: !Bool }
          | StrLit { eLoc :: a, eStr :: BS.ByteString }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | FloatLit { eLoc :: a, eFloat :: !Double }
-         | Lam { eLoc :: a, eBound :: Name a, lamE :: E a }
+         | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a }
          | BBuiltin { eLoc :: a, eBin :: BBin }
          | TBuiltin { eLoc :: a, eTer :: BTer }
@@ -287,14 +286,14 @@ data EF a x = ColumnF a Int
             | EAppF a x x
             | GuardedF a x x
             | ImplicitF a x
-            | LetF a (Name a, x) x
-            | VarF a (Name a)
+            | LetF a (Nm a, x) x
+            | VarF a (Nm a)
             | IntLitF a Integer
             | BoolLitF a Bool
             | StrLitF a BS.ByteString
             | RegexLitF a BS.ByteString
             | FloatLitF a Double
-            | LamF a (Name a) x
+            | LamF a (Nm a) x
             | DfnF a x
             | BBuiltinF a BBin
             | TBuiltinF a BTer
@@ -424,22 +423,22 @@ data C = IsNum
        deriving (Eq, Ord)
 
 instance Pretty C where
-    pretty IsNum           = "Num"
-    pretty IsEq            = "Eq"
-    pretty IsOrd           = "Ord"
-    pretty IsParse         = "Parseable"
-    pretty IsSemigroup     = "Semigroup"
-    pretty Functor         = "Functor"
-    pretty Foldable        = "Foldable"
-    pretty IsPrintf        = "Printf"
-    pretty Witherable      = "Witherable"
+    pretty IsNum       = "Num"
+    pretty IsEq        = "Eq"
+    pretty IsOrd       = "Ord"
+    pretty IsParse     = "Parseable"
+    pretty IsSemigroup = "Semigroup"
+    pretty Functor     = "Functor"
+    pretty Foldable    = "Foldable"
+    pretty IsPrintf    = "Printf"
+    pretty Witherable  = "Witherable"
 
 instance Show C where
     show = show . pretty
 
 -- decl
 data D a = SetFS BS.ByteString
-         | FunDecl (Name a) [Name a] (E a)
+         | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
          deriving (Functor)
 

@@ -19,7 +19,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Char8 as ASCII
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
-import qualified Intern.Name as Name
+import qualified Intern.Name as Nm
 import Intern.Name hiding (loc)
 import Jacinda.AST
 import Jacinda.Lexer
@@ -190,10 +190,10 @@ BBin :: { BBin }
      | exp { Exp }
      | dedupon { DedupOn }
 
-Bind :: { (Name AlexPosn, E AlexPosn) }
+Bind :: { (Nm AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
-Args :: { [(Name AlexPosn)] }
+Args :: { [(Nm AlexPosn)] }
      : lparen rparen { [] }
      | parens(name) { [$1] }
      | parens(sepBy(name, comma)) { reverse $1 }
@@ -217,7 +217,7 @@ Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
 
 E :: { E AlexPosn }
-  : name { Var (Name.loc $1) $1 }
+  : name { Var (Nm.loc $1) $1 }
   | intLit { IntLit (loc $1) (int $1) }
   | floatLit { FloatLit (loc $1) (float $1) }
   | boolLit { BoolLit (loc $1) (boolTok $1) }
@@ -229,10 +229,10 @@ E :: { E AlexPosn }
   | lastField { LastField $1 }
   | field iParse { EApp (loc $1) (UBuiltin $2 IParse) (Field (loc $1) (ix $1)) }
   | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
-  | name iParse { EApp (Name.loc $1) (UBuiltin $2 IParse) (Var (Name.loc $1) $1) }
-  | name fParse { EApp (Name.loc $1) (UBuiltin $2 FParse) (Var (Name.loc $1) $1) }
+  | name iParse { EApp (Nm.loc $1) (UBuiltin $2 IParse) (Var (Nm.loc $1) $1) }
+  | name fParse { EApp (Nm.loc $1) (UBuiltin $2 FParse) (Var (Nm.loc $1) $1) }
   | field colon { EApp (loc $1) (UBuiltin $2 Parse) (Field (loc $1) (ix $1)) }
-  | name colon { EApp (Name.loc $1) (UBuiltin $2 Parse) (Var (Name.loc $1) $1) }
+  | name colon { EApp (Nm.loc $1) (UBuiltin $2 Parse) (Var (Nm.loc $1) $1) }
   | lastField iParse { EApp $1 (UBuiltin $2 IParse) (LastField $1) }
   | lastField fParse { EApp $1 (UBuiltin $2 FParse) (LastField $1) }
   | lastField colon { EApp $1 (UBuiltin $2 Parse) (LastField $1) }
@@ -250,7 +250,7 @@ E :: { E AlexPosn }
   | parens(colon) { UBuiltin $1 Parse }
   | lparen BBin rparen { BBuiltin $1 $2 }
   | lparen E BBin rparen { EApp $1 (BBuiltin $1 $3) $2 }
-  | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Name.loc n) n)) $3)) } }
+  | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Nm.loc n) n)) $3)) } }
   | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
   | E capture E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Captures) $1) $3) $4 }
@@ -309,7 +309,7 @@ type Library = ([FilePath], [D AlexPosn])
 parseError :: Token AlexPosn -> Parse a
 parseError = throwError . Unexpected
 
-mkLet :: a -> [(Name a, E a)] -> E a -> E a
+mkLet :: a -> [(Nm a, E a)] -> E a -> E a
 mkLet _ [] e     = e
 mkLet l (b:bs) e = Let l b (mkLet l bs e)
 

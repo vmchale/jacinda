@@ -1,5 +1,5 @@
-module Intern.Unique ( Unique (..)
+module Intern.Unique ( U (..)
                      ) where
 
-newtype Unique = Unique { unUnique :: Int }
+newtype U = U { unU :: Int }
     deriving (Eq, Ord)
