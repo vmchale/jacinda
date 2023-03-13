@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Rename ( renameE
+module Jacinda.Rename ( rE
                       , renameProgram
                       , runRenameM
                       , renamePGlobal
@@ -124,38 +124,38 @@ replaceX n = cata a where
     a x             = embed x
 
 renameD :: D a -> RenameM (D a)
-renameD (FunDecl n ns e) = FunDecl n [] <$> renameE (mkLam ns e)
+renameD (FunDecl n ns e) = FunDecl n [] <$> rE (mkLam ns e)
 renameD d                = pure d
 
 renameProgram :: Program a -> RenameM (Program a)
-renameProgram (Program ds e) = Program <$> traverse renameD ds <*> renameE e
+renameProgram (Program ds e) = Program <$> traverse renameD ds <*> rE e
 
-{-# INLINABLE renameE #-}
-renameE :: (HasRenames s, MonadState s m) => E a -> m (E a)
-renameE (EApp l e e')   = EApp l <$> renameE e <*> renameE e'
-renameE (Tup l es)      = Tup l <$> traverse renameE es
-renameE (Var l n)       = Var l <$> replaceVar n
-renameE (Lam l n e)     = do
+{-# INLINABLE rE #-}
+rE :: (HasRenames s, MonadState s m) => E a -> m (E a)
+rE (EApp l e e')   = EApp l <$> rE e <*> rE e'
+rE (Tup l es)      = Tup l <$> traverse rE es
+rE (Var l n)       = Var l <$> replaceVar n
+rE (Lam l n e)     = do
     (n', modR) <- withName n
-    Lam l n' <$> withRenames modR (renameE e)
-renameE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
+    Lam l n' <$> withRenames modR (rE e)
+rE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
     x@(Nm nX uX _) <- dummyName l "x"
     y@(Nm nY uY _) <- dummyName l "y"
-    Lam l x . Lam l y <$> renameE ({-# SCC "replaceXY" #-} replaceXY (Nm nX uX) (Nm nY uY) e)
+    Lam l x . Lam l y <$> rE ({-# SCC "replaceXY" #-} replaceXY (Nm nX uX) (Nm nY uY) e)
                   | otherwise = do
     x@(Nm n u _) <- dummyName l "x"
     -- no need for withName... withRenames because this is fresh/globally unique
-    Lam l x <$> renameE ({-# SCC "replaceX" #-} replaceX (Nm n u) e)
-renameE (Guarded l p e) = Guarded l <$> renameE p <*> renameE e
-renameE (Implicit l e) = Implicit l <$> renameE e
-renameE ResVar{} = error "Bare reserved variable."
-renameE (Let l (n, eϵ) e') = do
-    eϵ' <- renameE eϵ
+    Lam l x <$> rE ({-# SCC "replaceX" #-} replaceX (Nm n u) e)
+rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
+rE (Implicit l e) = Implicit l <$> rE e
+rE ResVar{} = error "Bare reserved variable."
+rE (Let l (n, eϵ) e') = do
+    eϵ' <- rE eϵ
     (n', modR) <- withName n
-    Let l (n', eϵ') <$> withRenames modR (renameE e')
-renameE (Paren _ e) = renameE e
-renameE (Arr l es) = Arr l <$> traverse renameE es
-renameE (Anchor l es) = Anchor l <$> traverse renameE es
-renameE (OptionVal l e) = OptionVal l <$> traverse renameE e
-renameE (Cond l p e e') = Cond l <$> renameE p <*> renameE e <*> renameE e'
-renameE e = pure e -- literals &c.
+    Let l (n', eϵ') <$> withRenames modR (rE e')
+rE (Paren _ e) = rE e
+rE (Arr l es) = Arr l <$> traverse rE es
+rE (Anchor l es) = Anchor l <$> traverse rE es
+rE (OptionVal l e) = OptionVal l <$> traverse rE e
+rE (Cond l p e e') = Cond l <$> rE p <*> rE e <*> rE e'
+rE e = pure e -- literals &c.

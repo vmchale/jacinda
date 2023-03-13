@@ -55,7 +55,6 @@ instance Pretty K where
 
 data TB = TyInteger
         | TyFloat
-        | TyDate
         | TyStr | TyR
         | TyStream
         | TyVec

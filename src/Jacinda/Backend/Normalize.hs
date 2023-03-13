@@ -139,7 +139,7 @@ applyOp :: E (T K)
         -> E (T K)
         -> EvalM (E (T K))
 applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
-applyOp op e e'             = do { op' <- renameE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op e e'             = do { op' <- rE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
 
 foldE :: E (T K)
       -> E (T K)
@@ -396,7 +396,7 @@ eNorm e@(Var _ (Nm _ (U i) _)) = do
     st <- gets binds
     case IM.lookup i st of
         Just e'@Var{} -> eNorm e' -- no cyclic binds
-        Just e'       -> renameE e' -- FIXME: set outermost type to be type of var...
+        Just e'       -> rE e' -- FIXME: set outermost type to be type of var...
         Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Nm _ (U i) _) e) e') = do

@@ -45,6 +45,7 @@ library jacinda-lib
 
     hs-source-dirs:   src
     other-modules:
+        Jacinda.AST.I
         Jacinda.Lexer
         Intern.Name
         Intern.Unique
