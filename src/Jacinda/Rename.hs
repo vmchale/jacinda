@@ -45,22 +45,22 @@ runRenameM :: Int -> RenameM x -> (x, Int)
 runRenameM i act = second max_ (runState act (Renames i IM.empty))
 
 -- Make sure you don't have cycles in the renames map!
-replaceUnique :: (MonadState s m, HasRenames s) => Unique -> m Unique
-replaceUnique u@(Unique i) = do
+replaceUnique :: (MonadState s m, HasRenames s) => U -> m U
+replaceUnique u@(U i) = do
     rSt <- use (rename.boundLens)
     case IM.lookup i rSt of
         Nothing -> pure u
-        Just j  -> replaceUnique (Unique j)
+        Just j  -> replaceUnique (U j)
 
-replaceVar :: (MonadState s m, HasRenames s) => Name a -> m (Name a)
-replaceVar (Name n u l) = do
+replaceVar :: (MonadState s m, HasRenames s) => Nm a -> m (Nm a)
+replaceVar (Nm n u l) = do
     u' <- replaceUnique u
-    pure $ Name n u' l
+    pure $ Nm n u' l
 
-dummyName :: (MonadState s m, HasRenames s) => a -> T.Text -> m (Name a)
+dummyName :: (MonadState s m, HasRenames s) => a -> T.Text -> m (Nm a)
 dummyName l n = do
     st <- use (rename.maxLens)
-    Name n (Unique $ st+1) l
+    Nm n (U$st+1) l
         <$ modifying (rename.maxLens) (+1)
 
 -- allows us to work with a temporary change to the renamer state, tracking the
@@ -74,12 +74,12 @@ withRenames modSt act = do
     rename .= setMax postMax preSt
     pure res
 
-withName :: (HasRenames s, MonadState s m) => Name a -> m (Name a, Renames -> Renames)
-withName (Name t (Unique i) l) = do
+withName :: (HasRenames s, MonadState s m) => Nm a -> m (Nm a, Renames -> Renames)
+withName (Nm t (U i) l) = do
     m <- use (rename.maxLens)
     let newUniq = m+1
     rename.maxLens .= newUniq
-    pure (Name t (Unique newUniq) l, mapBound (IM.insert i (m+1)))
+    pure (Nm t (U newUniq) l, mapBound (IM.insert i (m+1)))
 
 mapBound :: (IM.IntMap Int -> IM.IntMap Int) -> Renames -> Renames
 mapBound f (Renames m b) = Renames m (f b)
@@ -88,7 +88,7 @@ setMax :: Int -> Renames -> Renames
 setMax i (Renames _ b) = Renames i b
 
 -- | Desguar top-level functions as lambdas
-mkLam :: [Name a] -> E a -> E a
+mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
 -- | A dfn could be unary or binary - here we guess if it is binary
@@ -109,8 +109,8 @@ hasY = cata a where
     a (CondF _ p e e')        = p || e || e'
     a _                       = False
 
-replaceXY :: (a -> Name a) -- ^ @x@
-          -> (a -> Name a) -- ^ @y@
+replaceXY :: (a -> Nm a) -- ^ @x@
+          -> (a -> Nm a) -- ^ @y@
           -> E a
           -> E a
 replaceXY nX nY = cata a where
@@ -118,7 +118,7 @@ replaceXY nX nY = cata a where
     a (ResVarF l Y) = Var l (nY l)
     a x             = embed x
 
-replaceX :: (a -> Name a) -> E a -> E a
+replaceX :: (a -> Nm a) -> E a -> E a
 replaceX n = cata a where
     a (ResVarF l X) = Var l (n l)
     a x             = embed x
@@ -139,13 +139,13 @@ renameE (Lam l n e)     = do
     (n', modR) <- withName n
     Lam l n' <$> withRenames modR (renameE e)
 renameE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
-    x@(Name nX uX _) <- dummyName l "x"
-    y@(Name nY uY _) <- dummyName l "y"
-    Lam l x . Lam l y <$> renameE ({-# SCC "replaceXY" #-} replaceXY (Name nX uX) (Name nY uY) e)
+    x@(Nm nX uX _) <- dummyName l "x"
+    y@(Nm nY uY _) <- dummyName l "y"
+    Lam l x . Lam l y <$> renameE ({-# SCC "replaceXY" #-} replaceXY (Nm nX uX) (Nm nY uY) e)
                   | otherwise = do
-    x@(Name n u _) <- dummyName l "x"
+    x@(Nm n u _) <- dummyName l "x"
     -- no need for withName... withRenames because this is fresh/globally unique
-    Lam l x <$> renameE ({-# SCC "replaceX" #-} replaceX (Name n u) e)
+    Lam l x <$> renameE ({-# SCC "replaceX" #-} replaceX (Nm n u) e)
 renameE (Guarded l p e) = Guarded l <$> renameE p <*> renameE e
 renameE (Implicit l e) = Implicit l <$> renameE e
 renameE ResVar{} = error "Bare reserved variable."

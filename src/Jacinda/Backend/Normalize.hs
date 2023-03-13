@@ -116,7 +116,7 @@ closedProgram i (Program ds e) = runEvalM i $
 
 processDecl :: D (T K)
             -> EvalM ()
-processDecl (FunDecl (Name _ (Unique i) _) [] e) = do
+processDecl (FunDecl (Nm _ (U i) _) [] e) = do
     e' <- eNorm e
     modify (mapBinds (IM.insert i e'))
 processDecl _ = pure ()
@@ -388,18 +388,18 @@ eNorm (EApp ty (UBuiltin _ Some) e) = do
 eNorm (EApp ty op@(UBuiltin _ CatMaybes) e) = EApp ty op <$> eNorm e
 eNorm Dfn{} = desugar
 eNorm ResVar{} = desugar
-eNorm (Let _ (Name _ (Unique i) _, b) e) = do
+eNorm (Let _ (Nm _ (U i) _, b) e) = do
     b' <- eNorm b
     modify (mapBinds (IM.insert i b'))
     eNorm e
-eNorm e@(Var _ (Name _ (Unique i) _)) = do
+eNorm e@(Var _ (Nm _ (U i) _)) = do
     st <- gets binds
     case IM.lookup i st of
         Just e'@Var{} -> eNorm e' -- no cyclic binds
         Just e'       -> renameE e' -- FIXME: set outermost type to be type of var...
         Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
-eNorm (EApp _ (Lam _ (Name _ (Unique i) _) e) e') = do
+eNorm (EApp _ (Lam _ (Nm _ (U i) _) e) e') = do
     e'' <- eNorm e'
     modify (mapBinds (IM.insert i e''))
     eNorm e

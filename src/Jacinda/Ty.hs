@@ -30,7 +30,7 @@ import           Prettyprinter              (Pretty (..), squotes, (<+>))
 
 data Err a = UF a (T ()) (T ())
            | Doesn'tSatisfy a (T ()) C
-           | IllScoped a (Name a)
+           | IllScoped a (Nm a)
            | Ambiguous (T K) (E ())
            | Expected K K
            | IllScopedTyVar (TyName ())
@@ -82,13 +82,13 @@ runTyM i = fmap (second maxU) . flip runStateT (TyState i IM.empty IM.empty IM.e
 type Subst a = IM.IntMap (T a)
 
 aT :: Subst a -> T a -> T a
-aT um ty'@(TyVar _ (Name _ (Unique i) _)) =
+aT um ty'@(TyVar _ (Nm _ (U i) _)) =
     case IM.lookup i um of
         Just ty@TyVar{} -> aT (IM.delete i um) ty -- prevent cyclic lookups
         Just ty@Rho{}   -> aT (IM.delete i um) ty
         Just ty         -> aT um ty
         Nothing         -> ty'
-aT um (Rho l n@(Name _ (Unique i) _) rs) =
+aT um (Rho l n@(Nm _ (U i) _) rs) =
     case IM.lookup i um of
         Just ty@Rho{}   -> aT (IM.delete i um) ty
         Just ty@TyVar{} -> aT (IM.delete i um) ty
@@ -109,26 +109,26 @@ match t t' = either (throw :: Err () -> Subst a) id (maM t t')
 maM :: T a -> T a -> Either (Err l) (Subst a)
 maM (TyB _ b) (TyB _ b') | b == b' = Right mempty
 maM (TyVar _ n) (TyVar _ n') | n == n' = Right mempty
-maM (TyVar _ (Name _ (Unique i) _)) t = Right (IM.singleton i t)
+maM (TyVar _ (Nm _ (U i) _)) t = Right (IM.singleton i t)
 maM (TyArr _ t0 t1) (TyArr _ t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- FIXME: I think <> is right
 maM (TyTup _ ts) (TyTup _ ts')        = fmap mconcat (zipWithM maM ts ts')
 maM (Rho _ n _) (Rho _ n' _) | n == n' = Right mempty
-maM (Rho _ n rs) t@(Rho _ _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unUnique$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
-maM (Rho _ n rs) t@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = IM.insert (unUnique$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
+maM (Rho _ n rs) t@(Rho _ _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
+maM (Rho _ n rs) t@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
 maM t t'                              = Left $ MF (void t) (void t')
 
 mgu :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
 mgu _ s (TyB _ b) (TyB _ b') | b == b' = Right s
-mgu _ s ty (TyVar _ (Name _ (Unique k) _)) = Right $ IM.insert k ty s
-mgu _ s (TyVar _ (Name _ (Unique k) _)) ty = Right $ IM.insert k ty s
+mgu _ s ty (TyVar _ (Nm _ (U k) _)) = Right $ IM.insert k ty s
+mgu _ s (TyVar _ (Nm _ (U k) _)) ty = Right $ IM.insert k ty s
 mgu l s (TyArr _ t0 t1) (TyArr _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyApp _ t0 t1) (TyApp _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup _ ts) (TyTup _ ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
-mgu l s (Rho _ n rs) t'@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = tS_ (\sϵ (i, tϵ) -> IM.insert (unUnique$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
+mgu l s (Rho _ n rs) t'@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s (Rho k n rs) (Rho _ n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
-    pure (IM.insert (unUnique$unique n) (Rho k n' (rs <> rs')) rss)
+    pure (IM.insert (unU$unique n) (Rho k n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l (void t) (void t')
 
 tS_ :: Monad m => (Subst a -> b -> m (Subst a)) -> Subst a -> [b] -> m (Subst a)
@@ -149,25 +149,25 @@ substInt tys k =
         Just ty'               -> Just ty'
         Nothing                -> Nothing
 
-freshName :: T.Text -> K -> TyM a (Name K)
+freshName :: T.Text -> K -> TyM a (Nm K)
 freshName n k = do
     st <- gets maxU
-    Name n (Unique $ st+1) k
+    Nm n (U $ st+1) k
         <$ modify (mapMaxU (+1))
 
-namek :: Name K -> TyM a (Name K)
+namek :: Nm K -> TyM a (Nm K)
 namek n =
-    modify (addKindEnv (unUnique$unique n) (loc n)) $> n
+    modify (addKindEnv (unU$unique n) (loc n)) $> n
 
-higherOrder :: T.Text -> TyM a (Name K)
+higherOrder :: T.Text -> TyM a (Nm K)
 higherOrder t = freshName t (KArr Star Star) >>= namek
 
 -- of kind 'Star'
-dummyName :: T.Text -> TyM a (Name K)
+dummyName :: T.Text -> TyM a (Nm K)
 dummyName n = freshName n Star >>= namek
 
-addC :: Ord a => Name b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
-addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
+addC :: Ord a => Nm b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
+addC (Nm _ (U i) _) c = IM.alter (Just . go) i where
     go Nothing   = S.singleton c
     go (Just cs) = S.insert c cs
 
@@ -175,7 +175,7 @@ addC (Name _ (Unique i) _) c = IM.alter (Just . go) i where
 tyArr :: T K -> T K -> T K
 tyArr = TyArr Star
 
-var :: Name K -> T K
+var :: Nm K -> T K
 var = TyVar Star
 
 isStar :: K -> TyM a ()
@@ -189,16 +189,16 @@ liftCloneTy ty = do
     -- FIXME: clone/propagate constraints
     ty' <$ modify (setMaxU j)
 
-cloneTy :: Int -> T a -> (T a, (Int, IM.IntMap Unique))
+cloneTy :: Int -> T a -> (T a, (Int, IM.IntMap U))
 cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
-    where cloneTyM (TyVar l (Name n (Unique j) l')) = do
+    where cloneTyM (TyVar l (Nm n (U j) l')) = do
                 st <- gets snd
                 case IM.lookup j st of
-                    Just k -> pure (TyVar l (Name n k l'))
+                    Just k -> pure (TyVar l (Nm n k l'))
                     Nothing -> do
                         k <- gets fst
-                        let j' = Unique $ k+1
-                        TyVar l (Name n j' l') <$ modify (\(u, s) -> (u+1, IM.insert j j' s))
+                        let j' = U$k+1
+                        TyVar l (Nm n j' l') <$ modify (\(u, s) -> (u+1, IM.insert j j' s))
           cloneTyM (TyArr l tyϵ ty')               = TyArr l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyApp l tyϵ ty')               = TyApp l <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup l tys)                   = TyTup l <$> traverse cloneTyM tys
@@ -221,7 +221,7 @@ kind (TyB k TyBool)                    = throwError $ Expected Star k
 kind (TyB k TyOption)                  = throwError $ Expected (KArr Star Star) k
 kind (TyB k TyStream)                  = throwError $ Expected (KArr Star Star) k
 kind (TyB k TyVec)                     = throwError $ Expected (KArr Star Star) k
-kind (TyVar _ n@(Name _ (Unique i) _)) = do
+kind (TyVar _ n@(Nm _ (U i) _)) = do
     preK <- gets (IM.lookup i . kindEnv)
     case preK of
         Just{}  -> pure ()
@@ -292,8 +292,8 @@ checkClass tys i cs = {-# SCC "checkClass" #-}
         Just ty -> traverse_ (checkType ty) (S.toList cs)
         Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
 
-lookupVar :: Name a -> TyM a (T K)
-lookupVar n@(Name _ (Unique i) l) = do
+lookupVar :: Nm a -> TyM a (T K)
+lookupVar n@(Nm _ (U i) l) = do
     st <- gets varEnv
     case IM.lookup i st of
         Just ty -> pure ty -- liftCloneTy ty
@@ -305,7 +305,7 @@ tyOf = fmap eLoc . tyE
 tyDS :: Ord a => Subst K -> D a -> TyM a (D (T K), Subst K)
 tyDS s (SetFS bs) = pure (SetFS bs, s)
 tyDS s FlushDecl  = pure (FlushDecl, s)
-tyDS s (FunDecl n@(Name _ (Unique i) _) [] e) = do
+tyDS s (FunDecl n@(Nm _ (U i) _) [] e) = do
     (e', s') <- tyES s e
     let t=eLoc e'
     modify (addVarEnv i t) $> (FunDecl (n$>t) [] e', s')
@@ -502,12 +502,12 @@ tyES s (EApp l e0 e1)     = do
     s2 <- liftEither $ mguPrep l s1 (eLoc e0') e0Ty
     s3 <- liftEither $ mguPrep l s2 (eLoc e1') a'
     pure (EApp b' e0' e1', s3)
-tyES s (Lam _ n@(Name _ (Unique i) _) e) = do
+tyES s (Lam _ n@(Nm _ (U i) _) e) = do
     a <- var <$> dummyName "a"
     modify (addVarEnv i a)
     (e', s') <- tyES s e
     pure (Lam (tyArr a (eLoc e')) (n$>a) e', s')
-tyES s (Let _ (n@(Name _ (Unique i) _), eϵ) e) = do
+tyES s (Let _ (n@(Nm _ (U i) _), eϵ) e) = do
     (eϵ', s0) <- tyES s eϵ
     let bTy=eLoc eϵ'
     modify (addVarEnv i bTy)

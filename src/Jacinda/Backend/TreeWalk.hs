@@ -18,8 +18,8 @@ import           Data.List.Ext
 import           Data.Maybe                 (mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
-import           Intern.Name                (Name (Name))
-import           Intern.Unique              (Unique (Unique))
+import           Intern.Name
+import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.Printf
@@ -493,7 +493,7 @@ foldAll re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
     tail' (_:xs) = xs
 
 ungather :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
-ungather st (Var _ (Name _ (Unique i) _)) =
+ungather st (Var _ (Nm _ (U i) _)) =
     case IM.lookup i st of
         Just res -> res
         Nothing  -> throw InternalError
@@ -513,7 +513,7 @@ ungather _ e@IntLit{}        = e
 ungather _ e@RegexCompiled{} = e
 
 mkFoldVar :: Int -> b -> E b
-mkFoldVar i l = Var l (Name "fold_placeholder" (Unique i) l)
+mkFoldVar i l = Var l (Nm "fold_placeholder" (U i) l)
 
 gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
 gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
