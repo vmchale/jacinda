@@ -24,10 +24,10 @@ bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
 
 runI i = second (max_.renames) . flip runState (ISt (Renames i mempty) mempty)
 
-inline :: Int -> Program (T ()) -> (E (T ()), Int)
+inline :: Int -> Program (T K) -> (E (T K), Int)
 inline i = runI i . iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
-iD :: D (T ()) -> M (T ()) ()
+iD :: D (T K) -> M (T K) ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
 iD SetFS{}          = pure ()
 iD FlushDecl{}      = pure ()
@@ -35,7 +35,7 @@ iD FunDecl{}        = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
-iE :: E (T ()) -> M (T ()) (E (T ()))
+iE :: E (T K) -> M (T K) (E (T K))
 iE e@NBuiltin{} = pure e; iE e@UBuiltin{} = pure e; iE e@BBuiltin{} = pure e; iE e@TBuiltin{} = pure e
 iE e@Column{} = pure e; iE e@ParseCol{} = pure e; iE e@IParseCol{} = pure e; iE e@FParseCol{} = pure e
 iE e@Field{} = pure e; iE e@LastField{} = pure e; iE e@AllField{} = pure e; iE e@AllColumn{} = pure e
