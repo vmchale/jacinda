@@ -105,8 +105,7 @@ instance Pretty (T a) where
 prettyFields :: [(Int, T a)] -> Doc ann
 prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":" <+> pretty t
 
-instance Show (T a) where
-    show = show . pretty
+instance Show (T a) where show=show.pretty
 
 -- unary
 data BUn = Tally -- length of string field
@@ -145,12 +144,10 @@ instance Pretty BUn where
 
 -- ternary
 data BTer = ZipW
-          | Fold
-          | Scan
+          | Fold | Scan
           | Substr
           | Option
-          | Captures
-          | AllCaptures
+          | Captures | AllCaptures
           deriving (Eq)
 
 instance Pretty BTer where
@@ -163,25 +160,15 @@ instance Pretty BTer where
     pretty AllCaptures = "captures"
 
 -- builtin
-data BBin = Plus
-          | Times
-          | Div
+data BBin = Plus | Times | Div
           | Minus | Exp
-          | Eq
-          | Neq
-          | Geq
-          | Gt
-          | Lt
-          | Leq
+          | Eq | Neq | Geq | Gt | Lt | Leq
           | Map
           | Matches -- ^ @'string' ~ /pat/@
           | NotMatches
-          | And
-          | Or
-          | Min
-          | Max
-          | Split
-          | Splitc
+          | And | Or
+          | Min | Max
+          | Split | Splitc
           | Prior
           | Filter
           | Sprintf
@@ -223,16 +210,10 @@ instance Pretty BBin where
 
 data DfnVar = X | Y deriving (Eq)
 
-instance Pretty DfnVar where
-    pretty X = "x"
-    pretty Y = "y"
+instance Pretty DfnVar where pretty X = "x"; pretty Y = "y"
 
 -- 0-ary
-data N = Ix
-       | Nf
-       | None
-       | Fp
-       deriving (Eq)
+data N = Ix | Nf | None | Fp deriving (Eq)
 
 -- expression
 data E a = Column { eLoc :: a, col :: Int }
@@ -311,10 +292,7 @@ data EF a x = ColumnF a Int
 type instance Base (E a) = (EF a)
 
 instance Pretty N where
-    pretty Ix   = "ix"
-    pretty Nf   = "nf"
-    pretty None = "None"
-    pretty Fp   = "fp"
+    pretty Ix = "ix"; pretty Nf = "nf"; pretty None = "None"; pretty Fp = "fp"
 
 instance Pretty (E a) where
     pretty (Column _ i)                                                 = "$" <> pretty i
@@ -374,8 +352,7 @@ instance Pretty (E a) where
     pretty (OptionVal _ Nothing)                                        = "None"
     pretty (Cond _ e0 e1 e2)                                            = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
 
-instance Show (E a) where
-    show = show . pretty
+instance Show (E a) where show=show.pretty
 
 -- for tests
 instance Eq (E a) where
@@ -432,8 +409,7 @@ instance Pretty C where
     pretty IsPrintf    = "Printf"
     pretty Witherable  = "Witherable"
 
-instance Show C where
-    show = show . pretty
+instance Show C where show=show.pretty
 
 -- decl
 data D a = SetFS BS.ByteString
@@ -446,24 +422,18 @@ instance Pretty (D a) where
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
 
--- TODO: fun decls (type decls)
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 
 instance Pretty (Program a) where
     pretty (Program ds e) = concatWith (<##>) (pretty <$> ds) <##> pretty e
 
-instance Show (Program a) where
-    show = show . pretty
+instance Show (Program a) where show=show.pretty
 
 flushD :: Program a -> Bool
-flushD (Program ds _) = any p ds where
-    p FlushDecl = True
-    p _         = False
+flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
 getFS :: Program a -> Maybe BS.ByteString
-getFS (Program ds _) = listToMaybe (concatMap go ds) where
-    go (SetFS bs) = [bs]
-    go _          = []
+getFS (Program ds _) = listToMaybe (concatMap go ds) where go (SetFS bs) = [bs]; go _ = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)

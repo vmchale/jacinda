@@ -22,8 +22,6 @@ import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
 
 data Renames = Renames { max_ :: Int, bound :: IM.IntMap Int }
 
--- TODO: instance Pretty Renames for debug?
-
 class HasRenames a where
     rename :: Lens' a Renames
 
@@ -44,7 +42,6 @@ renamePGlobal i = runRenameM i . renameProgram
 runRenameM :: Int -> RenameM x -> (x, Int)
 runRenameM i act = second max_ (runState act (Renames i IM.empty))
 
--- Make sure you don't have cycles in the renames map!
 replaceUnique :: (MonadState s m, HasRenames s) => U -> m U
 replaceUnique u@(U i) = do
     rSt <- use (rename.boundLens)
@@ -63,8 +60,6 @@ dummyName l n = do
     Nm n (U$st+1) l
         <$ modifying (rename.maxLens) (+1)
 
--- allows us to work with a temporary change to the renamer state, tracking the
--- max sensibly
 withRenames :: (HasRenames s, MonadState s m) => (Renames -> Renames) -> m a -> m a
 withRenames modSt act = do
     preSt <- use rename
@@ -91,7 +86,6 @@ setMax i (Renames _ b) = Renames i b
 mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
--- | A dfn could be unary or binary - here we guess if it is binary
 hasY :: E a -> Bool
 hasY = cata a where
     a (ResVarF _ Y)           = True
@@ -144,7 +138,6 @@ rE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
     Lam l x . Lam l y <$> rE ({-# SCC "replaceXY" #-} replaceXY (Nm nX uX) (Nm nY uY) e)
                   | otherwise = do
     x@(Nm n u _) <- dummyName l "x"
-    -- no need for withName... withRenames because this is fresh/globally unique
     Lam l x <$> rE ({-# SCC "replaceX" #-} replaceX (Nm n u) e)
 rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
 rE (Implicit l e) = Implicit l <$> rE e
@@ -158,4 +151,4 @@ rE (Arr l es) = Arr l <$> traverse rE es
 rE (Anchor l es) = Anchor l <$> traverse rE es
 rE (OptionVal l e) = OptionVal l <$> traverse rE e
 rE (Cond l p e e') = Cond l <$> rE p <*> rE e <*> rE e'
-rE e = pure e -- literals &c.
+rE e = pure e

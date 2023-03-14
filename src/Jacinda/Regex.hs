@@ -21,14 +21,14 @@ import           Foreign.ForeignPtr       (plusForeignPtr)
 import           Regex.Rure               (RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
--- see: https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
+-- https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
 
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yeetRureIO =<< compile genFlags defaultFs
-    where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a weird custom record separator
+    where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
@@ -74,7 +74,7 @@ isMatch' :: RurePtr
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
-compileDefault = unsafeDupablePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL? in case they have weird records
+compileDefault = unsafeDupablePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL for weird records
 
 newtype RureExe = RegexCompile String deriving (Show)
 
