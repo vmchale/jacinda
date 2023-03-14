@@ -36,6 +36,7 @@ data Err a = UF a (T ()) (T ())
            | Expected K K
            | IllScopedTyVar (TyName ())
            | MF (T ()) (T ())
+           | Occ a (T ()) (T ())
 
 instance Pretty a => Pretty (Err a) where
     pretty (UF l ty ty')           = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')
@@ -45,9 +46,9 @@ instance Pretty a => Pretty (Err a) where
     pretty (Expected k0 k1)        = "Found kind" <+> pretty k0 <> ", expected kind" <+> pretty k1
     pretty (IllScopedTyVar n)      = "Type variable" <+> squotes (pretty n) <+> "is not in scope."
     pretty (MF t t')               = "Failed to match" <+> squotes (pretty t) <+> "against type" <+> squotes (pretty t')
+    pretty (Occ l t t')            = pretty l <+> "occurs check failed when unifying type" <+> squotes (pretty t) <+> "with type" <+> squotes (pretty t')
 
-instance Pretty a => Show (Err a) where
-    show = show . pretty
+instance Pretty a => Show (Err a) where show=show.pretty
 
 instance (Typeable a, Pretty a) => Exception (Err a) where
 
@@ -63,7 +64,6 @@ mapMaxU :: (Int -> Int) -> TyState a -> TyState a
 mapMaxU f (TyState u k c v) = TyState (f u) k c v
 
 setMaxU :: Int -> TyState a -> TyState a
--- setMaxU i = mapMaxU (const i)
 setMaxU i (TyState _ k c v) = TyState i k c v
 
 mapCV :: (IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))) -> TyState a -> TyState a
@@ -111,17 +111,28 @@ maM :: T a -> T a -> Either (Err l) (Subst a)
 maM (TyB _ b) (TyB _ b') | b == b' = Right mempty
 maM (TyVar _ n) (TyVar _ n') | n == n' = Right mempty
 maM (TyVar _ (Nm _ (U i) _)) t = Right (IM.singleton i t)
-maM (TyArr _ t0 t1) (TyArr _ t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- FIXME: I think <> is right
+maM (TyArr _ t0 t1) (TyArr _ t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- TODO: I think <> is right
 maM (TyTup _ ts) (TyTup _ ts')        = fmap mconcat (zipWithM maM ts ts')
 maM (Rho _ n _) (Rho _ n' _) | n == n' = Right mempty
 maM (Rho _ n rs) t@(Rho _ _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
 maM (Rho _ n rs) t@(TyTup _ ts) | length ts >= fst (IM.findMax rs) = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
 maM t t'                              = Left $ MF (void t) (void t')
 
+occ :: T a -> IS.IntSet
+occ (TyVar _ (Nm _ (U i) _))  = IS.singleton i
+occ TyB{}                     = IS.empty
+occ (TyTup _ ts)              = foldMap occ ts
+occ (TyApp _ t t')            = occ t <> occ t'
+occ (TyArr _ t t')            = occ t <> occ t'
+occ (Rho _ (Nm _ (U i) _) rs) = IS.insert i (foldMap occ (IM.elems rs))
+
 mgu :: l -> Subst a -> T a -> T a -> Either (Err l) (Subst a)
 mgu _ s (TyB _ b) (TyB _ b') | b == b' = Right s
-mgu _ s ty (TyVar _ (Nm _ (U k) _)) = Right $ IM.insert k ty s
-mgu _ s (TyVar _ (Nm _ (U k) _)) ty = Right $ IM.insert k ty s
+mgu _ s (TyVar _ n) (TyVar _ n') | n == n' = Right s
+mgu l s t t'@(TyVar _ (Nm _ (U k) _)) | k `IS.notMember` occ t = Right $ IM.insert k t s
+                                      | otherwise = Left $ Occ l (void t') (void t)
+mgu l s t@(TyVar _ (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.insert k t' s
+                                      | otherwise = Left $ Occ l (void t) (void t')
 mgu l s (TyArr _ t0 t1) (TyArr _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyApp _ t0 t1) (TyApp _ t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup _ ts) (TyTup _ ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
@@ -143,7 +154,7 @@ zS op s (x:xs) (y:ys) = do{next <- op s x y; zS op next xs ys}
 substInt :: IM.IntMap (T a) -> Int -> Maybe (T a)
 substInt tys k =
     case IM.lookup k tys of
-        Just ty'@TyVar{}       -> Just $ aT (IM.delete k tys) ty' -- TODO: this is to prevent cyclic lookups: is it right?
+        Just ty'@TyVar{}       -> Just $ aT (IM.delete k tys) ty'
         Just (TyApp l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyApp l (aT tys' ty0) (aT tys' ty1)
         Just (TyArr l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyArr l (aT tys' ty0) (aT tys' ty1)
         Just (TyTup l tysϵ)    -> Just $ let tys' = IM.delete k tys in TyTup l (aT tys' <$> tysϵ)
@@ -326,7 +337,7 @@ checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need i
 checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Implicit _ e') = checkAmb e'
 checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
-checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors, don't fail yet!
+checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors
 checkAmb (Tup _ es) = traverse_ checkAmb es
 checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
@@ -538,6 +549,4 @@ tyES s (Anchor l es) = do
     (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- var <$> dummyName "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
     pure (Anchor (TyB Star TyUnit) es', s')
 tyES _ RegexCompiled{} = error "Regex should not be compiled at this stage."
-tyES _ Dfn{} = desugar
-tyES _ ResVar{} = desugar
-tyES _ Paren{} = desugar
+tyES _ Dfn{} = desugar; tyES _ ResVar{} = desugar; tyES _ Paren{} = desugar

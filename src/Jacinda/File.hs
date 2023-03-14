@@ -17,7 +17,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.ByteString.Lazy.Char8 as ASCIIL
 import           Data.Foldable              (traverse_)
-import           Data.Functor               (void, ($>))
+import           Data.Functor               (($>))
 import           Data.Tuple                 (swap)
 import           Jacinda.AST
 import           Jacinda.AST.I
@@ -58,13 +58,11 @@ parseEWithMax :: [FilePath] -> BSL.ByteString -> IO (Program AlexPosn, Int)
 parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStateT (parseE incls bsl) alexInitUserState
     where fst3 (x, _, _) = x
 
--- | Parse + rename (globally)
 parseWithMax' :: BSL.ByteString -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
 parseWithMax' = fmap (uncurry renamePGlobal . second (rewriteProgram . snd)) . parseWithMax
 
 type FileBS = BS.ByteString
 
--- fill in regex with compiled.
 compileR :: FileBS
          -> E (T K)
          -> E (T K)

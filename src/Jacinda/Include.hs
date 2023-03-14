@@ -22,7 +22,6 @@ defaultIncludes = do
     dot <- getCurrentDirectory
     pure $ (dot:) . (d:) . (++path)
 
--- | Parsed @JAC_PATH@
 jacPath :: IO [FilePath]
 jacPath = maybe [] splitEnv <$> lookupEnv "JAC_PATH"
 
