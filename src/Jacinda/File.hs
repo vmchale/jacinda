@@ -16,11 +16,14 @@ import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.ByteString.Lazy.Char8 as ASCIIL
+import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
 import           Data.Tuple                 (swap)
 import           Jacinda.AST
+import           Jacinda.AST.I
 import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.TreeWalk
+import           Jacinda.Check.Field
 import           Jacinda.Include
 import           Jacinda.Lexer
 import           Jacinda.Parser
@@ -121,13 +124,18 @@ tcIO :: [FilePath] -> BSL.ByteString -> IO ()
 tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    yeetIO $ void $ runTyM m (tyProgram ast)
+    (pT, i) <- yeetIO $ runTyM m (tyProgram ast)
+    let (eI, _) = inline i pT
+    m'Throw $ cF eI
 
 tySrc :: BSL.ByteString -> T K
 tySrc src =
     case parseWithMax' src of
         Right (ast, m) -> yeet $ fst <$> runTyM m (tyOf (expr ast))
         Left err       -> throw err
+
+m'Throw :: Exception e => Maybe e -> IO ()
+m'Throw = traverse_ throwIO
 
 yeetIO :: Exception e => Either e a -> IO a
 yeetIO = either throwIO pure
