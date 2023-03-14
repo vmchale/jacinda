@@ -46,6 +46,11 @@ in  { fileTypes = [ "jac" ]
               , name = "keyword"
               }
           , TextMate.MatchRe
+              { match =
+                  "(splitc|sprintf|option|match|captures|fp|nf|ix|substr|split|min|max)"
+              , name = "constant.language"
+              }
+          , TextMate.MatchRe
               { match = "[a-z][a-zA-Z]*", name = "entity.name.function" }
           , TextMate.BeginEnd
               { begin = "/", end = "[^\\\\]/", name = "string.regexp" }
