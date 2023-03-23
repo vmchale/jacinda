@@ -47,6 +47,7 @@ library jacinda-lib
     other-modules:
         Jacinda.AST.I
         Jacinda.Lexer
+        Jacinda.M
         Intern.Name
         Intern.Unique
         Jacinda.Rename
