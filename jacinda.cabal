@@ -53,10 +53,11 @@ library jacinda-lib
         Intern.Unique
         Jacinda.Rename
         Jacinda.Check.Field
-        Jacinda.Backend.P
+        Jacinda.Backend.Parse
         Jacinda.Backend.Normalize
         Jacinda.Backend.TreeWalk
         Jacinda.Backend.Printf
+        Jacinda.Backend.Trans
         Jacinda.Include
         Data.List.Ext
         Paths_jacinda

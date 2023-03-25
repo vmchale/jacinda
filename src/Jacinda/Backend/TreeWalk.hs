@@ -87,265 +87,265 @@ eEval (ix, line, ctx) = go where
     go str@StrLit{} = str
     go rr@RegexLit{} = rr
     go reϵ@RegexCompiled{} = reϵ
-    go op@BBuiltin{} = op
-    go op@UBuiltin{} = op
-    go op@TBuiltin{} = op
-    go (NBuiltin _ Nf) = mkI (fromIntegral $ V.length ctx)
-    go (EApp ty op@BBuiltin{} e) = EApp ty op (go e)
-    go (NBuiltin _ Ix) = mkI (fromIntegral ix)
-    go (NBuiltin _ None) = OptionVal undefined Nothing
-    go (EApp ty (UBuiltin _ Some) e) =
+    go op@BB{} = op
+    go op@UB{} = op
+    go op@TB{} = op
+    go (NB _ Nf) = mkI (fromIntegral $ V.length ctx)
+    go (EApp ty op@BB{} e) = EApp ty op (go e)
+    go (NB _ Ix) = mkI (fromIntegral ix)
+    go (NB _ None) = OptionVal undefined Nothing
+    go (EApp ty (UB _ Some) e) =
         let eI = go e
             in OptionVal ty (Just eI)
     go AllField{} = StrLit tyStr line
     go (Field _ i) = StrLit tyStr (ctx ! (i-1)) -- cause vector indexing starts at 0
     go LastField{} = StrLit tyStr (V.last ctx)
-    go (EApp _ (UBuiltin _ IParse) e) =
+    go (EApp _ (UB _ IParse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
-    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyInteger) _) Negate) e) =
+    go (EApp _ (UB (TyArr _ (TyB _ TyInteger) _) Negate) e) =
         let eI = asInt (go e)
             in mkI (negate eI)
-    go (EApp _ (UBuiltin (TyArr _ (TyB _ TyFloat) _) Negate) e) =
+    go (EApp _ (UB (TyArr _ (TyB _ TyFloat) _) Negate) e) =
         let eI = asFloat (go e)
             in mkF (negate eI)
-    go (EApp _ (UBuiltin _ FParse) e) =
+    go (EApp _ (UB _ FParse) e) =
         let eI = asStr (go e)
             in parseAsF eI
-    go (EApp _ (UBuiltin (TyArr _ _ (TyB _ TyInteger)) Parse) e) =
+    go (EApp _ (UB (TyArr _ _ (TyB _ TyInteger)) Parse) e) =
         let eI = asStr (go e)
             in parseAsEInt eI
-    go (EApp _ (UBuiltin (TyArr _ _ (TyB _ TyFloat)) Parse) e) =
+    go (EApp _ (UB (TyArr _ _ (TyB _ TyFloat)) Parse) e) =
         let eI = asStr (go e)
             in parseAsF eI
-    go (EApp _ (EApp _ (BBuiltin _ Matches) e) e') =
+    go (EApp _ (EApp _ (BB _ Matches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyB (isMatch' reϵ strϵ)
             (StrLit{}, _)                      -> noRes eI' "Regex"
             _                                  -> noRes eI "Str"
-    go (EApp _ (EApp _ (BBuiltin _ NotMatches) e) e') =
+    go (EApp _ (EApp _ (BB _ NotMatches) e) e') =
         let eI = go e
             eI' = go e'
         in case (eI, eI') of
             (StrLit _ strϵ, RegexCompiled reϵ) -> BoolLit tyB (not $ isMatch' reϵ strϵ)
             (StrLit{}, _)                      -> noRes eI' "Regex"
             _                                  -> noRes eI "Str"
-    go (EApp _ (EApp _ (BBuiltin _ Match) e) e') =
+    go (EApp _ (EApp _ (BB _ Match) e) e') =
         let eI = asRegex (go e)
             eI' = asStr (go e')
         in asTup (find' eI eI')
-    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Captures) e0) e1) e2) =
+    go (EApp _ (EApp _ (EApp _ (TB _ Captures) e0) e1) e2) =
         let e0' = asStr (go e0)
             e1' = asInt (go e1)
             e2' = asRegex (go e2)
             in OptionVal (tyOpt tyStr) (mkStr <$> findCapture e2' e0' (fromIntegral e1'))
-    go (EApp _ (EApp _ (EApp _ (TBuiltin _ AllCaptures) e0) e1) e2) =
+    go (EApp _ (EApp _ (EApp _ (TB _ AllCaptures) e0) e1) e2) =
         let e0' = asStr (go e0)
             e1' = asInt (go e1)
             e2' = asRegex (go e2)
             in Arr (tyV tyStr) (mkStr <$> V.fromList (captures' e2' e0' (fromIntegral e1')))
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI + eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Minus) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Minus) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI - eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Times) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Times) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI * eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Exp) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Exp) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (eI ^ eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Plus) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
             -- TODO: copy??
             in mkStr (eI <> eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
             in BoolLit tyB (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Gt) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI > eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Lt) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI < eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Neq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Neq) e) e') =
         let eI = asStr (go e)
             eI' = asStr (go e')
             in BoolLit tyB (eI /= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Leq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Leq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI <= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Geq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Geq) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in BoolLit tyB (eI <= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Eq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Eq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Neq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Neq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI /= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Lt) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Lt) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI < eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Gt) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Gt) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI > eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Geq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Geq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI >= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Leq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Leq) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in BoolLit tyB (eI <= eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Plus) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (eI + eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Minus) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Minus) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (eI - eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Times) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (eI * eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Exp) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Exp) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (eI ** eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyBool) _) Eq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
             in BoolLit tyB (eI == eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyBool) _) Neq) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyBool) _) Neq) e) e') =
         let eI = asBool (go e)
             eI' = asBool (go e')
             in BoolLit tyB (eI /= eI')
-    go (EApp _ (EApp _ (BBuiltin _ Div) e) e') =
+    go (EApp _ (EApp _ (BB _ Div) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in FloatLit tyF (eI / eI')
-    go (EApp _ (EApp _ (BBuiltin _ And) e) e') =
+    go (EApp _ (EApp _ (BB _ And) e) e') =
         let b = asBool (go e)
             b' = asBool (go e')
             in BoolLit tyB (b && b')
-    go (EApp _ (EApp _ (BBuiltin _ Or) e) e') =
+    go (EApp _ (EApp _ (BB _ Or) e) e') =
         let b = asBool e
             b' = asBool e'
             in BoolLit tyB (b || b')
-    go (EApp _ (UBuiltin _ Tally) e) =
+    go (EApp _ (UB _ Tally) e) =
         mkI (fromIntegral $ BS.length str)
         where str = asStr (go e)
-    go (EApp _ (UBuiltin _ Floor) e) =
+    go (EApp _ (UB _ Floor) e) =
         let f = asFloat e
         in mkI (floor f)
-    go (EApp _ (UBuiltin _ Ceiling) e) =
+    go (EApp _ (UB _ Ceiling) e) =
         let f = asFloat e
         in mkI (ceiling f)
     go (Tup ty es) = Tup ty (go <$> es)
-    go (EApp _ (EApp _ (BBuiltin _ Split) e) e') =
+    go (EApp _ (EApp _ (BB _ Split) e) e') =
         let str = asStr (go e)
             re = asRegex (go e')
             bss = splitBy re str
             in Arr undefined (mkStr <$> bss)
-    go (EApp _ (EApp _ (BBuiltin _ Splitc) e) e') =
+    go (EApp _ (EApp _ (BB _ Splitc) e) e') =
         let str = asStr (go e)
             c = the (asStr (go e'))
             bss = BS.split c str
             in Arr undefined (mkStr <$> V.fromList bss)
-    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Substr) e0) e1) e2) =
+    go (EApp _ (EApp _ (EApp _ (TB _ Substr) e0) e1) e2) =
         let eI0 = asStr (go e0)
             eI1 = asInt (go e1)
             eI2 = asInt (go e2)
         in mkStr (substr eI0 (fromIntegral eI1) (fromIntegral eI2))
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Max) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Max) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (max eI eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyFloat) _) Min) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Min) e) e') =
         let eI = asFloat (go e)
             eI' = asFloat (go e')
             in mkF (min eI eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Max) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Max) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (max eI eI')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ (TyB _ TyInteger) _) Min) e) e') =
+    go (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Min) e) e') =
         let eI = asInt (go e)
             eI' = asInt (go e')
             in mkI (min eI eI')
-    go (EApp _ (UBuiltin _ Not) e) =
+    go (EApp _ (UB _ Not) e) =
         let eI = asBool (go e)
         in BoolLit tyB (not eI)
-    go (EApp _ (UBuiltin _ (At i)) e) =
+    go (EApp _ (UB _ (At i)) e) =
         let eI = go e
             in case eI of
                 (Arr _ es) -> go (es V.! (i-1))
                 _          -> noRes eI "List"
-    go (EApp _ (UBuiltin _ (Select i)) e) =
+    go (EApp _ (UB _ (Select i)) e) =
         let eI = go e
             in case eI of
                 (Tup _ es) -> go (es !! (i-1))
                 _          -> noRes eI "Tuple"
-    go (EApp _ (EApp _ (BBuiltin _ Sprintf) e) e') =
+    go (EApp _ (EApp _ (BB _ Sprintf) e) e') =
         let eI = asStr (go e)
             eI' = go e'
         in mkStr (sprintf eI eI')
     go (OptionVal ty e) =
         OptionVal ty (go <$> e)
-    go (EApp _ (EApp _ (EApp _ (TBuiltin _ Option) e0) e1) e2) =
+    go (EApp _ (EApp _ (EApp _ (TB _ Option) e0) e1) e2) =
         let e0' = go e0
             e1' = go e1
             e2' = go e2
         in case asOpt e2' of
                 Nothing -> e0'
                 Just e  -> go (EApp undefined e1' e)
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) =
+    go (EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) =
         let x' = go x
             y' = asArr (go y)
         in Arr undefined (applyUn' x' <$> y')
         where applyUn' :: E (T K) -> E (T K) -> E (T K)
               applyUn' e e' = go (EApp undefined e e')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) =
+    go (EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyOption) _))) Map) x) y) =
         let x' = go x
             y' = asOpt (go y)
         in OptionVal undefined (applyUn' x' <$> y')
         where applyUn' :: E (T K) -> E (T K) -> E (T K)
               applyUn' e e' = go (EApp undefined e e')
-    go (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) seed) xs) =
+    go (EApp _ (EApp _ (EApp _ (TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _))) Fold) f) seed) xs) =
         let f' = go f
             seed' = go seed
             xs' = asArr (go xs)
         in foldE f' seed' xs'
         where foldE op = V.foldl' (applyOp' op)
               applyOp' op e e' = go (EApp undefined (EApp undefined op e) e')
-    go (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _)) Fold1) f) xs) =
+    go (EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyVec) _) _)) Fold1) f) xs) =
         let f' = go f
             xs' = asArr (go xs)
         in
@@ -358,7 +358,7 @@ eEval (ix, line, ctx) = go where
     go (Cond _ p e0 e1) =
         let p' = asBool (go p)
             in if p' then go e0 else go e1
-    go (EApp _ (UBuiltin _ TallyList) e) =
+    go (EApp _ (UB _ TallyList) e) =
         let xs = asArr (go e)
             in mkI $ fromIntegral $ V.length xs
     go e = error ("Internal error: " ++ show e)
@@ -407,30 +407,30 @@ ir re (Implicit _ e) =
 ir re (Guarded _ pe e) =
     -- TODO: normalize before stream
     fmap (\(ix, line) -> eEval (mkCtx re ix line) e) . ifilter' (\ix line -> asBool (eEval (mkCtx re ix line) pe))
-ir re (EApp _ (EApp _ (BBuiltin _ Map) op) stream) = fmap (applyUn op) . ir re stream
-ir re (EApp _ (EApp _ (BBuiltin _ Filter) op) stream) =
+ir re (EApp _ (EApp _ (BB _ Map) op) stream) = fmap (applyUn op) . ir re stream
+ir re (EApp _ (EApp _ (BB _ Filter) op) stream) =
     filter (asBool . applyUn op) . ir re stream
-ir re (EApp _ (EApp _ (BBuiltin _ MapMaybe) op) stream) =
+ir re (EApp _ (EApp _ (BB _ MapMaybe) op) stream) =
     mapMaybe (asOpt . applyUn op) . ir re stream
-ir re (EApp _ (UBuiltin _ CatMaybes) stream) =
+ir re (EApp _ (UB _ CatMaybes) stream) =
     mapMaybe asOpt . ir re stream
-ir re (EApp _ (EApp _ (BBuiltin _ Prior) op) stream) = prior (applyOp op) . ir re stream
-ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) op) streaml) streamr) = \lineStream ->
+ir re (EApp _ (EApp _ (BB _ Prior) op) stream) = prior (applyOp op) . ir re stream
+ir re (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) streaml) streamr) = \lineStream ->
     let
         irl = ir re streaml lineStream
         irr = ir re streamr lineStream
     in zipWith (applyOp op) irl irr
-ir re (EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) op) seed) xs) =
+ir re (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) =
     scanl' (applyOp op) seed . ir re xs
-ir re (EApp _ (EApp _ (BBuiltin (TyArr _ (TyArr _ _ (TyB _ TyStr)) _) DedupOn) op) e) =
+ir re (EApp _ (EApp _ (BB (TyArr _ (TyArr _ _ (TyB _ TyStr)) _) DedupOn) op) e) =
     nubOrdOn (asStr . applyUn op) . ir re e
-ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
+ir re (EApp _ (UB (TyArr _ (TyApp _ _ (TyB _ TyStr)) _) Dedup) e) =
     nubOrdOn asStr . ir re e
-ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
+ir re (EApp _ (UB (TyArr _ (TyApp _ _ (TyB _ TyInteger)) _) Dedup) e) =
     nubIntOn (fromIntegral . asInt) . ir re e
-ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
+ir re (EApp _ (UB (TyArr _ (TyApp _ _ (TyB _ TyFloat)) _) Dedup) e) =
     nubIntOn (fromEnum . asFloat) . ir re e
-ir re (EApp _ (UBuiltin (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
+ir re (EApp _ (UB (TyArr _ (TyApp _ _ (TyB _ TyBool)) _) Dedup) e) =
     nubIntOn (fromEnum . asBool) . ir re e
 
 -- | Output stream that prints each entry (expression)
@@ -501,11 +501,11 @@ ungather st (EApp ty e0 e1)  = EApp ty (ungather st e0) (ungather st e1)
 ungather st (Tup ty es)      = Tup ty (ungather st <$> es)
 ungather st (Arr ty es)      = Arr ty (ungather st <$> es)
 ungather st (OptionVal ty e) = OptionVal ty (ungather st <$> e)
-ungather _ e@BBuiltin{}      = e
-ungather _ e@UBuiltin{}      = e
-ungather _ (NBuiltin _ None) = OptionVal undefined Nothing
-ungather _ e@NBuiltin{}      = e
-ungather _ e@TBuiltin{}      = e
+ungather _ e@BB{}      = e
+ungather _ e@UB{}      = e
+ungather _ (NB _ None) = OptionVal undefined Nothing
+ungather _ e@NB{}      = e
+ungather _ e@TB{}      = e
 ungather _ e@StrLit{}        = e
 ungather _ e@BoolLit{}       = e
 ungather _ e@FloatLit{}      = e
@@ -516,7 +516,7 @@ mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Nm "fold_placeholder" (U i) l)
 
 gatherFoldsM :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
-gatherFoldsM (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
+gatherFoldsM (EApp _ (EApp _ (EApp _ (TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = do
     (i,_) <- get
     modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i undefined
@@ -526,11 +526,11 @@ gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
 gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
 gatherFoldsM (Cond ty p e e') = Cond ty <$> gatherFoldsM p <*> gatherFoldsM e <*> gatherFoldsM e'
 -- gatherFoldsM (Lam t n e) = Lam t n <$> gatherFoldsM e
-gatherFoldsM (NBuiltin _ None) = pure $ OptionVal undefined Nothing
-gatherFoldsM e@BBuiltin{} = pure e
-gatherFoldsM e@TBuiltin{} = pure e
-gatherFoldsM e@UBuiltin{} = pure e
-gatherFoldsM e@NBuiltin{} = pure e
+gatherFoldsM (NB _ None) = pure $ OptionVal undefined Nothing
+gatherFoldsM e@BB{} = pure e
+gatherFoldsM e@TB{} = pure e
+gatherFoldsM e@UB{} = pure e
+gatherFoldsM e@NB{} = pure e
 gatherFoldsM e@StrLit{} = pure e
 gatherFoldsM e@FloatLit{} = pure e
 gatherFoldsM e@IntLit{} = pure e
@@ -538,12 +538,12 @@ gatherFoldsM e@BoolLit{} = pure e
 gatherFoldsM e@RegexCompiled{} = pure e
 
 eWith :: RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
-eWith re (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
-eWith re (EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 re op stream
+eWith re (EApp _ (EApp _ (EApp _ (TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
+eWith re (EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 re op stream
 -- TODO: function APPLIED to fold/fold1 res.
-eWith _ e@BBuiltin{}                                                                                                                 = const e
-eWith _ e@UBuiltin{}                                                                                                                 = const e
-eWith _ e@TBuiltin{}                                                                                                                 = const e
+eWith _ e@BB{}                                                                                                                 = const e
+eWith _ e@UB{}                                                                                                                 = const e
+eWith _ e@TB{}                                                                                                                 = const e
 eWith _ e@StrLit{}                                                                                                                   = const e
 eWith _ e@FloatLit{}                                                                                                                 = const e
 eWith _ e@IntLit{}                                                                                                                   = const e
@@ -562,7 +562,7 @@ fileProcessor :: RurePtr
               -> Either StreamError ([BS.ByteString] -> IO ())
 fileProcessor _ _ AllField{}    = Left NakedField
 fileProcessor _ _ Field{}       = Left NakedField
-fileProcessor _ _ (NBuiltin _ Ix) = Left NakedField
+fileProcessor _ _ (NB _ Ix) = Left NakedField
 fileProcessor re f e@AllColumn{} = Right $ \inp ->
     printStream f $ ir re e inp
 fileProcessor re f e@Column{} = Right $ \inp ->
@@ -576,24 +576,24 @@ fileProcessor re f e@Guarded{} = Right $ \inp ->
     printStream f $ ir re e inp
 fileProcessor re f e@Implicit{} = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ Filter) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (BB _ Filter) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
 -- at the moment, catMaybes only works on streams
-fileProcessor re f e@(EApp _ (UBuiltin _ CatMaybes) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (UB _ CatMaybes) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) Map) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (BBuiltin (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyStream) _))) MapMaybe) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ Prior) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (BB _ Prior) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (BBuiltin _ DedupOn) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (BB _ DedupOn) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TBuiltin _ Scan) _) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TB _ Scan) _) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TBuiltin _ ZipW) _) _) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (EApp _ (EApp _ (TB _ ZipW) _) _) _) = Right $ \inp ->
     printStream f $ ir re e inp
-fileProcessor re f e@(EApp _ (UBuiltin _ Dedup) _) = Right $ \inp ->
+fileProcessor re f e@(EApp _ (UB _ Dedup) _) = Right $ \inp ->
     printStream f $ ir re e inp
 fileProcessor re f (Anchor _ es) = Right $ \inp ->
     printStream f $ takeConcatMap (\e -> ir re e inp) es
@@ -606,7 +606,7 @@ fileProcessor _ _ e@RegexLit{} = Right $ const (print e)
 fileProcessor _ _ Lam{} = Left UnevalFun
 fileProcessor _ _ Dfn{} = badSugar
 fileProcessor _ _ ResVar{} = badSugar
-fileProcessor _ _ BBuiltin{} = Left UnevalFun
-fileProcessor _ _ UBuiltin{} = Left UnevalFun
-fileProcessor _ _ TBuiltin{} = Left UnevalFun
+fileProcessor _ _ BB{} = Left UnevalFun
+fileProcessor _ _ UB{} = Left UnevalFun
+fileProcessor _ _ TB{} = Left UnevalFun
 fileProcessor re _ e = Right $ print . eWith re e
