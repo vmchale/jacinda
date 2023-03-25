@@ -11,8 +11,7 @@ rewriteProgram :: Program a -> Program a
 rewriteProgram (Program ds e) = Program (rewriteD <$> ds) (rewriteE e)
 
 rewriteD :: D a -> D a
-rewriteD (FunDecl n bs e) = FunDecl n bs (rewriteE e)
-rewriteD d                = d
+rewriteD (FunDecl n bs e) = FunDecl n bs (rewriteE e); rewriteD d = d
 
 rewriteE :: E a -> E a
 rewriteE = cata a where

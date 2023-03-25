@@ -53,6 +53,7 @@ library jacinda-lib
         Intern.Unique
         Jacinda.Rename
         Jacinda.Check.Field
+        Jacinda.Backend.P
         Jacinda.Backend.Normalize
         Jacinda.Backend.TreeWalk
         Jacinda.Backend.Printf
