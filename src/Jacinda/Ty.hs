@@ -332,9 +332,9 @@ isAmbiguous TyB{}            = False
 isAmbiguous Rho{}            = True
 
 checkAmb :: E (T K) -> TyM a ()
-checkAmb e@(BBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
-checkAmb TBuiltin{} = pure () -- don't fail on ternary builtins, we don't need it anyway... better error messages
-checkAmb e@(UBuiltin ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
+checkAmb e@(BB ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
+checkAmb TB{} = pure () -- don't fail on ternary builtins, we don't need it anyway... better error messages
+checkAmb e@(UB ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Implicit _ e') = checkAmb e'
 checkAmb (Guarded _ p e') = checkAmb p *> checkAmb e'
 checkAmb (EApp _ e' e'') = checkAmb e' *> checkAmb e'' -- more precise errors
@@ -416,90 +416,90 @@ tyES s (Field _ i)        = pure (Field tyStr i, s)
 tyES s LastField{}        = pure (LastField tyStr, s)
 tyES s AllField{}         = pure (AllField tyStr, s)
 tyES s AllColumn{}        = pure (AllColumn (tyStream tyStr), s)
-tyES s (NBuiltin _ Ix)    = pure (NBuiltin tyI Ix, s)
-tyES s (NBuiltin _ Fp)    = pure (NBuiltin tyStr Fp, s)
-tyES s (NBuiltin _ Nf)    = pure (NBuiltin tyI Nf, s)
-tyES s (BBuiltin l Plus)  = do {t <- tySemiOp l; pure (BBuiltin t Plus, s)}
-tyES s (BBuiltin l Minus) = do {t <- tyNumOp l; pure (BBuiltin t Minus, s)}
-tyES s (BBuiltin l Times) = do {t <- tyNumOp l; pure (BBuiltin t Times, s)}
-tyES s (BBuiltin l Exp)   = do {t <- tyNumOp l; pure (BBuiltin t Exp, s)}
-tyES s (BBuiltin l Gt)    = do {t <- tyOrd l; pure (BBuiltin t Gt, s)}
-tyES s (BBuiltin l Lt)    = do {t <- tyOrd l; pure (BBuiltin t Lt, s)}
-tyES s (BBuiltin l Geq)   = do {t <- tyOrd l; pure (BBuiltin t Geq, s)}
-tyES s (BBuiltin l Leq)   = do {t <- tyOrd l; pure (BBuiltin t Leq, s)}
-tyES s (BBuiltin l Eq)    = do {t <- tyEq l; pure (BBuiltin t Eq, s)}
-tyES s (BBuiltin l Neq)   = do {t <- tyEq l; pure (BBuiltin t Neq, s)}
-tyES s (BBuiltin l Min)   = do {t <- tyM l; pure (BBuiltin t Min, s)}
-tyES s (BBuiltin l Max)   = do {t <- tyM l; pure (BBuiltin t Max, s)}
-tyES s (BBuiltin _ Split) = pure (BBuiltin (tyArr tyStr (tyArr tyR (tyV tyStr))) Split, s)
-tyES s (BBuiltin _ Splitc) = pure (BBuiltin (tyArr tyStr (tyArr tyStr (tyV tyStr))) Splitc, s)
-tyES s (BBuiltin _ Matches) = pure (BBuiltin (tyArr tyStr (tyArr tyR tyB)) Matches, s)
-tyES s (BBuiltin _ NotMatches) = pure (BBuiltin (tyArr tyStr (tyArr tyR tyB)) NotMatches, s)
-tyES s (UBuiltin _ Tally) = pure (UBuiltin (tyArr tyStr tyI) Tally, s)
-tyES s (BBuiltin _ Div) = pure (BBuiltin (tyArr tyF (tyArr tyF tyF)) Div, s)
-tyES s (UBuiltin _ Not) = pure (UBuiltin (tyArr tyB tyB) Not, s)
-tyES s (BBuiltin _ And) = pure (BBuiltin (tyArr tyB (tyArr tyB tyB)) And, s)
-tyES s (BBuiltin _ Or) = pure (BBuiltin (tyArr tyB (tyArr tyB tyB)) Or, s)
-tyES s (BBuiltin _ Match) = pure (BBuiltin (tyArr tyStr (tyArr tyR (tyOpt $ TyTup Star [tyI, tyI]))) Match, s)
-tyES s (TBuiltin _ Substr) = pure (TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr, s)
-tyES s (UBuiltin _ IParse) = pure (UBuiltin (tyArr tyStr tyI) IParse, s)
-tyES s (UBuiltin _ FParse) = pure (UBuiltin (tyArr tyStr tyF) FParse, s)
-tyES s (UBuiltin _ Floor) = pure (UBuiltin (tyArr tyF tyI) Floor, s)
-tyES s (UBuiltin _ Ceiling) = pure (UBuiltin (tyArr tyF tyI) Ceiling, s)
-tyES s (UBuiltin _ TallyList) = do {a <- var <$> dummyName "a"; pure (UBuiltin (tyArr a tyI) TallyList, s)}
-tyES s (UBuiltin l Negate) = do {a <- dummyName "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UBuiltin (tyArr a' a') Negate, s)}
-tyES s (UBuiltin _ Some) = do {a <- var <$> dummyName "a"; pure (UBuiltin (tyArr a (tyOpt a)) Some, s)}
-tyES s (NBuiltin _ None) = do {a <- dummyName "a"; pure (NBuiltin (tyOpt (var a)) None, s)}
+tyES s (NB _ Ix)    = pure (NB tyI Ix, s)
+tyES s (NB _ Fp)    = pure (NB tyStr Fp, s)
+tyES s (NB _ Nf)    = pure (NB tyI Nf, s)
+tyES s (BB l Plus)  = do {t <- tySemiOp l; pure (BB t Plus, s)}
+tyES s (BB l Minus) = do {t <- tyNumOp l; pure (BB t Minus, s)}
+tyES s (BB l Times) = do {t <- tyNumOp l; pure (BB t Times, s)}
+tyES s (BB l Exp)   = do {t <- tyNumOp l; pure (BB t Exp, s)}
+tyES s (BB l Gt)    = do {t <- tyOrd l; pure (BB t Gt, s)}
+tyES s (BB l Lt)    = do {t <- tyOrd l; pure (BB t Lt, s)}
+tyES s (BB l Geq)   = do {t <- tyOrd l; pure (BB t Geq, s)}
+tyES s (BB l Leq)   = do {t <- tyOrd l; pure (BB t Leq, s)}
+tyES s (BB l Eq)    = do {t <- tyEq l; pure (BB t Eq, s)}
+tyES s (BB l Neq)   = do {t <- tyEq l; pure (BB t Neq, s)}
+tyES s (BB l Min)   = do {t <- tyM l; pure (BB t Min, s)}
+tyES s (BB l Max)   = do {t <- tyM l; pure (BB t Max, s)}
+tyES s (BB _ Split) = pure (BB (tyArr tyStr (tyArr tyR (tyV tyStr))) Split, s)
+tyES s (BB _ Splitc) = pure (BB (tyArr tyStr (tyArr tyStr (tyV tyStr))) Splitc, s)
+tyES s (BB _ Matches) = pure (BB (tyArr tyStr (tyArr tyR tyB)) Matches, s)
+tyES s (BB _ NotMatches) = pure (BB (tyArr tyStr (tyArr tyR tyB)) NotMatches, s)
+tyES s (UB _ Tally) = pure (UB (tyArr tyStr tyI) Tally, s)
+tyES s (BB _ Div) = pure (BB (tyArr tyF (tyArr tyF tyF)) Div, s)
+tyES s (UB _ Not) = pure (UB (tyArr tyB tyB) Not, s)
+tyES s (BB _ And) = pure (BB (tyArr tyB (tyArr tyB tyB)) And, s)
+tyES s (BB _ Or) = pure (BB (tyArr tyB (tyArr tyB tyB)) Or, s)
+tyES s (BB _ Match) = pure (BB (tyArr tyStr (tyArr tyR (tyOpt $ TyTup Star [tyI, tyI]))) Match, s)
+tyES s (TB _ Substr) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr, s)
+tyES s (UB _ IParse) = pure (UB (tyArr tyStr tyI) IParse, s)
+tyES s (UB _ FParse) = pure (UB (tyArr tyStr tyF) FParse, s)
+tyES s (UB _ Floor) = pure (UB (tyArr tyF tyI) Floor, s)
+tyES s (UB _ Ceiling) = pure (UB (tyArr tyF tyI) Ceiling, s)
+tyES s (UB _ TallyList) = do {a <- var <$> dummyName "a"; pure (UB (tyArr a tyI) TallyList, s)}
+tyES s (UB l Negate) = do {a <- dummyName "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
+tyES s (UB _ Some) = do {a <- var <$> dummyName "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
+tyES s (NB _ None) = do {a <- dummyName "a"; pure (NB (tyOpt (var a)) None, s)}
 tyES s (ParseCol l i) = do {a <- dummyName "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
-tyES s (UBuiltin l Parse) = do {a <- dummyName "a"; modify (mapCV (addC a (IsParse, l))); pure (UBuiltin (tyArr tyStr (var a)) Parse, s)}
-tyES s (BBuiltin l Sprintf) = do {a <- dummyName "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BBuiltin (tyArr tyStr (tyArr (var a) tyStr)) Sprintf, s)}
-tyES s (BBuiltin l DedupOn) = do {a <- var <$> dummyName "a"; b <- dummyName "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BBuiltin (tyArr (tyArr a b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
-tyES s (UBuiltin _ (At i)) = do {a <- var <$> dummyName "a"; pure (UBuiltin (tyArr (tyV a) a) (At i), s)}
-tyES s (UBuiltin l Dedup) = do {a <- dummyName "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UBuiltin (tyArr sA sA) Dedup, s)}
-tyES s (UBuiltin _ Const) = do {a <- var <$> dummyName "a"; b <- var <$> dummyName "b"; pure (UBuiltin (tyArr a (tyArr b a)) Const, s)}
-tyES s (UBuiltin l CatMaybes) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UBuiltin (tyArr (hkt f' (tyOpt a')) (hkt f' a')) CatMaybes, s)}
-tyES s (BBuiltin l Filter) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=hkt f' a' in pure (BBuiltin (tyArr (tyArr a' tyB) (tyArr w w)) Filter, s)}
-tyES s (UBuiltin _ (Select i)) = do
+tyES s (UB l Parse) = do {a <- dummyName "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyArr tyStr (var a)) Parse, s)}
+tyES s (BB l Sprintf) = do {a <- dummyName "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyArr tyStr (tyArr (var a) tyStr)) Sprintf, s)}
+tyES s (BB l DedupOn) = do {a <- var <$> dummyName "a"; b <- dummyName "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (tyArr a b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
+tyES s (UB _ (At i)) = do {a <- var <$> dummyName "a"; pure (UB (tyArr (tyV a) a) (At i), s)}
+tyES s (UB l Dedup) = do {a <- dummyName "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (tyArr sA sA) Dedup, s)}
+tyES s (UB _ Const) = do {a <- var <$> dummyName "a"; b <- var <$> dummyName "b"; pure (UB (tyArr a (tyArr b a)) Const, s)}
+tyES s (UB l CatMaybes) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (hkt f' (tyOpt a')) (hkt f' a')) CatMaybes, s)}
+tyES s (BB l Filter) = do {a <- dummyName "a"; f <- higherOrder "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=hkt f' a' in pure (BB (tyArr (tyArr a' tyB) (tyArr w w)) Filter, s)}
+tyES s (UB _ (Select i)) = do
     ρ <- dummyName "ρ"; a <- var <$> dummyName "a"
-    pure (UBuiltin (tyArr (Rho Star ρ (IM.singleton i a)) a) (Select i), s)
-tyES s (BBuiltin l MapMaybe) = do
+    pure (UB (tyArr (Rho Star ρ (IM.singleton i a)) a) (Select i), s)
+tyES s (BB l MapMaybe) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
     f <- higherOrder "f"
     modify (mapCV (addC f (Witherable, l)))
     let f'=var f
-    pure (BBuiltin (tyArr (tyArr a (tyOpt b)) (tyArr (hkt f' a) (hkt f' b))) MapMaybe, s)
-tyES s (BBuiltin l Map) = do
+    pure (BB (tyArr (tyArr a (tyOpt b)) (tyArr (hkt f' a) (hkt f' b))) MapMaybe, s)
+tyES s (BB l Map) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
     f <- higherOrder "f"
     let f'=var f
     modify (mapCV (addC f (Functor, l)))
-    pure (BBuiltin (tyArr (tyArr a b) (tyArr (hkt f' a) (hkt f' b))) Map, s)
-tyES s (TBuiltin l Fold) = do
+    pure (BB (tyArr (tyArr a b) (tyArr (hkt f' a) (hkt f' b))) Map, s)
+tyES s (TB l Fold) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
     f <- higherOrder "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (TBuiltin (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (hkt f' a) b))) Fold, s)
-tyES s (BBuiltin l Fold1) = do
+    pure (TB (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (hkt f' a) b))) Fold, s)
+tyES s (BB l Fold1) = do
     a <- var <$> dummyName "a"
     f <- higherOrder "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (BBuiltin (tyArr (tyArr a (tyArr a a)) (tyArr (hkt f' a) a)) Fold1, s)
-tyES s (TBuiltin _ Captures) = pure (TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (tyOpt tyStr)))) Captures, s)
-tyES s (BBuiltin _ Prior) = do
+    pure (BB (tyArr (tyArr a (tyArr a a)) (tyArr (hkt f' a) a)) Fold1, s)
+tyES s (TB _ Captures) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyR (tyOpt tyStr)))) Captures, s)
+tyES s (BB _ Prior) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
-    pure (BBuiltin (tyArr (tyArr a (tyArr a b)) (tyArr (tyStream a) (tyStream b))) Prior, s)
-tyES s (TBuiltin _ ZipW) = do
+    pure (BB (tyArr (tyArr a (tyArr a b)) (tyArr (tyStream a) (tyStream b))) Prior, s)
+tyES s (TB _ ZipW) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"; c <- var <$> dummyName "c"
-    pure (TBuiltin (tyArr (tyArr a (tyArr b c)) (tyArr (tyStream a) (tyArr (tyStream b) (tyStream c)))) ZipW, s)
-tyES s (TBuiltin _ Scan) = do
+    pure (TB (tyArr (tyArr a (tyArr b c)) (tyArr (tyStream a) (tyArr (tyStream b) (tyStream c)))) ZipW, s)
+tyES s (TB _ Scan) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
-    pure (TBuiltin (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (tyStream a) (tyStream b)))) Scan, s)
-tyES s (TBuiltin _ Option) = do
+    pure (TB (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (tyStream a) (tyStream b)))) Scan, s)
+tyES s (TB _ Option) = do
     a <- var <$> dummyName "a"; b <- var <$> dummyName "b"
-    pure (TBuiltin (tyArr b (tyArr (tyArr a b) (tyArr (tyOpt a) b))) Option, s)
-tyES s (TBuiltin _ AllCaptures) = pure (TBuiltin (tyArr tyStr (tyArr tyI (tyArr tyR (tyV tyStr)))) AllCaptures, s)
+    pure (TB (tyArr b (tyArr (tyArr a b) (tyArr (tyOpt a) b))) Option, s)
+tyES s (TB _ AllCaptures) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyR (tyV tyStr)))) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
 tyES s (Guarded l e se) = do
     (se', s0) <- tyES s se

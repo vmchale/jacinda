@@ -68,7 +68,7 @@ compileR :: FileBS
          -> E (T K)
 compileR fp = cata a where
     a (RegexLitF _ rrϵ) = RegexCompiled (compileDefault rrϵ)
-    a (NBuiltinF _ Fp)  = mkStr fp
+    a (NBF _ Fp)        = mkStr fp
     a x                 = embed x
 
 compileIn :: FileBS -> Program (T K) -> Program (T K)
