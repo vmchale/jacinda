@@ -1,4 +1,6 @@
-module Jacinda.AST.I ( inline ) where
+module Jacinda.AST.I ( inline
+                     , β
+                     ) where
 
 import           Control.Monad.State.Strict (State, gets, modify, runState)
 import           Data.Bifunctor             (second)
@@ -27,6 +29,9 @@ runI i = second (max_.renames) . flip runState (ISt (Renames i mempty) mempty)
 inline :: Int -> Program (T K) -> (E (T K), Int)
 inline i = runI i . iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
+β :: Int -> E a -> (E a, Int)
+β i = runI i.bM
+
 iD :: D (T K) -> M (T K) ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
 iD SetFS{}          = pure ()
@@ -34,6 +39,37 @@ iD FlushDecl{}      = pure ()
 iD FunDecl{}        = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
+
+bM :: E a -> M a (E a)
+bM (EApp _ (Lam _ n e') e) = do
+    eI <- bM e
+    modify (bind n eI) *> bM e'
+bM (EApp l e0 e1) = do
+    e0' <- bM e0
+    e1' <- bM e1
+    case e0' of
+        Lam{} -> bM (EApp l e0' e1')
+        _     -> pure (EApp l e0' e1')
+bM e@(Var _ (Nm _ (U i) _)) = do
+    st <- gets binds
+    case IM.lookup i st of
+        Just e' -> rE e'
+        Nothing -> pure e
+bM (Let l (n, e') e) = do
+    e'B <- bM e'
+    eB <- bM e
+    pure $ Let l (n, e'B) eB
+bM (Tup l es) = Tup l <$> traverse bM es; bM (Arr l es) = Arr l <$> traverse bM es
+bM (Anchor l es) = Anchor l <$> traverse bM es; bM (OptionVal l es) = OptionVal l <$> traverse bM es
+bM (Lam l n e) = Lam l n <$> bM e
+bM (Implicit l e) = Implicit l <$> bM e;
+bM (Guarded l e0 e1) = Guarded l <$> bM e0 <*> bM e1
+bM (Cond l p e0 e1) = Cond l <$> bM p <*> bM e0 <*> bM e1
+bM e@Column{} = pure e; bM e@IParseCol{} = pure e; bM e@FParseCol{} = pure e; bM e@AllField{} = pure e
+bM e@LastField{} = pure e; bM e@Field{} = pure e; bM e@ParseCol{} = pure e; bM e@AllColumn{} = pure e
+bM e@IntLit{} = pure e; bM e@FloatLit{} = pure e; bM e@StrLit{} = pure e; bM e@RegexLit{} = pure e; bM e@BoolLit{} = pure e
+bM e@BBuiltin{} = pure e; bM e@NBuiltin{} = pure e; bM e@UBuiltin{} = pure e; bM e@TBuiltin{} = pure e
+bM ResVar{} = desugar; bM Dfn{} = desugar; bM RegexCompiled{} = desugar; bM Paren{} = desugar
 
 iE :: E (T K) -> M (T K) (E (T K))
 iE e@NBuiltin{} = pure e; iE e@UBuiltin{} = pure e; iE e@BBuiltin{} = pure e; iE e@TBuiltin{} = pure e
