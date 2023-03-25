@@ -472,12 +472,7 @@ foldAll re foldExprs bs = evalAll seeds (mkStreams streamExprs) where
     (is, ops, seeds, streamExprs) = unzip4 foldExprs
     mkStreams = fmap (\streamExpr -> ir re streamExpr bs)
 
-    evalAll seedsϵ ess | not (any null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
-                       -- if I try to use the (all null ess) criterion it space
-                       -- leaks like crazy so... inspect only when we need?
-                       --
-                       -- (still leaks space... but less)
-                       | not (all null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
+    evalAll seedsϵ ess | not (any null ess) || not (all null ess) = let es' = zipWith3 applyOp' ops seedsϵ (headMaybe <$> ess) in es' `seqAll` evalAll es' (tail' <$> ess)
                        | otherwise = zip is seedsϵ
 
     seqAll (e:es) z = foldr seq e es `seq` z
@@ -525,7 +520,7 @@ gatherFoldsM (Tup ty es) = Tup ty <$> traverse gatherFoldsM es
 gatherFoldsM (Arr ty es) = Arr ty <$> traverse gatherFoldsM es
 gatherFoldsM (OptionVal ty e) = OptionVal ty <$> traverse gatherFoldsM e
 gatherFoldsM (Cond ty p e e') = Cond ty <$> gatherFoldsM p <*> gatherFoldsM e <*> gatherFoldsM e'
--- gatherFoldsM (Lam t n e) = Lam t n <$> gatherFoldsM e
+gatherFoldsM (Lam t n e) = Lam t n <$> gatherFoldsM e
 gatherFoldsM (NB _ None) = pure $ OptionVal undefined Nothing
 gatherFoldsM e@BB{} = pure e
 gatherFoldsM e@TB{} = pure e
@@ -541,13 +536,13 @@ eWith :: RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eWith re (EApp _ (EApp _ (EApp _ (TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) op) seed) stream) = foldWithCtx re op seed stream
 eWith re (EApp _ (EApp _ (BB (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1) op) stream)                          = fold1 re op stream
 -- TODO: function APPLIED to fold/fold1 res.
-eWith _ e@BB{}                                                                                                                 = const e
-eWith _ e@UB{}                                                                                                                 = const e
-eWith _ e@TB{}                                                                                                                 = const e
-eWith _ e@StrLit{}                                                                                                                   = const e
-eWith _ e@FloatLit{}                                                                                                                 = const e
-eWith _ e@IntLit{}                                                                                                                   = const e
-eWith _ e@BoolLit{}                                                                                                                  = const e
+eWith _ e@BB{}                                                                                                                = const e
+eWith _ e@UB{}                                                                                                                = const e
+eWith _ e@TB{}                                                                                                                = const e
+eWith _ e@StrLit{}                                                                                                            = const e
+eWith _ e@FloatLit{}                                                                                                          = const e
+eWith _ e@IntLit{}                                                                                                            = const e
+eWith _ e@BoolLit{}                                                                                                           = const e
 eWith re e = \bs ->
     let (eHoles, (_, folds)) = runState (gatherFoldsM e) (0, []) -- 0 state, should contain no vars by now
         in eClosed undefined $ ungather (IM.fromList $ foldAll re folds bs) eHoles
