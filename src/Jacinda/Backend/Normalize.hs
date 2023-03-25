@@ -2,7 +2,6 @@
 
 module Jacinda.Backend.Normalize ( eClosed
                                  , closedProgram
-                                 , readDigits
                                  , readFloat
                                  , mkI
                                  , mkF
@@ -29,6 +28,7 @@ import           Data.Word                  (Word8)
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
+import           Jacinda.Backend.P
 import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Jacinda.Rename
@@ -56,21 +56,6 @@ parseAsEInt = mkI . readDigits
 parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
 
-readDigits :: BS.ByteString -> Integer
-readDigits b | Just (45, bs) <- BS.uncons b = negate $ readDigits bs
-readDigits b = ASCII.foldl' (\seed x -> 10 * seed + f x) 0 b
-    where f '0' = 0
-          f '1' = 1
-          f '2' = 2
-          f '3' = 3
-          f '4' = 4
-          f '5' = 5
-          f '6' = 6
-          f '7' = 7
-          f '8' = 8
-          f '9' = 9
-          f c   = error (c:" is not a valid digit!")
-
 the :: BS.ByteString -> Word8
 the bs = case BS.uncons bs of
     Nothing     -> error "Empty splitc char!"
@@ -78,7 +63,7 @@ the bs = case BS.uncons bs of
     Just _      -> error "Splitc takes only one char!"
 
 readFloat :: BS.ByteString -> Double
-readFloat = read . ASCII.unpack
+readFloat = read . ASCII.unpack -- TODO: readMaybe
 
 desugar :: a
 desugar = error "Should have been desugared by this stage."
@@ -138,8 +123,8 @@ applyOp :: E (T K)
         -> E (T K)
         -> E (T K)
         -> EvalM (E (T K))
-applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- short-circuit if not a lambda, don't need rename
-applyOp op e e'             = do { op' <- rE op ; eNorm (EApp undefined (EApp undefined op' e) e') }
+applyOp op@BBuiltin{}  e e' = eNorm (EApp undefined (EApp undefined op e) e') -- don't need rename if not a lambda
+applyOp op e e'             = do {op' <- rE op ; eNorm (EApp undefined (EApp undefined op' e) e')}
 
 foldE :: E (T K)
       -> E (T K)
