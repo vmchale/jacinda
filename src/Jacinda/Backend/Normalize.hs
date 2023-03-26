@@ -381,7 +381,7 @@ eNorm e@(Var _ (Nm _ (U i) _)) = do
     st <- gets binds
     case IM.lookup i st of
         Just e'@Var{} -> eNorm e' -- no cyclic binds
-        Just e'       -> rE e' -- FIXME: set outermost type to be type of var...
+        Just e'       -> rE e' -- FIXME: match outermost type
         Nothing       -> pure e -- default to e in case var was bound in a lambda
 eNorm (EApp ty e@Var{} e') = eNorm =<< (EApp ty <$> eNorm e <*> pure e')
 eNorm (EApp _ (Lam _ (Nm _ (U i) _) e) e') = do

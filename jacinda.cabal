@@ -56,7 +56,8 @@ library jacinda-lib
         Jacinda.Check.Field
         Jacinda.Backend.Parse
         Jacinda.Backend.Normalize
-        Jacinda.Backend.TreeWalk
+        Jacinda.Backend.P
+        Jacinda.Backend.Stream
         Jacinda.Backend.Printf
         Jacinda.Backend.Trans
         Jacinda.Include
