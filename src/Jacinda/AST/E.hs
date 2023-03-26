@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.AST.E ( eta ) where
+module Jacinda.AST.E ( M, nN, eta ) where
 
 import           Control.Monad              ((<=<))
 import           Control.Monad.State.Strict (State, get, modify)

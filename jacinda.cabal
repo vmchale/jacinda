@@ -49,6 +49,7 @@ library jacinda-lib
         Jacinda.AST.E
         Jacinda.Lexer
         Jacinda.M
+        Jacinda.Fuse
         Intern.Name
         Intern.Unique
         Jacinda.Rename
