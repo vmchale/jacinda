@@ -12,5 +12,6 @@ fuse (EApp t0 (EApp t1 (EApp t2 f@(TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (T
         (EApp _ (EApp _ (BB _ Filter) p) xs) -> do
             let opTy@(TyArr _ sTy popTy@(TyArr _ xTy _))= eLoc op
             s <- nN "seed" sTy; x <- nN "x" xTy
-            let fop=Lam opTy s (Lam popTy x undefined) in pure (EApp t0 (EApp t1 (EApp t2 f fop) seed) xs)
+            let sE=Var sTy s; xE=Var xTy x
+            let fop=Lam opTy s (Lam popTy x (Cond sTy p (EApp sTy (EApp popTy op sE) xE) sE)) in pure (EApp t0 (EApp t1 (EApp t2 f fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 f op) seed) stream')
