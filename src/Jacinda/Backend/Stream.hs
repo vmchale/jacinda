@@ -1,10 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
--- | Tree-walking interpreter
-module Jacinda.Backend.TreeWalk ( runJac
-                                ) where
-
--- TODO: normalize before mapping?
+module Jacinda.Backend.Stream ( StreamError
+                              , fileProcessor
+                              ) where
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, get, modify, runState)
@@ -28,10 +26,7 @@ import           Jacinda.Ty.Const
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (hFlush, stdout)
 
-data StreamError = NakedField
-                 | UnevalFun
-                 | TupOfStreams -- ^ Reject a tuple of streams
-                 | BadCtx
+data StreamError = NakedField | UnevalFun
                  | InternalError
                  deriving (Show)
 
@@ -49,32 +44,25 @@ badSugar :: a
 badSugar = error "Internal error: dfn syntactic sugar at a stage where it should not be."
 
 asInt :: E a -> Integer
-asInt (IntLit _ i) = i
-asInt e            = noRes e "Int"
+asInt (IntLit _ i) = i; asInt e = noRes e "Int"
 
 asBool :: E a -> Bool
-asBool (BoolLit _ b) = b
-asBool e             = noRes e "Bool"
+asBool (BoolLit _ b) = b; asBool e = noRes e "Bool"
 
 asStr :: E a -> BS.ByteString
-asStr (StrLit _ str) = str
-asStr e              = noRes e "Str"
+asStr (StrLit _ str) = str; asStr e = noRes e "Str"
 
 asFloat :: E a -> Double
-asFloat (FloatLit _ f) = f
-asFloat e              = noRes e "Float"
+asFloat (FloatLit _ f) = f; asFloat e = noRes e "Float"
 
 asRegex :: E a -> RurePtr
-asRegex (RegexCompiled re) = re
-asRegex e                  = noRes e "Regex"
+asRegex (RegexCompiled re) = re; asRegex e = noRes e "Regex"
 
 asArr :: E a -> V.Vector (E a)
-asArr (Arr _ es) = es
-asArr e          = noRes e "List"
+asArr (Arr _ es) = es; asArr e = noRes e "List"
 
 asOpt :: E a -> Maybe (E a)
-asOpt (OptionVal _ e) = e
-asOpt e               = noRes e "Option"
+asOpt (OptionVal _ e) = e; asOpt e = noRes e "Option"
 
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
@@ -457,12 +445,6 @@ fold1 re op streamExpr bs =
     case ir re streamExpr bs of
         e:es -> foldl' (applyOp op) e es
         _    -> throw EmptyFold
-
-runJac :: RurePtr -- ^ Record separator
-       -> Int
-       -> Program (T K)
-       -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = fileProcessor re (flushD e) (closedProgram i e)
 
 foldAll :: RurePtr
         -> [(Int, E (T K), E (T K), E (T K))]

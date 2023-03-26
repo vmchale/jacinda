@@ -1,6 +1,5 @@
 module Jacinda.AST.I ( RM
-                     , inline
-                     , β
+                     , ib
                      ) where
 
 import           Control.Monad.State.Strict (State, gets, modify, runState)
@@ -27,8 +26,8 @@ bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
 
 runI i = second (max_.renames) . flip runState (ISt (Renames i mempty) mempty)
 
-inline :: Int -> Program (T K) -> (E (T K), Int)
-inline i = runI i . iP where iP (Program ds e) = traverse_ iD ds *> iE e
+ib :: Int -> Program (T K) -> (E (T K), Int)
+ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
 β :: Int -> E a -> (E a, Int)
 β i = runI i.bM
