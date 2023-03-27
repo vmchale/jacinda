@@ -37,6 +37,12 @@ yields
 https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school
 ```
 
+## Mac
+
+```
+pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}' | pbcopy
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
