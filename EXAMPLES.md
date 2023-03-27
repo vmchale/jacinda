@@ -57,7 +57,7 @@ Note the `81` to account for the leading `+`.
 # Find all distinct language extensions used in a project
 
 ```
-fd '\.hs$' "$1" -x ja '~.{%/LANGUAGE\s*.*\s*#-/}{`3}' -i | ja '~.$0'
+fd '\.hs$' . -x ja '.?{|`0 ~* 1 /LANGUAGE\s*([a-zA-Z]*)\s*#-/}' -i | ja '~.$0'
 ```
 
 One can make this more rigorous (allowing for `{-# LANGUAGE Xxx,Yyy #-}` with:

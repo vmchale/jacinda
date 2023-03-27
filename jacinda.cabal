@@ -46,6 +46,7 @@ library jacinda-lib
     hs-source-dirs:   src
     other-modules:
         Jacinda.AST.I
+        Jacinda.AST.E
         Jacinda.Lexer
         Jacinda.M
         Intern.Name
