@@ -37,6 +37,12 @@ yields
 https://soundcloud.com/ayeshaerotica-music/dead-babies
 ```
 
+## Mac
+
+```
+pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}' | pbcopy
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
