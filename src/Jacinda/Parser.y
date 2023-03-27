@@ -227,75 +227,75 @@ E :: { E AlexPosn }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
   | lastField { LastField $1 }
-  | field iParse { EApp (loc $1) (UBuiltin $2 IParse) (Field (loc $1) (ix $1)) }
-  | field fParse { EApp (loc $1) (UBuiltin $2 FParse) (Field (loc $1) (ix $1)) }
-  | name iParse { EApp (Nm.loc $1) (UBuiltin $2 IParse) (Var (Nm.loc $1) $1) }
-  | name fParse { EApp (Nm.loc $1) (UBuiltin $2 FParse) (Var (Nm.loc $1) $1) }
-  | field colon { EApp (loc $1) (UBuiltin $2 Parse) (Field (loc $1) (ix $1)) }
-  | name colon { EApp (Nm.loc $1) (UBuiltin $2 Parse) (Var (Nm.loc $1) $1) }
-  | lastField iParse { EApp $1 (UBuiltin $2 IParse) (LastField $1) }
-  | lastField fParse { EApp $1 (UBuiltin $2 FParse) (LastField $1) }
-  | lastField colon { EApp $1 (UBuiltin $2 Parse) (LastField $1) }
-  | x colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 X) }
-  | y colon { EApp $1 (UBuiltin $2 Parse) (ResVar $1 Y) }
-  | x iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 X) }
-  | x fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 X) }
-  | y iParse { EApp $1 (UBuiltin $2 IParse) (ResVar $1 Y) }
-  | y fParse { EApp $1 (UBuiltin $2 FParse) (ResVar $1 Y) }
+  | field iParse { EApp (loc $1) (UB $2 IParse) (Field (loc $1) (ix $1)) }
+  | field fParse { EApp (loc $1) (UB $2 FParse) (Field (loc $1) (ix $1)) }
+  | name iParse { EApp (Nm.loc $1) (UB $2 IParse) (Var (Nm.loc $1) $1) }
+  | name fParse { EApp (Nm.loc $1) (UB $2 FParse) (Var (Nm.loc $1) $1) }
+  | field colon { EApp (loc $1) (UB $2 Parse) (Field (loc $1) (ix $1)) }
+  | name colon { EApp (Nm.loc $1) (UB $2 Parse) (Var (Nm.loc $1) $1) }
+  | lastField iParse { EApp $1 (UB $2 IParse) (LastField $1) }
+  | lastField fParse { EApp $1 (UB $2 FParse) (LastField $1) }
+  | lastField colon { EApp $1 (UB $2 Parse) (LastField $1) }
+  | x colon { EApp $1 (UB $2 Parse) (ResVar $1 X) }
+  | y colon { EApp $1 (UB $2 Parse) (ResVar $1 Y) }
+  | x iParse { EApp $1 (UB $2 IParse) (ResVar $1 X) }
+  | x fParse { EApp $1 (UB $2 FParse) (ResVar $1 X) }
+  | y iParse { EApp $1 (UB $2 IParse) (ResVar $1 Y) }
+  | y fParse { EApp $1 (UB $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | column colon { ParseCol (loc $1) (ix $1) }
-  | parens(iParse) { UBuiltin $1 IParse }
-  | parens(fParse) { UBuiltin $1 FParse }
-  | parens(colon) { UBuiltin $1 Parse }
-  | lparen BBin rparen { BBuiltin $1 $2 }
-  | lparen E BBin rparen { EApp $1 (BBuiltin $1 $3) $2 }
-  | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BBuiltin $1 $2) (Var (Nm.loc n) n)) $3)) } }
-  | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BBuiltin (eLoc $1) $2) $1) $3 }
-  | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Fold) $1) $3) $4 }
-  | E capture E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Captures) $1) $3) $4 }
-  | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TBuiltin $2 Scan) $1) $3) $4 }
-  | comma E E E { EApp $1 (EApp $1 (EApp $1 (TBuiltin $1 ZipW) $2) $3) $4 }
+  | parens(iParse) { UB $1 IParse }
+  | parens(fParse) { UB $1 FParse }
+  | parens(colon) { UB $1 Parse }
+  | lparen BBin rparen { BB $1 $2 }
+  | lparen E BBin rparen { EApp $1 (BB $1 $3) $2 }
+  | lparen BBin E rparen {% do { n <- lift $ freshName "x" ; pure (Lam $1 n (EApp $1 (EApp $1 (BB $1 $2) (Var (Nm.loc n) n)) $3)) } }
+  | E BBin E { EApp (eLoc $1) (EApp (eLoc $3) (BB (eLoc $1) $2) $1) $3 }
+  | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Fold) $1) $3) $4 }
+  | E capture E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Captures) $1) $3) $4 }
+  | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Scan) $1) $3) $4 }
+  | comma E E E { EApp $1 (EApp $1 (EApp $1 (TB $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
-  | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BBuiltin tl Matches) (AllField tl)) $2) $4 }
+  | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BB tl Matches) (AllField tl)) $2) $4 }
   | lbraceBar E rbrace { Implicit $1 $2 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
-  | tally { UBuiltin $1 Tally }
-  | tallyL { UBuiltin $1 TallyList }
-  | const { UBuiltin $1 Const }
-  | exclamation { UBuiltin $1 Not }
+  | tally { UB $1 Tally }
+  | tallyL { UB $1 TallyList }
+  | const { UB $1 Const }
+  | exclamation { UB $1 Not }
   | lsqbracket E rsqbracket { Dfn $1 $2 }
   | x { ResVar $1 X }
   | y { ResVar $1 Y }
   | rr { RegexLit (loc $1) (BSL.toStrict $ rr $1) }
-  | min { BBuiltin $1 Min }
-  | max { BBuiltin $1 Max }
-  | split { BBuiltin $1 Split }
-  | match { BBuiltin $1 Match }
-  | splitc { BBuiltin $1 Splitc }
-  | substr { TBuiltin $1 Substr }
-  | sprintf { BBuiltin $1 Sprintf }
-  | option { TBuiltin $1 Option }
-  | captures { TBuiltin $1 AllCaptures }
-  | floor { UBuiltin $1 Floor }
-  | ceil { UBuiltin $1 Ceiling }
-  | floorSym { UBuiltin $1 Floor }
-  | ceilSym { UBuiltin $1 Ceiling }
-  | dedup { UBuiltin $1 Dedup }
-  | some { UBuiltin $1 Some }
-  | catMaybes { UBuiltin $1 CatMaybes }
-  | neg { UBuiltin $1 Negate }
-  | ix { NBuiltin $1 Ix }
-  | nf { NBuiltin $1 Nf }
-  | none { NBuiltin $1 None }
-  | fp { NBuiltin $1 Fp }
-  | parens(at) { UBuiltin (loc $1) (At $ ix $1) }
-  | parens(select) { UBuiltin (loc $1) (Select $ field $1) }
-  | E at { EApp (eLoc $1) (UBuiltin (loc $2) (At $ ix $2)) $1 }
-  | E select { EApp (eLoc $1) (UBuiltin (loc $2) (Select $ field $2)) $1 }
+  | min { BB $1 Min }
+  | max { BB $1 Max }
+  | split { BB $1 Split }
+  | match { BB $1 Match }
+  | splitc { BB $1 Splitc }
+  | substr { TB $1 Substr }
+  | sprintf { BB $1 Sprintf }
+  | option { TB $1 Option }
+  | captures { TB $1 AllCaptures }
+  | floor { UB $1 Floor }
+  | ceil { UB $1 Ceiling }
+  | floorSym { UB $1 Floor }
+  | ceilSym { UB $1 Ceiling }
+  | dedup { UB $1 Dedup }
+  | some { UB $1 Some }
+  | catMaybes { UB $1 CatMaybes }
+  | neg { UB $1 Negate }
+  | ix { NB $1 Ix }
+  | nf { NB $1 Nf }
+  | none { NB $1 None }
+  | fp { NB $1 Fp }
+  | parens(at) { UB (loc $1) (At $ ix $1) }
+  | parens(select) { UB (loc $1) (Select $ field $1) }
+  | E at { EApp (eLoc $1) (UB (loc $2) (At $ ix $2)) $1 }
+  | E select { EApp (eLoc $1) (UB (loc $2) (Select $ field $2)) $1 }
   | backslash name dot E { Lam $1 $2 $4 }
   | parens(E) { Paren (eLoc $1) $1 }
   | if E then E else E { Cond $1 $2 $4 $6 }

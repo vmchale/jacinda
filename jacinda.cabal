@@ -49,13 +49,17 @@ library jacinda-lib
         Jacinda.AST.E
         Jacinda.Lexer
         Jacinda.M
+        Jacinda.Fuse
         Intern.Name
         Intern.Unique
         Jacinda.Rename
         Jacinda.Check.Field
+        Jacinda.Backend.Parse
         Jacinda.Backend.Normalize
-        Jacinda.Backend.TreeWalk
+        Jacinda.Backend.P
+        Jacinda.Backend.Stream
         Jacinda.Backend.Printf
+        Jacinda.Backend.Trans
         Jacinda.Include
         Data.List.Ext
         Paths_jacinda

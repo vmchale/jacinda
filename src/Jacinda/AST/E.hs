@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.AST.E ( eta ) where
+module Jacinda.AST.E ( M, nN, eta ) where
 
 import           Control.Monad              ((<=<))
 import           Control.Monad.State.Strict (State, get, modify)
@@ -39,32 +39,32 @@ mkLam ts e = do
 eta = eM <=< eO
 
 eM :: E (T K) -> M (E (T K))
-eM (EApp t ho@(BBuiltin _ Map) op)     = EApp t ho <$> eta op
-eM (EApp t ho@(BBuiltin _ Filter) op)  = EApp t ho <$> eta op
-eM (EApp t ho@(BBuiltin _ Prior) op)   = EApp t ho <$> eta op
-eM (EApp t ho@(BBuiltin _ DedupOn) op) = EApp t ho <$> eta op
-eM (EApp t ho@(BBuiltin _ Fold1) op)   = EApp t ho <$> eta op
-eM (EApp t ho@(TBuiltin _ Fold) op)    = EApp t ho <$> eta op
-eM (EApp t ho@(TBuiltin _ Scan) op)    = EApp t ho <$> eta op
-eM (EApp t ho@(TBuiltin _ ZipW) op)    = EApp t ho <$> eta op
-eM (EApp t e0 e1)                      = EApp t <$> eM e0 <*> eM e1
-eM (Cond t p e0 e1)                    = Cond t <$> eM p <*> eM e0 <*> eM e1
-eM (OptionVal t e)                     = OptionVal t <$> traverse eM e
-eM (Implicit t e)                      = Implicit t <$> eM e
-eM (Lam t n e)                         = Lam t n <$> eM e
-eM (Guarded t p e)                     = Guarded t <$> eM p <*> eM e
-eM (Tup t es)                          = Tup t <$> traverse eM es
-eM (Anchor t es)                       = Anchor t <$> traverse eM es
-eM (Arr t es)                          = Arr t <$> traverse eM es
-eM (Let t (n, e') e)                   = do {e'𝜂 <- eM e'; e𝜂 <- eM e; pure (Let t (n, e'𝜂) e𝜂)}
-eM e                                   = pure e
+eM (EApp t ho@(BB _ Map) op)     = EApp t ho <$> eta op
+eM (EApp t ho@(BB _ Filter) op)  = EApp t ho <$> eta op
+eM (EApp t ho@(BB _ Prior) op)   = EApp t ho <$> eta op
+eM (EApp t ho@(BB _ DedupOn) op) = EApp t ho <$> eta op
+eM (EApp t ho@(BB _ Fold1) op)   = EApp t ho <$> eta op
+eM (EApp t ho@(TB _ Fold) op)    = EApp t ho <$> eta op
+eM (EApp t ho@(TB _ Scan) op)    = EApp t ho <$> eta op
+eM (EApp t ho@(TB _ ZipW) op)    = EApp t ho <$> eta op
+eM (EApp t e0 e1)                = EApp t <$> eM e0 <*> eM e1
+eM (Cond t p e0 e1)              = Cond t <$> eM p <*> eM e0 <*> eM e1
+eM (OptionVal t e)               = OptionVal t <$> traverse eM e
+eM (Implicit t e)                = Implicit t <$> eM e
+eM (Lam t n e)                   = Lam t n <$> eM e
+eM (Guarded t p e)               = Guarded t <$> eM p <*> eM e
+eM (Tup t es)                    = Tup t <$> traverse eM es
+eM (Anchor t es)                 = Anchor t <$> traverse eM es
+eM (Arr t es)                    = Arr t <$> traverse eM es
+eM (Let t (n, e') e)             = do {e'𝜂 <- eM e'; e𝜂 <- eM e; pure (Let t (n, e'𝜂) e𝜂)}
+eM e                             = pure e
 
 -- outermost
 eO :: E (T K) -> M (E (T K))
 eO e@(Var t@TyArr{} _)    = mkLam (doms t) e
-eO e@(UBuiltin t _)       = mkLam (doms t) e
-eO e@(BBuiltin t _)       = mkLam (doms t) e
-eO e@(TBuiltin t _)       = mkLam (doms t) e
+eO e@(UB t _)             = mkLam (doms t) e
+eO e@(BB t _)             = mkLam (doms t) e
+eO e@(TB t _)             = mkLam (doms t) e
 eO e@(EApp t@TyArr{} _ _) = mkLam (doms t) e
 eO e@(Lam t@TyArr{} _ _)  = do
     let l = length (doms t)

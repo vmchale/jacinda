@@ -22,7 +22,7 @@ import           Data.Tuple                 (swap)
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Normalize
-import           Jacinda.Backend.TreeWalk
+import           Jacinda.Backend.P
 import           Jacinda.Check.Field
 import           Jacinda.Include
 import           Jacinda.Lexer
@@ -68,7 +68,7 @@ compileR :: FileBS
          -> E (T K)
 compileR fp = cata a where
     a (RegexLitF _ rrϵ) = RegexCompiled (compileDefault rrϵ)
-    a (NBuiltinF _ Fp)  = mkStr fp
+    a (NBF _ Fp)        = mkStr fp
     a x                 = embed x
 
 compileIn :: FileBS -> Program (T K) -> Program (T K)
@@ -84,7 +84,7 @@ exprEval src =
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTyM m (tyProgram ast)
-            in closedProgram i (compileIn undefined typed)
+            in closedProgram i (compileIn (error "nf not defined.") typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs
@@ -102,7 +102,6 @@ runOnBytes incls fp src cliFS contents = do
     (typed, i) <- yeetIO $ runTyM m (tyProgram ast)
     cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (ASCII.pack fp) typed)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
-    -- TODO: BSL.split, BSL.splitWith for arbitrary record separators
 
 runOnHandle :: [FilePath]
             -> BSL.ByteString -- ^ Program
@@ -123,7 +122,7 @@ tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (pT, i) <- yeetIO $ runTyM m (tyProgram ast)
-    let (eI, _) = inline i pT
+    let (eI, _) = ib i pT
     m'Throw $ cF eI
 
 tySrc :: BSL.ByteString -> T K
