@@ -257,3 +257,13 @@ let
   val total := white + black + draw
 in (total . white . black . draw) end
 ```
+
+# Get Version
+
+```
+curl -s https://github.com/cisco/ChezScheme/releases | rg 'csv(\d.*).tar.gz' -o -r '$1' | head -n1
+```
+
+```
+curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>.?{|`0 ~* 1 /csv(\d.*).tar.gz/}'
+```
