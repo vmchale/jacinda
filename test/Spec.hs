@@ -57,9 +57,9 @@ pAst :: E ()
 pAst =
     EApp ()
         (EApp ()
-            (BBuiltin () Gt)
+            (BB () Gt)
             (EApp ()
-                (UBuiltin () Tally)
+                (UB () Tally)
                 (AllField ())))
         (IntLit () 72)
 
@@ -83,8 +83,8 @@ sumBytesAST =
     EApp ()
         (EApp ()
             (EApp ()
-                (TBuiltin () Fold)
-                (BBuiltin () Plus))
+                (TB () Fold)
+                (BB () Plus))
             (IntLit () 0))
             (IParseCol () 5)
 
