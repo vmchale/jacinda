@@ -267,3 +267,7 @@ curl -s https://github.com/cisco/ChezScheme/releases | rg 'csv(\d.*).tar.gz' -o 
 ```
 curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>.?{|`0 ~* 1 /csv(\d.*).tar.gz/}'
 ```
+
+```
+curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>[x ~* 1 /csv(\d.*).tar.gz/]:?$0'
+```
