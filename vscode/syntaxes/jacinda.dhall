@@ -1,5 +1,7 @@
 -- https://macromates.com/manual/en/language_grammars
-let map = https://prelude.dhall-lang.org/List/map
+let map =
+      https://prelude.dhall-lang.org/List/map
+        sha256:dd845ffb4568d40327f2a817eb42d1c6138b929ca758d50bc33112ef3c885680
 
 let TextMate =
       < MatchRe : { match : Text, name : Text }
