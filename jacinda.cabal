@@ -48,7 +48,6 @@ library jacinda-lib
         Jacinda.AST.I
         Jacinda.AST.E
         Jacinda.Lexer
-        Jacinda.M
         Jacinda.Fuse
         Intern.Name
         Intern.Unique
@@ -59,7 +58,6 @@ library jacinda-lib
         Jacinda.Backend.P
         Jacinda.Backend.Stream
         Jacinda.Backend.Printf
-        Jacinda.Backend.Trans
         Jacinda.Include
         Data.List.Ext
         Paths_jacinda
