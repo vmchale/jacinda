@@ -23,6 +23,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
+import Debug.Trace
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
 import           Intern.Name
@@ -427,12 +428,12 @@ eNorm (EApp ty0 (EApp ty1 op@(BB _ Match) e) e') = do
     pure $ case (eI, eI') of
         (StrLit _ str, RegexCompiled re) -> asTup (find' re str)
         _                                -> EApp ty0 (EApp ty1 op eI) eI'
-eNorm (EApp ty0 (EApp ty1 op@(BB _ Sprintf) e) e') = do
+{- eNorm (EApp ty0 (EApp ty1 op@(BB _ Sprintf) e) e') = do
     eI <- eNorm e
     eI' <- eNorm e'
     pure $ case (eI, eI') of
         (StrLit _ fmt, _) | isReady eI' -> mkStr $ sprintf fmt eI'
-        _                               -> EApp ty0 (EApp ty1 op eI) eI'
+        _                               -> EApp ty0 (EApp ty1 op eI) eI' -}
 eNorm (EApp ty0 (EApp ty1 op@(BB (TyArr _ _ (TyArr _ _ (TyApp _ (TyB _ TyVec) _))) Map) x) y) = do
     x' <- eNorm x
     y' <- eNorm y

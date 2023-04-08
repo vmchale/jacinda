@@ -54,9 +54,8 @@ library jacinda-lib
         Jacinda.Rename
         Jacinda.Check.Field
         Jacinda.Backend.Parse
-        Jacinda.Backend.Normalize
+        Jacinda.Backend.Const
         Jacinda.Backend.P
-        Jacinda.Backend.Stream
         Jacinda.Backend.Printf
         Jacinda.Include
         Data.List.Ext

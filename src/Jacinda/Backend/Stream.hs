@@ -16,6 +16,7 @@ import           Data.List.Ext
 import           Data.Maybe                 (mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
+import Data.Vector ((!))
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
@@ -25,17 +26,6 @@ import           Jacinda.Regex              (captures', find', findCapture, isMa
 import           Jacinda.Ty.Const
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (hFlush, stdout)
-
-data StreamError = NakedField | UnevalFun
-                 | InternalError
-                 deriving (Show)
-
-instance Exception StreamError where
-
-(!) :: V.Vector a -> Int -> a
-v ! ix = case v V.!? ix of
-    Just x  -> x
-    Nothing -> throw $ IndexOutOfBounds ix
 
 noRes :: E b -> String -> a
 noRes e ty = error ("Internal error: " ++ show e ++ " did not normalize to appropriate type, expected " ++ ty)
@@ -64,6 +54,11 @@ asArr (Arr _ es) = es; asArr e = noRes e "List"
 asOpt :: E a -> Maybe (E a)
 asOpt (OptionVal _ e) = e; asOpt e = noRes e "Option"
 
+data StreamError = NakedField | UnevalFun
+                 | InternalError
+                 deriving (Show)
+
+instance Exception StreamError where
 -- eval
 eEval :: (Int, BS.ByteString, V.Vector BS.ByteString) -- ^ Field context (for that line)
       -> E (T K)
@@ -379,11 +374,10 @@ applyUn unOp e =
         TyArr _ _ res -> eClosed reprehensible (EApp res unOp e)
         _             -> error "Internal error?"
 
--- | Turn an expression representing a stream into a stream of expressions (using line as context)
 ir :: RurePtr
    -> E (T K)
    -> [BS.ByteString]
-   -> [E (T K)] -- TODO: include chunks/context too?
+   -> [E (T K)]
 ir _ AllColumn{} = fmap mkStr
 ir re (Column _ i) = fmap (mkStr . atField re i)
 ir re (IParseCol _ i) = fmap (parseAsEInt . atField re i)
@@ -532,7 +526,6 @@ eWith re e = \bs ->
 takeConcatMap :: (a -> [b]) -> [a] -> [b]
 takeConcatMap f = concat . transpose . fmap f
 
--- | Given an expression, turn it into a function which will process the file.
 fileProcessor :: RurePtr
               -> Bool -- ^ Flush output?
               -> E (T K)
