@@ -1,7 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Jacinda.Backend.Printf ( sprintf
-                              , isReady
                               ) where
 
 import qualified Data.ByteString    as BS
@@ -9,14 +8,9 @@ import           Data.Semigroup     ((<>))
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
 import           Jacinda.AST
-
-isReady :: E a -> Bool
-isReady FloatLit{} = True
-isReady StrLit{}   = True
-isReady IntLit{}   = True
-isReady BoolLit{}  = True
-isReady (Tup _ es) = all isReady es
-isReady _          = False
+import Jacinda.Backend.Parse
+import           Jacinda.Ty.Const
+import Jacinda.Regex
 
 sprintf :: BS.ByteString -- ^ Format string
         -> E a

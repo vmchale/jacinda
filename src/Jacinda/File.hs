@@ -21,8 +21,8 @@ import           Data.Functor               (($>))
 import           Data.Tuple                 (swap)
 import           Jacinda.AST
 import           Jacinda.AST.I
-import           Jacinda.Backend.Normalize
 import           Jacinda.Backend.P
+import           Jacinda.Backend.Const
 import           Jacinda.Check.Field
 import           Jacinda.Include
 import           Jacinda.Lexer
@@ -84,7 +84,7 @@ exprEval src =
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTyM m (tyProgram ast)
-            in closedProgram i (compileIn (error "nf not defined.") typed)
+            in undefined i (compileIn (error "nf not defined.") typed)
 
 compileFS :: Maybe BS.ByteString -> RurePtr
 compileFS (Just bs) = compileDefault bs

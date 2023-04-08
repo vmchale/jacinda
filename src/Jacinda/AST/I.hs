@@ -2,6 +2,8 @@
 
 module Jacinda.AST.I ( RM
                      , ib
+                     , β
+                     , runI
                      ) where
 
 import           Control.Monad.State.Strict (MonadState, State, gets, modify, runState)
