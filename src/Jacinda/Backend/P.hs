@@ -17,7 +17,7 @@ runJac :: RurePtr -- ^ Record separator
        -> Int
        -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = bsProcess re (flushD e) (fst $ uncurry (flip fuse) $ ib i e)
+runJac re i e = ϝ (bsProcess re (flushD e)) $ (ϝ fuse $ ib i e) where ϝ = uncurry.flip
 
 data StreamError = NakedField
                  deriving (Show)
@@ -44,25 +44,15 @@ readFloat = read . ASCII.unpack -- TODO: readMaybe
 
 bsProcess :: RurePtr
           -> Bool -- ^ Flush output?
+          -> Int -- ^ Unique context
           -> E (T K)
           -> Either StreamError ([BS.ByteString] -> IO ())
-bsProcess _ _ AllField{} = Left NakedField
-bsProcess _ _ Field{}    = Left NakedField
-bsProcess _ _ (NB _ Ix)  = Left NakedField
+bsProcess _ _ _ AllField{} = Left NakedField
+bsProcess _ _ _ Field{}    = Left NakedField
+bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 
 atField :: RurePtr
         -> Int
         -> BS.ByteString -- ^ Line
         -> BS.ByteString
 atField re i = (! (i-1)) . splitBy re
-
-ir :: RurePtr
-   -> E (T K)
-   -> [BS.ByteString]
-   -> [E (T K)]
-ir _ AllColumn{} = fmap mkStr
-ir re (Column _ i) = fmap (mkStr . atField re i)
-ir re (IParseCol _ i) = fmap (parseAsEInt . atField re i)
-ir re (FParseCol _ i) = fmap (parseAsF . atField re i)
-ir re (ParseCol ty@(TyApp _ _ (TyB _ TyFloat)) i) = ir re (FParseCol ty i)
-ir re (ParseCol ty@(TyApp _ _ (TyB _ TyInteger)) i) = ir re (IParseCol ty i)
