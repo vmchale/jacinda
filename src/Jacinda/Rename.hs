@@ -17,7 +17,7 @@ import qualified Data.Text                  as T
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
-import           Lens.Micro                 (Lens')
+import           Lens.Micro                 (Lens', over)
 import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
 
 data Renames = Renames { max_ :: Int, bound :: IM.IntMap Int }
@@ -47,7 +47,7 @@ replaceUnique u@(U i) = do
     rSt <- use (rename.boundLens)
     case IM.lookup i rSt of
         Nothing -> pure u
-        Just j  -> replaceUnique (U j)
+        Just j  -> withRenames (over boundLens (IM.delete i)) $ replaceUnique (U j)
 
 replaceVar :: (MonadState s m, HasRenames s) => Nm a -> m (Nm a)
 replaceVar (Nm n u l) = do
