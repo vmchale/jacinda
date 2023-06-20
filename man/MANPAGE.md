@@ -226,6 +226,9 @@ a boolean expression.
 [y]|> {|`0~/^$/}
 :   Is the last line blank?
 
+.?{|`1 ~* 1 /([^\?]*)/}
+:   Trim URL
+
 # BUGS
 
 Please report any bugs you may come across to
