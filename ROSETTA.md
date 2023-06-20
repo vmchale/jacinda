@@ -261,13 +261,13 @@ in (total . white . black . draw) end
 # Get Version
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | rg 'csv(\d.*).tar.gz' -o -r '$1' | head -n1
+curl -s https://github.com/cisco/ChezScheme/releases | rg 'csv(\d(\.\d+)*).tar.gz' -o -r '$1' | head -n1
 ```
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>.?{|`0 ~* 1 /csv(\d.*).tar.gz/}'
+curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>.?{|`0 ~* 1 /csv(\d(\.\d+)*).tar.gz/}'
 ```
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>[x ~* 1 /csv(\d.*).tar.gz/]:?$0'
+curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>[x ~* 1 /csv(\d(\.\d+)*).tar.gz/]:?$0'
 ```
