@@ -16,8 +16,8 @@ import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Char8 as ASCII
 import qualified Data.Text as T
+import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
 import qualified Intern.Name as Nm
 import Intern.Name hiding (loc)
@@ -199,13 +199,13 @@ Args :: { [(Nm AlexPosn)] }
      | parens(sepBy(name, comma)) { reverse $1 }
 
 D :: { D AlexPosn }
-  : set fs defEq rr semicolon { SetFS (BSL.toStrict $ rr $4) }
+  : set fs defEq rr semicolon { SetFS (rr $4) }
   | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }
 
 Include :: { FilePath }
-        : include strLit { ASCII.unpack (strTok $2) }
+        : include strLit { T.unpack (strTok $2) }
 
 File :: { ([FilePath], Program AlexPosn) }
      : many(Include) Program { (reverse $1, $2) }
@@ -270,7 +270,7 @@ E :: { E AlexPosn }
   | lsqbracket E rsqbracket { Dfn $1 $2 }
   | x { ResVar $1 X }
   | y { ResVar $1 Y }
-  | rr { RegexLit (loc $1) (BSL.toStrict $ rr $1) }
+  | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
   | min { BB $1 Min }
   | max { BB $1 Max }
   | split { BB $1 Split }
@@ -327,26 +327,26 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-parse :: BSL.ByteString -> Either (ParseError AlexPosn) File
+parse :: T.Text -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
 
-parseWithMax :: BSL.ByteString -> Either (ParseError AlexPosn) (Int, File)
+parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
 
-parseWithInitCtx :: BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithInitCtx :: T.Text -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 
-parseWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithCtx = parseWithInitSt parseF
 
-parseLibWithCtx :: BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)
+parseLibWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)
 parseLibWithCtx = parseWithInitSt parseLib
 
-runParse :: Parse a -> BSL.ByteString -> Either (ParseError AlexPosn) (AlexUserState, a)
+runParse :: Parse a -> T.Text -> Either (ParseError AlexPosn) (AlexUserState, a)
 runParse parser str = liftErr $ runAlexSt str (runExceptT parser)
 
-parseWithInitSt :: Parse a -> BSL.ByteString -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, a)
+parseWithInitSt :: Parse a -> T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, a)
 parseWithInitSt parser str st = liftErr $ withAlexSt str st (runExceptT parser)
     where liftErr (Left err)            = Left (LexErr err)
           liftErr (Right (_, Left err)) = Left err

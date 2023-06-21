@@ -28,6 +28,7 @@ import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
+import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
@@ -232,7 +233,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Var { eLoc :: a, eVar :: Nm a }
          | IntLit { eLoc :: a, eInt :: !Integer }
          | BoolLit { eLoc :: a, eBool :: !Bool }
-         | StrLit { eLoc :: a, eStr :: BS.ByteString }
+         | StrLit { eLoc :: a, eStr :: T.Text }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
@@ -270,7 +271,7 @@ data EF a x = ColumnF a Int
             | VarF a (Nm a)
             | IntLitF a Integer
             | BoolLitF a Bool
-            | StrLitF a BS.ByteString
+            | StrLitF a T.Text
             | RegexLitF a BS.ByteString
             | FloatLitF a Double
             | LamF a (Nm a) x
@@ -335,7 +336,7 @@ instance Pretty (E a) where
     pretty (BoolLit _ False)                                      = "#f"
     pretty (BB _ b)                                               = parens (pretty b)
     pretty (UB _ u)                                               = pretty u
-    pretty (StrLit _ bstr)                                        = pretty (decodeUtf8 bstr)
+    pretty (StrLit _ str)                                         = pretty str
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
     pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
@@ -412,13 +413,13 @@ instance Pretty C where
 instance Show C where show=show.pretty
 
 -- decl
-data D a = SetFS BS.ByteString
+data D a = SetFS T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
          deriving (Functor)
 
 instance Pretty (D a) where
-    pretty (SetFS bs)       = ":set" <+> "/" <> pretty (decodeUtf8 bs) <> "/;"
+    pretty (SetFS bs)       = ":set" <+> "/" <> pretty bs <> "/;"
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
 
@@ -432,7 +433,7 @@ instance Show (Program a) where show=show.pretty
 flushD :: Program a -> Bool
 flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
-getFS :: Program a -> Maybe BS.ByteString
+getFS :: Program a -> Maybe T.Text
 getFS (Program ds _) = listToMaybe (concatMap go ds) where go (SetFS bs) = [bs]; go _ = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a

@@ -1,18 +1,18 @@
 module Main (main) where
 
-import qualified Data.ByteString      as BS
-import qualified Data.ByteString.Lazy as BSL
-import           Data.Semigroup       ((<>))
-import qualified Data.Version         as V
+import           Data.Semigroup      ((<>))
+import qualified Data.Text           as T
+import qualified Data.Text.IO        as TIO
+import qualified Data.Version        as V
 import           Jacinda.File
 import           Options.Applicative
-import qualified Paths_jacinda        as P
-import           System.IO            (stdin)
+import qualified Paths_jacinda       as P
+import           System.IO           (stdin)
 
 data Command = TypeCheck !FilePath ![FilePath]
              | Run !FilePath !(Maybe FilePath) ![FilePath]
-             | Expr !BSL.ByteString !(Maybe FilePath) !(Maybe BS.ByteString) ![FilePath]
-             | Eval !BSL.ByteString
+             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) ![FilePath]
+             | Eval !T.Text
 
 jacFile :: Parser FilePath
 jacFile = argument str
@@ -20,14 +20,13 @@ jacFile = argument str
     <> help "Source code"
     <> jacCompletions)
 
-jacFs :: Parser (Maybe BS.ByteString)
+jacFs :: Parser (Maybe T.Text)
 jacFs = optional $ option str
     (short 'F'
     <> metavar "REGEXP"
     <> help "Field separator")
 
--- FIXME: this seems to mishandle iota on the command-line..
-jacExpr :: Parser BSL.ByteString
+jacExpr :: Parser T.Text
 jacExpr = argument str
     (metavar "EXPR"
     <> help "Jacinda expression")
@@ -77,9 +76,9 @@ main :: IO ()
 main = run =<< execParser wrapper
 
 run :: Command -> IO ()
-run (TypeCheck fp is)         = tcIO is =<< BSL.readFile fp
-run (Run fp Nothing is)       = do { contents <- BSL.readFile fp ; runOnHandle is contents Nothing stdin }
-run (Run fp (Just dat) is)    = do { contents <- BSL.readFile fp ; runOnFile is contents Nothing dat }
+run (TypeCheck fp is)         = tcIO is =<< TIO.readFile fp
+run (Run fp Nothing is)       = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing stdin }
+run (Run fp (Just dat) is)    = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing dat }
 run (Expr eb Nothing fs is)   = runOnHandle is eb fs stdin
 run (Expr eb (Just fp) fs is) = runOnFile is eb fs fp
 run (Eval e)                  = print (exprEval e)

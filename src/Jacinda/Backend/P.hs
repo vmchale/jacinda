@@ -1,17 +1,17 @@
 module Jacinda.Backend.P ( runJac ) where
 
-import qualified Data.ByteString        as BS
+import           Control.Exception     (Exception, throw)
+import qualified Data.ByteString       as BS
+import qualified Data.ByteString.Char8 as ASCII
+import qualified Data.Vector           as V
 import           Jacinda.AST
 import           Jacinda.AST.I
-import Control.Exception (Exception, throw)
-import Jacinda.Backend.Parse
-import qualified Data.Vector as V
-import Jacinda.Backend.Const
+import           Jacinda.Backend.Const
+import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
-import Jacinda.Regex
-import Jacinda.Ty.Const
-import Regex.Rure (RurePtr)
-import qualified Data.ByteString.Char8 as ASCII
+import           Jacinda.Regex
+import           Jacinda.Ty.Const
+import           Regex.Rure            (RurePtr)
 
 runJac :: RurePtr -- ^ Record separator
        -> Int

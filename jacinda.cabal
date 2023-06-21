@@ -83,7 +83,7 @@ library jacinda-lib
         split
 
     if !flag(cross)
-        build-tool-depends: alex:alex >=3.3.0.0, happy:happy
+        build-tool-depends: alex:alex >=3.4.0.0, happy:happy
 
     if impl(ghc >=8.0)
         ghc-options:
@@ -110,7 +110,7 @@ executable ja
         base,
         jacinda-lib,
         optparse-applicative >=0.13.0.0,
-        bytestring
+        text
 
     if impl(ghc >=8.0)
         ghc-options:
@@ -136,8 +136,9 @@ test-suite jacinda-test
         base,
         jacinda-lib,
         tasty,
-        tasty-hunit,
-        bytestring
+        bytestring,
+        text,
+        tasty-hunit
 
     if impl(ghc >=8.0)
         ghc-options:
@@ -165,6 +166,7 @@ benchmark jacinda-bench
         jacinda-lib,
         deepseq,
         bytestring,
+        text,
         silently
 
     if impl(ghc >=8.0)
