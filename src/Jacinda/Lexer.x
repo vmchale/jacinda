@@ -33,7 +33,7 @@ import Prettyprinter (Pretty (pretty), (<+>), colon, squotes)
 
 }
 
-%wrapper "monadUserState-bytestring"
+%wrapper "monadUserState-strict-text"
 
 $digit = [0-9]
 
@@ -166,24 +166,24 @@ tokens :-
         "#t"                     { tok (\p _ -> alex $ TokBool p True) }
         "#f"                     { tok (\p _ -> alex $ TokBool p False) }
 
-        \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ ASCII.unpack $ BSL.tail s)) }
-        `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ ASCII.unpack $ BSL.tail s)) }
+        \$$digit+                { tok (\p s -> alex $ TokStreamLit p (read $ T.unpack $ T.tail s)) }
+        `$digit+                 { tok (\p s -> alex $ TokFieldLit p (read $ T.unpack $ T.tail s)) }
 
-        "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ ASCII.unpack $ ASCII.tail s)) }
-        "->"$digit+              { tok (\p s -> alex $ TokSelect p (read $ ASCII.unpack $ ASCII.drop 2 s)) }
-        $digit+                  { tok (\p s -> alex $ TokInt p (read $ ASCII.unpack s)) }
-        _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
+        "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ T.unpack $ T.tail s)) }
+        "->"$digit+              { tok (\p s -> alex $ TokSelect p (read $ T.unpack $ T.drop 2 s)) }
+        $digit+                  { tok (\p s -> alex $ TokInt p (read $ T.unpack s)) }
+        _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ T.unpack $ T.tail s)) }
 
-        $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ ASCII.unpack s)) }
-        _$digit+\.$digit+        { tok (\p s -> alex $ TokFloat p (negate $ read $ ASCII.unpack $ BSL.tail s)) }
+        $digit+\.$digit+         { tok (\p s -> alex $ TokFloat p (read $ T.unpack s)) }
+        _$digit+\.$digit+        { tok (\p s -> alex $ TokFloat p (negate $ read $ T.unpack $ T.tail s)) }
 
-        @string                  { tok (\p s -> alex $ TokStr p (escReplace' $ BSL.init $ BSL.tail s)) }
+        @string                  { tok (\p s -> alex $ TokStr p (escReplace $ T.init $ T.tail s)) }
 
         -- TODO: allow chars to be escaped
-        "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (BSL.init $ BSL.tail s)) }
+        "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (T.init $ T.tail s)) }
 
-        @name                    { tok (\p s -> TokName p <$> newIdentAlex p (mkText s)) }
-        @tyname                  { tok (\p s -> TokTyName p <$> newIdentAlex p (mkText s)) }
+        @name                    { tok (\p s -> TokName p <$> newIdentAlex p s) }
+        @tyname                  { tok (\p s -> TokTyName p <$> newIdentAlex p s) }
 
     }
 
@@ -195,7 +195,7 @@ dropQuotes = BSL.init . BSL.tail
 alex :: a -> Alex a
 alex = pure
 
-tok f (p,_,s,_) len = f p (BSL.take len s)
+tok f (p,_,_,s) len = f p (T.take len s)
 
 constructor c t = tok (\p _ -> alex $ c p t)
 
@@ -207,18 +207,12 @@ mkSym = constructor TokSym
 
 mkBuiltin = constructor TokBuiltin
 
-escReplace' :: BSL.ByteString -> BS.ByteString
-escReplace' = encodeUtf8 . escReplace . decodeUtf8 . BSL.toStrict
-
 -- this is inefficient but w/e
 escReplace :: T.Text -> T.Text
 escReplace =
       T.replace "\\\"" "\""
     . T.replace "\\n" "\n"
     . T.replace "\\t" "\t"
-
-mkText :: BSL.ByteString -> T.Text
-mkText = decodeUtf8 . BSL.toStrict
 
 instance Pretty AlexPosn where
     pretty (AlexPn _ line col) = pretty line <> colon <> pretty col
@@ -432,10 +426,10 @@ data Token a = EOF { loc :: a }
              | TokInt { loc :: a, int :: Integer }
              | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
-             | TokStr { loc :: a, strTok :: BS.ByteString }
+             | TokStr { loc :: a, strTok :: T.Text }
              | TokStreamLit { loc :: a, ix :: Int }
              | TokFieldLit { loc :: a, ix :: Int }
-             | TokRR { loc :: a, rr :: BSL.ByteString }
+             | TokRR { loc :: a, rr :: T.Text }
              | TokAccess { loc :: a, ix :: Int }
              | TokSelect { loc :: a, field :: Int }
 
@@ -447,10 +441,10 @@ instance Pretty (Token a) where
     pretty (TokBuiltin _ b)   = "builtin" <+> squotes (pretty b)
     pretty (TokKeyword _ kw)  = "keyword" <+> squotes (pretty kw)
     pretty (TokInt _ i)       = pretty i
-    pretty (TokStr _ str)     = squotes (pretty $ decodeUtf8 str)
+    pretty (TokStr _ str)     = squotes (pretty str)
     pretty (TokStreamLit _ i) = "$" <> pretty i
     pretty (TokFieldLit _ i)  = "`" <> pretty i
-    pretty (TokRR _ rr')      = "/" <> pretty (mkText rr') <> "/"
+    pretty (TokRR _ rr')      = "/" <> pretty rr' <> "/"
     pretty (TokResVar _ v)    = "reserved variable" <+> squotes (pretty v)
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
@@ -477,12 +471,12 @@ newIdent pos t pre@(max', names, uniqs) =
             in let newName = Nm t (U i) pos
                 in ((i, M.insert t i names, IM.insert i newName uniqs), newName)
 
-runAlexSt :: BSL.ByteString -> Alex a -> Either String (AlexUserState, a)
+runAlexSt :: T.Text -> Alex a -> Either String (AlexUserState, a)
 runAlexSt inp = withAlexSt inp alexInitUserState
 
-withAlexSt :: BSL.ByteString -> AlexUserState -> Alex a -> Either String (AlexUserState, a)
+withAlexSt :: T.Text -> AlexUserState -> Alex a -> Either String (AlexUserState, a)
 withAlexSt inp ust (Alex f) = first alex_ust <$> f
-    (AlexState { alex_bpos = 0
+    (AlexState { alex_bytes = []
                , alex_pos = alexStartPos
                , alex_inp = inp
                , alex_chr = '\n'

@@ -3,14 +3,14 @@
 module Jacinda.Backend.Printf ( sprintf
                               ) where
 
-import qualified Data.ByteString    as BS
-import           Data.Semigroup     ((<>))
-import qualified Data.Text          as T
-import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Data.ByteString       as BS
+import           Data.Semigroup        ((<>))
+import qualified Data.Text             as T
+import           Data.Text.Encoding    (decodeUtf8, encodeUtf8)
 import           Jacinda.AST
-import Jacinda.Backend.Parse
+import           Jacinda.Backend.Parse
+import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import Jacinda.Regex
 
 sprintf :: BS.ByteString -- ^ Format string
         -> E a
@@ -30,7 +30,7 @@ sprintf' fmt (IntLit _ i) =
         in prefix <> T.pack (show i) <> T.drop 2 fmt'
 sprintf' fmt (StrLit _ bs) =
     let (prefix, fmt') = T.breakOn "%s" fmt
-        in prefix <> decodeUtf8 bs <> T.drop 2 fmt'
+        in prefix <> bs <> T.drop 2 fmt'
 sprintf' fmt (Tup _ [e]) = sprintf' fmt e
 sprintf' fmt (Tup l (e:es)) =
     let nextFmt = sprintf' fmt e

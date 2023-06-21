@@ -23,9 +23,9 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.Semigroup             ((<>))
-import Debug.Trace
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
+import           Debug.Trace
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST

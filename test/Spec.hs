@@ -4,9 +4,10 @@ module Main (main) where
 
 import           Control.Monad          ((<=<))
 import qualified Data.ByteString        as BS
-import qualified Data.ByteString.Lazy   as BSL
 import           Data.Foldable          (toList)
 import           Data.Functor           (void)
+import qualified Data.Text              as T
+import qualified Data.Text.IO           as TIO
 import           Jacinda.AST
 import           Jacinda.File
 import           Jacinda.Parser
@@ -48,7 +49,7 @@ main = defaultMain $
         , testCase "if...then...else" (evalTo "if #t then 0 else 1" "0")
         ]
 
-evalTo :: BSL.ByteString -> String -> Assertion
+evalTo :: T.Text -> String -> Assertion
 evalTo bsl expected =
     let actual = show (exprEval bsl)
         in actual @?= expected
@@ -69,13 +70,13 @@ splitWhitespaceT haystack expected =
         toList (splitBy defaultRurePtr haystack) @?= expected
 
 -- example: ls -l | ja '(+)|0 $5:i'
-sumBytes :: BSL.ByteString
+sumBytes :: T.Text
 sumBytes = "(+)|0 $5:i"
 
-krakRegex :: BSL.ByteString
+krakRegex :: T.Text
 krakRegex = "{% /Krakatoa/}{`0}"
 
-krakCol :: BSL.ByteString
+krakCol :: T.Text
 krakCol = "{`3:i > 4}{`0}"
 
 sumBytesAST :: E ()
@@ -89,22 +90,22 @@ sumBytesAST =
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
-tyFile = tcIO [] <=< BSL.readFile
+tyFile = tcIO [] <=< TIO.readFile
 
-tyOfT :: BSL.ByteString -> T K -> Assertion
+tyOfT :: T.Text -> T K -> Assertion
 tyOfT src expected =
     tySrc src @?= expected
 
-parseTo :: BSL.ByteString -> E () -> Assertion
+parseTo :: T.Text -> E () -> Assertion
 parseTo src e =
     case rewriteProgram . snd <$> parse src of
         Left err     -> assertFailure (show err)
         Right actual -> void (expr actual) @?= e
 
 parseFile :: FilePath -> TestTree
-parseFile fp = testCase ("Parses " ++ fp) $ parseNoErr =<< BSL.readFile fp
+parseFile fp = testCase ("Parses " ++ fp) $ parseNoErr =<< TIO.readFile fp
 
-parseNoErr :: BSL.ByteString -> Assertion
+parseNoErr :: T.Text -> Assertion
 parseNoErr src =
     case parse src of
         Left err -> assertFailure (show err)

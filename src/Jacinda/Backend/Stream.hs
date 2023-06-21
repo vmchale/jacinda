@@ -15,8 +15,8 @@ import           Data.List                  (scanl', transpose, unzip4)
 import           Data.List.Ext
 import           Data.Maybe                 (mapMaybe)
 import           Data.Semigroup             ((<>))
+import           Data.Vector                ((!))
 import qualified Data.Vector                as V
-import Data.Vector ((!))
 import           Intern.Name
 import           Intern.Unique
 import           Jacinda.AST
