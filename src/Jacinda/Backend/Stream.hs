@@ -346,8 +346,7 @@ eEval (ix, line, ctx) = go where
             in mkI $ fromIntegral $ V.length xs
     go e = error ("Internal error: " ++ show e)
 
--- just shove some big number into the renamer and hope it doesn't clash (bad,
--- hack, this is why we got kicked out of the garden of Eden)
+-- just shove some big number into the renamer and hope it doesn't clash
 reprehensible :: Int
 reprehensible = (maxBound :: Int) `div` 2
 

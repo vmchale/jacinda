@@ -95,6 +95,8 @@ instance Pretty TB where
     pretty TyUnit    = "𝟙"
     pretty TyR       = "Regex"
 
+instance Show TB where show=show.pretty
+
 instance Pretty (T a) where
     pretty (TyB _ b)        = pretty b
     pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
@@ -233,7 +235,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Var { eLoc :: a, eVar :: Nm a }
          | IntLit { eLoc :: a, eInt :: !Integer }
          | BoolLit { eLoc :: a, eBool :: !Bool }
-         | StrLit { eLoc :: a, eStr :: T.Text }
+         | StrLit { eLoc :: a, eStr :: BS.ByteString }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | FloatLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
@@ -271,7 +273,7 @@ data EF a x = ColumnF a Int
             | VarF a (Nm a)
             | IntLitF a Integer
             | BoolLitF a Bool
-            | StrLitF a T.Text
+            | StrLitF a BS.ByteString
             | RegexLitF a BS.ByteString
             | FloatLitF a Double
             | LamF a (Nm a) x
@@ -336,7 +338,7 @@ instance Pretty (E a) where
     pretty (BoolLit _ False)                                      = "#f"
     pretty (BB _ b)                                               = parens (pretty b)
     pretty (UB _ u)                                               = pretty u
-    pretty (StrLit _ str)                                         = pretty str
+    pretty (StrLit _ str)                                         = pretty (decodeUtf8 str)
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
     pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
