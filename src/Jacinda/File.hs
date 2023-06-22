@@ -12,8 +12,9 @@ import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.State.Strict (StateT, get, put, runStateT)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
-import qualified Data.ByteString.Lazy.Char8 as ASCIIL
+import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as BSL
+import qualified Data.ByteString.Lazy.Char8 as ASCIIL
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (($>))
 import qualified Data.Text                  as T
@@ -62,7 +63,7 @@ parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStat
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
 parseWithMax' = fmap (uncurry renamePGlobal . second (rewriteProgram . snd)) . parseWithMax
 
-type FileBS = T.Text
+type FileBS = BS.ByteString
 
 compileR :: FileBS
          -> E (T K)
@@ -101,7 +102,7 @@ runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yeetIO $ runTyM m (tyProgram ast)
-    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (T.pack fp) typed)
+    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (encodeUtf8 $ T.pack fp) typed)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
 
 runOnHandle :: [FilePath]

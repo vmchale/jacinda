@@ -30,7 +30,7 @@ sprintf' fmt (IntLit _ i) =
         in prefix <> T.pack (show i) <> T.drop 2 fmt'
 sprintf' fmt (StrLit _ bs) =
     let (prefix, fmt') = T.breakOn "%s" fmt
-        in prefix <> bs <> T.drop 2 fmt'
+        in prefix <> decodeUtf8 bs <> T.drop 2 fmt'
 sprintf' fmt (Tup _ [e]) = sprintf' fmt e
 sprintf' fmt (Tup l (e:es)) =
     let nextFmt = sprintf' fmt e
