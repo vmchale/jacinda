@@ -3,6 +3,7 @@ module Jacinda.Backend.P ( runJac ) where
 import           Control.Exception         (Exception, throw)
 import qualified Data.ByteString           as BS
 import qualified Data.ByteString.Char8     as ASCII
+import           Data.Containers.ListUtils (nubOrd)
 import           Data.Foldable             (traverse_)
 import           Data.Maybe                (mapMaybe)
 import qualified Data.Text                 as T
@@ -57,15 +58,21 @@ bsProcess :: RurePtr
 bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
-bsProcess r f _ e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
-    Right (traverse_ g.eStream r e)
-    where g = if f then undefined else putDoc.pretty
+bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
+    Right (traverse_ g.eStream u r e)
+    where g | f = undefined | otherwise = putDoc.pretty
 
 -- BETA REDUCTION CONTEXT?? without causing failure-to-stream
 -- also maybe need to pass forward an int-unique to fold (later) I dunno
-eStream :: RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
-eStream r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream r e bs
-eStream r (Implicit _ e) bs              = zipWith (\fs i -> eStep (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
+eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
+eStream i r (EApp _ (UB _ CatMaybes) e) bs                                    = mapMaybe asM$eStream i r e bs
+eStream _ r (Implicit _ e) bs                                                 = zipWith (\fs i -> eStep (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
+eStream _ _ AllColumn{} bs                                                    = mkStr<$>bs
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e in mapMaybe undefined undefined
+eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = undefined
+
+($$) :: E (T K) -> E (T K) -> UM (E (T K))
+f $$ x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS _ = throw (InternalCoercionError TyStr)
