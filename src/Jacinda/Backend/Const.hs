@@ -1,7 +1,6 @@
-module Jacinda.Backend.Const ( mkI, mkF, mkStr ) where
+module Jacinda.Backend.Const ( mkI, mkF, mkStr, mkJ ) where
 
 import qualified Data.ByteString  as BS
-import qualified Data.Text        as T
 import           Jacinda.AST
 import           Jacinda.Ty.Const
 
@@ -13,3 +12,6 @@ mkF = FloatLit tyF
 
 mkStr :: BS.ByteString -> E (T K)
 mkStr = StrLit tyStr
+
+mkJ :: E (T K) -> E (T K)
+mkJ e = OptionVal (TyApp Star (TyB (KArr Star Star) TyOption) (eLoc e)) (Just e)

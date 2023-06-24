@@ -54,15 +54,36 @@ bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 
-asS :: E (T K) -> BS.ByteString
-asS (StrLit _ s) = s
-asS _            = throw (InternalCoercionError TyStr)
+-- BETA REDUCTION CONTEXT?? without causing failure-to-stream
+-- also maybe need to pass forward an int-unique to fold (later) I dunno
+eStream :: RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
+eStream r (EApp _ (UB _ CatMaybes) e) bs = undefined
+eStream r (Implicit _ e) bs              = zipWith (\fs i -> eCtx fs i e) [splitBy r b | b <- bs] [1..]
 
--- .?{|`1 ~* 1 /([^\?]*)/}')
+asS :: E (T K) -> BS.ByteString
+asS (StrLit _ s) = s; asS _ = throw (InternalCoercionError TyStr)
+
+asI :: E (T K) -> Integer
+asI (IntLit _ i) = i; asI _ = throw (InternalCoercionError TyInteger)
+
+asR :: E (T K) -> RurePtr
+asR (RegexCompiled r) = r; asR _ = throw (InternalCoercionError TyR)
+
+asM :: E (T K) -> Maybe (E (T K))
+asM (OptionVal _ e) = e; asM _ = throw (InternalCoercionError TyOption)
+
+-- .?{|`1 ~* 1 /([^\?]*)/}
 eCtx :: V.Vector BS.ByteString -- ^ Line, split by field separator
-     -> E (T K) -> RM (T K) (E (T K))
-eCtx fs (Field _ i)                                     = pure (mkStr (fs ! (i-1)))
-eCtx _ (EApp _ (EApp _ (EApp _ (TB _ Captures) _) _) _) = undefined
+     -> Integer -- ^ Line number
+     -> E (T K) -> E (T K)
+eCtx fs _ (Field _ i) = mkStr (fs ! (i-1))
+eCtx _ i (NB _ Ix)    = mkI i
+eCtx fs i e           = eStep (eCtx fs i) e
+
+eStep :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
+eStep f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
+    let mRes = findCapture (asR$eStep f r) (asS$eStep f s) (fromIntegral$asI$eStep f i)
+    in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
 
 atField :: RurePtr
         -> Int
