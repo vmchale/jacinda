@@ -1,11 +1,13 @@
 module Jacinda.Backend.P ( runJac ) where
 
-import           Control.Exception     (Exception, throw)
-import qualified Data.ByteString       as BS
-import qualified Data.ByteString.Char8 as ASCII
-import qualified Data.Text             as T
-import           Data.Text.Encoding    (decodeUtf8)
-import qualified Data.Vector           as V
+import           Control.Exception         (Exception, throw)
+import qualified Data.ByteString           as BS
+import qualified Data.ByteString.Char8     as ASCII
+import           Data.Foldable             (traverse_)
+import           Data.Maybe                (mapMaybe)
+import qualified Data.Text                 as T
+import           Data.Text.Encoding        (decodeUtf8)
+import qualified Data.Vector               as V
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Const
@@ -13,7 +15,9 @@ import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Regex.Rure            (RurePtr)
+import           Prettyprinter             (pretty)
+import           Prettyprinter.Render.Text (putDoc)
+import           Regex.Rure                (RurePtr)
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
@@ -53,12 +57,15 @@ bsProcess :: RurePtr
 bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
+bsProcess r f _ e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
+    Right (traverse_ g.eStream r e)
+    where g = if f then undefined else putDoc.pretty
 
 -- BETA REDUCTION CONTEXT?? without causing failure-to-stream
 -- also maybe need to pass forward an int-unique to fold (later) I dunno
 eStream :: RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
-eStream r (EApp _ (UB _ CatMaybes) e) bs = undefined
-eStream r (Implicit _ e) bs              = zipWith (\fs i -> eCtx fs i e) [splitBy r b | b <- bs] [1..]
+eStream r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream r e bs
+eStream r (Implicit _ e) bs              = zipWith (\fs i -> eStep (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS _ = throw (InternalCoercionError TyStr)
@@ -72,18 +79,18 @@ asR (RegexCompiled r) = r; asR _ = throw (InternalCoercionError TyR)
 asM :: E (T K) -> Maybe (E (T K))
 asM (OptionVal _ e) = e; asM _ = throw (InternalCoercionError TyOption)
 
--- .?{|`1 ~* 1 /([^\?]*)/}
 eCtx :: V.Vector BS.ByteString -- ^ Line, split by field separator
      -> Integer -- ^ Line number
      -> E (T K) -> E (T K)
 eCtx fs _ (Field _ i) = mkStr (fs ! (i-1))
 eCtx _ i (NB _ Ix)    = mkI i
-eCtx fs i e           = eStep (eCtx fs i) e
+eCtx _ _ e            = e
 
 eStep :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eStep f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
     let mRes = findCapture (asR$eStep f r) (asS$eStep f s) (fromIntegral$asI$eStep f i)
     in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
+eStep f e = f e
 
 atField :: RurePtr
         -> Int
