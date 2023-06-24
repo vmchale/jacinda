@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Jacinda.AST.I ( RM
+module Jacinda.AST.I ( RM, ISt (..)
                      , ib
                      , β
                      , runI
