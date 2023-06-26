@@ -6,9 +6,8 @@ import qualified Data.ByteString.Char8     as ASCII
 import           Data.Containers.ListUtils (nubOrd)
 import           Data.Foldable             (traverse_)
 import           Data.Maybe                (mapMaybe)
-import qualified Data.Text                 as T
-import           Data.Text.Encoding        (decodeUtf8)
 import qualified Data.Vector               as V
+import Control.Monad.State.Strict (evalState)
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Const
@@ -24,7 +23,7 @@ runJac :: RurePtr -- ^ Record separator
        -> Int
        -> Program (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = ϝ (bsProcess re (flushD e)) $ (ϝ fuse $ ib i e) where ϝ = uncurry.flip
+runJac re i e = ϝ (bsProcess re (flushD e)) (ϝ fuse $ ib i e) where ϝ = uncurry.flip
 
 data StreamError = NakedField
                  deriving (Show)
@@ -66,13 +65,13 @@ bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
 -- also maybe need to pass forward an int-unique to fold (later) I dunno
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs                                    = mapMaybe asM$eStream i r e bs
-eStream _ r (Implicit _ e) bs                                                 = zipWith (\fs i -> eStep (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
+eStream _ r (Implicit _ e) bs                                                 = zipWith (\fs i -> eB (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
 eStream _ _ AllColumn{} bs                                                    = mkStr<$>bs
-eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e in mapMaybe undefined undefined
-eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = undefined
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (mapOp i f eϵ)) xs
+eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in mkStr<$>nubOrd(asS<$>s)
 
-($$) :: E (T K) -> E (T K) -> UM (E (T K))
-f $$ x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
+mapOp :: Int -> E (T K) -> E (T K) -> E (T K)
+mapOp i f x | TyArr _ _ cod <- eLoc f = fst (β i (EApp cod f x))
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS _ = throw (InternalCoercionError TyStr)
@@ -93,11 +92,11 @@ eCtx fs _ (Field _ i) = mkStr (fs ! (i-1))
 eCtx _ i (NB _ Ix)    = mkI i
 eCtx _ _ e            = e
 
-eStep :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
-eStep f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
-    let mRes = findCapture (asR$eStep f r) (asS$eStep f s) (fromIntegral$asI$eStep f i)
+eB :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
+eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
+    let mRes = findCapture (asR$eB f r) (asS$eB f s) (fromIntegral$asI$eB f i)
     in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
-eStep f e = f e
+eB f e = f e
 
 atField :: RurePtr
         -> Int
