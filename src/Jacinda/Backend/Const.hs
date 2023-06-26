@@ -1,4 +1,4 @@
-module Jacinda.Backend.Const ( mkI, mkF, mkStr, mkJ ) where
+module Jacinda.Backend.Const ( mkI, mkF, mkStr, mkB, mkJ ) where
 
 import qualified Data.ByteString  as BS
 import           Jacinda.AST
@@ -9,6 +9,9 @@ mkI = IntLit tyI
 
 mkF :: Double -> E (T K)
 mkF = FloatLit tyF
+
+mkB :: Bool -> E (T K)
+mkB = BoolLit tyB
 
 mkStr :: BS.ByteString -> E (T K)
 mkStr = StrLit tyStr
