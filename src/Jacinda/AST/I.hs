@@ -1,8 +1,8 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Jacinda.AST.I ( RM, UM, ISt (..)
+module Jacinda.AST.I ( RM, ISt (..)
                      , ib
-                     , β, lβ
+                     , β
                      , runI
                      ) where
 
@@ -23,7 +23,7 @@ data ISt a = ISt { renames :: !Renames
 instance HasRenames (ISt a) where
     rename f s = fmap (\x -> s { renames = x }) (f (renames s))
 
-type RM a = State (ISt a); type UM = State Int
+type RM a = State (ISt a)
 
 bind :: Nm a -> E a -> ISt a -> ISt a
 bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
@@ -43,9 +43,6 @@ iD FlushDecl{}      = pure ()
 iD FunDecl{}        = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
-
-lβ :: E (T K) -> UM (E (T K))
-lβ = undefined
 
 bM :: (MonadState (ISt a) m) => E a -> m (E a)
 bM (EApp _ (Lam _ n e') e) = do
