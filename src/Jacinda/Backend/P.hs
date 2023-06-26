@@ -15,7 +15,7 @@ import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Prettyprinter              (pretty)
+import           Prettyprinter              (pretty, hardline)
 import           Prettyprinter.Render.Text  (putDoc)
 import           Regex.Rure                 (RurePtr)
 
@@ -59,7 +59,7 @@ bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
-    where g | f = undefined | otherwise = putDoc.pretty
+    where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs                                    = mapMaybe asM$eStream i r e bs
