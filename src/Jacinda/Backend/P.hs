@@ -1,13 +1,13 @@
 module Jacinda.Backend.P ( runJac ) where
 
-import           Control.Exception         (Exception, throw)
-import qualified Data.ByteString           as BS
-import qualified Data.ByteString.Char8     as ASCII
-import           Data.Containers.ListUtils (nubOrd)
-import           Data.Foldable             (traverse_)
-import           Data.Maybe                (mapMaybe)
-import qualified Data.Vector               as V
-import Control.Monad.State.Strict (evalState)
+import           Control.Exception          (Exception, throw)
+import           Control.Monad.State.Strict (evalState)
+import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Char8      as ASCII
+import           Data.Containers.ListUtils  (nubOrd)
+import           Data.Foldable              (traverse_)
+import           Data.Maybe                 (catMaybes, mapMaybe)
+import qualified Data.Vector                as V
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Const
@@ -15,9 +15,9 @@ import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
 import           Jacinda.Regex
 import           Jacinda.Ty.Const
-import           Prettyprinter             (pretty)
-import           Prettyprinter.Render.Text (putDoc)
-import           Regex.Rure                (RurePtr)
+import           Prettyprinter              (pretty)
+import           Prettyprinter.Render.Text  (putDoc)
+import           Regex.Rure                 (RurePtr)
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
@@ -69,6 +69,7 @@ eStream _ r (Implicit _ e) bs                                                 = 
 eStream _ _ AllColumn{} bs                                                    = mkStr<$>bs
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (mapOp i f eϵ)) xs
 eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in mkStr<$>nubOrd(asS<$>s)
+eStream _ r (Guarded _ p e) bs = let bss=splitBy r<$>bs in catMaybes$zipWith (\fs i -> if asB (eB (eCtx fs i) p) then Just (eB (eCtx fs i) e) else Nothing) bss [1..]
 
 mapOp :: Int -> E (T K) -> E (T K) -> E (T K)
 mapOp i f x | TyArr _ _ cod <- eLoc f = fst (β i (EApp cod f x))
@@ -85,6 +86,9 @@ asR (RegexCompiled r) = r; asR _ = throw (InternalCoercionError TyR)
 asM :: E (T K) -> Maybe (E (T K))
 asM (OptionVal _ e) = e; asM _ = throw (InternalCoercionError TyOption)
 
+asB :: E (T K) -> Bool
+asB (BoolLit _ b) = b; asB _ = throw (InternalCoercionError TyBool)
+
 eCtx :: V.Vector BS.ByteString -- ^ Line, split by field separator
      -> Integer -- ^ Line number
      -> E (T K) -> E (T K)
@@ -96,10 +100,7 @@ eB :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
     let mRes = findCapture (asR$eB f r) (asS$eB f s) (fromIntegral$asI$eB f i)
     in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'==x1')
 eB f e = f e
-
-atField :: RurePtr
-        -> Int
-        -> BS.ByteString -- ^ Line
-        -> BS.ByteString
-atField re i = (! (i-1)) . splitBy re
