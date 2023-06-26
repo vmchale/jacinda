@@ -102,6 +102,9 @@ eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
     in mkB (x0'==x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) =
+    let x0'=asS(eB f x0); x1'=asS(eB f x1)
+    in mkB (x0'==x1')
 eB f (EApp _ (EApp _ (BB _ Matches) s) r) =
     let s'=asS(eB f s); r'=asR(eB f r)
     in mkB (isMatch' r' s')
