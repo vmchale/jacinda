@@ -61,13 +61,11 @@ bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
     where g | f = undefined | otherwise = putDoc.pretty
 
--- BETA REDUCTION CONTEXT?? without causing failure-to-stream
--- also maybe need to pass forward an int-unique to fold (later) I dunno
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs                                    = mapMaybe asM$eStream i r e bs
 eStream _ r (Implicit _ e) bs                                                 = zipWith (\fs i -> eB (eCtx fs i) e) [splitBy r b | b <- bs] [1..]
 eStream _ _ AllColumn{} bs                                                    = mkStr<$>bs
-eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (mapOp i f eϵ)) xs
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (eB id$mapOp i f eϵ)) xs
 eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in mkStr<$>nubOrd(asS<$>s)
 eStream _ r (Guarded _ p e) bs = let bss=splitBy r<$>bs in catMaybes$zipWith (\fs i -> if asB (eB (eCtx fs i) p) then Just (eB (eCtx fs i) e) else Nothing) bss [1..]
 
