@@ -239,7 +239,7 @@ kind (TyVar _ n@(Nm _ (U i) _)) = do
         Just{}  -> pure ()
         Nothing -> throwError $ IllScopedTyVar (void n)
 kind (TyTup Star tys) =
-    traverse_  isStar (fmap tLoc tys)
+    traverse_  (isStar.tLoc) tys
 kind (TyTup k _) = throwError $ Expected Star k
 kind (TyArr Star ty0 ty1) =
     isStar (tLoc ty0) *>
