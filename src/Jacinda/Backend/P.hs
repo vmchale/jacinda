@@ -108,4 +108,7 @@ eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) =
 eB f (EApp _ (EApp _ (BB _ Matches) s) r) =
     let s'=asS(eB f s); r'=asR(eB f r)
     in mkB (isMatch' r' s')
+eB f (EApp _ (EApp _ (BB _ NotMatches) s) r) =
+    let s'=asS(eB f s); r'=asR(eB f r)
+    in mkB (not$isMatch' r' s')
 eB f e = f e
