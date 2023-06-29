@@ -7,6 +7,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrd)
 import           Data.Foldable              (traverse_)
 import           Data.Maybe                 (catMaybes, mapMaybe)
+import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Jacinda.AST
 import           Jacinda.AST.I
