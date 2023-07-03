@@ -64,11 +64,17 @@ bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
 bsProcess r _ u e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
     Right $ \bs -> putDoc (pretty (eF u r e bs))
+bsProcess r _ u e@(EApp _ (EApp _ (BB _ Fold1) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
+    Right $ \bs -> putDoc (pretty (eF u r e bs))
 
 -- gather folds?
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
     let op'=eB id op; seed'=eB id seed; xsϵ=eStream u r xs bs
+    in evalState (foldM (applyOp op') seed' xsϵ) u
+    where applyOp f e e' = eB id<$>lβ (EApp undefined (EApp undefined f e) e')
+eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
+    let op'=eB id op; seed':xsϵ=eStream u r xs bs
     in evalState (foldM (applyOp op') seed' xsϵ) u
     where applyOp f e e' = eB id<$>lβ (EApp undefined (EApp undefined f e) e')
 
@@ -151,4 +157,5 @@ eB f (EApp _ (EApp _ (BB _ Split) s) r) =
 eB f (EApp _ (UB _ (At i)) v) =
     let v'=asV(eB f v)
     in v'!(i-1)
+eB f (EApp _ (EApp _ (UB _ Const) e) _) = eB f e
 eB f e = f e
