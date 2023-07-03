@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Jacinda.AST.I ( RM, ISt (..)
+module Jacinda.AST.I ( RM, UM, ISt (..)
                      , ib
-                     , β
+                     , β, lβ
                      , runI
                      ) where
 
-import           Control.Monad.State.Strict (MonadState, State, gets, modify, runState)
+import           Control.Monad.State.Strict (MonadState, State, gets, modify, runState, state)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
@@ -23,7 +23,7 @@ data ISt a = ISt { renames :: !Renames
 instance HasRenames (ISt a) where
     rename f s = fmap (\x -> s { renames = x }) (f (renames s))
 
-type RM a = State (ISt a)
+type RM a = State (ISt a); type UM = State Int
 
 bind :: Nm a -> E a -> ISt a -> ISt a
 bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
@@ -35,6 +35,9 @@ ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> 
 
 β :: Int -> E a -> (E a, Int)
 β i = runI i.bM
+
+lβ :: E a -> UM (E a)
+lβ e = state (`β` e)
 
 iD :: D (T K) -> RM (T K) ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
