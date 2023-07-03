@@ -97,6 +97,7 @@ eCtx :: (BS.ByteString, V.Vector BS.ByteString) -- ^ Line, split by field separa
      -> E (T K) -> E (T K)
 eCtx ~(f, _) _ AllField{}  = mkStr f
 eCtx (_, fs) _ (Field _ i) = mkStr (fs ! (i-1))
+eCtx (_, fs) _ LastField{} = mkStr (V.last fs)
 eCtx _ i (NB _ Ix)         = mkI i
 eCtx _ _ e                 = e
 
@@ -107,6 +108,21 @@ eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
     in mkB (x0'==x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Gt) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'>x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Geq) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'>=x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Leq) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'<=x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Lt) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'<x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Neq) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkB (x0'/=x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) =
     let x0'=asS(eB f x0); x1'=asS(eB f x1)
     in mkB (x0'==x1')
@@ -121,5 +137,5 @@ eB f (EApp _ (EApp _ (BB _ Split) s) r) =
     in Arr (tyV tyStr) (mkStr<$>splitBy r' s')
 eB f (EApp _ (UB _ (At i)) v) =
     let v'=asV(eB f v)
-    in v'!i
+    in v'!(i-1)
 eB f e = f e
