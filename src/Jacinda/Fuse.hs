@@ -5,6 +5,7 @@ module Jacinda.Fuse ( fuse ) where
 import           Control.Monad.State.Strict (runState)
 import           Jacinda.AST
 import           Jacinda.AST.E
+import           Jacinda.Ty.Const           (tyStream)
 
 fuse :: Int -> E (T K) -> (E (T K), Int)
 fuse i = flip runState i.fM
@@ -25,7 +26,7 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (Ty
             let sE=Var sTy s; xE=Var xTy x
                 popT=TyArr Star xTy sTy; fopT=TyArr Star sTy popT
                 fop=Lam fopT s (Lam popT x (EApp undefined (EApp undefined op sE) (EApp yTy f xE)))
-            fM (EApp undefined (EApp undefined (EApp undefined (TB (TyArr Star fopT (TyArr Star sTy (TyArr Star (TyApp Star (TyB undefined TyStream) xTy) sTy))) Fold) fop) seed) xs)
+            fM (EApp sTy (EApp undefined (EApp undefined (TB (TyArr Star fopT (TyArr Star sTy (TyArr Star (TyApp Star (TyB undefined TyStream) xTy) sTy))) Fold) fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 ho op) seed) stream')
 fM (Tup t es) = Tup t <$> traverse fM es
 fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1
