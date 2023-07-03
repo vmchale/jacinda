@@ -90,7 +90,7 @@ eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
     where applyOp f e e' = eBM id =<< lβ (EApp undefined (EApp undefined f e) e')
 
 chain :: Int -> E (T K) -> E (T K) -> E (T K)
-chain i f x = let (e,i') = mapOp i f x in eB i' id e
+chain i f x = evalState (eBM id =<< mapOp f x) i
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
@@ -102,8 +102,8 @@ eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.chain i op) xs
 eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
 
-mapOp :: Int -> E (T K) -> E (T K) -> (E (T K), Int)
-mapOp i f x | TyArr _ _ cod <- eLoc f = β i (EApp cod f x)
+mapOp :: E (T K) -> E (T K) -> UM (E (T K))
+mapOp f x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
