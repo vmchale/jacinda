@@ -4,7 +4,7 @@ import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (evalState)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
-import           Data.Containers.ListUtils  (nubOrd)
+import           Data.Containers.ListUtils  (nubOrd, nubOrdOn)
 import           Data.Foldable              (traverse_)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
@@ -63,12 +63,13 @@ bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
-eStream i r (EApp _ (UB _ CatMaybes) e) bs                                    = mapMaybe asM$eStream i r e bs
-eStream _ r (Implicit _ e) bs                                                 = zipWith (\fs i -> eB (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
-eStream _ _ AllColumn{} bs                                                    = mkStr<$>bs
-eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs                          = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (eB id$mapOp i f eϵ)) xs
-eStream i r (EApp (TyApp _ (TyB _ TyStream) (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in mkStr<$>nubOrd(asS<$>s)
-eStream _ r (Guarded _ p e) bs                                                = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB (eCtx fs i) p) then Just (eB (eCtx fs i) e) else Nothing) bss [1..]
+eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
+eStream _ r (Implicit _ e) bs = zipWith (\fs i -> eB (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
+eStream _ _ AllColumn{} bs = mkStr<$>bs
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (eB id$mapOp i f eϵ)) xs
+eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
+eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (\eϵ -> asS$eB id$mapOp i op eϵ) xs
+eStream _ r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB (eCtx fs i) p) then Just (eB (eCtx fs i) e) else Nothing) bss [1..]
 
 mapOp :: Int -> E (T K) -> E (T K) -> E (T K)
 mapOp i f x | TyArr _ _ cod <- eLoc f = fst (β i (EApp cod f x))
@@ -87,6 +88,9 @@ asM (OptionVal _ e) = e; asM e = throw (InternalCoercionError e TyOption)
 
 asB :: E (T K) -> Bool
 asB (BoolLit _ b) = b; asB e = throw (InternalCoercionError e TyBool)
+
+asV :: E (T K) -> V.Vector (E (T K))
+asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)
 
 eCtx :: (BS.ByteString, V.Vector BS.ByteString) -- ^ Line, split by field separator
      -> Integer -- ^ Line number
@@ -112,4 +116,10 @@ eB f (EApp _ (EApp _ (BB _ Matches) s) r) =
 eB f (EApp _ (EApp _ (BB _ NotMatches) s) r) =
     let s'=asS(eB f s); r'=asR(eB f r)
     in mkB (not$isMatch' r' s')
+eB f (EApp _ (EApp _ (BB _ Split) s) r) =
+    let s'=asS(eB f s); r'=asR(eB f r)
+    in Arr (tyV tyStr) (mkStr<$>splitBy r' s')
+eB f (EApp _ (UB _ (At i)) v) =
+    let v'=asV(eB f v)
+    in v'!i
 eB f e = f e
