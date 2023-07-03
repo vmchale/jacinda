@@ -84,6 +84,7 @@ library jacinda-lib
 
     if !flag(cross)
         build-tool-depends: alex:alex >=3.4.0.0, happy:happy
+        build-tool-depends: alex:alex >= 3.3.0, happy:happy
 
     if impl(ghc >=8.0)
         ghc-options:
