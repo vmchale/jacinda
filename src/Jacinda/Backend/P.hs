@@ -10,6 +10,7 @@ import           Data.Foldable              (foldl', traverse_)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
+import           Data.Word                  (Word8)
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Const
@@ -19,7 +20,7 @@ import           Jacinda.Regex
 import           Jacinda.Ty.Const
 import           Prettyprinter              (hardline, pretty)
 import           Prettyprinter.Render.Text  (putDoc)
-import           Regex.Rure                 (RurePtr)
+import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
 
 runJac :: RurePtr -- ^ Record separator
        -> Int
@@ -49,7 +50,17 @@ parseAsF :: BS.ByteString -> E (T K)
 parseAsF = FloatLit tyF . readFloat
 
 readFloat :: BS.ByteString -> Double
-readFloat = read . ASCII.unpack -- TODO: readMaybe
+readFloat = read . ASCII.unpack
+
+the :: BS.ByteString -> Word8
+the bs = case BS.uncons bs of
+    Nothing                -> error "Empty splitc char!"
+    Just (c,b) | BS.null b -> c
+    Just _                 -> error "Splitc takes only one char!"
+
+asTup :: Maybe RureMatch -> E (T K)
+asTup Nothing                = OptionVal undefined Nothing
+asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . fromIntegral <$> [s, e])))
 
 bsProcess :: RurePtr
           -> Bool -- ^ Flush output?
@@ -63,9 +74,9 @@ bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
     where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
 bsProcess r _ u e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
-    Right $ \bs -> putDoc (pretty (eF u r e bs))
+    Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
 bsProcess r _ u e@(EApp _ (EApp _ (BB _ Fold1) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
-    Right $ \bs -> putDoc (pretty (eF u r e bs))
+    Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
 
 -- gather folds?
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
@@ -82,7 +93,8 @@ eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
 eStream _ r (Implicit _ e) bs = zipWith (\fs i -> eB (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
 eStream _ _ AllColumn{} bs = mkStr<$>bs
-eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (\eϵ -> asM (eB id$mapOp i f eϵ)) xs
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.eB id.mapOp i f) xs
+eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (eB id.mapOp i f) xs
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (\eϵ -> asS$eB id$mapOp i op eϵ) xs
 eStream _ r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB (eCtx fs i) p) then Just (eB (eCtx fs i) e) else Nothing) bss [1..]
@@ -121,30 +133,36 @@ eB :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
     let mRes = findCapture (asR$eB f r) (asS$eB f s) (fromIntegral$asI$eB f i)
     in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Max) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in x0' `seq` x1' `seq` mkI (max x0' x1')
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Min) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in x0' `seq` x1' `seq` mkI (min x0' x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkI (x0'+x1')
+    in x0' `seq` x1' `seq` mkI (x0'+x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkB (x0'==x1')
+    in x0' `seq` x1' `seq` mkB (x0'==x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Gt) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkB (x0'>x1')
+    in x0' `seq` x1' `seq` mkB (x0'>x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Geq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkB (x0'>=x1')
+    in x0' `seq` x1' `seq` mkB (x0'>=x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Leq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkB (x0'<=x1')
+    in x0' `seq` x1' `seq` mkB (x0'<=x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Lt) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
-    in mkB (x0'<x1')
+    in x0' `seq` x1' `seq` mkB (x0'<x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Neq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
     in mkB (x0'/=x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) =
     let x0'=asS(eB f x0); x1'=asS(eB f x1)
-    in mkB (x0'==x1')
+    in x0' `seq` x1' `seq` mkB (x0'==x1')
 eB f (EApp _ (EApp _ (BB _ Matches) s) r) =
     let s'=asS(eB f s); r'=asR(eB f r)
     in mkB (isMatch' r' s')
@@ -156,5 +174,7 @@ eB f (EApp _ (EApp _ (BB _ Split) s) r) =
     in Arr (tyV tyStr) (mkStr<$>splitBy r' s')
 eB f (EApp _ (UB _ (At i)) v) =
     let v'=asV(eB f v) in v'!(i-1)
+eB f (EApp _ (UB _ Tally) e) =
+    let s=asS(eB f e); r=fromIntegral (BS.length s) in r `seq` mkI r
 eB f (EApp _ (EApp _ (UB _ Const) e) _) = eB f e
 eB f e = f e
