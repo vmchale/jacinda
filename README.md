@@ -59,23 +59,15 @@ The manpages document the builtins and provide a syntax reference.
 
 # Status
 
-The project is in beta, it doesn't necessarily work and there are many
-missing features, but the language will remain stable.
-
-It is worse than awk but it has its place and it avoids some of the painful
-imperative/scoping defects.
+There are many missing features but the language will remain stable.
 
 ## Missing Features & Bugs
 
   * No nested dfns
-  * Obscure renamer edge cases during evaluation
-  * `printf` formatting for floats
   * No list literal syntax
-  * Typeclasses are not documented
   * Postfix `:f` and `:i` are handled poorly
   * Polymorphic functions can't be instantiated with separate types (global
     monomorphism restriction)
-  * Expressions with multiple folds blow up in memory sometimes
 
 Intentionally missing features:
 
