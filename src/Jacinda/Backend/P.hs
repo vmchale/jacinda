@@ -1,11 +1,12 @@
 module Jacinda.Backend.P ( runJac ) where
 
 import           Control.Exception          (Exception, throw)
+import           Control.Monad              (foldM)
 import           Control.Monad.State.Strict (evalState)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
-import           Data.Containers.ListUtils  (nubOrd, nubOrdOn)
-import           Data.Foldable              (traverse_)
+import           Data.Containers.ListUtils  (nubOrdOn)
+import           Data.Foldable              (foldl', traverse_)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -61,6 +62,15 @@ bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
     where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
+bsProcess r _ u e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
+    Right $ \bs -> putDoc (pretty (eF u r e bs))
+
+-- gather folds?
+eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
+eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
+    let op'=eB id op; seed'=eB id seed; xsϵ=eStream u r xs bs
+    in evalState (foldM (applyOp op') seed' xsϵ) u
+    where applyOp f e e' = eB id<$>lβ (EApp undefined (EApp undefined f e) e')
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
@@ -105,6 +115,9 @@ eB :: (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eB f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) =
     let mRes = findCapture (asR$eB f r) (asS$eB f s) (fromIntegral$asI$eB f i)
     in OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
+eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) x0) x1) =
+    let x0'=asI(eB f x0); x1'=asI(eB f x1)
+    in mkI (x0'+x1')
 eB f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) =
     let x0'=asI(eB f x0); x1'=asI(eB f x1)
     in mkB (x0'==x1')
