@@ -96,6 +96,10 @@ eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
 eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
 eStream _ _ AllColumn{} bs = mkStr<$>bs
+eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (ParseCol (TyApp _ _ (TyB _ TyInteger)) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (FParseCol _ n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (ParseCol (TyApp _ _ (TyB _ TyFloat)) n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.chain i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (chain i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.chain i p) xs in [x | (p,x) <- (zip ps xs), p]
@@ -111,6 +115,9 @@ asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E (T K) -> Integer
 asI (IntLit _ i) = i; asI e = throw (InternalCoercionError e TyInteger)
+
+asF :: E (T K) -> Double
+asF (FloatLit _ x) = x; asF e = throw (InternalCoercionError e TyFloat)
 
 asR :: E (T K) -> RurePtr
 asR (RegexCompiled r) = r; asR e = throw (InternalCoercionError e TyR)
@@ -150,6 +157,21 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Min) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
     pure (x0' `seq` x1' `seq` mkI (x0'+x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Minus) x0) x1) = do
+    x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkI (x0'-x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Times) x0) x1) = do
+    x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkI (x0'*x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Plus) x0) x1) = do
+    x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkF (x0'+x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Minus) x0) x1) = do
+    x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkF (x0'-x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Times) x0) x1) = do
+    x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkF (x0'*x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
     pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
