@@ -15,6 +15,5 @@ let
   val even := count (isEven #. iStream)
   val odd := count (isOdd #. iStream)
   val tens := count (divTen #. iStream)
-  {. FIXME: if different lengths, all fucked (and... wrong :(
   val total := odd + even
-in (total . odd . even) end
+in (total . even . odd . tens) end

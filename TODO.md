@@ -19,13 +19,13 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 # Features
+- [ ] occurs check
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
 - [ ] `$1:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
 - [x] Operator syntax for floor/ceiling?  - [x] `|.` for instance? `|'`?
-- [ ] Witherable typeclass, vectors/lists should be a member!
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
 - [x] mapMaybe, catMaybes? for `Witherable`...
@@ -64,6 +64,7 @@
   - [ ] `~?` (maybe match)
 - [x] fold without seed
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
+  - [ ] foldMaybe
 - [ ] Builtins
   - [x] Last field
 ## Syntax

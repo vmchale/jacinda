@@ -1,3 +1,5 @@
+  * Scrap `HasField` typeclass; add row types
+
 # 1.2.0.0
 
   * `~`, `!~` builtins require that the regex be the second argument.

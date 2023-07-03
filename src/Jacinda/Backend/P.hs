@@ -155,7 +155,6 @@ eB f (EApp _ (EApp _ (BB _ Split) s) r) =
     let s'=asS(eB f s); r'=asR(eB f r)
     in Arr (tyV tyStr) (mkStr<$>splitBy r' s')
 eB f (EApp _ (UB _ (At i)) v) =
-    let v'=asV(eB f v)
-    in v'!(i-1)
+    let v'=asV(eB f v) in v'!(i-1)
 eB f (EApp _ (EApp _ (UB _ Const) e) _) = eB f e
 eB f e = f e
