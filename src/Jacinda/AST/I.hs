@@ -34,7 +34,7 @@ ib :: Int -> Program (T K) -> (E (T K), Int)
 ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
 β :: Int -> E a -> (E a, Int)
-β i = runI i.bM
+β i = runI i.bM.(i `seq`)
 
 lβ :: E a -> UM (E a)
 lβ e = state (`β` e)
