@@ -529,7 +529,7 @@ process"step^(0 . '') $0
 
 ### CSV Processing
 
-We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html), viz.
+We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.1.1/scripts/csvformat.html), viz.
 
 ```
 csvformat file.csv -D'|' | ja -F'\|' '$1'
