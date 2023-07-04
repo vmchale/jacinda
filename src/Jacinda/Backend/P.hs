@@ -263,6 +263,10 @@ eBM f (EApp _ (UB _ TallyList) e) = do
     let r=fromIntegral (V.length$asV e')
     pure (mkI r)
 eBM f (EApp _ (EApp _ (UB _ Const) e) _) = eBM f e
+eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = do
+    op' <- eBM f op; seed' <- eBM f seed; xs' <- eBM f xs
+    V.foldM (applyOp op') seed' (asV xs')
+    where applyOp g e e' = eBM f =<< a2 g e e'
 eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     op' <- eBM f op; xs' <- eBM f xs
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
