@@ -1,4 +1,4 @@
-module Jacinda.Backend.P ( runJac ) where
+module Jacinda.Backend.P ( runJac, eB ) where
 
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (foldM)
@@ -268,4 +268,7 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
     V.foldM (applyOp op') seed xs''
     where applyOp g e e' = eBM f =<< a2 g e e'
+eBM f (Cond _ p e e') = do
+    p' <- eBM f p
+    if (asB p') then eBM f e else eBM f e'
 eBM f e = pure (f e)

@@ -86,7 +86,8 @@ exprEval src =
         Left err -> throw err
         Right (ast, m) ->
             let (typed, i) = yeet $ runTyM m (tyProgram ast)
-            in undefined i (compileIn (error "nf not defined.") typed)
+                (inlined, j) = ib i typed
+            in eB j id (compileR (error "nf not defined.") inlined)
 
 compileFS :: Maybe T.Text -> RurePtr
 compileFS (Just bs) = compileDefault (encodeUtf8 bs)
