@@ -157,76 +157,76 @@ eBM f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) = do
     pure $ OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Max) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkI (max x0' x1'))
+    pure (mkI (max x0' x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Min) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkI (min x0' x1'))
+    pure (mkI (min x0' x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkI (x0'+x1'))
+    pure (mkI (x0'+x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Minus) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkI (x0'-x1'))
+    pure (mkI (x0'-x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Times) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkI (x0'*x1'))
+    pure (mkI (x0'*x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Plus) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkF (x0'+x1'))
+    pure (mkF (x0'+x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Minus) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkF (x0'-x1'))
+    pure (mkF (x0'-x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Times) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkF (x0'*x1'))
+    pure (mkF (x0'*x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
+    pure (mkB (x0'==x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Neq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'/=x1'))
+    pure (mkB (x0'/=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Gt) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'>x1'))
+    pure (mkB (x0'>x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Lt) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'<x1'))
+    pure (mkB (x0'<x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Leq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'<=x1'))
+    pure (mkB (x0'<=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Geq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'>=x1'))
+    pure (mkB (x0'>=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Gt) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'>x1'))
+    pure (mkB (x0'>x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Lt) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'<x1'))
+    pure (mkB (x0'<x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Eq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
+    pure (mkB (x0'==x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Neq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'/=x1'))
+    pure (mkB (x0'/=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Geq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'>=x1'))
+    pure (mkB (x0'>=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Leq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'<=x1'))
+    pure (mkB (x0'<=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) = do
     x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
+    pure (mkB (x0'==x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Plus) x0) x1) = do
     x0' <- asS <$> eBM f x0; x1' <- asS<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkStr (x0'<>x1'))
+    pure (mkStr (x0'<>x1'))
 eBM f (EApp _ (EApp _ (BB _ And) x0) x1) = do
     x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'&&x1'))
+    pure (mkB (x0'&&x1'))
 eBM f (EApp _ (EApp _ (BB _ Or) x0) x1) = do
     x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
-    pure (x0' `seq` x1' `seq` mkB (x0'||x1'))
+    pure (mkB (x0'||x1'))
 eBM f (EApp _ (EApp _ (BB _ Matches) s) r) = do
     s' <- asS<$>eBM f s; r' <- asR<$>eBM f r
     pure $ mkB (isMatch' r' s')
@@ -247,7 +247,7 @@ eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure (asV v'!(i-1))}
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
     let r =fromIntegral (BS.length$asS s')
-    pure (r `seq` mkI r)
+    pure (mkI r)
 eBM f (EApp _ (EApp _ (UB _ Const) e) _) = eBM f e
 eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     op' <- eBM f op; xs' <- eBM f xs
