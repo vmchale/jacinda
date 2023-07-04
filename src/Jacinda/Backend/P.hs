@@ -112,7 +112,7 @@ eStream _ r (ParseCol (TyApp _ _ (TyB _ TyFloat)) n) bs = [parseAsF (splitBy r b
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
-eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.c1 i p) xs in [x | (p,x) <- (zip ps xs), p]
+eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.c1 i p) xs in [x | (pϵ,x) <- zip ps xs, pϵ]
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.c1 i op) xs
 eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
@@ -243,7 +243,7 @@ eBM f (EApp _ (UB _ FParse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
 eBM f (EApp _ (UB _ IParse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyInteger) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyFloat) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
-eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure ((asV v')!(i-1))}
+eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure (asV v'!(i-1))}
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
     let r =fromIntegral (BS.length$asS s')
