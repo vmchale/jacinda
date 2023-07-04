@@ -78,7 +78,6 @@ bsProcess r _ u e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) xs) | TyApp _ (TyB _
 bsProcess r _ u e@(EApp _ (EApp _ (BB _ Fold1) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
     Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
 
--- gather folds?
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
     let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
@@ -228,6 +227,7 @@ eBM f (EApp _ (EApp _ (BB _ And) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB _ Or) x0) x1) = do
     x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
     pure (mkB (x0'||x1'))
+eBM f (EApp _ (UB _ Not) b) = do {b' <- asB<$>eBM f b; pure $ mkB (not b')}
 eBM f (EApp _ (EApp _ (BB _ Matches) s) r) = do
     s' <- asS<$>eBM f s; r' <- asR<$>eBM f r
     pure $ mkB (isMatch' r' s')
@@ -245,9 +245,17 @@ eBM f (EApp _ (UB _ IParse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyInteger) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyFloat) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
 eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure (asV v'!(i-1))}
+eBM f (EApp _ (UB _ Floor) x) = do {xr <- asF<$>eBM f x; pure $ mkI (floor xr)}
+eBM f (EApp _ (UB _ Ceiling) x) = do {xr <- asF<$>eBM f x; pure $ mkI (ceiling xr)}
+eBM f (EApp (TyB _ TyInteger) (UB _ Negate) i) = do {i' <- eBM f i; pure $ mkI (negate (asI i'))}
+eBM f (EApp (TyB _ TyFloat) (UB _ Negate) x) = do {x' <- eBM f x; pure $ mkF (negate (asF x'))}
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
     let r =fromIntegral (BS.length$asS s')
+    pure (mkI r)
+eBM f (EApp _ (UB _ TallyList) e) = do
+    e' <- eBM f e
+    let r=fromIntegral (V.length$asV e')
     pure (mkI r)
 eBM f (EApp _ (EApp _ (UB _ Const) e) _) = eBM f e
 eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
