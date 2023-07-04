@@ -83,14 +83,20 @@ eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
     let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
     in evalState (foldM (applyOp op') seed' xsϵ) u
-    where applyOp f e e' = eBM id =<< lβ (EApp undefined (EApp undefined f e) e')
+    where applyOp f e e' = eBM id =<< a2 f e e'
 eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
     let op'=eB u id op; seed':xsϵ=eStream u r xs bs
     in evalState (foldM (applyOp op') seed' xsϵ) u
-    where applyOp f e e' = eBM id =<< lβ (EApp undefined (EApp undefined f e) e')
+    where applyOp f e e' = eBM id =<< a2 f e e'
+
+a1 :: E (T K) -> E (T K) -> UM (E (T K))
+a1 f x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
+
+a2 :: E (T K) -> E (T K) -> E (T K) -> UM (E (T K))
+a2 op x0 x1 | TyArr _ _ t@(TyArr _ _ t') <- eLoc op = lβ (EApp t' (EApp t op x0) x1)
 
 chain :: Int -> E (T K) -> E (T K) -> E (T K)
-chain i f x = evalState (eBM id =<< mapOp f x) i
+chain i f x = evalState (eBM id =<< a1 f x) i
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
@@ -106,9 +112,6 @@ eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.chain i op) xs
 eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
-
-mapOp :: E (T K) -> E (T K) -> UM (E (T K))
-mapOp f x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
@@ -222,5 +225,5 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     op' <- eBM f op; xs' <- eBM f xs
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
     V.foldM (applyOp op') seed xs''
-    where applyOp g e e' = eBM f =<< lβ (EApp undefined (EApp undefined g e) e')
+    where applyOp g e e' = eBM f =<< a2 g e e'
 eBM f e = pure (f e)
