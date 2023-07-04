@@ -1,8 +1,4 @@
 - inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
-- [ ] regex errors should include position of regex
-- [x] separate syntax for filtering a stream, e.g. {/pat/}[$0] or w/e
-  - [x] still have {/pat/}{field}
-- [ ] REPL would be good.
 - [ ] xattr -d com.apple.quarantine
 # Documentation
 - [ ] Document escaped characters
@@ -37,8 +33,6 @@
 - [x] SCANS
   - [x] backend
 - [ ] ignore case?
-- [x] dyadic infix/prior? Something for successive differences!
-- [x] string concatenation
 - [ ] environment variables
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
   can be a variable!
@@ -52,11 +46,9 @@
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] parse dates
-- [x] `Parseable` class - implement
 - [½] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
-- [x] `Option` is not a functor
 - [ ] Expose captures
 - [ ] `dedupBy` builtin
 - [ ] Infix operators
@@ -66,13 +58,10 @@
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
   - [ ] foldMaybe
 - [ ] Builtins
-  - [x] Last field
 ## Syntax
-- [x] `;` vs. `val`?
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
-- [x] `\\` (backslash) for "prior", succ diffs
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
 - [ ] `0$` or something... line, split by field separator, 
@@ -83,14 +72,7 @@
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
 # Bugs
-- [ ] `{|[x+y] |> split `0 /,/}` fails b/c fold-vec with lambdas...
-- [x] `take n str + str2` parses as `take n (str + str2)`
-- [ ] When we inline, we need to specify a type!
-- [ ] '[(split y /-/).1]"$0' -> "bare reserved variable" whoops
-  - [ ] should be a type error
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
-- [ ] '([:fp"$0)' -i LICENSE
-- [ ] cat /etc/passwd | ja -F: '{`5 !~/false/}{`0}' fails on mac
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 # Performance
 - [ ] don't bother with `imap` if `ix` isn't used?
@@ -104,3 +86,5 @@
 - [ ] not a fan of prettyprint
 # Examples
 - [ ] https://github.com/tenox7/ttyplot#examples
+- [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
+- [ ] https://awk.dev/
