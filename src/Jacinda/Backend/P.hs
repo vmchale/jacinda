@@ -6,7 +6,7 @@ import           Control.Monad.State.Strict (evalState)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
-import           Data.Foldable              (foldl', traverse_)
+import           Data.Foldable              (traverse_)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -208,9 +208,11 @@ eBM f (EApp _ (EApp _ (BB _ Split) s) r) = do
 eBM f (EApp _ (EApp _ (BB _ Splitc) s) c) = do
     s' <- asS<$>eBM f s; c' <- the.asS<$>eBM f c
     pure (Arr (tyV tyStr) (mkStr <$> V.fromList (BS.split c' s')))
-eBM f (EApp _ (UB _ (At i)) v) = do
-    v' <- eBM f v
-    pure $ (asV v')!(i-1)
+eBM f (EApp _ (UB _ FParse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
+eBM f (EApp _ (UB _ IParse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
+eBM f (EApp (TyB _ TyInteger) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
+eBM f (EApp (TyB _ TyFloat) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
+eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure ((asV v')!(i-1))}
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
     let r =fromIntegral (BS.length$asS s')
