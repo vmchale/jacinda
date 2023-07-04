@@ -36,6 +36,7 @@ instance Exception StreamError where
 data EvalError = EmptyFold
                | IndexOutOfBounds Int
                | InternalCoercionError (E (T K)) TB
+               | ExpectedTup (E (T K))
                deriving (Show)
 
 instance Exception EvalError where
@@ -137,6 +138,9 @@ asB (BoolLit _ b) = b; asB e = throw (InternalCoercionError e TyBool)
 
 asV :: E (T K) -> V.Vector (E (T K))
 asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)
+
+asT :: E (T K) -> [E (T K)]
+asT (Tup _ es) = es; asT e = throw (ExpectedTup e)
 
 eCtx :: (BS.ByteString, V.Vector BS.ByteString) -- ^ Line, split by field separator
      -> Integer -- ^ Line number
@@ -245,6 +249,7 @@ eBM f (EApp _ (UB _ IParse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyInteger) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB _ TyFloat) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
 eBM f (EApp _ (UB _ (At i)) v) = do {v' <- eBM f v; pure (asV v'!(i-1))}
+eBM f (EApp _ (UB _ (Select i)) x) = do {x' <- eBM f x; pure (asT x' !! (i-1))}
 eBM f (EApp _ (UB _ Floor) x) = do {xr <- asF<$>eBM f x; pure $ mkI (floor xr)}
 eBM f (EApp _ (UB _ Ceiling) x) = do {xr <- asF<$>eBM f x; pure $ mkI (ceiling xr)}
 eBM f (EApp (TyB _ TyInteger) (UB _ Negate) i) = do {i' <- eBM f i; pure $ mkI (negate (asI i'))}
