@@ -95,8 +95,11 @@ a1 f x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
 a2 :: E (T K) -> E (T K) -> E (T K) -> UM (E (T K))
 a2 op x0 x1 | TyArr _ _ t@(TyArr _ _ t') <- eLoc op = lβ (EApp t' (EApp t op x0) x1)
 
-chain :: Int -> E (T K) -> E (T K) -> E (T K)
-chain i f x = evalState (eBM id =<< a1 f x) i
+c1 :: Int -> E (T K) -> E (T K) -> E (T K)
+c1 i f x = evalState (eBM id =<< a1 f x) i
+
+c2 :: Int -> E (T K) -> E (T K) -> E (T K) -> E (T K)
+c2 i op x0 x1 = evalState (eBM id =<< a2 op x0 x1) i
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
@@ -106,11 +109,12 @@ eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (ParseCol (TyApp _ _ (TyB _ TyInteger)) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (FParseCol _ n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (ParseCol (TyApp _ _ (TyB _ TyFloat)) n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
-eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.chain i f) xs
-eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (chain i f) xs
-eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.chain i p) xs in [x | (p,x) <- (zip ps xs), p]
+eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.c1 i f) xs
+eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
+eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
+eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.c1 i p) xs in [x | (p,x) <- (zip ps xs), p]
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
-eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.chain i op) xs
+eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.c1 i op) xs
 eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
 
 asS :: E (T K) -> BS.ByteString
@@ -193,12 +197,36 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Leq) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Geq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
     pure (x0' `seq` x1' `seq` mkB (x0'>=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Gt) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'>x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Lt) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'<x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Eq) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Neq) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'/=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Geq) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'>=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Leq) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'<=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) = do
     x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
     pure (x0' `seq` x1' `seq` mkB (x0'==x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Plus) x0) x1) = do
     x0' <- asS <$> eBM f x0; x1' <- asS<$>eBM f x1
     pure (x0' `seq` x1' `seq` mkStr (x0'<>x1'))
+eBM f (EApp _ (EApp _ (BB _ And) x0) x1) = do
+    x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'&&x1'))
+eBM f (EApp _ (EApp _ (BB _ Or) x0) x1) = do
+    x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
+    pure (x0' `seq` x1' `seq` mkB (x0'||x1'))
 eBM f (EApp _ (EApp _ (BB _ Matches) s) r) = do
     s' <- asS<$>eBM f s; r' <- asR<$>eBM f r
     pure $ mkB (isMatch' r' s')
