@@ -105,6 +105,7 @@ eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
 eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
 eStream _ _ AllColumn{} bs = mkStr<$>bs
+eStream _ r (Column _ i) bs = mkStr.(! (i-1)).splitBy r<$>bs
 eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (ParseCol (TyApp _ _ (TyB _ TyInteger)) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (FParseCol _ n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
