@@ -254,6 +254,7 @@ eBM f (EApp _ (UB _ Floor) x) = do {xr <- asF<$>eBM f x; pure $ mkI (floor xr)}
 eBM f (EApp _ (UB _ Ceiling) x) = do {xr <- asF<$>eBM f x; pure $ mkI (ceiling xr)}
 eBM f (EApp (TyB _ TyInteger) (UB _ Negate) i) = do {i' <- eBM f i; pure $ mkI (negate (asI i'))}
 eBM f (EApp (TyB _ TyFloat) (UB _ Negate) x) = do {x' <- eBM f x; pure $ mkF (negate (asF x'))}
+eBM _ (NB t None) = pure (OptionVal t Nothing)
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
     let r =fromIntegral (BS.length$asS s')
