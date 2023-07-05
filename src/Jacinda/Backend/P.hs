@@ -269,6 +269,9 @@ eBM f (EApp _ (EApp _ (UB _ Const) e) _) = eBM f e
 eBM f (EApp _ (EApp _ (BB _ Sprintf) fs) s) = do
     fs' <- eBM f fs; s' <- eBM f s
     pure $ mkStr (sprintf (asS fs') s')
+eBM f (EApp _ (EApp _ (BB _ Match) s) r) = do
+    s' <- eBM f s; r' <- eBM f r
+    pure $ asTup (find' (asR r') (asS s'))
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = do
     op' <- eBM f op; seed' <- eBM f seed; xs' <- eBM f xs
     V.foldM (applyOp op') seed' (asV xs')
