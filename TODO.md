@@ -68,6 +68,7 @@
 # Examples
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
+- [ ] https://muhammadraza.me/2022/data-oneliners/
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
