@@ -156,10 +156,12 @@ eB :: Int -> (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eB i f x = evalState (eBM f x) i
 
 eBM :: (E (T K) -> E (T K)) -> E (T K) -> UM (E (T K))
-eBM f (EApp _ (EApp _ (EApp _ (TB _ Captures) s) i) r) = do
-    r' <- eBM f r; s' <- eBM f s; i' <- eBM f i
-    let mRes = findCapture (asR r') (asS s') (fromIntegral (asI i'))
-    pure $ OptionVal (TyApp undefined (TyB undefined TyOption) (TyB undefined TyStr)) (fmap mkStr mRes)
+eBM f (EApp t (EApp _ (EApp _ (TB _ Captures) s) i) r) = do
+    s' <- eBM f s; i' <- eBM f i; r' <- eBM f r
+    pure $ OptionVal t (mkStr <$> findCapture (asR r') (asS s') (fromIntegral$asI i'))
+eBM f (EApp t (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) = do
+    s' <- eBM f s; i' <- eBM f i; r' <- eBM f r
+    pure $ Arr t (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Max) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkI (max x0' x1'))
