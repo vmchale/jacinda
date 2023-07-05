@@ -14,6 +14,7 @@ import           Data.Word                  (Word8)
 import           Jacinda.AST
 import           Jacinda.AST.I
 import           Jacinda.Backend.Const
+import           Jacinda.Backend.Printf
 import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
 import           Jacinda.Regex
@@ -254,6 +255,7 @@ eBM f (EApp _ (UB _ Floor) x) = do {xr <- asF<$>eBM f x; pure $ mkI (floor xr)}
 eBM f (EApp _ (UB _ Ceiling) x) = do {xr <- asF<$>eBM f x; pure $ mkI (ceiling xr)}
 eBM f (EApp (TyB _ TyInteger) (UB _ Negate) i) = do {i' <- eBM f i; pure $ mkI (negate (asI i'))}
 eBM f (EApp (TyB _ TyFloat) (UB _ Negate) x) = do {x' <- eBM f x; pure $ mkF (negate (asF x'))}
+eBM f (EApp t (UB _ Some) e) = do {e' <- eBM f e; pure (OptionVal t (Just e'))}
 eBM _ (NB t None) = pure (OptionVal t Nothing)
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e
@@ -264,6 +266,9 @@ eBM f (EApp _ (UB _ TallyList) e) = do
     let r=fromIntegral (V.length$asV e')
     pure (mkI r)
 eBM f (EApp _ (EApp _ (UB _ Const) e) _) = eBM f e
+eBM f (EApp _ (EApp _ (BB _ Sprintf) fs) s) = do
+    fs' <- eBM f fs; s' <- eBM f s
+    pure $ mkStr (sprintf (asS fs') s')
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = do
     op' <- eBM f op; seed' <- eBM f seed; xs' <- eBM f xs
     V.foldM (applyOp op') seed' (asV xs')
@@ -273,7 +278,6 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
     V.foldM (applyOp op') seed xs''
     where applyOp g e e' = eBM f =<< a2 g e e'
-eBM f (Cond _ p e e') = do
-    p' <- eBM f p
-    if (asB p') then eBM f e else eBM f e'
+eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
+eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
 eBM f e = pure (f e)
