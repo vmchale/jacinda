@@ -115,6 +115,7 @@ eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
 eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.c1 i p) xs in [x | (pϵ,x) <- zip ps xs, pϵ]
+eStream i r (EApp _ (EApp _ (EApp _ (TB _ ZipW) f) e0) e1) bs = let xs0=eStream i r e0 bs; xs1=eStream i r e1 bs in zipWith (c2 i f) xs0 xs1
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.c1 i op) xs
 eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
@@ -193,6 +194,9 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Minus) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Times) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkF (x0'*x1'))
+eBM f (EApp _ (EApp _ (BB _ Div) x0) x1) = do
+    x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
+    pure (mkF (x0'/x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Eq) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkB (x0'==x1'))
