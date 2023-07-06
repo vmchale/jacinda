@@ -65,13 +65,13 @@ So `{|``0}` would define a stream of text corresponding to the lines in the file
 
 ### Fold
 
-Then, count lines with the word "Bloom":
+To count lines with the word "Bloom":
 
 ```
 ja '(+)|0 {% /Bloom/}{1}' -i ulysses.txt
 ```
 
-Note the *fold*, `|`. It is a ternary operator taking `(+)`, `0`, and `{% /Bloom/}{1}` as arguments. The general syntax is:
+Note the *fold*, `|`. It is a ternary operator taking `(+)`, `0`, and `{%/Bloom/}{1}` as arguments. The general syntax is:
 
 ```
 <expr>|<expr> <expr>
@@ -83,8 +83,7 @@ There is also `|>`, which folds without a seed.
 
 ### Map
 
-Suppose we wish to count the lines in a file. We have nearly all the tools to do
-so:
+Suppose we wish to count the lines in a file.
 
 ```
 (+)|0 {|1}
@@ -132,7 +131,7 @@ There is syntactical support for lambdas;
 \x. (+)|0 x
 ```
 
-would be equivalent to the above example.
+would be equivalent to `[(+)|0 x]`.
 
 ### Zips
 
