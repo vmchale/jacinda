@@ -195,11 +195,11 @@ a boolean expression.
 {#\`0>72}{\`0}
 :   Print lines longer than 72 bytes
 
-{| sprintf \'%i %i\' (\`2 . \`1)}
-:   Print the first two fields in opposite order
-
 {ix=3}{`0}
 :   Select only the third line
+
+{| sprintf \'%i %i\' (\`2 . \`1)}
+:   Print the first two fields in opposite order
 
 :set fs := /,[ \\t]*|[ \\t]+/; {| sprintf \'%i %i\' (\`2 . \`1)}
 :   Same, with input fields separated by comma and/or blanks and tabs.
