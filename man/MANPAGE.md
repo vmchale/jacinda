@@ -88,8 +88,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   Eq b :=> (a -> b) -> Stream a -> Stream a
 
 **max** Maximum of two values
+:   Ord a :=> a -> a -> a
 
 **min** Minimum of two values
+:   Ord a :=> a -> a -> a
 
 **&** Boolean and
 
