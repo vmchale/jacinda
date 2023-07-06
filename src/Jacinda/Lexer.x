@@ -224,8 +224,6 @@ mkText = decodeUtf8 . BSL.toStrict
 instance Pretty AlexPosn where
     pretty (AlexPn _ line col) = pretty line <> colon <> pretty col
 
-deriving instance Ord AlexPosn
-
 -- functional bimap?
 type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn))
 
