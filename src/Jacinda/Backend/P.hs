@@ -168,6 +168,13 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Max) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Min) x0) x1) = do
     x0' <- asI<$>eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkI (min x0' x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Min) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (mkF (min x0' x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Max) x0) x1) = do
+    x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
+    pure (mkF (max x0' x1'))
+    -- TODO: tup ord
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Plus) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkI (x0'+x1'))
@@ -222,6 +229,12 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Geq) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Leq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkB (x0'<=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Exp) x0) x1) = do
+    x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
+    pure (mkI (x0'^x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Exp) x0) x1) = do
+    x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
+    pure (mkF (x0'**x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) = do
     x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
     pure (mkB (x0'==x1'))
@@ -283,6 +296,19 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
     V.foldM (applyOp op') seed xs''
     where applyOp g e e' = eBM f =<< a2 g e e'
+eBM f (EApp yT@(TyApp _ (TyB _ TyOption) _) (EApp _ (BB _ Map) g) x) = do
+    g' <- eBM f g; x' <- eBM f x
+    let TyArr _ _ cod=eLoc g'
+    OptionVal yT <$> traverse (eBM f.EApp cod g') (asM x')
+eBM f (EApp yT@(TyApp _ (TyB _ TyVec) _) (EApp _ (BB _ Map) g) x) = do
+    g' <- eBM f g; x' <- eBM f x
+    let TyArr _ _ cod=eLoc g'
+    Arr yT <$> traverse (eBM f.EApp cod g') (asV x')
+eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
+    x' <- eBM f x; g' <- eBM f g; y' <- eBM f y
+    case asM y' of
+        Nothing -> pure x'
+        Just yϵ -> eBM f (EApp t g' yϵ)
 eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
 eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
 eBM f e = pure (f e)
