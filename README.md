@@ -19,9 +19,9 @@ If you have [cabal](https://www.haskell.org/cabal/) and [GHC](https://www.haskel
 cabal install jacinda
 ```
 
-## Vim Plugin
+## Editor Support
 
-There is a [vim plugin](https://github.com/vmchale/jacinda-vim).
+There is a [vim plugin](https://github.com/vmchale/jacinda-vim) and a [VSCode extension](https://marketplace.visualstudio.com/items?itemName=vmchale.jacinda).
 
 # SHOCK & AWE
 
@@ -58,8 +58,6 @@ on some of the features as well as examples.
 The manpages document the builtins and provide a syntax reference.
 
 # Status
-
-There are many missing features but the language will remain stable.
 
 ## Missing Features & Bugs
 
