@@ -202,11 +202,11 @@ Print lines longer than 72 bytes
 {#\[ga]0>72}{\[ga]0}
 Print lines longer than 72 bytes
 .TP
-{| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
-Print the first two fields in opposite order
-.TP
 {ix=3}{\[ga]0}
 Select only the third line
+.TP
+{| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
+Print the first two fields in opposite order
 .TP
 :set fs := /,[ \[rs]t]*|[ \[rs]t]+/; {| sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
 Same, with input fields separated by comma and/or blanks and tabs.
