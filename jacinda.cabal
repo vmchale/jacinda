@@ -57,7 +57,7 @@ library jacinda-lib
         Jacinda.Backend.Const
         Jacinda.Backend.P
         Jacinda.Backend.Printf
-        Jacinda.Include
+        Include
         Paths_jacinda
 
     autogen-modules:  Paths_jacinda

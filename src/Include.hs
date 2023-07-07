@@ -1,6 +1,6 @@
-module Jacinda.Include ( defaultIncludes
-                       , resolveImport
-                       ) where
+module Include ( defaultIncludes
+               , resolveImport
+               ) where
 
 import           Control.Exception  (Exception, throwIO)
 import           Control.Monad      (filterM)
