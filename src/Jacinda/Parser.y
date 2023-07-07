@@ -19,10 +19,10 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
-import qualified Intern.Name as Nm
-import Intern.Name hiding (loc)
+import qualified Nm
 import Jacinda.AST
 import Jacinda.Lexer
+import Nm hiding (loc)
 import Prettyprinter (Pretty (pretty), (<+>))
 
 }

@@ -27,9 +27,9 @@ import qualified Data.Map as M
 import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import Data.Text.Encoding (decodeUtf8, encodeUtf8)
-import Intern.Name
-import Intern.Unique
+import Nm
 import Prettyprinter (Pretty (pretty), (<+>), colon, squotes)
+import U
 
 }
 
