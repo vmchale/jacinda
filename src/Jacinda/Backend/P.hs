@@ -204,6 +204,7 @@ eCtx ~(f, _) _ AllField{}  = mkStr f
 eCtx (_, fs) _ (Field _ i) = mkStr (fs ! (i-1))
 eCtx (_, fs) _ LastField{} = mkStr (V.last fs)
 eCtx _ i (NB _ Ix)         = mkI i
+eCtx (_, fs) _ (NB _ Nf)   = mkI (fromIntegral$V.length fs)
 eCtx _ _ e                 = e
 
 eB :: Int -> (E (T K) -> E (T K)) -> E (T K) -> E (T K)
@@ -366,6 +367,9 @@ eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
     case asM y' of
         Nothing -> pure x'
         Just yϵ -> eBM f (EApp t g' yϵ)
+eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
+    i0' <- eBM f i0; i1' <- eBM f i1; s' <- eBM f s
+    pure $ mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
 eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
 eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
 eBM f e = pure (f e)
