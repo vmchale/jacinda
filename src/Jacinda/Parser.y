@@ -20,7 +20,7 @@ import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
 import qualified Nm
-import Jacinda.AST
+import A
 import Jacinda.Lexer
 import Nm hiding (loc)
 import Prettyprinter (Pretty (pretty), (<+>))

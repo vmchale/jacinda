@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.AST.E ( M, nN, eta ) where
+module A.E ( M, nN, eta ) where
 
+import           A
 import           Control.Monad              ((<=<))
 import           Control.Monad.State.Strict (State, get, modify)
 import           Data.Functor               (($>))
 import qualified Data.Text                  as T
-import           Jacinda.AST
 import           Nm
 import           U
 

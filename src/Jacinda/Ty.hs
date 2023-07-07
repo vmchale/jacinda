@@ -9,6 +9,7 @@ module Jacinda.Ty ( runTyM
                   , tyOf
                   ) where
 
+import           A
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (zipWithM)
 import           Control.Monad.Except       (liftEither, throwError)
@@ -23,7 +24,6 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
-import           Jacinda.AST
 import           Jacinda.Ty.Const
 import           Nm
 import           Prettyprinter              (Pretty (..), squotes, (<+>))

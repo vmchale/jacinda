@@ -1,7 +1,7 @@
 module Jacinda.Backend.Const ( mkI, mkF, mkStr, mkB ) where
 
+import           A
 import qualified Data.ByteString  as BS
-import           Jacinda.AST
 import           Jacinda.Ty.Const
 
 mkI :: Integer -> E (T K)

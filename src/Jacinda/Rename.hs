@@ -9,12 +9,12 @@ module Jacinda.Rename ( rE
                       , HasRenames (..)
                       ) where
 
+import           A
 import           Control.Monad.State.Strict (MonadState, State, runState)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
-import           Jacinda.AST
 import           Lens.Micro                 (Lens', over)
 import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
 import           Nm

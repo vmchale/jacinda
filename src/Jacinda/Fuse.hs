@@ -2,9 +2,9 @@
 
 module Jacinda.Fuse ( fuse ) where
 
+import           A
+import           A.E
 import           Control.Monad.State.Strict (runState)
-import           Jacinda.AST
-import           Jacinda.AST.E
 import           Jacinda.Ty.Const           (tyStream)
 
 fuse :: Int -> E (T K) -> (E (T K), Int)

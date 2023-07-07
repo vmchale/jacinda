@@ -2,13 +2,13 @@
 
 module Main (main) where
 
+import           A
 import           Control.Monad          ((<=<))
 import qualified Data.ByteString        as BS
 import           Data.Foldable          (toList)
 import           Data.Functor           (void)
 import qualified Data.Text              as T
 import qualified Data.Text.IO           as TIO
-import           Jacinda.AST
 import           Jacinda.File
 import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite

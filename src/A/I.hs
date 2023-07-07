@@ -1,16 +1,16 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Jacinda.AST.I ( RM, UM, ISt (..)
-                     , ib
-                     , β, lβ
-                     , runI
-                     ) where
+module A.I ( RM, UM, ISt (..)
+           , ib
+           , β, lβ
+           , runI
+           ) where
 
+import           A
 import           Control.Monad.State.Strict (MonadState, State, gets, modify, runState, state)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Jacinda.AST
 import           Jacinda.Rename
 import           Jacinda.Ty
 import           Nm
