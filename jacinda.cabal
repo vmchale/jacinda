@@ -51,7 +51,7 @@ library jacinda-lib
         Jacinda.Fuse
         Nm
         U
-        Jacinda.Rename
+        R
         Jacinda.Check.Field
         Jacinda.Backend.Parse
         Jacinda.Backend.Const
