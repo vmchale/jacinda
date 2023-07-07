@@ -210,6 +210,7 @@ eCtx _ _ e                 = e
 eB :: Int -> (E (T K) -> E (T K)) -> E (T K) -> E (T K)
 eB i f x = evalState (eBM f x) i
 
+{-# SCC eBM #-}
 eBM :: (E (T K) -> E (T K)) -> E (T K) -> UM (E (T K))
 eBM f (EApp t (EApp _ (EApp _ (TB _ Captures) s) i) r) = do
     s' <- eBM f s; i' <- eBM f i; r' <- eBM f r
