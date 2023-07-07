@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Rename ( rE
-                      , renameProgram
-                      , runRenameM
-                      , renamePGlobal
-                      , RenameM
-                      , Renames (..)
-                      , HasRenames (..)
-                      ) where
+module R ( rE
+         , renameProgram
+         , runRenameM
+         , renamePGlobal
+         , RenameM
+         , Renames (..)
+         , HasRenames (..)
+         ) where
 
 import           A
 import           Control.Monad.State.Strict (MonadState, State, runState)

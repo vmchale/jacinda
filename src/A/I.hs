@@ -11,8 +11,8 @@ import           Control.Monad.State.Strict (MonadState, State, gets, modify, ru
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Jacinda.Rename
 import           Nm
+import           R
 import           Ty
 import           U
 
