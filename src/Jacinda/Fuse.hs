@@ -5,7 +5,7 @@ module Jacinda.Fuse ( fuse ) where
 import           A
 import           A.E
 import           Control.Monad.State.Strict (runState)
-import           Ty.Const                   (tyStream)
+import           Ty.Const
 
 fuse :: Int -> E (T K) -> (E (T K), Int)
 fuse i = flip runState i.fM
@@ -18,7 +18,7 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (Ty
             let opTy@(TyArr _ sTy popTy@(TyArr _ xTy _)) = eLoc op
             s <- nN "seed" sTy; x <- nN "x" xTy
             let sE=Var sTy s; xE=Var xTy x
-            let fop=Lam opTy s (Lam popTy x (Cond sTy p (EApp sTy (EApp popTy op sE) xE) sE)) in pure (EApp t0 (EApp t1 (EApp t2 ho fop) seed) xs)
+            let fop=Lam opTy s (Lam popTy x (Cond sTy (EApp tyB p xE) (EApp sTy (EApp popTy op sE) xE) sE)) in pure (EApp t0 (EApp t1 (EApp t2 ho fop) seed) xs)
         (EApp _ (EApp _ (BB _ Map) f) xs) -> do
             let (TyArr _ xTy yTy) = eLoc f
                 (TyArr _ sTy _) = eLoc op
