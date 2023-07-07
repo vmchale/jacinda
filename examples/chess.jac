@@ -1,9 +1,3 @@
-{. fn sum(x) :=
-  {. (+)|0 x;
-
-{. fn count(x) :=
-  {. sum [:1"x;
-
 fn count(x) ≔
   (+)|0 [:1"x;
 
