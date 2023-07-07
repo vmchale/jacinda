@@ -18,7 +18,7 @@ import           Jacinda.Backend.Printf
 import           Jacinda.Backend.Parse
 import           Jacinda.Fuse
 import           Jacinda.Regex
-import           Jacinda.Ty.Const
+import           Nm
 import           Prettyprinter              (hardline, pretty)
 import           Prettyprinter.Render.Text  (putDoc)
 import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
