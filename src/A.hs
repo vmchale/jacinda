@@ -5,23 +5,23 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
-module Jacinda.AST ( E (..)
-                   , T (..)
-                   , TB (..)
-                   , BBin (..)
-                   , BTer (..)
-                   , BUn (..)
-                   , K (..)
-                   , DfnVar (..)
-                   , D (..)
-                   , Program (..)
-                   , C (..)
-                   , N (..)
-                   , mapExpr
-                   , getFS, flushD
-                   -- * Base functors
-                   , EF (..)
-                   ) where
+module A ( E (..)
+         , T (..)
+         , TB (..)
+         , BBin (..)
+         , BTer (..)
+         , BUn (..)
+         , K (..)
+         , DfnVar (..)
+         , D (..)
+         , Program (..)
+         , C (..)
+         , N (..)
+         , mapExpr
+         , getFS, flushD
+         -- * Base functors
+         , EF (..)
+         ) where
 
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS

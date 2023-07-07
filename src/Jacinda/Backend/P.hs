@@ -1,5 +1,7 @@
 module Jacinda.Backend.P ( runJac, eB ) where
 
+import           A
+import           A.I
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (foldM)
 import           Control.Monad.State.Strict (evalState)
@@ -11,8 +13,6 @@ import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
-import           Jacinda.AST
-import           Jacinda.AST.I
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.Printf
 import           Jacinda.Backend.Parse

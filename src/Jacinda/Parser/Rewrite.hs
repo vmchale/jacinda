@@ -4,8 +4,8 @@ module Jacinda.Parser.Rewrite ( rewriteProgram
                               ) where
 
 
+import           A
 import           Control.Recursion (cata, embed)
-import           Jacinda.AST
 
 rewriteProgram :: Program a -> Program a
 rewriteProgram (Program ds e) = Program (rewriteD <$> ds) (rewriteE e)

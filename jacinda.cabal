@@ -37,7 +37,7 @@ library jacinda-lib
     exposed-modules:
         Jacinda.Parser
         Jacinda.Parser.Rewrite
-        Jacinda.AST
+        A
         Jacinda.Ty
         Jacinda.Ty.Const
         Jacinda.Regex
@@ -45,8 +45,8 @@ library jacinda-lib
 
     hs-source-dirs:   src
     other-modules:
-        Jacinda.AST.I
-        Jacinda.AST.E
+        A.I
+        A.E
         Jacinda.Lexer
         Jacinda.Fuse
         Nm

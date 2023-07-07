@@ -2,10 +2,10 @@
 
 module Jacinda.Check.Field ( cF ) where
 
+import           A
 import           Control.Applicative (Alternative (..))
 import           Control.Exception   (Exception)
 import           Data.Foldable       (asum)
-import           Jacinda.AST
 import           Prettyprinter       (Pretty (..), squotes, (<+>))
 
 data LErr = NF (E (T K)) | B (E (T K)) | TS (E (T K))

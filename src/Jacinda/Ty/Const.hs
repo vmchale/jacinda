@@ -8,7 +8,7 @@ module Jacinda.Ty.Const ( tyStream
                         , tyV
                         ) where
 
-import           Jacinda.AST
+import           A
 
 -- | argument assumed to have kind 'Star'
 tyStream :: T K -> T K

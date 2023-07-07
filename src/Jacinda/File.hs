@@ -5,6 +5,8 @@ module Jacinda.File ( tcIO
                     , exprEval
                     ) where
 
+import           A
+import           A.I
 import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
@@ -21,8 +23,6 @@ import qualified Data.Text                  as T
 import           Data.Text.Encoding         (encodeUtf8)
 import qualified Data.Text.IO               as TIO
 import           Data.Tuple                 (swap)
-import           Jacinda.AST
-import           Jacinda.AST.I
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.P
 import           Jacinda.Check.Field
