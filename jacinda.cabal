@@ -58,7 +58,6 @@ library jacinda-lib
         Jacinda.Backend.P
         Jacinda.Backend.Printf
         Jacinda.Include
-        Data.List.Ext
         Paths_jacinda
 
     autogen-modules:  Paths_jacinda
