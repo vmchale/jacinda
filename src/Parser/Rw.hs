@@ -1,7 +1,7 @@
-module Jacinda.Parser.Rewrite ( rewriteProgram
-                              , rewriteD
-                              , rewriteE
-                              ) where
+module Parser.Rw ( rewriteProgram
+                 , rewriteD
+                 , rewriteE
+                 ) where
 
 
 import           A

@@ -3,16 +3,16 @@
 module Main (main) where
 
 import           A
-import           Control.Monad          ((<=<))
-import qualified Data.ByteString        as BS
-import           Data.Foldable          (toList)
-import           Data.Functor           (void)
-import qualified Data.Text              as T
-import qualified Data.Text.IO           as TIO
+import           Control.Monad    ((<=<))
+import qualified Data.ByteString  as BS
+import           Data.Foldable    (toList)
+import           Data.Functor     (void)
+import qualified Data.Text        as T
+import qualified Data.Text.IO     as TIO
 import           Jacinda.File
-import           Jacinda.Parser
-import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
+import           Parser
+import           Parser.Rw
 import           Test.Tasty
 import           Test.Tasty.HUnit
 import           Ty.Const
