@@ -27,7 +27,7 @@ import           Jacinda.Backend.Const
 import           Jacinda.Backend.P
 import           Jacinda.Check.Field
 import           Jacinda.Include
-import           Jacinda.Lexer
+import           L
 import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex

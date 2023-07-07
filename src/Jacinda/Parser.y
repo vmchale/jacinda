@@ -21,7 +21,7 @@ import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
 import qualified Nm
 import A
-import Jacinda.Lexer
+import L
 import Nm hiding (loc)
 import Prettyprinter (Pretty (pretty), (<+>))
 
