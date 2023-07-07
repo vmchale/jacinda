@@ -5,7 +5,6 @@ module Main (main) where
 import           A
 import           Control.DeepSeq      (NFData (..))
 import           Criterion.Main
-import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text.IO         as TIO
 import           Jacinda.File
 import           System.IO.Silently   (silence)

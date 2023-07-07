@@ -164,7 +164,6 @@ benchmark jacinda-bench
         criterion,
         jacinda-lib,
         deepseq,
-        bytestring,
         text,
         silently
 
