@@ -9,7 +9,7 @@ import           Data.Foldable    (toList)
 import           Data.Functor     (void)
 import qualified Data.Text        as T
 import qualified Data.Text.IO     as TIO
-import           Jacinda.File
+import           File
 import           Jacinda.Regex
 import           Parser
 import           Parser.Rw

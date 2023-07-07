@@ -4,7 +4,7 @@ import           Data.Semigroup      ((<>))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
-import           Jacinda.File
+import           File
 import           Options.Applicative
 import qualified Paths_jacinda       as P
 import           System.IO           (stdin)
