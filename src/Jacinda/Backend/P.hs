@@ -1,21 +1,26 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Jacinda.Backend.P ( runJac, eB ) where
 
 import           A
 import           A.I
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (foldM)
-import           Control.Monad.State.Strict (evalState)
+import           Control.Monad.State.Strict (State, evalState, get, modify, runState)
+import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
+import qualified Data.IntMap                as IM
+import           Data.List                  (unzip4)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
 import           Jacinda.Backend.Const
-import           Jacinda.Backend.Printf
 import           Jacinda.Backend.Parse
+import           Jacinda.Backend.Printf
 import           Jacinda.Fuse
 import           Jacinda.Regex
 import           Nm
@@ -40,6 +45,7 @@ data EvalError = EmptyFold
                | IndexOutOfBounds Int
                | InternalCoercionError (E (T K)) TB
                | ExpectedTup (E (T K))
+               | BadHole (Nm (T K))
                deriving (Show)
 
 instance Exception EvalError where
@@ -66,6 +72,47 @@ asTup :: Maybe RureMatch -> E (T K)
 asTup Nothing                = OptionVal undefined Nothing
 asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . fromIntegral <$> [s, e])))
 
+mkFoldVar :: Int -> b -> E b
+mkFoldVar i l = Var l (Nm "fold_placeholder" (U i) l)
+
+-- this relies on all streams being the same length stream which in turn relies
+-- on the fuse step (fold-of-filter->fold)
+foldAll :: Int -> RurePtr -> [(Int, E (T K), E (T K), E (T K))] -> [BS.ByteString] -> ([(Int, E (T K))], Int)
+foldAll i r xs bs = runState (foldMultiple seeds (mkStreams es)) i
+    where (ns, ops, seeds, es) = unzip4 xs
+          mkStreams = fmap (\e -> eStream i r e bs)
+
+          foldMultiple seedsϵ esϵ | not (any null esϵ) = do {es' <- sequence$zipWith3 c2M ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ)}
+                                  | otherwise = pure$zip ns seedsϵ
+
+gf :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
+gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | TyApp _ (TyB _ TyStream) _ <- eLoc stream = do
+    (i,_) <- get
+    modify (bimap (+1) ((i, op, seed, stream) :))
+    pure $ mkFoldVar i undefined
+gf (EApp ty e0 e1) = EApp ty <$> gf e0 <*> gf e1
+gf (Tup ty es) = Tup ty <$> traverse gf es
+gf (Arr ty es) = Arr ty <$> traverse gf es
+gf (OptionVal ty e) = OptionVal ty <$> traverse gf e
+gf (Cond ty p e e') = Cond ty <$> gf p <*> gf e <*> gf e'
+gf (Lam t n e) = Lam t n <$> gf e
+gf e@BB{} = pure e
+gf e@TB{} = pure e
+gf e@UB{} = pure e
+gf e@NB{} = pure e
+gf e@StrLit{} = pure e
+gf e@FloatLit{} = pure e
+gf e@IntLit{} = pure e
+gf e@BoolLit{} = pure e
+gf e@RegexCompiled{} = pure e
+
+ug :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
+ug st (Var _ n@(Nm _ (U i) _)) =
+    case IM.lookup i st of
+        Just res -> res
+        Nothing  -> throw (BadHole n)
+ug _ e = e
+
 bsProcess :: RurePtr
           -> Bool -- ^ Flush output?
           -> Int -- ^ Unique context
@@ -77,9 +124,7 @@ bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
     where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
-bsProcess r _ u e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
-    Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
-bsProcess r _ u e@(EApp _ (EApp _ (BB _ Fold1) _) xs) | TyApp _ (TyB _ TyStream) _ <- eLoc xs =
+bsProcess r _ u e =
     Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
 
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
@@ -91,6 +136,10 @@ eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
     let op'=eB u id op; seed':xsϵ=eStream u r xs bs
     in evalState (foldM (applyOp op') seed' xsϵ) u
     where applyOp f e e' = eBM id =<< a2 f e e'
+eF u r e = \bs ->
+    let (eHoley, (_, folds)) = runState (gf e) (0, [])
+        (filledHoles, u') = foldAll u r folds bs
+        in eB u' (ug (IM.fromList filledHoles)) eHoley
 
 a1 :: E (T K) -> E (T K) -> UM (E (T K))
 a1 f x | TyArr _ _ cod <- eLoc f = lβ (EApp cod f x)
@@ -101,8 +150,10 @@ a2 op x0 x1 | TyArr _ _ t@(TyArr _ _ t') <- eLoc op = lβ (EApp t' (EApp t op x0
 c1 :: Int -> E (T K) -> E (T K) -> E (T K)
 c1 i f x = evalState (eBM id =<< a1 f x) i
 
+c2M op x0 x1 = eBM id =<< a2 op x0 x1
+
 c2 :: Int -> E (T K) -> E (T K) -> E (T K) -> E (T K)
-c2 i op x0 x1 = evalState (eBM id =<< a2 op x0 x1) i
+c2 i op x0 x1 = evalState (c2M op x0 x1) i
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
