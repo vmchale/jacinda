@@ -35,8 +35,8 @@ flag cross
 
 library jacinda-lib
     exposed-modules:
-        Jacinda.Parser
-        Jacinda.Parser.Rewrite
+        Parser
+        Parser.Rw
         A
         Ty
         Ty.Const

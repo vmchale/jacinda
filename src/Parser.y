@@ -1,15 +1,15 @@
 {
     {-# LANGUAGE OverloadedStrings #-}
-    module Jacinda.Parser ( parse
-                          , parseWithMax
-                          , parseWithInitCtx
-                          , parseWithCtx
-                          , parseLibWithCtx
-                          , ParseError (..)
-                          -- * Type synonyms
-                          , File
-                          , Library
-                          ) where
+    module Parser ( parse
+                  , parseWithMax
+                  , parseWithInitCtx
+                  , parseWithCtx
+                  , parseLibWithCtx
+                  , ParseError (..)
+                  -- * Type synonyms
+                  , File
+                  , Library
+                  ) where
 
 import Control.Exception (Exception)
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
@@ -19,10 +19,10 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
-import qualified Nm
 import A
 import L
 import Nm hiding (loc)
+import qualified Nm
 import Prettyprinter (Pretty (pretty), (<+>))
 
 }

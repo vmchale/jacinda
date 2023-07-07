@@ -27,10 +27,10 @@ import           Jacinda.Backend.Const
 import           Jacinda.Backend.P
 import           Jacinda.Check.Field
 import           Jacinda.Include
-import           Jacinda.Parser
-import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
 import           L
+import           Parser
+import           Parser.Rw
 import           R
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (Handle)
