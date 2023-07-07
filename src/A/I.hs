@@ -12,8 +12,8 @@ import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Jacinda.Rename
-import           Jacinda.Ty
 import           Nm
+import           Ty
 import           U
 
 data ISt a = ISt { renames :: !Renames

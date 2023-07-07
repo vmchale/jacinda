@@ -1,8 +1,8 @@
 module Jacinda.Backend.Const ( mkI, mkF, mkStr, mkB ) where
 
 import           A
-import qualified Data.ByteString  as BS
-import           Jacinda.Ty.Const
+import qualified Data.ByteString as BS
+import           Ty.Const
 
 mkI :: Integer -> E (T K)
 mkI = IntLit tyI

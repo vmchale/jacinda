@@ -5,7 +5,7 @@ module Jacinda.Fuse ( fuse ) where
 import           A
 import           A.E
 import           Control.Monad.State.Strict (runState)
-import           Jacinda.Ty.Const           (tyStream)
+import           Ty.Const                   (tyStream)
 
 fuse :: Int -> E (T K) -> (E (T K), Int)
 fuse i = flip runState i.fM

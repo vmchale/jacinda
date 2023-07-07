@@ -22,6 +22,8 @@ import           Jacinda.Ty.Const
 import           Prettyprinter              (hardline, pretty)
 import           Prettyprinter.Render.Text  (putDoc)
 import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
+import           Ty.Const
+import           U
 
 runJac :: RurePtr -- ^ Record separator
        -> Int

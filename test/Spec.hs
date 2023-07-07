@@ -13,9 +13,9 @@ import           Jacinda.File
 import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
-import           Jacinda.Ty.Const
 import           Test.Tasty
 import           Test.Tasty.HUnit
+import           Ty.Const
 
 main :: IO ()
 main = defaultMain $
