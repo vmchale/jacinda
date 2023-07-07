@@ -26,7 +26,7 @@ import           Data.Tuple                 (swap)
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.P
 import           Jacinda.Check.Field
-import           Jacinda.Include
+import           Include
 import           Jacinda.Regex
 import           L
 import           Parser
