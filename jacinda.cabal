@@ -49,8 +49,8 @@ library jacinda-lib
         Jacinda.AST.E
         Jacinda.Lexer
         Jacinda.Fuse
-        Intern.Name
-        Intern.Unique
+        Nm
+        U
         Jacinda.Rename
         Jacinda.Check.Field
         Jacinda.Backend.Parse

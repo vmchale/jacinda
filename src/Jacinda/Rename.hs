@@ -14,11 +14,11 @@ import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
-import           Intern.Name
-import           Intern.Unique
 import           Jacinda.AST
 import           Lens.Micro                 (Lens', over)
 import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
+import           Nm
+import           U
 
 data Renames = Renames { max_ :: Int, bound :: IM.IntMap Int }
 

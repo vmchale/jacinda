@@ -1,13 +1,13 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module Intern.Name ( Nm (..)
-                   , TyName
-                   , eqName
-                   ) where
+module Nm ( Nm (..)
+          , TyName
+          , eqName
+          ) where
 
 import qualified Data.Text     as T
-import           Intern.Unique
 import           Prettyprinter (Pretty (pretty))
+import           U
 
 data Nm a = Nm { name   :: T.Text
                , unique :: !U

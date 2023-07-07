@@ -32,7 +32,7 @@ import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
-import           Intern.Name
+import           Nm
 import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, pipe, punctuate, tupled, (<+>))
 import           Regex.Rure         (RurePtr)
 

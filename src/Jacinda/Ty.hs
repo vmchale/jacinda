@@ -23,11 +23,11 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
-import           Intern.Name
-import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Ty.Const
+import           Nm
 import           Prettyprinter              (Pretty (..), squotes, (<+>))
+import           U
 
 data Err a = UF a (T ()) (T ())
            | Doesn'tSatisfy a (T ()) C

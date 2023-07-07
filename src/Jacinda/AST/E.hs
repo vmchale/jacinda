@@ -6,9 +6,9 @@ import           Control.Monad              ((<=<))
 import           Control.Monad.State.Strict (State, get, modify)
 import           Data.Functor               (($>))
 import qualified Data.Text                  as T
-import           Intern.Name
-import           Intern.Unique
 import           Jacinda.AST
+import           Nm
+import           U
 
 type M = State Int
 

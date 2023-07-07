@@ -10,11 +10,11 @@ import           Control.Monad.State.Strict (MonadState, State, gets, modify, ru
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Intern.Name
-import           Intern.Unique
 import           Jacinda.AST
 import           Jacinda.Rename
 import           Jacinda.Ty
+import           Nm
+import           U
 
 data ISt a = ISt { renames :: !Renames
                  , binds   :: IM.IntMap (E a)
