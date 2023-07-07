@@ -1,20 +1,20 @@
 {
     {-# LANGUAGE OverloadedStrings #-}
-    module Jacinda.Lexer ( alexMonadScan
-                         , alexInitUserState
-                         , runAlex
-                         , runAlexSt
-                         , withAlexSt
-                         , freshName
-                         , AlexPosn (..)
-                         , Alex (..)
-                         , Token (..)
-                         , Keyword (..)
-                         , Sym (..)
-                         , Builtin (..)
-                         , Var (..)
-                         , AlexUserState
-                         ) where
+    module L ( alexMonadScan
+             , alexInitUserState
+             , runAlex
+             , runAlexSt
+             , withAlexSt
+             , freshName
+             , AlexPosn (..)
+             , Alex (..)
+             , Token (..)
+             , Keyword (..)
+             , Sym (..)
+             , Builtin (..)
+             , Var (..)
+             , AlexUserState
+             ) where
 
 import Control.Arrow ((&&&))
 import Data.Bifunctor (first)

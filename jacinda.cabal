@@ -47,7 +47,7 @@ library jacinda-lib
     other-modules:
         A.I
         A.E
-        Jacinda.Lexer
+        L
         Jacinda.Fuse
         Nm
         U
