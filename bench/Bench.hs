@@ -3,11 +3,11 @@
 module Main (main) where
 
 import           A
-import           Control.DeepSeq      (NFData (..))
+import           Control.DeepSeq    (NFData (..))
 import           Criterion.Main
-import qualified Data.Text.IO         as TIO
-import           Jacinda.File
-import           System.IO.Silently   (silence)
+import qualified Data.Text.IO       as TIO
+import           File
+import           System.IO.Silently (silence)
 
 main :: IO ()
 main =

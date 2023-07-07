@@ -1,9 +1,9 @@
-module Jacinda.File ( tcIO
-                    , tySrc
-                    , runOnHandle
-                    , runOnFile
-                    , exprEval
-                    ) where
+module File ( tcIO
+            , tySrc
+            , runOnHandle
+            , runOnFile
+            , exprEval
+            ) where
 
 import           A
 import           A.I
@@ -23,10 +23,10 @@ import qualified Data.Text                  as T
 import           Data.Text.Encoding         (encodeUtf8)
 import qualified Data.Text.IO               as TIO
 import           Data.Tuple                 (swap)
+import           Include
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.P
 import           Jacinda.Check.Field
-import           Include
 import           Jacinda.Regex
 import           L
 import           Parser

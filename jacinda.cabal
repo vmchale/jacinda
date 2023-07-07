@@ -41,7 +41,7 @@ library jacinda-lib
         Ty
         Ty.Const
         Jacinda.Regex
-        Jacinda.File
+        File
 
     hs-source-dirs:   src
     other-modules:
