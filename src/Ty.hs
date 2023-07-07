@@ -1,13 +1,13 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Ty ( runTyM
-                  , tyProgram
-                  , match
-                  , aT
-                  -- * For debugging
-                  , tyOf
-                  ) where
+module Ty ( runTyM
+          , tyProgram
+          , match
+          , aT
+          -- * For debugging
+          , tyOf
+          ) where
 
 import           A
 import           Control.Exception          (Exception, throw)
@@ -24,9 +24,9 @@ import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
-import           Jacinda.Ty.Const
 import           Nm
 import           Prettyprinter              (Pretty (..), squotes, (<+>))
+import           Ty.Const
 import           U
 
 data Err a = UF a (T ()) (T ())

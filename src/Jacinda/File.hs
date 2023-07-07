@@ -32,9 +32,9 @@ import           Jacinda.Parser
 import           Jacinda.Parser.Rewrite
 import           Jacinda.Regex
 import           Jacinda.Rename
-import           Jacinda.Ty
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (Handle)
+import           Ty
 
 parseLib :: [FilePath] -> FilePath -> StateT AlexUserState IO [D AlexPosn]
 parseLib incls fp = do

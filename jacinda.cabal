@@ -38,8 +38,8 @@ library jacinda-lib
         Jacinda.Parser
         Jacinda.Parser.Rewrite
         A
-        Jacinda.Ty
-        Jacinda.Ty.Const
+        Ty
+        Ty.Const
         Jacinda.Regex
         Jacinda.File
 

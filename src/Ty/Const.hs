@@ -1,12 +1,12 @@
-module Jacinda.Ty.Const ( tyStream
-                        , tyStr, tyR
-                        , tyI
-                        , tyF
-                        , tyB
-                        , hkt
-                        , tyOpt
-                        , tyV
-                        ) where
+module Ty.Const ( tyStream
+                , tyStr, tyR
+                , tyI
+                , tyF
+                , tyB
+                , hkt
+                , tyOpt
+                , tyV
+                ) where
 
 import           A
 
