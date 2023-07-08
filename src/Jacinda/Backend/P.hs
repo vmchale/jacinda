@@ -27,14 +27,16 @@ import           Nm
 import           Prettyprinter              (hardline, pretty)
 import           Prettyprinter.Render.Text  (putDoc)
 import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
+import           System.IO                  (hFlush, stdout)
 import           Ty.Const
 import           U
 
 runJac :: RurePtr -- ^ Record separator
+       -> Bool -- ^ Flush output?
        -> Int
-       -> Program (T K)
+       -> E (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re i e = ϝ (bsProcess re (flushD e)) (ϝ fuse $ ib i e) where ϝ = uncurry.flip
+runJac re f i e = ϝ (bsProcess re f) (fuse i e) where ϝ = uncurry.flip
 
 data StreamError = NakedField
                  deriving (Show)
@@ -108,9 +110,7 @@ gf e@RegexCompiled{} = pure e
 
 ug :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
 ug st (Var _ n@(Nm _ (U i) _)) =
-    case IM.lookup i st of
-        Just res -> res
-        Nothing  -> throw (BadHole n)
+    IM.findWithDefault (throw (BadHole n)) i st
 ug _ e = e
 
 bsProcess :: RurePtr
@@ -123,9 +123,12 @@ bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
 bsProcess r f u e | (TyApp _ (TyB _ TyStream) _) <- eLoc e =
     Right (traverse_ g.eStream u r e)
-    where g | f = undefined | otherwise = putDoc.(<>hardline).pretty
+    where g | f = (*>fflush).pDocLn | otherwise = pDocLn
+          fflush = hFlush stdout
 bsProcess r _ u e =
-    Right $ \bs -> putDoc (pretty (eF u r e bs) <> hardline)
+    Right $ \bs -> pDocLn (eF u r e bs)
+
+pDocLn = putDoc.(<>hardline).pretty
 
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
