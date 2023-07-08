@@ -7,7 +7,7 @@ module A.I ( RM, UM, ISt (..)
            ) where
 
 import           A
-import           Control.Monad.State.Strict (MonadState, State, gets, modify, runState, state)
+import           Control.Monad.State.Strict (State, gets, modify, runState, state)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
@@ -47,7 +47,7 @@ iD FunDecl{}        = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
-bM :: (MonadState (ISt a) m) => E a -> m (E a)
+bM :: E a -> RM a (E a)
 bM (EApp _ (Lam _ n e') e) = do
     eI <- bM e
     modify (bind n eI) *> bM e'
