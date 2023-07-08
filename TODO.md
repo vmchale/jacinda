@@ -1,5 +1,9 @@
 - inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
 - [ ] xattr -d com.apple.quarantine
+# Release
+- [ ] Every single instance of ord (max, compare) in `eBM`
+- [ ] Folds of guarded streams should be rewritten (like fold-of-filter)
+- [ ] Anchored streams
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
