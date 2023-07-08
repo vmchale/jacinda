@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (unzip4)
+import           Data.List                  (scanl', unzip4)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -130,14 +130,19 @@ bsProcess r _ u e =
 
 pDocLn = putDoc.(<>hardline).pretty
 
+
+scanM :: Monad m => (b -> a -> m b) -> b -> [a] -> m [b]
+scanM op seed xs = sequence $
+    scanl' go (pure seed) xs where go seedϵ x = do {seedϵ' <- seedϵ; op seedϵ' x}
+
 eF :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> E (T K)
 eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
     let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
-    in evalState (foldM (applyOp op') seed' xsϵ) u
+    in evalState (foldM (c2M op') seed' xsϵ) u
     where applyOp f e e' = eBM id =<< a2 f e e'
 eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
     let op'=eB u id op; seed':xsϵ=eStream u r xs bs
-    in evalState (foldM (applyOp op') seed' xsϵ) u
+    in evalState (foldM (c2M op') seed' xsϵ) u
     where applyOp f e e' = eBM id =<< a2 f e e'
 eF u r e = \bs ->
     let (eHoley, (_, folds)) = runState (gf e) (0, [])
@@ -159,6 +164,9 @@ c2 :: Int -> E (T K) -> E (T K) -> E (T K) -> E (T K)
 c2 i op x0 x1 = evalState (c2M op x0 x1) i
 
 eStream :: Int -> RurePtr -> E (T K) -> [BS.ByteString] -> [E (T K)]
+eStream u r (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) bs =
+    let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
+    in evalState (scanM (c2M op') seed' xsϵ) u
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
 eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
 eStream _ _ AllColumn{} bs = mkStr<$>bs
