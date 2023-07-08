@@ -73,13 +73,6 @@ compileR fp = cata a where
     a (NBF _ Fp)        = mkStr fp
     a x                 = embed x
 
-compileIn :: FileBS -> Program (T K) -> Program (T K)
-compileIn fp (Program ds e) = Program (compileD fp <$> ds) (compileR fp e)
-
-compileD :: FileBS -> D (T K) -> D (T K)
-compileD fp (FunDecl n l e) = FunDecl n l (compileR fp e)
-compileD _ d                = d
-
 exprEval :: T.Text -> E (T K)
 exprEval src =
     case parseWithMax' src of
@@ -103,7 +96,9 @@ runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yeetIO $ runTyM m (tyProgram ast)
-    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) i (compileIn (encodeUtf8 $ T.pack fp) typed)
+    let (eI, j) = ib i typed
+    m'Throw $ cF eI
+    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
 
 runOnHandle :: [FilePath]

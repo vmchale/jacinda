@@ -65,7 +65,6 @@ data TB = TyInteger
         -- TODO: convert float to int
         deriving (Eq, Ord)
 
--- unicode mathematical angle bracket
 tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
 tupledByFunky sep = group . encloseSep (flatAlt "⟨ " "⟨") (flatAlt " ⟩" "⟩") sep
 
@@ -75,14 +74,13 @@ tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
 jacTup :: Pretty a => [a] -> Doc ann
 jacTup = tupledBy " . " . fmap pretty
 
--- type
 data T a = TyB { tLoc :: a, tyBuiltin :: TB }
          | TyApp { tLoc :: a, tyApp0 :: T a, tyApp1 :: T a }
          | TyArr { tLoc :: a, tyArr0 :: T a, tyArr1 :: T a }
          | TyVar { tLoc :: a, tyVar :: Nm a }
          | TyTup { tLoc :: a, tyTups :: [T a] }
          | Rho { tLoc :: a, tyRho :: Nm a, tyArms :: IM.IntMap (T a) }
-         deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set, not alpha-equiv.
+         deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set; not alpha-equiv.
 
 instance Pretty TB where
     pretty TyInteger = "Integer"

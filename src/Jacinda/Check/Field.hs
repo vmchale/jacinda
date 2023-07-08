@@ -8,11 +8,10 @@ import           Control.Exception   (Exception)
 import           Data.Foldable       (asum)
 import           Prettyprinter       (Pretty (..), squotes, (<+>))
 
-data LErr = NF (E (T K)) | B (E (T K)) | TS (E (T K))
+data LErr = NF (E (T K)) | TS (E (T K))
 
 instance Pretty LErr where
     pretty (NF e) = "Naked field in expression" <+> squotes (pretty e)
-    pretty (B e)  = "Builtin" <+> squotes (pretty e) <+> "requires context."
     pretty (TS e) = squotes (pretty e) <+> "Tuples cannot have streams."
 
 instance Show LErr where show=show.pretty
