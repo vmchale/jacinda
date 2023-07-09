@@ -41,9 +41,8 @@ lβ e = state (`β` e)
 
 iD :: D (T K) -> RM (T K) ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
-iD SetFS{}          = pure ()
-iD FlushDecl{}      = pure ()
-iD FunDecl{}        = desugar
+iD SetFS{} = pure (); iD FlushDecl{} = pure ()
+iD FunDecl{} = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
@@ -69,7 +68,7 @@ bM (Let l (n, e') e) = do
 bM (Tup l es) = Tup l <$> traverse bM es; bM (Arr l es) = Arr l <$> traverse bM es
 bM (Anchor l es) = Anchor l <$> traverse bM es; bM (OptionVal l es) = OptionVal l <$> traverse bM es
 bM (Lam l n e) = Lam l n <$> bM e
-bM (Implicit l e) = Implicit l <$> bM e;
+bM (Implicit l e) = Implicit l <$> bM e
 bM (Guarded l e0 e1) = Guarded l <$> bM e0 <*> bM e1
 bM (Cond l p e0 e1) = Cond l <$> bM p <*> bM e0 <*> bM e1
 bM e@Column{} = pure e; bM e@IParseCol{} = pure e; bM e@FParseCol{} = pure e; bM e@AllField{} = pure e
