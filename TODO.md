@@ -4,6 +4,7 @@
 - [ ] Every single instance of ord (max, compare) in `eBM`
 - [ ] Folds of guarded streams should be rewritten (like fold-of-filter)
 - [ ] Anchored streams
+- [ ] `checkType` cases
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples

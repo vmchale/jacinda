@@ -11,7 +11,7 @@ rwP :: Program a -> Program a
 rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
 
 rwD :: D a -> D a
-rwD (FunDecl n bs e) = FunDecl n bs (rwE e); rewriteD d = d
+rwD (FunDecl n bs e) = FunDecl n bs (rwE e); rwD d = d
 
 rwE :: E a -> E a
 rwE = cata a where

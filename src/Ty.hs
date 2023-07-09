@@ -53,8 +53,6 @@ instance Pretty a => Show (Err a) where show=show.pretty
 
 instance (Typeable a, Pretty a) => Exception (Err a) where
 
--- solve, unify etc. THEN check that all constraints are satisfied?
--- (after accumulating classVar membership...)
 data TyState a = TyState { maxU      :: !Int
                          , kindEnv   :: IM.IntMap K
                          , classVars :: IM.IntMap (S.Set (C, a))
@@ -146,7 +144,7 @@ mgu l _ t t' = Left $ UF l (void t) (void t')
 
 tS_ :: Monad m => (Subst a -> b -> m (Subst a)) -> Subst a -> [b] -> m (Subst a)
 tS_ _ s []     = pure s
-tS_ f s (t:ts) = do{next <- f s t; tS_ f next ts}
+tS_ f s (t:ts) = do {next <- f s t; tS_ f next ts}
 
 zS _ s [] _           = pure s
 zS _ s _ []           = pure s
@@ -156,9 +154,9 @@ substInt :: IM.IntMap (T a) -> Int -> Maybe (T a)
 substInt tys k =
     case IM.lookup k tys of
         Just ty'@TyVar{}       -> Just $ aT (IM.delete k tys) ty'
-        Just (TyApp l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyApp l (aT tys' ty0) (aT tys' ty1)
-        Just (TyArr l ty0 ty1) -> Just $ let tys' = IM.delete k tys in TyArr l (aT tys' ty0) (aT tys' ty1)
-        Just (TyTup l tysϵ)    -> Just $ let tys' = IM.delete k tys in TyTup l (aT tys' <$> tysϵ)
+        Just (TyApp l ty0 ty1) -> Just $ let tys'=IM.delete k tys in TyApp l (aT tys' ty0) (aT tys' ty1)
+        Just (TyArr l ty0 ty1) -> Just $ let tys'=IM.delete k tys in TyArr l (aT tys' ty0) (aT tys' ty1)
+        Just (TyTup l tysϵ)    -> Just $ let tys'=IM.delete k tys in TyTup l (aT tys' <$> tysϵ)
         Just ty'               -> Just ty'
         Nothing                -> Nothing
 
@@ -184,7 +182,6 @@ addC (Nm _ (U i) _) c = IM.alter (Just . go) i where
     go Nothing   = S.singleton c
     go (Just cs) = S.insert c cs
 
--- | arguments assumed to have kind 'Star'
 tyArr :: T K -> T K -> T K
 tyArr = TyArr Star
 
