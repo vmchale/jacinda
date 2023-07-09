@@ -78,7 +78,7 @@ exprEval src =
     case parseWithMax' src of
         Left err -> throw err
         Right (ast, m) ->
-            let (typed, i) = yeet $ runTyM m (tyProgram ast)
+            let (typed, i) = yeet $ runTyM m (tyP ast)
                 (inlined, j) = ib i typed
             in eB j id (compileR (error "nf not defined.") inlined)
 
@@ -95,7 +95,7 @@ runOnBytes :: [FilePath]
 runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    (typed, i) <- yIO $ runTyM m (tyProgram ast)
+    (typed, i) <- yIO $ runTyM m (tyP ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
     cont <- yIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
@@ -119,7 +119,7 @@ tcIO :: [FilePath] -> T.Text -> IO ()
 tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    (pT, i) <- yIO $ runTyM m (tyProgram ast)
+    (pT, i) <- yIO $ runTyM m (tyP ast)
     let (eI, _) = ib i pT
     m'Throw $ cF eI
 
