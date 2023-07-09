@@ -182,7 +182,11 @@ eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps
 eStream i r (EApp _ (EApp _ (EApp _ (TB _ ZipW) f) e0) e1) bs = let xs0=eStream i r e0 bs; xs1=eStream i r e1 bs in zipWith (c2 i f) xs0 xs1
 eStream i r (EApp (TyApp _ _ (TyB _ TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.c1 i op) xs
-eStream u r (Guarded _ p e) bs = let bss=(\b -> (b, splitBy r b))<$>bs in catMaybes$zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
+eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyInteger) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asI.c1 i op) xs
+eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ _ (TyB _ TyFloat) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asF.c1 i op) xs
+eStream u r (Guarded _ p e) bs =
+    let bss=(\b -> (b, splitBy r b))<$>bs
+    in catMaybes $ zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
 
 asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
