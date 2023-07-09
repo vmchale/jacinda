@@ -95,10 +95,10 @@ runOnBytes :: [FilePath]
 runOnBytes incls fp src cliFS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    (typed, i) <- yeetIO $ runTyM m (tyProgram ast)
+    (typed, i) <- yIO $ runTyM m (tyProgram ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
-    cont <- yeetIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
+    cont <- yIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
 
 runOnHandle :: [FilePath]
@@ -119,7 +119,7 @@ tcIO :: [FilePath] -> T.Text -> IO ()
 tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
-    (pT, i) <- yeetIO $ runTyM m (tyProgram ast)
+    (pT, i) <- yIO $ runTyM m (tyProgram ast)
     let (eI, _) = ib i pT
     m'Throw $ cF eI
 
@@ -132,8 +132,8 @@ tySrc src =
 m'Throw :: Exception e => Maybe e -> IO ()
 m'Throw = traverse_ throwIO
 
-yeetIO :: Exception e => Either e a -> IO a
-yeetIO = either throwIO pure
+yIO :: Exception e => Either e a -> IO a
+yIO = either throwIO pure
 
 yeet :: Exception e => Either e a -> a
 yeet = either throw id
