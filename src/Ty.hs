@@ -404,9 +404,9 @@ tyE e = do
     pure (fmap (aT s) e')
 
 tyES :: Ord a => Subst K -> E a -> TyM a (E (T K), Subst K)
-tyES s (BoolLit _ b)      = pure (BoolLit tyB b, s)
-tyES s (IntLit _ i)       = pure (IntLit tyI i, s)
-tyES s (FloatLit _ f)     = pure (FloatLit tyF f, s)
+tyES s (BLit _ b)         = pure (BLit tyB b, s)
+tyES s (ILit _ i)         = pure (ILit tyI i, s)
+tyES s (FLit _ f)         = pure (FLit tyF f, s)
 tyES s (StrLit _ str)     = pure (StrLit tyStr str, s)
 tyES s (RegexLit _ rr)    = pure (RegexLit tyR rr, s)
 tyES s (Column _ i)       = pure (Column (tyStream tyStr) i, s)
@@ -548,5 +548,5 @@ tyES s (Cond l p e0 e1) = do
 tyES s (Anchor l es) = do
     (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- var <$> dummyName "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
     pure (Anchor (TyB Star TyUnit) es', s')
-tyES _ RegexCompiled{} = error "Regex should not be compiled at this stage."
+tyES _ RC{} = error "Regex should not be compiled at this stage."
 tyES _ Dfn{} = desugar; tyES _ ResVar{} = desugar; tyES _ Paren{} = desugar

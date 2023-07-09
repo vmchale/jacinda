@@ -59,7 +59,7 @@ parseAsEInt :: BS.ByteString -> E (T K)
 parseAsEInt = mkI . readDigits
 
 parseAsF :: BS.ByteString -> E (T K)
-parseAsF = FloatLit tyF . readFloat
+parseAsF = FLit tyF . readFloat
 
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
@@ -98,15 +98,9 @@ gf (Arr ty es) = Arr ty <$> traverse gf es
 gf (OptionVal ty e) = OptionVal ty <$> traverse gf e
 gf (Cond ty p e e') = Cond ty <$> gf p <*> gf e <*> gf e'
 gf (Lam t n e) = Lam t n <$> gf e
-gf e@BB{} = pure e
-gf e@TB{} = pure e
-gf e@UB{} = pure e
-gf e@NB{} = pure e
-gf e@StrLit{} = pure e
-gf e@FloatLit{} = pure e
-gf e@IntLit{} = pure e
-gf e@BoolLit{} = pure e
-gf e@RegexCompiled{} = pure e
+gf e@BB{} = pure e; gf e@TB{} = pure e; gf e@UB{} = pure e; gf e@NB{} = pure e
+gf e@StrLit{} = pure e; gf e@FLit{} = pure e; gf e@ILit{} = pure e; gf e@BLit{} = pure e
+gf e@RC{} = pure e
 
 ug :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
 ug st (Var _ n@(Nm _ (U i) _)) =
@@ -192,19 +186,19 @@ asS :: E (T K) -> BS.ByteString
 asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E (T K) -> Integer
-asI (IntLit _ i) = i; asI e = throw (InternalCoercionError e TyInteger)
+asI (ILit _ i) = i; asI e = throw (InternalCoercionError e TyInteger)
 
 asF :: E (T K) -> Double
-asF (FloatLit _ x) = x; asF e = throw (InternalCoercionError e TyFloat)
+asF (FLit _ x) = x; asF e = throw (InternalCoercionError e TyFloat)
 
 asR :: E (T K) -> RurePtr
-asR (RegexCompiled r) = r; asR e = throw (InternalCoercionError e TyR)
+asR (RC r) = r; asR e = throw (InternalCoercionError e TyR)
 
 asM :: E (T K) -> Maybe (E (T K))
 asM (OptionVal _ e) = e; asM e = throw (InternalCoercionError e TyOption)
 
 asB :: E (T K) -> Bool
-asB (BoolLit _ b) = b; asB e = throw (InternalCoercionError e TyBool)
+asB (BLit _ b) = b; asB e = throw (InternalCoercionError e TyBool)
 
 asV :: E (T K) -> V.Vector (E (T K))
 asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)

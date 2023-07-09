@@ -19,10 +19,10 @@ sprintf fmt e = encodeUtf8 (sprintf' (decodeUtf8 fmt) e)
 -- TODO: interpret precision, like %0.6f %.6
 
 sprintf' :: T.Text -> E a -> T.Text
-sprintf' fmt (FloatLit _ f) =
+sprintf' fmt (FLit _ f) =
     let (prefix, fmt') = T.breakOn "%f" fmt
         in prefix <> T.pack (show f) <> T.drop 2 fmt'
-sprintf' fmt (IntLit _ i) =
+sprintf' fmt (ILit _ i) =
     let (prefix, fmt') = T.breakOn "%i" fmt
         in prefix <> T.pack (show i) <> T.drop 2 fmt'
 sprintf' fmt (StrLit _ bs) =
@@ -32,7 +32,7 @@ sprintf' fmt (Tup _ [e]) = sprintf' fmt e
 sprintf' fmt (Tup l (e:es)) =
     let nextFmt = sprintf' fmt e
         in sprintf' nextFmt (Tup l es)
-sprintf' fmt (BoolLit _ b) =
+sprintf' fmt (BLit _ b) =
     let (prefix, fmt') = T.breakOn "%b" fmt
         in prefix <> showBool b <> T.drop 2 fmt'
     where showBool True  = "true"

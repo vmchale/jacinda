@@ -218,9 +218,9 @@ Program :: { Program AlexPosn }
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }
-  | intLit { IntLit (loc $1) (int $1) }
-  | floatLit { FloatLit (loc $1) (float $1) }
-  | boolLit { BoolLit (loc $1) (boolTok $1) }
+  | intLit { ILit (loc $1) (int $1) }
+  | floatLit { FLit (loc $1) (float $1) }
+  | boolLit { BLit (loc $1) (boolTok $1) }
   | strLit { StrLit (loc $1) (encodeUtf8 $ strTok $1) }
   | column { Column (loc $1) (ix $1) }
   | field { Field (loc $1) (ix $1) }

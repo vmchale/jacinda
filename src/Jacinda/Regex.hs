@@ -27,7 +27,7 @@ defaultFs = "\\s+"
 
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
-defaultRurePtr = unsafePerformIO $ yeetRureIO =<< compile genFlags defaultFs
+defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
     where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
@@ -74,11 +74,11 @@ isMatch' :: RurePtr
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
-compileDefault = unsafeDupablePerformIO . (yeetRureIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL for weird records
+compileDefault = unsafeDupablePerformIO . (yIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL for weird records
 
 newtype RureExe = RegexCompile String deriving (Show)
 
 instance Exception RureExe where
 
-yeetRureIO :: Either String a -> IO a
-yeetRureIO = either (throwIO . RegexCompile) pure
+yIO :: Either String a -> IO a
+yIO = either (throwIO . RegexCompile) pure
