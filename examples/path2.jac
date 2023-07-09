@@ -5,4 +5,4 @@
 fn path(x) :=
   intercalate '\n' (splitc x ':');
 
-path"$0
+path¨$0

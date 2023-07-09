@@ -62,7 +62,6 @@ data TB = TyInteger
         | TyBool
         | TyOption
         | TyUnit
-        -- TODO: convert float to int
         deriving (Eq, Ord)
 
 tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
@@ -108,7 +107,6 @@ prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":"
 
 instance Show (T a) where show=show.pretty
 
--- unary
 data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
@@ -189,7 +187,7 @@ instance Pretty BBin where
     pretty Geq        = ">="
     pretty Leq        = "<="
     pretty Neq        = "!="
-    pretty Map        = "\""
+    pretty Map        = "¨"
     pretty Matches    = "~"
     pretty NotMatches = "!~"
     pretty And        = "&"
@@ -291,7 +289,7 @@ data EF a x = ColumnF a Int
 type instance Base (E a) = (EF a)
 
 instance Pretty N where
-    pretty Ix = "ix"; pretty Nf = "nf"; pretty None = "None"; pretty Fp = "fp"
+    pretty Ix = "⍳"; pretty Nf = "nf"; pretty None = "None"; pretty Fp = "fp"
 
 instance Pretty (E a) where
     pretty (Column _ i)                                           = "$" <> pretty i
@@ -309,7 +307,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (BB _ Splitc) e) e')                   = "splitc" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BB _ Match) e) e')                    = "match" <+> pretty e <+> pretty e'
     pretty (EApp _ (EApp _ (BB _ Sprintf) e) e')                  = "sprintf" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Map) e) e')                      = pretty e <> "\"" <> pretty e'
+    pretty (EApp _ (EApp _ (BB _ Map) e) e')                      = pretty e <> "¨" <> pretty e'
     pretty (EApp _ (EApp _ (BB _ b) e) e')                        = pretty e <+> pretty b <+> pretty e'
     pretty (EApp _ (BB _ b) e)                                    = parens (pretty e <> pretty b)
     pretty (EApp _ (EApp _ (EApp _ (TB _ Fold) e) e') e'')        = pretty e <> "|" <> pretty e' <+> pretty e''

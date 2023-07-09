@@ -17,7 +17,7 @@ fn step(needle, ctx, line) :=
 fn process(x) :=
   let
     val fpCtx ≔ fromMaybe 'WARN' (x->1)
-    val line ≔ (λl. sprintf'%s: %s' (fpCtx.l))"(x->2)
+    val line ≔ (λl. sprintf'%s: %s' (fpCtx.l))¨(x->2)
   in line end;
 
 process:?(step/(\+|-).*TODO/)^(None.None)$0

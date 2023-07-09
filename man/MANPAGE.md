@@ -69,7 +69,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
-**\"** Binary operator: map
+**\"**,  **¨** Binary operator: map
 :   Functor f :=> a -> b -> f a -> f b
 
 **[:** Unary operator: const
@@ -105,7 +105,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **!~** Does not match
 :   Str -> Regex -> Bool
 
-**ix** Line number
+**ix**, **⍳** Line number
 
 **substr** Extract substring
 :   Str -> Int -> Int -> Str
@@ -194,6 +194,7 @@ a boolean expression.
 
 {#\`0>72}{\`0}
 :   Print lines longer than 72 bytes
+
 
 {ix=3}{`0}
 :   Select only the third line
