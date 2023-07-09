@@ -1,8 +1,9 @@
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Ty ( runTyM
-          , tyProgram
+module Ty ( Subst
+          , runTyM
+          , tyP
           , match
           , aT
           -- * For debugging
@@ -348,8 +349,8 @@ checkAmb _ = pure ()
 tS _ s []     = pure ([], s)
 tS f s (t:ts) = do{(x, next) <- f s t; first (x:) <$> tS f next ts}
 
-tyProgram :: Ord a => Program a -> TyM a (Program (T K))
-tyProgram (Program ds e) = do
+tyP :: Ord a => Program a -> TyM a (Program (T K))
+tyP (Program ds e) = do
     (ds', s0) <- tS tyDS mempty ds
     (e', s1) <- tyES s0 e
     toCheck <- gets (IM.toList . classVars)
