@@ -62,7 +62,7 @@ pAst =
             (EApp ()
                 (UB () Tally)
                 (AllField ())))
-        (IntLit () 72)
+        (ILit () 72)
 
 splitWhitespaceT :: BS.ByteString -> [BS.ByteString] -> TestTree
 splitWhitespaceT haystack expected =
@@ -86,7 +86,7 @@ sumBytesAST =
             (EApp ()
                 (TB () Fold)
                 (BB () Plus))
-            (IntLit () 0))
+            (ILit () 0))
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
@@ -98,7 +98,7 @@ tyOfT src expected =
 
 parseTo :: T.Text -> E () -> Assertion
 parseTo src e =
-    case rewriteProgram . snd <$> parse src of
+    case rwP . snd <$> parse src of
         Left err     -> assertFailure (show err)
         Right actual -> void (expr actual) @?= e
 

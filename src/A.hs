@@ -231,11 +231,11 @@ data E a = Column { eLoc :: a, col :: Int }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: Nm a }
-         | IntLit { eLoc :: a, eInt :: !Integer }
-         | BoolLit { eLoc :: a, eBool :: !Bool }
+         | ILit { eLoc :: a, eInt :: !Integer }
+         | BLit { eLoc :: a, eBool :: !Bool }
          | StrLit { eLoc :: a, eStr :: BS.ByteString }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
-         | FloatLit { eLoc :: a, eFloat :: !Double }
+         | FLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a }
          | BB { eLoc :: a, eBin :: BBin }
@@ -244,7 +244,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | NB { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
-         | RegexCompiled RurePtr -- holds compiled regex after normalization
+         | RC RurePtr -- compiled regex after normalization
          | Arr { eLoc :: a, elems :: V.Vector (E a) }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
@@ -269,11 +269,11 @@ data EF a x = ColumnF a Int
             | ImplicitF a x
             | LetF a (Nm a, x) x
             | VarF a (Nm a)
-            | IntLitF a Integer
-            | BoolLitF a Bool
+            | ILitF a Integer
+            | BLitF a Bool
             | StrLitF a BS.ByteString
             | RegexLitF a BS.ByteString
-            | FloatLitF a Double
+            | FLitF a Double
             | LamF a (Nm a) x
             | DfnF a x
             | BBF a BBin
@@ -282,7 +282,7 @@ data EF a x = ColumnF a Int
             | NBF a N
             | TupF a [x]
             | ResVarF a DfnVar
-            | RegexCompiledF RurePtr
+            | RCF RurePtr
             | ArrF a (V.Vector x)
             | AnchorF a [x]
             | ParenF a x
@@ -329,11 +329,11 @@ instance Pretty (E a) where
     pretty (EApp _ e@UB{} e')                                     = pretty e <> pretty e'
     pretty (EApp _ e e')                                          = pretty e <+> pretty e'
     pretty (Var _ n)                                              = pretty n
-    pretty (IntLit _ i)                                           = pretty i
+    pretty (ILit _ i)                                             = pretty i
     pretty (RegexLit _ rr)                                        = "/" <> pretty (decodeUtf8 rr) <> "/"
-    pretty (FloatLit _ f)                                         = pretty f
-    pretty (BoolLit _ True)                                       = "#t"
-    pretty (BoolLit _ False)                                      = "#f"
+    pretty (FLit _ f)                                             = pretty f
+    pretty (BLit _ True)                                          = "#t"
+    pretty (BLit _ False)                                         = "#f"
     pretty (BB _ b)                                               = parens (pretty b)
     pretty (UB _ u)                                               = pretty u
     pretty (StrLit _ str)                                         = pretty (decodeUtf8 str)
@@ -344,7 +344,7 @@ instance Pretty (E a) where
     pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
     pretty (Implicit _ e)                                         = braces ("|" <+> pretty e)
     pretty (NB _ n)                                               = pretty n
-    pretty RegexCompiled{}                                        = "(compiled regex)"
+    pretty RC{}                                                   = "(compiled regex)"
     pretty (Let _ (n, b) e)                                       = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
     pretty (Paren _ e)                                            = parens (pretty e)
     pretty (Arr _ es)                                             = tupledByFunky "," (V.toList $ pretty <$> es)
@@ -370,11 +370,11 @@ instance Eq (E a) where
     (==) (Let _ (n, eϵ) e) (Let _ (n', eϵ') e') = eqName n n' && e == e' && eϵ == eϵ'
     (==) (Var _ n) (Var _ n')                   = eqName n n'
     (==) (Lam _ n e) (Lam _ n' e')              = eqName n n' && e == e'
-    (==) (IntLit _ i) (IntLit _ j)              = i == j
-    (==) (FloatLit _ u) (FloatLit _ v)          = u == v
+    (==) (ILit _ i) (ILit _ j)                  = i == j
+    (==) (FLit _ u) (FLit _ v)                  = u == v
     (==) (StrLit _ str) (StrLit _ str')         = str == str'
     (==) (RegexLit _ rr) (RegexLit _ rr')       = rr == rr'
-    (==) (BoolLit _ b) (BoolLit _ b')           = b == b'
+    (==) (BLit _ b) (BLit _ b')                 = b == b'
     (==) (BB _ b) (BB _ b')                     = b == b'
     (==) (TB _ b) (TB _ b')                     = b == b'
     (==) (UB _ unOp) (UB _ unOp')               = unOp == unOp'
@@ -382,8 +382,8 @@ instance Eq (E a) where
     (==) (Tup _ es) (Tup _ es')                 = es == es'
     (==) (ResVar _ x) (ResVar _ y)              = x == y
     (==) (Dfn _ f) (Dfn _ g)                    = f == g -- we're testing for lexical equivalence
-    (==) RegexCompiled{} _                      = error "Cannot compare compiled regex!"
-    (==) _ RegexCompiled{}                      = error "Cannot compare compiled regex!"
+    (==) RC{} _                                 = error "Cannot compare compiled regex!"
+    (==) _ RC{}                                 = error "Cannot compare compiled regex!"
     (==) (Paren _ e) e'                         = e == e'
     (==) e (Paren _ e')                         = e == e'
     (==) _ _                                    = False

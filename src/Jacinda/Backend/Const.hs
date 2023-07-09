@@ -5,13 +5,13 @@ import qualified Data.ByteString as BS
 import           Ty.Const
 
 mkI :: Integer -> E (T K)
-mkI = IntLit tyI
+mkI = ILit tyI
 
 mkF :: Double -> E (T K)
-mkF = FloatLit tyF
+mkF = FLit tyF
 
 mkB :: Bool -> E (T K)
-mkB = BoolLit tyB
+mkB = BLit tyB
 
 mkStr :: BS.ByteString -> E (T K)
 mkStr = StrLit tyStr

@@ -42,8 +42,8 @@ parseLib incls fp = do
     st <- get
     case parseLibWithCtx contents st of
         Left err              -> liftIO (throwIO err)
-        Right (st', ([], ds)) -> put st' $> (rewriteD <$> ds)
-        Right (st', (is, ds)) -> do { put st' ; dss <- traverse (parseLib incls) is ; pure (concat dss ++ fmap rewriteD ds) }
+        Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
+        Right (st', (is, ds)) -> do { put st' ; dss <- traverse (parseLib incls) is ; pure (concat dss ++ fmap rwD ds) }
 
 parseE :: [FilePath] -> T.Text -> StateT AlexUserState IO (Program AlexPosn)
 parseE incls bs = do
@@ -53,7 +53,7 @@ parseE incls bs = do
         Right (st', (is, Program ds e)) -> do
             put st'
             dss <- traverse (parseLib incls) is
-            pure $ Program (concat dss ++ fmap rewriteD ds) (rewriteE e)
+            pure $ Program (concat dss ++ fmap rwD ds) (rwE e)
 
 -- | Parse + rename (decls)
 parseEWithMax :: [FilePath] -> T.Text -> IO (Program AlexPosn, Int)
@@ -61,7 +61,7 @@ parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStat
     where fst3 (x, _, _) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry renamePGlobal . second (rewriteProgram . snd)) . parseWithMax
+parseWithMax' = fmap (uncurry renamePGlobal . second (rwP . snd)) . parseWithMax
 
 type FileBS = BS.ByteString
 
@@ -69,7 +69,7 @@ compileR :: FileBS
          -> E (T K)
          -> E (T K)
 compileR fp = cata a where
-    a (RegexLitF _ rrϵ) = RegexCompiled (compileDefault rrϵ)
+    a (RegexLitF _ rrϵ) = RC (compileDefault rrϵ)
     a (NBF _ Fp)        = mkStr fp
     a x                 = embed x
 

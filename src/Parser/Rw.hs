@@ -1,20 +1,20 @@
-module Parser.Rw ( rewriteProgram
-                 , rewriteD
-                 , rewriteE
+module Parser.Rw ( rwP
+                 , rwD
+                 , rwE
                  ) where
 
 
 import           A
 import           Control.Recursion (cata, embed)
 
-rewriteProgram :: Program a -> Program a
-rewriteProgram (Program ds e) = Program (rewriteD <$> ds) (rewriteE e)
+rwP :: Program a -> Program a
+rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
 
-rewriteD :: D a -> D a
-rewriteD (FunDecl n bs e) = FunDecl n bs (rewriteE e); rewriteD d = d
+rwD :: D a -> D a
+rwD (FunDecl n bs e) = FunDecl n bs (rwE e); rewriteD d = d
 
-rewriteE :: E a -> E a
-rewriteE = cata a where
+rwE :: E a -> E a
+rwE = cata a where
     a (EAppF l e0@(UB _ Tally) (EApp lϵ (EApp lϵϵ e1@BB{} e2) e3))                      = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
     a (EAppF l e0@(UB _ Const) (EApp lϵ (EApp lϵϵ e1@(BB _ Map) e2) e3))                = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
     a (EAppF l e0@(EApp _ (BB _ Eq) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
