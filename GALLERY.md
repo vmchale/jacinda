@@ -10,7 +10,7 @@ strings $(which ja) | ja '~.[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-
 ```
 @include'lib/string.jac'
 
-(+)|'' (intercalate '\n')"{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
+(+)|'' (intercalate '\n')¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
 # Get Library Versions
@@ -86,7 +86,7 @@ Count blank lines:
 # Longest Line
 
 ```
-max|_1 #"$0
+max|_1 #¨$0
 ```
 
 All lines >110 bytes:
@@ -112,7 +112,7 @@ Is there a line >110 bytes?
 ```
 
 ```
-(max|_1 #"$0) > 110
+(max|_1 #¨$0) > 110
 ```
 
 # Count Bytes in Directory
@@ -146,5 +146,5 @@ maximum := [max|_1 x]
 ```
 
 ```
-{|ix}
+{|⍳}
 ```

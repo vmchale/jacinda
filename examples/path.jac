@@ -2,4 +2,4 @@
 fn path(x) :=
   ([x+'\n'+y]) |> (splitc x ':');
 
-path"$0
+path¨$0

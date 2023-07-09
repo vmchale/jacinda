@@ -104,7 +104,7 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
 # Ctags
 
 ```
-ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(ix.`1)}' -i /development/dhall/dhall-kitty/conf.dhall
+ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(⍳.`1)}' -i /development/dhall/dhall-kitty/conf.dhall
 ```
 
 # Sum Total Population

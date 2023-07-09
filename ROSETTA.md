@@ -73,7 +73,7 @@ fn printSpan(str) :=
     val str := option '(none)' (sprintf '%i-%i') p
   in str end;
 
-printSpan"{% / *\^+/}{`2}
+printSpan¨{% / *\^+/}{`2}
 ```
 
 ```
@@ -82,7 +82,7 @@ printSpan"{% / *\^+/}{`2}
 fn printSpan(str) :=
   let
     val p := match str /\^+/
-    val str := (sprintf '%i-%i')"p
+    val str := (sprintf '%i-%i')¨p
   in str end;
 
 printSpan:?{% /\|/}{`2}
@@ -101,7 +101,7 @@ BEGIN { FS = ":" ;OFS = "\n" }
 fn path(x) :=
   ([x+'\n'+y])|>(splitc x ':');
 
-path"$0
+path¨$0
 ```
 
 # Ttyplot
@@ -133,7 +133,7 @@ vm_stat 1 | awk '{ print int($2)*4096/1024^3; fflush(); }' | ttyplot -t "MacOS M
 ```
 
 ```
-vm_stat 1 | ja ':flush; {ix>3}{`2:f*4096.0%(1024.0**3.0)}' | ttyplot -t "MacOS Memory Usage" -u GB
+vm_stat 1 | ja ':flush; {⍳>3}{`2:f*4096.0%(1024.0**3.0)}' | ttyplot -t "MacOS Memory Usage" -u GB
 ```
 
 ```
@@ -227,7 +227,7 @@ awk 'NR == 7' FILE
 ```
 
 ```
-ja '{ix=7}{`0}' -i FILE
+ja '{⍳=7}{`0}' -i FILE
 ```
 
 # Data Science

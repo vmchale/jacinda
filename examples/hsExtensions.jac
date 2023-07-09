@@ -6,4 +6,4 @@ fn findExtensions(line) :=
     val extList ≔ (\s.split s /,\s*/)"extStr
   in extList end;
 
-~.(λx.(intercalate'\n')"(findExtensions x)):?$0
+~.(λx.(intercalate'\n')¨(findExtensions x)):?$0
