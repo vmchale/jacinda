@@ -81,7 +81,6 @@ tokens :-
 
         "|"                      { mkSym FoldTok }
         \"                       { mkSym Quot }
-        ¨                        { mkSym Quot }
         "^"                      { mkSym Caret }
         "|>"                     { mkSym Fold1Tok }
 
@@ -138,9 +137,7 @@ tokens :-
         ix                       { mkRes VarIx }
         ⍳                        { mkRes VarIx }
         nf                       { mkRes VarNf }
-        -- TODO: does this uncover an alex bug?
-        -- ⍳                        { mkRes VarIx }
-        -- ¨                        { mkSym Quot }
+        ¨                        { mkSym Quot }
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 
@@ -319,7 +316,7 @@ instance Pretty Sym where
     pretty Dot           = "."
     pretty TallyTok      = "#"
     pretty LengthTok     = "#*"
-    pretty Quot          = "\""
+    pretty Quot          = "¨"
     pretty Caret         = "^"
     pretty ConstTok      = "[:"
     pretty LBracePercent = "{%"
@@ -363,11 +360,10 @@ instance Pretty Var where
     pretty VarX     = "x"
     pretty VarY     = "y"
     pretty VarFs    = "fs"
-    pretty VarIx    = "ix"
+    pretty VarIx    = "⍳"
     pretty VarNf    = "nf"
     pretty VarMin   = "min"
     pretty VarMax   = "max"
-    -- TODO: exp, log, sqrt, floor ...
 
 instance Pretty Keyword where
     pretty KwLet     = "let"

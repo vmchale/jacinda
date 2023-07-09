@@ -143,7 +143,6 @@ instance Pretty BUn where
     pretty Negate     = "-."
     pretty TallyList  = "#*"
 
--- ternary
 data BTer = ZipW
           | Fold | Scan
           | Substr
@@ -177,7 +176,6 @@ data BBin = Plus | Times | Div
           | MapMaybe
           | Fold1
           | DedupOn
-          -- TODO: floor functions, sqrt, sin, cos
           deriving (Eq)
 
 instance Pretty BBin where
@@ -388,15 +386,11 @@ instance Eq (E a) where
     (==) e (Paren _ e')                         = e == e'
     (==) _ _                                    = False
 
-data C = IsNum
-       | IsEq
-       | IsOrd
-       | IsParse
+data C = IsNum | IsEq | IsOrd
+       | IsParse | IsPrintf
        | IsSemigroup
        | Functor -- ^ For map (@"@)
-       | Foldable
-       | IsPrintf
-       | Witherable
+       | Foldable | Witherable
        deriving (Eq, Ord)
 
 instance Pretty C where
