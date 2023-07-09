@@ -116,10 +116,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **splitc** Split a string on a single character
 :   Str -> Str -> List Str
 
-**|.** Floor function
+**⌊**, **|.** Floor function
 :   Float -> Int
 
-**|`** Ceiling function
+**⌈**, **|`** Ceiling function
 :   Float -> Int
 
 **-.** Unary negate
