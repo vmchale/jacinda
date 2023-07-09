@@ -112,7 +112,9 @@ tokens :-
         \\                       { mkSym Backslash }
         λ                        { mkSym Backslash }
         "|`"                     { mkSym CeilSym }
+        ⌈                        { mkSym CeilSym }
         "|."                     { mkSym FloorSym }
+        ⌊                        { mkSym FloorSym }
         "~."                     { mkSym DedupTok }
         "~.*"                    { mkSym DedupOnTok }
         ".?"                     { mkSym CatMaybesTok }
@@ -325,8 +327,8 @@ instance Pretty Sym where
     pretty Backslash     = "\\"
     pretty BackslashDot  = "\\."
     pretty FilterTok     = "#."
-    pretty FloorSym      = "|."
-    pretty CeilSym       = "|`"
+    pretty FloorSym      = "⌊"
+    pretty CeilSym       = "⌈"
     pretty DedupTok      = "~."
     pretty DedupOnTok    = "~.*"
     pretty CatMaybesTok  = ".?"
