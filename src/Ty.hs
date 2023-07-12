@@ -252,7 +252,6 @@ kind (TyApp k1 ty0 ty1) = do
 
 checkType :: Ord a => T K -> (C, a) -> TyM a ()
 checkType TyVar{} _                            = pure ()
-checkType (TyB _ TyR) (IsSemigroup, _)         = pure ()
 checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
 checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
 checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
@@ -260,7 +259,6 @@ checkType (TyB _ TyInteger) (IsOrd, _)         = pure ()
 checkType (TyB _ TyInteger) (IsEq, _)          = pure ()
 checkType (TyB _ TyInteger) (IsParse, _)       = pure ()
 checkType (TyB _ TyFloat) (IsParse, _)         = pure ()
-checkType ty (IsParse, l)                      = throwError $ Doesn'tSatisfy l (void ty) IsParse
 checkType (TyB _ TyFloat) (IsSemigroup, _)     = pure ()
 checkType (TyB _ TyFloat) (IsNum, _)           = pure ()
 checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
@@ -271,9 +269,6 @@ checkType ty@(TyB _ TyStr) (c@IsOrd, l)        = throwError $ Doesn'tSatisfy l (
 checkType (TyTup _ tys) (IsEq, l)              = traverse_ (`checkType` (IsEq, l)) tys
 checkType (TyTup _ tys) (IsOrd, l)             = traverse_ (`checkType` (IsOrd, l)) tys
 checkType (TyApp _ (TyB _ TyVec) ty) (IsEq, l) = checkType ty (IsEq, l)
-checkType ty@TyTup{} (c@IsNum, l)              = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty@(TyB _ TyStr) (c@IsNum, l)        = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty@(TyB _ TyBool) (c@IsNum, l)       = throwError $ Doesn'tSatisfy l (void ty) c
 checkType ty@TyArr{} (c, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
 checkType (TyB _ TyVec) (Functor, _)           = pure ()
 checkType (TyB _ TyStream) (Functor, _)        = pure ()
@@ -290,7 +285,10 @@ checkType (TyB _ TyInteger) (IsPrintf, _)      = pure ()
 checkType (TyB _ TyBool) (IsPrintf, _)         = pure ()
 checkType (TyTup _ tys) (IsPrintf, l)          = traverse_ (`checkType` (IsPrintf, l)) tys
 checkType (Rho _ _ rs) (IsPrintf, l)           = traverse_ (`checkType` (IsPrintf, l)) (IM.elems rs)
+checkType ty (c@IsParse, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
 checkType ty (c@IsPrintf, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsSemigroup, l)                = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsNum, l)                      = throwError $ Doesn'tSatisfy l (void ty) c
 
 checkClass :: Ord a
            => IM.IntMap (T K) -- ^ Unification result
