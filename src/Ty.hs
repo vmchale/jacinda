@@ -251,44 +251,47 @@ kind (TyApp k1 ty0 ty1) = do
         k0                               -> throwError $ Expected (KArr Star Star) k0
 
 checkType :: Ord a => T K -> (C, a) -> TyM a ()
-checkType TyVar{} _                            = pure ()
-checkType (TyB _ TyStr) (IsSemigroup, _)       = pure ()
-checkType (TyB _ TyInteger) (IsSemigroup, _)   = pure ()
-checkType (TyB _ TyInteger) (IsNum, _)         = pure ()
-checkType (TyB _ TyInteger) (IsOrd, _)         = pure ()
-checkType (TyB _ TyInteger) (IsEq, _)          = pure ()
-checkType (TyB _ TyInteger) (IsParse, _)       = pure ()
-checkType (TyB _ TyFloat) (IsParse, _)         = pure ()
-checkType (TyB _ TyFloat) (IsSemigroup, _)     = pure ()
-checkType (TyB _ TyFloat) (IsNum, _)           = pure ()
-checkType (TyB _ TyFloat) (IsOrd, _)           = pure ()
-checkType (TyB _ TyFloat) (IsEq, _)            = pure ()
-checkType (TyB _ TyBool) (IsEq, _)             = pure ()
-checkType (TyB _ TyStr) (IsEq, _)              = pure ()
-checkType ty@(TyB _ TyStr) (c@IsOrd, l)        = throwError $ Doesn'tSatisfy l (void ty) c
-checkType (TyTup _ tys) (IsEq, l)              = traverse_ (`checkType` (IsEq, l)) tys
-checkType (TyTup _ tys) (IsOrd, l)             = traverse_ (`checkType` (IsOrd, l)) tys
-checkType (TyApp _ (TyB _ TyVec) ty) (IsEq, l) = checkType ty (IsEq, l)
-checkType ty@TyArr{} (c, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
-checkType (TyB _ TyVec) (Functor, _)           = pure ()
-checkType (TyB _ TyStream) (Functor, _)        = pure ()
-checkType (TyB _ TyOption) (Functor, _)        = pure ()
-checkType (TyB _ TyStream) (Witherable, _)     = pure ()
-checkType ty (c@Witherable, l)                 = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@Functor, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
-checkType (TyB _ TyVec) (Foldable, _)          = pure ()
-checkType (TyB _ TyStream) (Foldable, _)       = pure ()
-checkType ty (c@Foldable, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
-checkType (TyB _ TyStr) (IsPrintf, _)          = pure ()
-checkType (TyB _ TyFloat) (IsPrintf, _)        = pure ()
-checkType (TyB _ TyInteger) (IsPrintf, _)      = pure ()
-checkType (TyB _ TyBool) (IsPrintf, _)         = pure ()
-checkType (TyTup _ tys) (IsPrintf, l)          = traverse_ (`checkType` (IsPrintf, l)) tys
-checkType (Rho _ _ rs) (IsPrintf, l)           = traverse_ (`checkType` (IsPrintf, l)) (IM.elems rs)
-checkType ty (c@IsParse, l)                    = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsPrintf, l)                   = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsSemigroup, l)                = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsNum, l)                      = throwError $ Doesn'tSatisfy l (void ty) c
+checkType TyVar{} _                                  = pure ()
+checkType (TyB _ TyStr) (IsSemigroup, _)             = pure ()
+checkType (TyB _ TyInteger) (IsSemigroup, _)         = pure ()
+checkType (TyB _ TyFloat) (IsSemigroup, _)           = pure ()
+checkType (TyB _ TyInteger) (IsNum, _)               = pure ()
+checkType (TyB _ TyFloat) (IsNum, _)                 = pure ()
+checkType (TyB _ TyInteger) (IsEq, _)                = pure ()
+checkType (TyB _ TyFloat) (IsEq, _)                  = pure ()
+checkType (TyB _ TyBool) (IsEq, _)                   = pure ()
+checkType (TyB _ TyStr) (IsEq, _)                    = pure ()
+checkType (TyTup _ tys) (IsEq, l)                    = traverse_ (`checkType` (IsEq, l)) tys
+checkType (TyApp _ (TyB _ TyVec) ty) (c@IsEq, l)     = checkType ty (c, l)
+checkType (TyApp _ (TyB _ TyOption) ty) (c@IsEq, l)  = checkType ty (c, l)
+checkType (TyB _ TyInteger) (IsParse, _)             = pure ()
+checkType (TyB _ TyFloat) (IsParse, _)               = pure ()
+checkType (TyB _ TyFloat) (IsOrd, _)                 = pure ()
+checkType (TyB _ TyInteger) (IsOrd, _)               = pure ()
+checkType (TyB _ TyStr) (IsOrd, _)                   = pure ()
+checkType (TyTup _ tys) (IsOrd, l)                   = traverse_ (`checkType` (IsOrd, l)) tys
+checkType (TyApp _ (TyB _ TyVec) ty) (c@IsOrd, l)    = checkType ty (c, l)
+checkType (TyApp _ (TyB _ TyOption) ty) (c@IsOrd, l) = checkType ty (c, l)
+checkType (TyB _ TyVec) (Functor, _)                 = pure ()
+checkType (TyB _ TyStream) (Functor, _)              = pure ()
+checkType (TyB _ TyOption) (Functor, _)              = pure ()
+checkType (TyB _ TyStream) (Witherable, _)           = pure ()
+checkType (TyB _ TyVec) (Foldable, _)                = pure ()
+checkType (TyB _ TyStream) (Foldable, _)             = pure ()
+checkType (TyB _ TyStr) (IsPrintf, _)                = pure ()
+checkType (TyB _ TyFloat) (IsPrintf, _)              = pure ()
+checkType (TyB _ TyInteger) (IsPrintf, _)            = pure ()
+checkType (TyB _ TyBool) (IsPrintf, _)               = pure ()
+checkType (TyTup _ tys) (IsPrintf, l)                = traverse_ (`checkType` (IsPrintf, l)) tys
+checkType (Rho _ _ rs) (IsPrintf, l)                 = traverse_ (`checkType` (IsPrintf, l)) (IM.elems rs)
+checkType ty@TyArr{} (c, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@Foldable, l)                         = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@Witherable, l)                       = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@Functor, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsParse, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsPrintf, l)                         = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsSemigroup, l)                      = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c@IsNum, l)                            = throwError $ Doesn'tSatisfy l (void ty) c
 
 checkClass :: Ord a
            => IM.IntMap (T K) -- ^ Unification result
@@ -298,7 +301,7 @@ checkClass :: Ord a
 checkClass tys i cs = {-# SCC "checkClass" #-}
     case substInt tys i of
         Just ty -> traverse_ (checkType ty) (S.toList cs)
-        Nothing -> pure () -- FIXME: we need to check that the var is well-kinded for constraint
+        Nothing -> pure ()
 
 lookupVar :: Nm a -> TyM a (T K)
 lookupVar n@(Nm _ (U i) l) = do
