@@ -283,15 +283,7 @@ checkType (TyB _ TyFloat) (IsPrintf, _)              = pure ()
 checkType (TyB _ TyInteger) (IsPrintf, _)            = pure ()
 checkType (TyB _ TyBool) (IsPrintf, _)               = pure ()
 checkType (TyTup _ tys) (IsPrintf, l)                = traverse_ (`checkType` (IsPrintf, l)) tys
-checkType (Rho _ _ rs) (IsPrintf, l)                 = traverse_ (`checkType` (IsPrintf, l)) (IM.elems rs)
-checkType ty@TyArr{} (c, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@Foldable, l)                         = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@Witherable, l)                       = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@Functor, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsParse, l)                          = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsPrintf, l)                         = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsSemigroup, l)                      = throwError $ Doesn'tSatisfy l (void ty) c
-checkType ty (c@IsNum, l)                            = throwError $ Doesn'tSatisfy l (void ty) c
+checkType ty (c, l)                                  = throwError $ Doesn'tSatisfy l (void ty) c
 
 checkClass :: Ord a
            => IM.IntMap (T K) -- ^ Unification result
