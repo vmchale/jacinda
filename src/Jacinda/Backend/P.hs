@@ -151,6 +151,7 @@ c1 :: Int -> E (T K) -> E (T K) -> E (T K)
 c1 i f x = evalState (eBM id =<< a1 f x) i
 
 c2M op x0 x1 = eBM id =<< a2 op x0 x1
+c2Mϵ f g e e' = eBM f =<< a2 g e e'
 
 c2 :: Int -> E (T K) -> E (T K) -> E (T K) -> E (T K)
 c2 i op x0 x1 = evalState (c2M op x0 x1) i
@@ -300,6 +301,9 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Geq) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Leq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkB (x0'<=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Gt) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'>x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyInteger) _) Exp) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkI (x0'^x1'))
@@ -309,12 +313,20 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyFloat) _) Exp) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) = do
     x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
     pure (mkB (x0'==x1'))
-eBM f (EApp _ (EApp _ op@(BB (TyArr _ (TyApp _ (TyB _ TyVec) _) _) Eq) x0) x1) = do
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyApp _ (TyB _ TyVec) t) _) Eq) x0) x1) = do
     x0' <- asV<$>eBM f x0; x1' <- asV<$>eBM f x1
     mkB <$> if V.length x0'==V.length x1'
-        then and . fmap asB <$> V.zipWithM (c2Mϵ op) x0' x1'
+        then and . fmap asB <$> V.zipWithM (c2Mϵ f op) x0' x1'
         else pure False
-    where c2Mϵ g e e' = eBM f =<< a2 g e e'
+    where op = BB (TyArr Star t (TyArr Star t tyB)) Eq
+eBM f (EApp _ (EApp _ (BB (TyArr _ (TyApp _ (TyB _ TyOption) t) _) Eq) x0) x1) = do
+    x0' <- asM<$>eBM f x0; x1' <- asM<$>eBM f x1
+    case (x0',x1') of
+        (Nothing, Nothing) -> pure (mkB True)
+        (Nothing, Just{})  -> pure (mkB False)
+        (Just{}, Nothing)  -> pure (mkB False)
+        (Just e0, Just e1) -> c2Mϵ f op e0 e1
+    where op = BB (TyArr Star t (TyArr Star t tyB)) Eq
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Plus) x0) x1) = do
     x0' <- asS <$> eBM f x0; x1' <- asS<$>eBM f x1
     pure (mkStr (x0'<>x1'))
@@ -366,13 +378,11 @@ eBM f (EApp _ (EApp _ (BB _ Match) s) r) = do
     pure $ asTup (find' (asR r') (asS s'))
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = do
     op' <- eBM f op; seed' <- eBM f seed; xs' <- eBM f xs
-    V.foldM (c2Mϵ op') seed' (asV xs')
-    where c2Mϵ g e e' = eBM f =<< a2 g e e'
+    V.foldM (c2Mϵ f op') seed' (asV xs')
 eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     op' <- eBM f op; xs' <- eBM f xs
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
-    V.foldM (c2Mϵ op') seed xs''
-    where c2Mϵ g e e' = eBM f =<< a2 g e e'
+    V.foldM (c2Mϵ f op') seed xs''
 eBM f (EApp yT@(TyApp _ (TyB _ TyOption) _) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
     let TyArr _ _ cod=eLoc g'
