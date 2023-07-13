@@ -8,6 +8,7 @@
 git diff origin/main | ja run /development/jac/longline.jac
 ja: InternalCoercionError (λx. x) CHANGELOG.md Str
 ```
+- [ ] Bug: fold1
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
