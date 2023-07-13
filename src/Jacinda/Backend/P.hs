@@ -31,12 +31,22 @@ import           System.IO                  (hFlush, stdout)
 import           Ty.Const
 import           U
 
+φ :: E (T K) -> Int
+φ (TB (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _))) Fold) = 1
+φ (BB (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _) _)) Fold1)            = 1
+φ (EApp _ e0 e1)                                                             = φ e0+φ e1
+φ (Tup _ es)                                                                 = sum (φ<$>es)
+φ (OptionVal _ (Just e))                                                     = φ e
+φ (Cond _ p e0 e1)                                                           = φ p+φ e0+φ e1
+φ (Lam _ _ e)                                                                = φ e
+φ _                                                                          = 0
+
 runJac :: RurePtr -- ^ Record separator
        -> Bool -- ^ Flush output?
        -> Int
        -> E (T K)
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re f i e = ϝ (bsProcess re f) (fuse i e) where ϝ = uncurry.flip
+runJac re f i e = ϝ (bsProcess re f) (if φ e > 1 then fuse i e else (e, i)) where ϝ = uncurry.flip
 
 data StreamError = NakedField
                  deriving (Show)
@@ -321,7 +331,7 @@ eBM f (EApp _ (EApp _ (BB (TyArr _ (TyB _ TyStr) _) Eq) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyApp _ (TyB _ TyVec) t) _) Eq) x0) x1) = do
     x0' <- asV<$>eBM f x0; x1' <- asV<$>eBM f x1
     mkB <$> if V.length x0'==V.length x1'
-        then and . fmap asB <$> V.zipWithM (c2Mϵ f op) x0' x1'
+        then all asB <$> V.zipWithM (c2Mϵ f op) x0' x1'
         else pure False
     where op = BB (TyArr Star t (TyArr Star t tyB)) Eq
 eBM f (EApp _ (EApp _ (BB (TyArr _ (TyApp _ (TyB _ TyOption) t) _) Eq) x0) x1) = do
