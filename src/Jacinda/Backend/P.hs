@@ -80,18 +80,23 @@ mkFoldVar i l = Var l (Nm "fold_placeholder" (U i) l)
 -- this relies on all streams being the same length stream which in turn relies
 -- on the fuse step (fold-of-filter->fold)
 foldAll :: Int -> RurePtr -> [(Int, E (T K), E (T K), E (T K))] -> [BS.ByteString] -> ([(Int, E (T K))], Int)
-foldAll i r xs bs = runState (foldMultiple seeds (mkStreams es)) i
+foldAll i r xs bs = runState (foldMultiple seeds (mkStream <$> es) ctxStream ixStream) i
     where (ns, ops, seeds, es) = unzip4 xs
-          mkStreams = fmap (\e -> eStream i r e bs)
+          mkStream e = eStream i r e bs
+          ctxStream = [(b, splitBy r b) | b <- bs]
+          ixStream = [1..]
 
-          foldMultiple seedsϵ esϵ | not (any null esϵ) = do {es' <- sequence$zipWith3 c2M ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ)}
-                                  | otherwise = pure$zip ns seedsϵ
+          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
+          -- TODO: sanity check same length all streams
+          foldMultiple seedsϵ _ [] _ = pure$zip ns seedsϵ
+
+          allHeads = foldr seq ()
 
 gf :: E (T K) -> State (Int, [(Int, E (T K), E (T K), E (T K))]) (E (T K))
 gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | TyApp _ (TyB _ TyStream) _ <- eLoc stream = do
     (i,_) <- get
     modify (bimap (+1) ((i, op, seed, stream) :))
-    pure $ mkFoldVar i undefined
+    pure $ mkFoldVar i (eLoc stream)
 gf (EApp ty e0 e1) = EApp ty <$> gf e0 <*> gf e1
 gf (Tup ty es) = Tup ty <$> traverse gf es
 gf (Arr ty es) = Arr ty <$> traverse gf es
