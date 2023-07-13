@@ -1,9 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module R ( rE
-         , renameProgram
-         , runRenameM
-         , renamePGlobal
+         , rP
          , RenameM
          , Renames (..)
          , HasRenames (..)
@@ -36,11 +34,11 @@ maxLens f s = fmap (\x -> s { max_ = x }) (f (max_ s))
 
 type RenameM = State Renames
 
-renamePGlobal :: Int -> Program a -> (Program a, Int)
-renamePGlobal i = runRenameM i . renameProgram
+rP :: Int -> Program a -> (Program a, Int)
+rP i = runRM i . renameProgram
 
-runRenameM :: Int -> RenameM x -> (x, Int)
-runRenameM i act = second max_ (runState act (Renames i IM.empty))
+runRM :: Int -> RenameM x -> (x, Int)
+runRM i act = second max_ (runState act (Renames i IM.empty))
 
 replaceUnique :: (MonadState s m, HasRenames s) => U -> m U
 replaceUnique u@(U i) = do

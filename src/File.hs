@@ -57,11 +57,11 @@ parseE incls bs = do
 
 -- | Parse + rename (decls)
 parseEWithMax :: [FilePath] -> T.Text -> IO (Program AlexPosn, Int)
-parseEWithMax incls bsl = uncurry renamePGlobal . swap . second fst3 <$> runStateT (parseE incls bsl) alexInitUserState
+parseEWithMax incls bsl = uncurry rP . swap . second fst3 <$> runStateT (parseE incls bsl) alexInitUserState
     where fst3 (x, _, _) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry renamePGlobal . second (rwP . snd)) . parseWithMax
+parseWithMax' = fmap (uncurry rP . second (rwP . snd)) . parseWithMax
 
 type FileBS = BS.ByteString
 
