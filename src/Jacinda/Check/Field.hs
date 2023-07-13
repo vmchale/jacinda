@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Check.Field ( cF ) where
+module Jacinda.Check.Field ( cF, LErr (..) ) where
 
 import           A
 import           Control.Applicative (Alternative (..))
