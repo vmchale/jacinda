@@ -7,13 +7,10 @@ fn isEven() :=
 fn isOdd() :=
   (~ /(1|3|5|7|9)$/);
 
-fn divTen() :=
-  (~/0$/);
-
 let
   val iStream := $0
   val even := count (isEven #. iStream)
   val odd := count (isOdd #. iStream)
-  val tens := count (divTen #. iStream)
+  val tens := count {%/0$/}{`0}
   val total := odd + even
 in (total . even . odd . tens) end
