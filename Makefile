@@ -1,3 +1,5 @@
+MAKEFLAGS += --warn-undefined-variables --no-builtin-rules -j
+
 HS_SRC := $(shell find src -type f) jacinda.cabal
 
 JAC_SRC := $(shell find prelude lib -type f)
