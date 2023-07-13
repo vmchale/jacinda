@@ -47,6 +47,12 @@ iD FunDecl{} = desugar
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
 bM :: E a -> RM a (E a)
+bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do
+    eI <- bM e
+    modify (bind n' eI)
+    eI'' <- bM e''
+    modify (bind n eI'')
+    bM e'
 bM (EApp _ (Lam _ n e') e) = do
     eI <- bM e
     modify (bind n eI) *> bM e'
