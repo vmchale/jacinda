@@ -2,8 +2,12 @@
 - [ ] xattr -d com.apple.quarantine
 # Release
 - [ ] Every single instance of ord (max, compare) in `eBM`
-- [ ] Folds of guarded streams should be rewritten (like fold-of-filter)
 - [ ] Anchored streams
+- [ ] Bug:
+```
+git diff origin/main | ja run /development/jac/longline.jac
+ja: InternalCoercionError (λx. x) CHANGELOG.md Str
+```
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
