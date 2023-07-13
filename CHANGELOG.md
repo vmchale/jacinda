@@ -1,4 +1,8 @@
+# 2.0.0.0
+
   * Scrap `HasField` typeclass; add row types
+  * Expressions with multiple folds no longer blow up memory (🤞)
+  * Fix many bugs
 
 # 1.2.0.0
 
