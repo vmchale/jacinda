@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Backend.P ( runJac, eB ) where
+module Jacinda.Backend.P ( EvalErr (..), runJac, eB ) where
 
 import           A
 import           A.I
@@ -53,14 +53,14 @@ data StreamError = NakedField
 
 instance Exception StreamError where
 
-data EvalError = EmptyFold
-               | IndexOutOfBounds Int
-               | InternalCoercionError (E T) TB
-               | ExpectedTup (E T)
-               | BadHole (Nm T)
-               deriving (Show)
+data EvalErr = EmptyFold
+             | IndexOutOfBounds Int
+             | InternalCoercionError (E T) TB
+             | ExpectedTup (E T)
+             | BadHole (Nm T)
+             deriving (Show)
 
-instance Exception EvalError where
+instance Exception EvalErr where
 
 (!) :: V.Vector a -> Int -> a
 v ! ix = case v V.!? ix of {Just x  -> x; Nothing -> throw $ IndexOutOfBounds ix}
