@@ -82,10 +82,10 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   (a -> a -> b) -> Stream a -> Stream b
 
 **~.** Unary deduplication (stream)
-:   Eq a :=> Stream a -> Stream a
+:   Ord a :=> Stream a -> Stream a
 
 **~.\*** Deduplicate on (stream)
-:   Eq b :=> (a -> b) -> Stream a -> Stream a
+:   Ord b :=> (a -> b) -> Stream a -> Stream a
 
 **max** Maximum of two values
 :   Ord a :=> a -> a -> a
