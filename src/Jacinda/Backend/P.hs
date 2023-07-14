@@ -115,7 +115,7 @@ gf (Cond ty p e e') = Cond ty <$> gf p <*> gf e <*> gf e'
 gf (Lam t n e) = Lam t n <$> gf e
 gf e@BB{} = pure e; gf e@TB{} = pure e; gf e@UB{} = pure e; gf e@NB{} = pure e
 gf e@StrLit{} = pure e; gf e@FLit{} = pure e; gf e@ILit{} = pure e; gf e@BLit{} = pure e
-gf e@RC{} = pure e
+gf e@RC{} = pure e; gf e@Var{} = pure e
 
 ug :: IM.IntMap (E (T K)) -> E (T K) -> E (T K)
 ug st (Var _ n@(Nm _ (U i) _)) =
