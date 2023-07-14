@@ -39,6 +39,7 @@ in  { fileTypes = [ "jac" ]
           }
           mkTextMate
           [ TextMate.MatchRe { match = "{\\..*\$", name = "comment.line" }
+          , TextMate.MatchRe { match = "#!.*\$", name = "comment.line" }
           , TextMate.MatchRe { match = "#(t|f)", name = "constant.language" }
           , TextMate.MatchRe
               { match =
