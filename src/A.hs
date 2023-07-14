@@ -11,7 +11,6 @@ module A ( E (..)
          , BBin (..)
          , BTer (..)
          , BUn (..)
-         , K (..)
          , DfnVar (..)
          , D (..)
          , Program (..)
@@ -45,15 +44,6 @@ infixr 6 <##>
 (<##>) :: Doc a -> Doc a -> Doc a
 (<##>) x y = x <> hardline <> hardline <> y
 
--- kind
-data K = Star
-       | KArr K K
-       deriving (Eq, Ord)
-
-instance Pretty K where
-    pretty Star         = "★"
-    pretty (KArr k0 k1) = parens (pretty k0 <+> "⟶" <+> pretty k1)
-
 data TB = TyInteger
         | TyFloat
         | TyStr | TyR
@@ -73,13 +63,13 @@ tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
 jacTup :: Pretty a => [a] -> Doc ann
 jacTup = tupledBy " . " . fmap pretty
 
-data T a = TyB { tLoc :: a, tyBuiltin :: TB }
-         | TyApp { tLoc :: a, tyApp0 :: T a, tyApp1 :: T a }
-         | TyArr { tLoc :: a, tyArr0 :: T a, tyArr1 :: T a }
-         | TyVar { tLoc :: a, tyVar :: Nm a }
-         | TyTup { tLoc :: a, tyTups :: [T a] }
-         | Rho { tLoc :: a, tyRho :: Nm a, tyArms :: IM.IntMap (T a) }
-         deriving (Eq, Ord, Functor) -- this is so we can store consntraints in a set; not alpha-equiv.
+data T = TyB { tyBuiltin :: TB }
+       | TyApp { tyApp0 :: T, tyApp1 :: T }
+       | TyArr { tyArr0 :: T, tyArr1 :: T }
+       | TyVar { tyVar :: Nm () }
+       | TyTup { tyTups :: [T] }
+       | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
+       deriving (Eq, Ord)
 
 instance Pretty TB where
     pretty TyInteger = "Integer"
@@ -94,18 +84,18 @@ instance Pretty TB where
 
 instance Show TB where show=show.pretty
 
-instance Pretty (T a) where
-    pretty (TyB _ b)        = pretty b
-    pretty (TyApp _ ty ty') = pretty ty <+> pretty ty'
-    pretty (TyVar _ n)      = pretty n
-    pretty (TyArr _ ty ty') = pretty ty <+> "⟶" <+> pretty ty'
-    pretty (TyTup _ tys)    = jacTup tys
-    pretty (Rho _ n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
+instance Pretty T where
+    pretty (TyB b)        = pretty b
+    pretty (TyApp ty ty') = pretty ty <+> pretty ty'
+    pretty (TyVar n)      = pretty n
+    pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
+    pretty (TyTup tys)    = jacTup tys
+    pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
 
-prettyFields :: [(Int, T a)] -> Doc ann
+prettyFields :: [(Int, T)] -> Doc ann
 prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":" <+> pretty t
 
-instance Show (T a) where show=show.pretty
+instance Show T where show=show.pretty
 
 data BUn = Tally -- length of string field
          | Const

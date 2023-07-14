@@ -30,7 +30,7 @@ bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
 
 runI i = second (max_.renames) . flip runState (ISt (Renames i mempty) mempty)
 
-ib :: Int -> Program (T K) -> (E (T K), Int)
+ib :: Int -> Program T -> (E T, Int)
 ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
 β :: Int -> E a -> (E a, Int)
@@ -39,7 +39,7 @@ ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> 
 lβ :: E a -> UM (E a)
 lβ e = state (`β` e)
 
-iD :: D (T K) -> RM (T K) ()
+iD :: D T -> RM T ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
 iD SetFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
@@ -83,7 +83,7 @@ bM e@ILit{} = pure e; bM e@FLit{} = pure e; bM e@StrLit{} = pure e; bM e@RegexLi
 bM e@BB{} = pure e; bM e@NB{} = pure e; bM e@UB{} = pure e; bM e@TB{} = pure e
 bM ResVar{} = desugar; bM Dfn{} = desugar; bM Paren{} = desugar
 
-iE :: E (T K) -> RM (T K) (E (T K))
+iE :: E T -> RM T (E T)
 iE e@NB{} = pure e; iE e@UB{} = pure e; iE e@BB{} = pure e; iE e@TB{} = pure e
 iE e@Column{} = pure e; iE e@ParseCol{} = pure e; iE e@IParseCol{} = pure e; iE e@FParseCol{} = pure e
 iE e@Field{} = pure e; iE e@LastField{} = pure e; iE e@AllField{} = pure e; iE e@AllColumn{} = pure e

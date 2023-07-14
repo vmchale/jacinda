@@ -66,14 +66,14 @@ parseWithMax' = fmap (uncurry rP . second (rwP . snd)) . parseWithMax
 type FileBS = BS.ByteString
 
 compileR :: FileBS
-         -> E (T K)
-         -> E (T K)
+         -> E T
+         -> E T
 compileR fp = cata a where
     a (RegexLitF _ rrϵ) = RC (compileDefault rrϵ)
     a (NBF _ Fp)        = mkStr fp
     a x                 = embed x
 
-exprEval :: T.Text -> E (T K)
+exprEval :: T.Text -> E T
 exprEval src =
     case parseWithMax' src of
         Left err -> throw err
@@ -123,7 +123,7 @@ tcIO incls src = do
     let (eI, _) = ib i pT
     m'Throw $ cF eI
 
-tySrc :: T.Text -> T K
+tySrc :: T.Text -> T
 tySrc src =
     case parseWithMax' src of
         Right (ast, m) -> yeet $ fst <$> runTyM m (tyOf (expr ast))
