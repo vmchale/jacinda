@@ -585,7 +585,7 @@ The language does not allow custom typeclasses.
 
 ## Functor
 
-The map operator `"` is works on all functors, not just streams. `Stream`,
+The map operator `"` works on all functors, not just streams. `Stream`,
 `List`, and `Option` are instances.
 
 ## IsPrintf
