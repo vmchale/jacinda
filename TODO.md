@@ -25,14 +25,10 @@
 - [ ] `$1:` etc. parseable columns
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
-- [x] Operator syntax for floor/ceiling?  - [x] `|.` for instance? `|'`?
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [ ] `fail : a` builtin (unicode bottom?)
 - [x] mapMaybe, catMaybes? for `Witherable`...
-  - [x] `:?` or `.?` as `mapMaybe` and `catMaybes`??
   - [ ] vectors/lists should be a member!
-- [x] `match`
-- [x] `splitc` - split on char! (easier/faster)
 - [ ] iota for vectors etc.
 - [x] SCANS
   - [x] backend
@@ -41,11 +37,6 @@
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
   can be a variable!
   - [ ] that introduced a bug w/ nested dfns (euh)
-- [x] better error messages ja: ./Data/Vector/Generic.hs:257 ((!)): index out of bounds (5,2)
-- [ ] `NR` - number of records (per line) also `-1 (last)
-- [x] printf
-  - [x] array/vector type (integer indexed)
-- [x] `[:` as shorthand for `const`
 - [x] `.1` etc. to extract tuples (arrays?)
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
