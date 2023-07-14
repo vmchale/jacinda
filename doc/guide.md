@@ -607,4 +607,26 @@ sprintf '%s-%i' ('str' . 2)
 
 are both valid.
 
-# Row Types
+## Row Types
+
+The `->n` accessors work on all applicable tuples, so
+
+```
+(a.b.c)->2
+```
+
+and
+
+```
+(a.b)->2
+```
+
+are both valid.
+
+Moreover,
+
+```
+(a.b)->3
+```
+
+will be caught during typechecking.
