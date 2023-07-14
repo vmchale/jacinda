@@ -578,17 +578,19 @@ effectiveness.
 
 # Machinery
 
+## Typeclasses
+
 Under the hood, Jacinda has typeclasses, inspired by Haskell. These are used to
 disambiguate operators and witness with an implementation.
 
 The language does not allow custom typeclasses.
 
-## Functor
+### Functor
 
 The map operator `"` works on all functors, not just streams. `Stream`,
 `List`, and `Option` are instances.
 
-## IsPrintf
+### IsPrintf
 
 The `IsPrintf` typeclass is used to type `sprintf`; strings, integers, floats, booleans, and
 tuples of such are members.
@@ -604,3 +606,5 @@ sprintf '%s-%i' ('str' . 2)
 ```
 
 are both valid.
+
+# Row Types
