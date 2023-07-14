@@ -5,7 +5,7 @@ module Jacinda.Backend.P ( runJac, eB ) where
 import           A
 import           A.I
 import           Control.Exception          (Exception, throw)
-import           Control.Monad              (foldM)
+import           Control.Monad              (foldM, (<=<))
 import           Control.Monad.State.Strict (State, evalState, get, modify, runState)
 import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
@@ -352,7 +352,7 @@ eBM f (EApp _ (EApp _ (BB _ Or) x0) x1) = do
     x0' <- asB<$>eBM f x0; x1' <- asB<$>eBM f x1
     pure (mkB (x0'||x1'))
 eBM f (EApp _ (UB _ Not) b) = do {b' <- asB<$>eBM f b; pure $ mkB (not b')}
-eBM f (EApp _ (EApp _ (BB _ Matches) s) r) = do
+eBM f (EApp _ (EApp _ (BB _ Matches) s) r) = {-# SCC "eBMMatch" #-} do
     s' <- asS<$>eBM f s; r' <- asR<$>eBM f r
     pure $ mkB (isMatch' r' s')
 eBM f (EApp _ (EApp _ (BB _ NotMatches) s) r) = do
@@ -400,17 +400,15 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
     V.foldM (c2Mϵ f op') seed xs''
 eBM f (EApp yT@(TyApp _ (TyB _ TyOption) _) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
-    let TyArr _ _ cod=eLoc g'
-    OptionVal yT <$> traverse (eBM f.EApp cod g') (asM x')
+    OptionVal yT <$> traverse (eBM f <=< a1 g') (asM x')
 eBM f (EApp yT@(TyApp _ (TyB _ TyVec) _) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
-    let TyArr _ _ cod=eLoc g'
-    Arr yT <$> traverse (eBM f.EApp cod g') (asV x')
+    Arr yT <$> traverse (eBM f <=< a1 g') (asV x')
 eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
     x' <- eBM f x; g' <- eBM f g; y' <- eBM f y
     case asM y' of
         Nothing -> pure x'
-        Just yϵ -> eBM f (EApp t g' yϵ)
+        Just yϵ -> eBM f =<< lβ (EApp t g' yϵ)
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
     i0' <- eBM f i0; i1' <- eBM f i1; s' <- eBM f s
     pure $ mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
