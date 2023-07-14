@@ -7,17 +7,17 @@ let TextMate =
       >
 
 let mkTextMate =
-      \(tm : TextMate) ->
+      λ(tm : TextMate) →
         merge
           { MatchRe =
-              \(x : { match : Text, name : Text }) ->
+              λ(x : { match : Text, name : Text }) →
                 { match = Some x.match
                 , name = x.name
                 , begin = None Text
                 , end = None Text
                 }
           , BeginEnd =
-              \(x : { begin : Text, end : Text, name : Text }) ->
+              λ(x : { begin : Text, end : Text, name : Text }) →
                 { match = None Text
                 , begin = Some x.begin
                 , end = Some x.end
