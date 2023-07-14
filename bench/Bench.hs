@@ -20,10 +20,7 @@ main =
                 ]
 
 instance NFData (E a) where
-    rnf (StrLit _ str)  = rnf str
-    rnf (ILit _ i)      = rnf i
-    rnf (BLit _ b)      = rnf b
-    rnf (FLit _ f)      = rnf f
-    rnf (Arr _ es)      = rnf es
-    rnf (Tup _ es)      = rnf es
+    rnf (StrLit _ str)  = rnf str; rnf (ILit _ i) = rnf i;
+    rnf (BLit _ b) = rnf b; rnf (FLit _ f) = rnf f
+    rnf (Arr _ es) = rnf es; rnf (Tup _ es) = rnf es
     rnf (OptionVal _ e) = rnf e
