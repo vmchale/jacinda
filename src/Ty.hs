@@ -261,7 +261,8 @@ checkType (TyB _ TyInteger) (IsEq, _)               = pure ()
 checkType (TyB _ TyFloat) (IsEq, _)                 = pure ()
 checkType (TyB _ TyBool) (IsEq, _)                  = pure ()
 checkType (TyB _ TyStr) (IsEq, _)                   = pure ()
-checkType (TyTup _ tys) (IsEq, l)                   = traverse_ (`checkType` (IsEq, l)) tys
+checkType (TyTup _ tys) (c@IsEq, l)                 = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ _ rs) (c@IsEq, l)                  = traverse_ (`checkType` (c, l)) (IM.elems rs)
 checkType (TyApp _ (TyB _ TyVec) ty) (c@IsEq, l)    = checkType ty (c, l)
 checkType (TyApp _ (TyB _ TyOption) ty) (c@IsEq, l) = checkType ty (c, l)
 checkType (TyB _ TyInteger) (IsParse, _)            = pure ()
@@ -279,7 +280,8 @@ checkType (TyB _ TyStr) (IsPrintf, _)               = pure ()
 checkType (TyB _ TyFloat) (IsPrintf, _)             = pure ()
 checkType (TyB _ TyInteger) (IsPrintf, _)           = pure ()
 checkType (TyB _ TyBool) (IsPrintf, _)              = pure ()
-checkType (TyTup _ tys) (IsPrintf, l)               = traverse_ (`checkType` (IsPrintf, l)) tys
+checkType (TyTup _ tys) (c@IsPrintf, l)             = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ _ rs) (c@IsPrintf, l)              = traverse_ (`checkType` (c, l)) (IM.elems rs)
 checkType ty (c, l)                                 = throwError $ Doesn'tSatisfy l (void ty) c
 
 checkClass :: Ord a
