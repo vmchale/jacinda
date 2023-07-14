@@ -47,7 +47,7 @@ in  { fileTypes = [ "jac" ]
               }
           , TextMate.MatchRe
               { match =
-                  "(splitc|sprintf|option|match|captures|fp|nf|ix|substr|split|min|max)"
+                  "(splitc|sprintf|option|match|captures|fp|nf|ix|substr|split|min|max|Some|None)"
               , name = "constant.language"
               }
           , TextMate.MatchRe
