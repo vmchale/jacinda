@@ -1,11 +1,5 @@
-module Ty.Const ( tyStream
-                , tyStr, tyR
-                , tyI
-                , tyF
-                , tyB
-                , hkt
-                , tyOpt
-                , tyV
+module Ty.Const ( tyStream, tyOpt, tyV
+                , tyStr, tyR, tyI, tyF, tyB
                 ) where
 
 import           A
@@ -14,29 +8,11 @@ import           A
 tyStream :: T -> T
 tyStream = TyApp (TyB TyStream)
 
-tyB :: T
-tyB = TyB TyBool
-
-tyI :: T
-tyI = TyB TyInteger
-
-tyF :: T
-tyF = TyB TyFloat
-
-tyStr :: T
-tyStr = TyB TyStr
-
-tyR :: T
-tyR = TyB TyR
-
-hkt :: T -> T -> T
-hkt = TyApp
+tyB, tyI, tyF, tyStr, tyR :: T
+tyB=TyB TyBool; tyI=TyB TyInteger; tyF=TyB TyFloat; tyStr=TyB TyStr; tyR=TyB TyR
 
 tyOpt :: T -> T
-tyOpt = hkt (TyB TyOption)
-
-tyVec :: T
-tyVec = TyB TyVec
+tyOpt = TyApp (TyB TyOption)
 
 tyV :: T -> T
-tyV = TyApp tyVec
+tyV = TyApp (TyB TyVec)
