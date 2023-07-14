@@ -8,7 +8,7 @@ import           Control.Exception   (Exception)
 import           Data.Foldable       (asum)
 import           Prettyprinter       (Pretty (..), squotes, (<+>))
 
-data LErr = NF (E (T K)) | TS (E (T K))
+data LErr = NF (E T) | TS (E T)
 
 instance Pretty LErr where
     pretty (NF e) = "Naked field in expression" <+> squotes (pretty e)
@@ -18,8 +18,8 @@ instance Show LErr where show=show.pretty
 
 instance Exception LErr where
 
-cF :: E (T K) -> Maybe LErr
-cF e@(Tup (TyTup _ ts) _) | any isS ts = Just (TS e)
+cF :: E T -> Maybe LErr
+cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e)
 cF e@Field{} = Just (NF e); cF e@AllField{} = Just (NF e); cF e@LastField{} = Just (NF e)
 cF e@(NB _ Ix) = Just (NF e); cF e@(NB _ Nf) = Just (NF e)
 cF IParseCol{} = Nothing; cF FParseCol{} = Nothing; cF ParseCol{} = Nothing; cF Column{} = Nothing
@@ -33,8 +33,8 @@ cF (Lam _ _ e) = cF e; cF Let{} = error "Inlining unexpectedly failed?"
 cF RC{} = error "Sanity check failed. Regex should not be compiled at this time."
 cF Dfn{} = desugar; cF Paren{} = desugar; cF ResVar{} = desugar
 
-isS :: T a -> Bool
-isS (TyApp _ (TyB _ TyStream) _) = True; isS _ = False
+isS :: T -> Bool
+isS (TyApp (TyB TyStream) _) = True; isS _ = False
 
 foldMapAlternative :: (Traversable t, Alternative f) => (a -> f b) -> t a -> f b
 foldMapAlternative f xs = asum (f <$> xs)

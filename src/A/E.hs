@@ -15,8 +15,8 @@ type M = State Int
 nN :: T.Text -> a -> M (Nm a)
 nN n l = do {i <- get; modify (+1) $> Nm n (U$i+1) l}
 
-doms :: T a -> [T a]
-doms (TyArr _ t t') = t:doms t'; doms _ = []
+doms :: T -> [T]
+doms (TyArr t t') = t:doms t'; doms _ = []
 
 cLam :: E a -> Int
 cLam (Lam _ _ e) = 1+cLam e; cLam _ = 0
@@ -24,21 +24,21 @@ cLam (Lam _ _ e) = 1+cLam e; cLam _ = 0
 tuck :: E a -> (E a -> E a, E a)
 tuck (Lam l n e) = let (f, e') = tuck e in (Lam l n.f, e'); tuck e = (id, e)
 
-unseam :: [T K] -> M (E (T K) -> E (T K), E (T K) -> E (T K))
+unseam :: [T] -> M (E T -> E T, E T -> E T)
 unseam ts = do
-    lApps <- traverse (\t -> do {n <- nN "x" t; pure (\e' -> let t' = eLoc e' in Lam (TyArr Star t t') n e', \e' -> let TyArr _ _ cod = eLoc e' in EApp cod e' (Var t n))}) ts
+    lApps <- traverse (\t -> do {n <- nN "x" t; pure (\e' -> let t' = eLoc e' in Lam (TyArr t t') n e', \e' -> let TyArr _ cod = eLoc e' in EApp cod e' (Var t n))}) ts
     let (ls, eApps) = unzip lApps
     pure (thread ls, thread (reverse eApps))
     where thread = foldr (.) id
 
-mkLam :: [T K] -> E (T K) -> M (E (T K))
+mkLam :: [T] -> E T -> M (E T)
 mkLam ts e = do
     (lam, app) <- unseam ts
     pure $ lam (app e)
 
 eta = eM <=< eO
 
-eM :: E (T K) -> M (E (T K))
+eM :: E T -> M (E T)
 eM (EApp t ho@(BB _ Map) op)     = EApp t ho <$> eta op
 eM (EApp t ho@(BB _ Filter) op)  = EApp t ho <$> eta op
 eM (EApp t ho@(BB _ Prior) op)   = EApp t ho <$> eta op
@@ -60,7 +60,7 @@ eM (Let t (n, e') e)             = do {e'𝜂 <- eM e'; e𝜂 <- eM e; pure (Let
 eM e                             = pure e
 
 -- outermost
-eO :: E (T K) -> M (E (T K))
+eO :: E T -> M (E T)
 eO e@(Var t@TyArr{} _)    = mkLam (doms t) e
 eO e@(UB t _)             = mkLam (doms t) e
 eO e@(BB t _)             = mkLam (doms t) e

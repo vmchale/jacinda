@@ -31,9 +31,9 @@ main = defaultMain $
         , splitWhitespaceT "      55 ./src/Jacinda/File.hs" ["55", "./src/Jacinda/File.hs"]
         , splitWhitespaceT "" []
         , splitWhitespaceT "5" ["5"]
-        , testCase "type of" (tyOfT sumBytes (TyB Star TyInteger))
-        , testCase "type of" (tyOfT krakRegex (TyApp Star (TyB (KArr Star Star) TyStream) (TyB Star TyStr))) -- stream of str
-        , testCase "type of" (tyOfT krakCol (TyApp Star (TyB (KArr Star Star) TyStream) (TyB Star TyStr))) -- stream of str
+        , testCase "type of" (tyOfT sumBytes (TyB TyInteger))
+        , testCase "type of" (tyOfT krakRegex (TyApp (TyB TyStream) (TyB TyStr))) -- stream of str
+        , testCase "type of" (tyOfT krakCol (TyApp (TyB TyStream) (TyB TyStr))) -- stream of str
         , testCase "type of (zip)" (tyOfT ",(-) $3:i $6:i" (tyStream tyI))
         , testCase "type of (filter)" (tyOfT "(>110) #. #\"$0" (tyStream tyI))
         , testCase "typechecks dfn" (tyOfT "[(+)|0 x] $1:i" tyI)
@@ -92,7 +92,7 @@ sumBytesAST =
 tyFile :: FilePath -> Assertion
 tyFile = tcIO [] <=< TIO.readFile
 
-tyOfT :: T.Text -> T K -> Assertion
+tyOfT :: T.Text -> T -> Assertion
 tyOfT src expected =
     tySrc src @?= expected
 

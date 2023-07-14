@@ -11,32 +11,32 @@ module Ty.Const ( tyStream
 import           A
 
 -- | argument assumed to have kind 'Star'
-tyStream :: T K -> T K
-tyStream = TyApp Star (TyB (KArr Star Star) TyStream)
+tyStream :: T -> T
+tyStream = TyApp (TyB TyStream)
 
-tyB :: T K
-tyB = TyB Star TyBool
+tyB :: T
+tyB = TyB TyBool
 
-tyI :: T K
-tyI = TyB Star TyInteger
+tyI :: T
+tyI = TyB TyInteger
 
-tyF :: T K
-tyF = TyB Star TyFloat
+tyF :: T
+tyF = TyB TyFloat
 
-tyStr :: T K
-tyStr = TyB Star TyStr
+tyStr :: T
+tyStr = TyB TyStr
 
-tyR :: T K
-tyR = TyB Star TyR
+tyR :: T
+tyR = TyB TyR
 
-hkt :: T K -> T K -> T K
-hkt = TyApp Star
+hkt :: T -> T -> T
+hkt = TyApp
 
-tyOpt :: T K -> T K
-tyOpt = hkt (TyB (KArr Star Star) TyOption)
+tyOpt :: T -> T
+tyOpt = hkt (TyB TyOption)
 
-tyVec :: T K
-tyVec = TyB (KArr Star Star) TyVec
+tyVec :: T
+tyVec = TyB TyVec
 
-tyV :: T K -> T K
-tyV = hkt tyVec
+tyV :: T -> T
+tyV = TyApp tyVec
