@@ -318,18 +318,30 @@ eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Geq) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Leq) x0) x1) = do
     x0' <- asF<$>eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkB (x0'<=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Eq) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'==x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Neq) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'/=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Gt) x0) x1) = do
     x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
     pure (mkB (x0'>x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Geq) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'>=x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Lt) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'<x1'))
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Leq) x0) x1) = do
+    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
+    pure (mkB (x0'<=x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Exp) x0) x1) = do
     x0' <- asI <$> eBM f x0; x1' <- asI<$>eBM f x1
     pure (mkI (x0'^x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Exp) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkF (x0'**x1'))
-eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Eq) x0) x1) = do
-    x0' <- asS<$>eBM f x0; x1' <- asS<$>eBM f x1
-    pure (mkB (x0'==x1'))
 eBM f (EApp _ (EApp _ (BB (TyArr (TyApp (TyB TyVec) t) _) Eq) x0) x1) = do
     x0' <- asV<$>eBM f x0; x1' <- asV<$>eBM f x1
     mkB <$> if V.length x0'==V.length x1'
