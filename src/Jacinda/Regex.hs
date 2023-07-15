@@ -31,7 +31,7 @@ defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
     where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
-substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ - begin)
+substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ-begin)
                                | otherwise = "error: invalid substring indices."
 
 captures' :: RurePtr -> BS.ByteString -> CSize -> [BS.ByteString]
@@ -74,7 +74,7 @@ isMatch' :: RurePtr
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
-compileDefault = unsafeDupablePerformIO . (yIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL for weird records
+compileDefault = unsafeDupablePerformIO . (yIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL
 
 newtype RureExe = RegexCompile String deriving (Show)
 
