@@ -4,7 +4,6 @@
 - [ ] Every single instance of ord (max, compare) in `eBM`
 - [ ] Anchored streams
 - [ ] Bug: fold1
-- [ ] `make check` fails... Rho?
 - [ ] Document row types
 - [ ] document unicode?
 # Documentation

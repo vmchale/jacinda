@@ -221,8 +221,12 @@ Processing</a></li>
 </ul></li>
 <li><a href="#machinery" id="toc-machinery">Machinery</a>
 <ul>
+<li><a href="#typeclasses" id="toc-typeclasses">Typeclasses</a>
+<ul>
 <li><a href="#functor" id="toc-functor">Functor</a></li>
 <li><a href="#isprintf" id="toc-isprintf">IsPrintf</a></li>
+</ul></li>
+<li><a href="#row-types" id="toc-row-types">Row Types</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -261,18 +265,17 @@ lines,</p>
 <p>So <code>{|``0}</code> would define a stream of text corresponding to
 the lines in the file.</p>
 <h3 id="fold">Fold</h3>
-<p>Then, count lines with the word “Bloom”:</p>
+<p>To count lines with the word “Bloom”:</p>
 <pre><code>ja &#39;(+)|0 {% /Bloom/}{1}&#39; -i ulysses.txt</code></pre>
 <p>Note the <em>fold</em>, <code>|</code>. It is a ternary operator
-taking <code>(+)</code>, <code>0</code>, and <code>{% /Bloom/}{1}</code>
+taking <code>(+)</code>, <code>0</code>, and <code>{%/Bloom/}{1}</code>
 as arguments. The general syntax is:</p>
 <pre><code>&lt;expr&gt;|&lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>It takes a binary operator, a seed, and a stream and returns an
 expression.</p>
 <p>There is also <code>|&gt;</code>, which folds without a seed.</p>
 <h3 id="map">Map</h3>
-<p>Suppose we wish to count the lines in a file. We have nearly all the
-tools to do so:</p>
+<p>Suppose we wish to count the lines in a file.</p>
 <pre><code>(+)|0 {|1}</code></pre>
 <p>This uses aforementioned <code>{|&lt;expr&gt;}</code> syntax. It this
 defines a stream of <code>1</code>s for each line, and takes its
@@ -302,7 +305,7 @@ syntax is</p>
 <h4 id="lambdas">Lambdas</h4>
 <p>There is syntactical support for lambdas;</p>
 <pre><code>\x. (+)|0 x</code></pre>
-<p>would be equivalent to the above example.</p>
+<p>would be equivalent to <code>[(+)|0 x]</code>.</p>
 <h3 id="zips">Zips</h3>
 <p>The syntax is:</p>
 <pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
@@ -537,7 +540,7 @@ process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
 <p>We can process <code>.csv</code> data with the aid of <a
-href="https://csvkit.readthedocs.io/en/1.0.6/scripts/csvformat.html">csvformat</a>,
+href="https://csvkit.readthedocs.io/en/1.1.1/scripts/csvformat.html">csvformat</a>,
 viz.</p>
 <pre><code>csvformat file.csv -D&#39;|&#39; | ja -F&#39;\|&#39; &#39;$1&#39;</code></pre>
 <p>For “well-behaved” csv data, we can simply split on
@@ -567,15 +570,16 @@ breakthroughs</a>.</p>
 <p>This extracts the 5th and 11th columns (discarding headers), and then
 computes effectiveness.</p>
 <h1 id="machinery">Machinery</h1>
+<h2 id="typeclasses">Typeclasses</h2>
 <p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These
 are used to disambiguate operators and witness with an
 implementation.</p>
 <p>The language does not allow custom typeclasses.</p>
-<h2 id="functor">Functor</h2>
-<p>The map operator <code>"</code> is works on all functors, not just
+<h3 id="functor">Functor</h3>
+<p>The map operator <code>"</code> works on all functors, not just
 streams. <code>Stream</code>, <code>List</code>, and <code>Option</code>
 are instances.</p>
-<h2 id="isprintf">IsPrintf</h2>
+<h3 id="isprintf">IsPrintf</h3>
 <p>The <code>IsPrintf</code> typeclass is used to type
 <code>sprintf</code>; strings, integers, floats, booleans, and tuples of
 such are members.</p>
@@ -583,5 +587,15 @@ such are members.</p>
 <p>and</p>
 <pre><code>sprintf &#39;%s-%i&#39; (&#39;str&#39; . 2)</code></pre>
 <p>are both valid.</p>
+<h2 id="row-types">Row Types</h2>
+<p>The <code>-&gt;n</code> accessors work on all applicable tuples,
+so</p>
+<pre><code>(a.b.c)-&gt;2</code></pre>
+<p>and</p>
+<pre><code>(a.b)-&gt;2</code></pre>
+<p>are both valid.</p>
+<p>Moreover,</p>
+<pre><code>(a.b)-&gt;3</code></pre>
+<p>will be caught during typechecking.</p>
 </body>
 </html>

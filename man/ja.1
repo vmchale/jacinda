@@ -91,10 +91,10 @@ Witherable f :=> (a -> Bool) -> f a -> f a
 (a -> a -> b) -> Stream a -> Stream b
 .TP
 \f[B]\[ti].\f[R] Unary deduplication (stream)
-Eq a :=> Stream a -> Stream a
+Ord a :=> Stream a -> Stream a
 .TP
 \f[B]\[ti].*\f[R] Deduplicate on (stream)
-Eq b :=> (a -> b) -> Stream a -> Stream a
+Ord b :=> (a -> b) -> Stream a -> Stream a
 .TP
 \f[B]max\f[R] Maximum of two values
 Ord a :=> a -> a -> a
