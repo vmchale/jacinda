@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', unzip4)
+import           Data.List                  (scanl', unzip4, transpose)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -87,6 +87,9 @@ asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . f
 mkFoldVar :: Int -> b -> E b
 mkFoldVar i l = Var l (Nm "fold_placeholder" (U i) l)
 
+takeConcatMap :: (a -> [b]) -> [a] -> [b]
+takeConcatMap f = concat . transpose . fmap f
+
 -- this relies on all streams being the same length stream which in turn relies
 -- on the fuse step (fold-of-filter->fold)
 foldAll :: Int -> RurePtr -> [(Int, E T, E T, E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
@@ -130,15 +133,17 @@ bsProcess :: RurePtr
 bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
-bsProcess r f u e | (TyApp (TyB TyStream) _) <- eLoc e =
-    Right (traverse_ g.eStream u r e)
-    where g | f = (*>fflush).pDocLn | otherwise = pDocLn
-          fflush = hFlush stdout
+bsProcess r f u e | (TyApp (TyB TyStream) _) <- eLoc e = Right (ps f.eStream u r e)
+bsProcess r f u (Anchor _ es) = Right (\bs -> ps f $ takeConcatMap (\e -> eStream u r e bs) es)
 bsProcess r _ u e =
     Right $ \bs -> pDocLn (eF u r e bs)
 
 pDocLn = putDoc.(<>hardline).pretty
 
+ps p es =
+    traverse_ g es
+    where g | p = (*>fflush).pDocLn | otherwise = pDocLn
+          fflush = hFlush stdout
 
 scanM :: Monad m => (b -> a -> m b) -> b -> [a] -> m [b]
 scanM op seed xs = sequence $
