@@ -36,8 +36,25 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
 fM (EApp t0 (EApp t1 ho@(BB _ Fold1) op) stream) | TyApp (TyB TyStream) _ <- eLoc stream = do
     stream' <- fM stream
     case stream' of
+        (EApp _ (EApp _ (BB _ Filter) p) xs) -> do
+            let opT@(TyArr xT popT) = eLoc op
+            s <- nN "s" xT; x <- nN "x" xT
+            let sE=Var xT s; xE=Var xT x
+            let fop=Lam opT s (Lam popT x (Cond xT (EApp tyB p xE) (EApp xT (EApp popT op sE) xE) sE))
+            pure (EApp t0 (EApp t1 ho fop) xs)
+        (Guarded t p e) -> do
+            let opT@(TyArr xT popT) = eLoc op
+            s <- nN "s" xT; x <- nN "x" xT
+            let sE=Var xT s; xE=Var xT x
+            let fop=Lam opT s (Lam popT x (Cond xT p (EApp xT (EApp popT op sE) xE) xE))
+            pure (EApp t0 (EApp t1 ho fop) (Implicit t e))
         (EApp _ (EApp _ (BB _ Map) f) xs) -> do
-            pure undefined
+            let (TyArr xT yT) = eLoc f
+            s <- nN "s" xT; x <- nN "x" xT
+            let sE=Var xT s; xE=Var xT x
+                popT=TyArr xT yT; fopT=TyArr xT popT
+                fop = Lam fopT s (Lam popT x (EApp undefined (EApp undefined op (EApp yT f sE)) (EApp yT f xE)))
+            fM (EApp yT (EApp undefined (BB undefined Fold1) fop) xs)
         _ -> pure (EApp t0 (EApp t1 ho op) stream')
 fM (Tup t es) = Tup t <$> traverse fM es
 fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1
