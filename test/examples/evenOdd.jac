@@ -1,5 +1,5 @@
 fn count(x) ≔
-  (+)|> [:1"x;
+  (+)|0 [:1"x;
 
 fn isEven() :=
   (~ /(0|2|4|6|8)$/);
@@ -11,6 +11,6 @@ let
   val iStream := $0
   val even := count (isEven #. iStream)
   val odd := count (isOdd #. iStream)
-  val tens := count {%/0$/}{`0}
+  val tens := (+)|> {%/0$/}{1}
   val total := odd + even
 in (total . even . odd . tens) end
