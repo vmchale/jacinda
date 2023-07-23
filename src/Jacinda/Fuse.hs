@@ -11,7 +11,7 @@ fuse :: Int -> E T -> (E T, Int)
 fuse i = flip runState i.fM
 
 fM :: E T -> M (E T)
-fM (EApp t0 (EApp t1 (EApp t2 ho@(TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStream) _) _))) Fold) op) seed) stream) = do
+fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TyStream) _ <- eLoc stream = do
     stream' <- fM stream
     case stream' of
         (EApp _ (EApp _ (BB _ Filter) p) xs) -> do
@@ -33,6 +33,12 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStre
                 fop=Lam fopT s (Lam popT x (EApp undefined (EApp undefined op sE) (EApp yTy f xE)))
             fM (EApp sTy (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sTy (TyArr (TyApp (TyB TyStream) xTy) sTy))) Fold) fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 ho op) seed) stream')
+fM (EApp t0 (EApp t1 ho@(BB _ Fold1) op) stream) | TyApp (TyB TyStream) _ <- eLoc stream = do
+    stream' <- fM stream
+    case stream' of
+        (EApp _ (EApp _ (BB _ Map) f) xs) -> do
+            pure undefined
+        _ -> pure (EApp t0 (EApp t1 ho op) stream')
 fM (Tup t es) = Tup t <$> traverse fM es
 fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1
 fM (Lam t n e) = Lam t n <$> fM e

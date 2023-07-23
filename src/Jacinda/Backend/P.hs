@@ -14,7 +14,7 @@ import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.List                  (scanl', unzip4, transpose)
-import           Data.Maybe                 (catMaybes, mapMaybe)
+import           Data.Maybe                 (catMaybes, mapMaybe, fromMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
@@ -92,24 +92,31 @@ takeConcatMap f = concat . transpose . fmap f
 
 -- this relies on all streams being the same length stream which in turn relies
 -- on the fuse step (fold-of-filter->fold)
-foldAll :: Int -> RurePtr -> [(Int, E T, E T, E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
-foldAll i r xs bs = runState (foldMultiple seeds (mkStream <$> es) ctxStream ixStream) i
+foldAll :: Int -> RurePtr -> [(Int, E T, Maybe (E T), E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
+foldAll i r xs bs = runState (foldMultiple seeds' streams ctxStream ixStream) i
     where (ns, ops, seeds, es) = unzip4 xs
           mkStream e = eStream i r e bs
+          streams = mkStream<$>es
+          heads = head<$>streams
+          seeds' = zipWith fromMaybe heads seeds
           ctxStream = [(b, splitBy r b) | b <- bs]
           ixStream = [1..]
 
-          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
+          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) | not (any null esϵ) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
           -- TODO: sanity check same length all streams
           foldMultiple seedsϵ _ [] _ = pure$zip ns seedsϵ
 
           allHeads = foldr seq ()
 
-gf :: E T -> State (Int, [(Int, E T, E T, E T)]) (E T)
-gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | TyApp (TyB TyStream) _ <- eLoc stream = do
+gf :: E T -> State (Int, [(Int, E T, Maybe (E T), E T)]) (E T)
+gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | t@(TyApp (TyB TyStream) _) <- eLoc stream = do
     (i,_) <- get
-    modify (bimap (+1) ((i, op, seed, stream) :))
-    pure $ mkFoldVar i (eLoc stream)
+    modify (bimap (+1) ((i, op, Just seed, stream) :))
+    pure $ mkFoldVar i t
+gf (EApp _ (EApp _ (BB _ Fold1) op) stream) | t@(TyApp (TyB TyStream) _) <- eLoc stream = do
+    (i, _) <- get
+    modify (bimap (+1) ((i, op, Nothing, stream) :))
+    pure $ mkFoldVar i t
 gf (EApp ty e0 e1) = EApp ty <$> gf e0 <*> gf e1
 gf (Tup ty es) = Tup ty <$> traverse gf es
 gf (Arr ty es) = Arr ty <$> traverse gf es
@@ -133,17 +140,15 @@ bsProcess :: RurePtr
 bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
-bsProcess r f u e | (TyApp (TyB TyStream) _) <- eLoc e = Right (ps f.eStream u r e)
-bsProcess r f u (Anchor _ es) = Right (\bs -> ps f $ takeConcatMap (\e -> eStream u r e bs) es)
+bsProcess r f u e | (TyApp (TyB TyStream) _) <- eLoc e = Right (pS f.eStream u r e)
+bsProcess r f u (Anchor _ es) = Right (\bs -> pS f $ takeConcatMap (\e -> eStream u r e bs) es)
 bsProcess r _ u e =
     Right $ \bs -> pDocLn (eF u r e bs)
 
 pDocLn = putDoc.(<>hardline).pretty
 
-ps p es =
-    traverse_ g es
-    where g | p = (*>fflush).pDocLn | otherwise = pDocLn
-          fflush = hFlush stdout
+pS p = traverse_ g where g | p = (*>fflush).pDocLn | otherwise = pDocLn
+                         fflush = hFlush stdout
 
 scanM :: Monad m => (b -> a -> m b) -> b -> [a] -> m [b]
 scanM op seed xs = sequence $
