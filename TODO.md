@@ -1,11 +1,10 @@
 - inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
 - [ ] xattr -d com.apple.quarantine
 # Release
-- [ ] Every single instance of ord (max, compare) in `eBM`
 - [ ] Anchored streams
 - [ ] Bug: fold1
-- [ ] Document row types
-- [ ] document unicode?
+  - [ ] two expressions with fold1 (and also gather-folds)
+  - [ ] fold-of-scan idiom?
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
@@ -21,6 +20,7 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 # Features
+- [ ] `Ord` for tuples, vectors
 - [ ] occurs check
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
