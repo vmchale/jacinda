@@ -80,7 +80,7 @@ exprEval src =
         Right (ast, m) ->
             let (typed, i) = yeet $ runTyM m (tyP ast)
                 (inlined, j) = ib i typed
-            in eB j id (compileR (error "nf not defined.") inlined)
+            in eB j pure (compileR (error "nf not defined.") inlined)
 
 compileFS :: Maybe T.Text -> RurePtr
 compileFS (Just bs) = compileDefault (encodeUtf8 bs)
