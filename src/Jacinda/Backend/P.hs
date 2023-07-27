@@ -13,8 +13,8 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', unzip4, transpose)
-import           Data.Maybe                 (catMaybes, mapMaybe, fromMaybe)
+import           Data.List                  (scanl', transpose, unzip4)
+import           Data.Maybe                 (catMaybes, fromMaybe, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
@@ -48,8 +48,7 @@ runJac :: RurePtr -- ^ Record separator
        -> Either StreamError ([BS.ByteString] -> IO ())
 runJac re f i e = ϝ (bsProcess re f) (if φ e > 1 then fuse i e else (e, i)) where ϝ = uncurry.flip
 
-data StreamError = NakedField
-                 deriving (Show)
+data StreamError = NakedField deriving (Show)
 
 instance Exception StreamError where
 
@@ -149,16 +148,20 @@ scanM op seed xs = sequence $
     scanl' go (pure seed) xs where go seedϵ x = do {seedϵ' <- seedϵ; op seedϵ' x}
 
 eF :: Int -> RurePtr -> E T -> [BS.ByteString] -> E T
-eF u r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = \bs ->
-    let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
-    in evalState (foldM (c2M op') seed' xsϵ) u
-eF u r (EApp _ (EApp _ (BB _ Fold1) op) xs) = \bs ->
-    let op'=eB u id op; seed':xsϵ=eStream u r xs bs
-    in evalState (foldM (c2M op') seed' xsϵ) u
-eF u r e = \bs ->
+eF u r e | φ e > 1 = \bs ->
     let (eHoley, (_, folds)) = runState (gf e) (0, [])
         (filledHoles, u') = foldAll u r folds bs
         in eB u' (ug (IM.fromList filledHoles)) eHoley
+        | otherwise = \bs ->
+        eB u (go bs) e
+            where go bb (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) =
+                      let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bb
+                      in evalState (foldM (c2M op') seed' xsϵ) u
+                  go bb eϵ@(EApp _ (EApp _ (BB _ Fold1) op) xs) =
+                      let op'=eB u id op; seed':xsϵ=eStream u r xs bb
+                      in evalState (foldM (c2M op') seed' xsϵ) u
+                  go _ eϵ = eϵ
+
 
 a1 :: E T -> E T -> UM (E T)
 a1 f x | TyArr _ cod <- eLoc f = lβ (EApp cod f x)
