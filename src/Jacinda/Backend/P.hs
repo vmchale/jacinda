@@ -91,7 +91,7 @@ takeConcatMap f = concat . transpose . fmap f
 
 -- this relies on all streams being the same length stream which in turn relies
 -- on the fuse step (fold-of-filter->fold)
-foldAll :: Int -> RurePtr -> [(Int, E T, (E T), E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
+foldAll :: Int -> RurePtr -> [(Int, E T, E T, E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
 foldAll i r xs bs = runState (foldMultiple seeds streams ctxStream ixStream) i
     where (ns, ops, seeds, es) = unzip4 xs
           mkStream e = eStream i r e bs
