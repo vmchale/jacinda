@@ -92,30 +92,24 @@ takeConcatMap f = concat . transpose . fmap f
 
 -- this relies on all streams being the same length stream which in turn relies
 -- on the fuse step (fold-of-filter->fold)
-foldAll :: Int -> RurePtr -> [(Int, E T, Maybe (E T), E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
-foldAll i r xs bs = runState (foldMultiple seeds' streams ctxStream ixStream) i
+foldAll :: Int -> RurePtr -> [(Int, E T, (E T), E T)] -> [BS.ByteString] -> ([(Int, E T)], Int)
+foldAll i r xs bs = runState (foldMultiple seeds streams ctxStream ixStream) i
     where (ns, ops, seeds, es) = unzip4 xs
           mkStream e = eStream i r e bs
           streams = mkStream<$>es
-          heads = head<$>streams
-          seeds' = zipWith fromMaybe heads seeds
           ctxStream = [(b, splitBy r b) | b <- bs]
           ixStream = [1..]
 
-          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) | not (any null esϵ) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
+          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
           -- TODO: sanity check same length all streams
           foldMultiple seedsϵ _ [] _ = pure$zip ns seedsϵ
 
           allHeads = foldr seq ()
 
-gf :: E T -> State (Int, [(Int, E T, Maybe (E T), E T)]) (E T)
+gf :: E T -> State (Int, [(Int, E T, E T, E T)]) (E T)
 gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | t@(TyApp (TyB TyStream) _) <- eLoc stream = do
     (i,_) <- get
-    modify (bimap (+1) ((i, op, Just seed, stream) :))
-    pure $ mkFoldVar i t
-gf (EApp _ (EApp _ (BB _ Fold1) op) stream) | t@(TyApp (TyB TyStream) _) <- eLoc stream = do
-    (i, _) <- get
-    modify (bimap (+1) ((i, op, Nothing, stream) :))
+    modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i t
 gf (EApp ty e0 e1) = EApp ty <$> gf e0 <*> gf e1
 gf (Tup ty es) = Tup ty <$> traverse gf es
