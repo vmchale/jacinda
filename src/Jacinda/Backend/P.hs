@@ -99,7 +99,7 @@ foldAll i r xs bs = runState (foldMultiple seeds streams ctxStream ixStream) i
           ctxStream = [(b, splitBy r b) | b <- bs]
           ixStream = [1..]
 
-          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
+          foldMultiple seedsϵ esϵ (ctx:ctxes) (ix:ixes) = allHeads esϵ `seq` do {es' <- sequence$zipWith3 (c2Mϵ (pure.eCtx ctx ix)) ops seedsϵ (head<$>esϵ); foldMultiple es' (tail<$>esϵ) ctxes ixes}
           -- TODO: sanity check same length all streams
           foldMultiple seedsϵ _ [] _ = pure$zip ns seedsϵ
 
@@ -151,16 +151,19 @@ eF :: Int -> RurePtr -> E T -> [BS.ByteString] -> E T
 eF u r e | φ e > 1 = \bs ->
     let (eHoley, (_, folds)) = runState (gf e) (0, [])
         (filledHoles, u') = foldAll u r folds bs
-        in eB u' (ug (IM.fromList filledHoles)) eHoley
+        in eB u' (pure.ug (IM.fromList filledHoles)) eHoley
         | otherwise = \bs ->
         eB u (go bs) e
-            where go bb (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) =
-                      let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bb
-                      in evalState (foldM (c2M op') seed' xsϵ) u
-                  go bb eϵ@(EApp _ (EApp _ (BB _ Fold1) op) xs) =
-                      let op'=eB u id op; seed':xsϵ=eStream u r xs bb
-                      in evalState (foldM (c2M op') seed' xsϵ) u
-                  go _ eϵ = eϵ
+            where go bb (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) = do
+                      op' <- eBM pure op
+                      seed' <- eBM pure seed
+                      let xsϵ=eStream u r xs bb
+                      foldM (c2M op') seed' xsϵ
+                  go bb eϵ@(EApp _ (EApp _ (BB _ Fold1) op) xs) = do
+                      op' <- eBM pure op
+                      let seed':xsϵ=eStream u r xs bb
+                      foldM (c2M op') seed' xsϵ
+                  go _ eϵ = pure eϵ
 
 
 a1 :: E T -> E T -> UM (E T)
@@ -170,9 +173,9 @@ a2 :: E T -> E T -> E T -> UM (E T)
 a2 op x0 x1 | TyArr _ t@(TyArr _ t') <- eLoc op = lβ (EApp t' (EApp t op x0) x1)
 
 c1 :: Int -> E T -> E T -> E T
-c1 i f x = evalState (eBM id =<< a1 f x) i
+c1 i f x = evalState (eBM pure =<< a1 f x) i
 
-c2M op x0 x1 = eBM id =<< a2 op x0 x1
+c2M op x0 x1 = eBM pure =<< a2 op x0 x1
 c2Mϵ f g e e' = eBM f =<< a2 g e e'
 
 c2 :: Int -> E T -> E T -> E T -> E T
@@ -180,10 +183,10 @@ c2 i op x0 x1 = evalState (c2M op x0 x1) i
 
 eStream :: Int -> RurePtr -> E T -> [BS.ByteString] -> [E T]
 eStream u r (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) bs =
-    let op'=eB u id op; seed'=eB u id seed; xsϵ=eStream u r xs bs
+    let op'=eB u pure op; seed'=eB u pure seed; xsϵ=eStream u r xs bs
     in evalState (scanM (c2M op') seed' xsϵ) u
 eStream i r (EApp _ (UB _ CatMaybes) e) bs = mapMaybe asM$eStream i r e bs
-eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
+eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (pure.eCtx fs i) e) [(b, splitBy r b) | b <- bs] [1..]
 eStream _ _ AllColumn{} bs = mkStr<$>bs
 eStream _ r (Column _ i) bs = mkStr.(! (i-1)).splitBy r<$>bs
 eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
@@ -203,7 +206,7 @@ eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ (TyB TyInteger) <
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ (TyB TyFloat) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asF.c1 i op) xs
 eStream u r (Guarded _ p e) bs =
     let bss=(\b -> (b, splitBy r b))<$>bs
-    in catMaybes $ zipWith (\fs i -> if asB (eB u (eCtx fs i) p) then Just (eB u (eCtx fs i) e) else Nothing) bss [1..]
+    in catMaybes $ zipWith (\fs i -> if asB (eB u (pure.eCtx fs i) p) then Just (eB u (pure.eCtx fs i) e) else Nothing) bss [1..]
 
 asS :: E T -> BS.ByteString
 asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
@@ -239,11 +242,11 @@ eCtx _ i (NB _ Ix)         = mkI i
 eCtx (_, fs) _ (NB _ Nf)   = mkI (fromIntegral$V.length fs)
 eCtx _ _ e                 = e
 
-eB :: Int -> (E T -> E T) -> E T -> E T
+eB :: Int -> (E T -> UM (E T)) -> E T -> E T
 eB i f x = evalState (eBM f x) i
 
 {-# SCC eBM #-}
-eBM :: (E T -> E T) -> E T -> UM (E T)
+eBM :: (E T -> UM (E T)) -> E T -> UM (E T)
 eBM f (EApp t (EApp _ (EApp _ (TB _ Captures) s) i) r) = do
     s' <- eBM f s; i' <- eBM f i; r' <- eBM f r
     pure $ OptionVal t (mkStr <$> findCapture (asR r') (asS s') (fromIntegral$asI i'))
@@ -435,4 +438,4 @@ eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
     pure $ mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
 eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
 eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
-eBM f e = pure (f e)
+eBM f e = f e
