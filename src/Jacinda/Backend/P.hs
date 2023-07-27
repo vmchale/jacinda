@@ -33,7 +33,6 @@ import           U
 
 φ :: E T -> Int
 φ (TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStream) _) _))) Fold) = 1
-φ (BB (TyArr _ (TyArr (TyApp (TyB TyStream) _) _)) Fold1)          = 1
 φ (EApp _ e0 e1)                                                   = φ e0+φ e1
 φ (Tup _ es)                                                       = sum (φ<$>es)
 φ (OptionVal _ (Just e))                                           = φ e
