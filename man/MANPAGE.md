@@ -136,7 +136,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
-**captures** Return all captures
+**captures** Return all captures (nth capture group)
 :   Str -> Int -> Regex -> List Str
 
 **:?** mapMaybe
@@ -199,10 +199,10 @@ a boolean expression.
 {ix=3}{`0}
 :   Select only the third line
 
-{| sprintf \'%i %i\' (\`2 . \`1)}
+{|sprintf \'%i %i\' (\`2 . \`1)}
 :   Print the first two fields in opposite order
 
-:set fs := /,[ \\t]*|[ \\t]+/; {| sprintf \'%i %i\' (\`2 . \`1)}
+:set fs := /,[ \\t]*|[ \\t]+/; {|sprintf \'%i %i\' (\`2 . \`1)}
 :   Same, with input fields separated by comma and/or blanks and tabs.
 
 (+)|0 $1:i
