@@ -216,7 +216,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Implicit { eLoc :: a, eImplicit :: E a }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
-         | Var { eLoc :: a, eVar :: Nm a }
+         | Var { eLoc :: a, eVar :: !(Nm a) }
          | ILit { eLoc :: a, eInt :: !Integer }
          | BLit { eLoc :: a, eBool :: !Bool }
          | StrLit { eLoc :: a, eStr :: BS.ByteString }
