@@ -4,7 +4,7 @@
 - [ ] Anchored streams
 - [ ] Bug: fold1
   - [ ] two expressions with fold1 (and also gather-folds)
-  - [ ] fold-of-scan idiom?
+  - [ ] fold: catmaybes, mapMaybes
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
@@ -61,7 +61,7 @@
 - [ ] lineLength := (#")
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
-- [ ] `0$` or something... line, split by field separator, 
+- [ ] `0$` or something... line, split by field separator,
 # Examples
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
