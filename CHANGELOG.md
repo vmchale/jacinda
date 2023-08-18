@@ -3,6 +3,7 @@
   * Scrap `HasField` typeclass; add row types
   * Expressions with multiple folds no longer blow up memory (🤞)
   * Fix many bugs
+  * Unicode syntax works from command-line
 
 # 1.2.0.0
 
