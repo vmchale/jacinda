@@ -39,9 +39,8 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
         (EApp _ (EApp _ (BB _ MapMaybe) f) xs) -> do
             -- op | seed (f:?xs) -> [option x (x `op`) (f y)] | seed xs
             let TyArr xT yT=eLoc f
-                yMT=tyOpt yT
                 sT=eLoc seed
-            s <- nN "seed" sT; x <- nN "x" xT; z <- nN "z" yMT
+            s <- nN "seed" sT; x <- nN "x" xT
             let sE=Var sT s; xE=Var xT x
                 popT=TyArr xT sT; fopT=TyArr sT popT
                 fop=Lam fopT s (Lam popT x (EApp sT (EApp undefined (EApp undefined (TB undefined Option) sE) (EApp undefined op sE)) (EApp yT f xE)))
@@ -51,7 +50,7 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
             let TyArr _ xTy=eLoc op
                 xMT=tyOpt xTy
                 sTy=eLoc seed
-            s <- nN "seed" sTy; x <- nN "x" xMT; z <- nN "z" xTy
+            s <- nN "seed" sTy; x <- nN "x" xMT
             let sE=Var sTy s; xE=Var xMT x
                 popT=TyArr xMT sTy; fopT=TyArr sTy popT
                 fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB undefined Option) sE) (EApp undefined op sE)) xE))
