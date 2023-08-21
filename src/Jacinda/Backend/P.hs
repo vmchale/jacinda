@@ -14,7 +14,7 @@ import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
 import           Data.List                  (scanl', transpose, unzip4)
-import           Data.Maybe                 (catMaybes, fromMaybe, mapMaybe)
+import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
