@@ -73,7 +73,7 @@ One can make this more rigorous (allowing for `{-# LANGUAGE Xxx,Yyy #-}` with:
 
 fn findExtensions(line) :=
   let
-    val extStr ≔ line ~* 1 /\{-#\s*LANGUAGE\s*(.*)#-\}/
+    val extStr ≔ line ~* 1 /\{-#\s*LANGUAGE\s*([^\s]*)\s*#-\}/
     val extList ≔ (\s.split s /,\s*/)"extStr
   in extList end;
 
