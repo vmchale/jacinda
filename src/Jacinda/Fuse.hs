@@ -43,7 +43,7 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
             s <- nN "seed" sT; x <- nN "x" xT
             let sE=Var sT s; xE=Var xT x
                 popT=TyArr xT sT; fopT=TyArr sT popT
-                fop=Lam fopT s (Lam popT x (EApp sT (EApp undefined (EApp undefined (TB undefined Option) sE) (EApp undefined op sE)) (EApp yT f xE)))
+                fop=Lam fopT s (Lam popT x (EApp sT (EApp undefined (EApp undefined (TB (TyArr sT (TyArr undefined (TyArr yT sT))) Option) sE) (EApp undefined op sE)) (EApp yT f xE)))
             pure (EApp sT (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sT (TyArr (TyApp (TyB TyStream) xT) sT))) Fold) fop) seed) xs)
         (EApp _ (UB _ CatMaybes) xs) -> do
             -- op | seed (.? stream') -> [option x (x `op`) y] | seed stream'
