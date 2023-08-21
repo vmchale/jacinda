@@ -47,13 +47,13 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
             pure (EApp sT (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sT (TyArr (TyApp (TyB TyStream) xT) sT))) Fold) fop) seed) xs)
         (EApp _ (UB _ CatMaybes) xs) -> do
             -- op | seed (.? stream') -> [option x (x `op`) y] | seed stream'
-            let TyArr _ xTy=eLoc op
+            let TyArr _ (TyArr xTy _)=eLoc op
                 xMT=tyOpt xTy
                 sTy=eLoc seed
             s <- nN "seed" sTy; x <- nN "x" xMT
             let sE=Var sTy s; xE=Var xMT x
                 popT=TyArr xMT sTy; fopT=TyArr sTy popT
-                fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB undefined Option) sE) (EApp undefined op sE)) xE))
+                fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB (TyArr sTy (TyArr undefined (TyArr xMT sTy))) Option) sE) (EApp undefined op sE)) xE))
             pure (EApp sTy (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sTy (TyArr (TyApp (TyB TyStream) xMT) sTy))) Fold) fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 ho op) seed) stream')
 fM (Tup t es) = Tup t <$> traverse fM es
