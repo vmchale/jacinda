@@ -88,6 +88,33 @@ fd '\.hs$' . -x ja run hsExtensions.jac -i | ja '~.$0'
 
 This can be used to populate the `other-extensions` field in a `.cabal` file.
 
+## Laconic Style
+
+Suppose we have a Haskell file with several GHC pragmas and we wish to condense them to a single line.
+
+```haskell
+{-# LANGUAGE DeriveFoldable    #-}
+{-# LANGUAGE DeriveFunctor     #-}
+{-# LANGUAGE DeriveGeneric     #-}
+{-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeFamilies      #-}
+```
+
+Then we could use
+
+```
+let
+  val list := [x+', '+y]|>[x ~* 1 /\{-#\s*LANGUAGE\s*([^\s]*)\s*#-\}/]:?$0
+in sprintf '{-# LANGUAGE %s -#}' list end
+```
+
+We'd get:
+
+```haskell
+{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveGeneric, DeriveTraversable, OverloadedStrings, TypeFamilies -#}
+```
+
 # cdc
 
 ```
