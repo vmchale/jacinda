@@ -13,7 +13,7 @@ import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', transpose, unzip4)
+import           Data.List                  (scanl', transpose, uncons, unzip4)
 import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
@@ -160,7 +160,7 @@ eF u r e | φ e > 1 = \bs ->
                       foldM (c2M op') seed' xsϵ
                   go bb eϵ@(EApp _ (EApp _ (BB _ Fold1) op) xs) = do
                       op' <- eBM pure op
-                      let seed':xsϵ=eStream u r xs bb
+                      let (seed',xsϵ)=case uncons $ eStream u r xs bb of {Just s -> s; Nothing -> throw EmptyFold}
                       foldM (c2M op') seed' xsϵ
                   go _ eϵ = pure eϵ
 
