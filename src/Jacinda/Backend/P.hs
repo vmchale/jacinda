@@ -158,7 +158,7 @@ eF u r e | φ e > 1 = \bs ->
                       seed' <- eBM pure seed
                       let xsϵ=eStream u r xs bb
                       foldM (c2M op') seed' xsϵ
-                  go bb eϵ@(EApp _ (EApp _ (BB _ Fold1) op) xs) = do
+                  go bb (EApp _ (EApp _ (BB _ Fold1) op) xs) = do
                       op' <- eBM pure op
                       let (seed',xsϵ)=case uncons $ eStream u r xs bb of {Just s -> s; Nothing -> throw EmptyFold}
                       foldM (c2M op') seed' xsϵ
