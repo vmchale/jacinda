@@ -61,26 +61,22 @@ fM (EApp t0 (EApp t1 ho@(BB _ Fold1) op) stream) | TyApp (TyB TyStream) _ <- eLo
     case stream' of
         (EApp _ (EApp _ (BB _ Filter) p) xs) ->
             fM (In op (Just p) Nothing xs)
+        (EApp _ (EApp _ (BB _ MapMaybe) f) xs) ->
+            fM (In op Nothing (Just f) xs)
         (Guarded t p e) -> do
             let xT=eLoc e
             x <- nN "x" xT
             fM (In op (Just $ Lam (TyArr xT tyB) x p) Nothing (Implicit t e))
-        (EApp _ (EApp _ (BB _ Map) f) xs) ->
-            fM (In op Nothing (Just f) xs)
+        (EApp _ (EApp _ (BB _ Map) f) (EApp _ (EApp _ (BB _ Filter) p) xs)) ->
+            undefined
+        (EApp _ (EApp _ (BB _ Map) f) (Guarded t p e)) ->
+            undefined
         (EApp _ (UB _ CatMaybes) xs) ->
             undefined
-        (EApp _ (EApp _ (BB _ MapMaybe) f) xs) ->
-            undefined
-        _ -> pure (EApp t0 (EApp t1 ho op) stream')
+        _ -> pure (EApp t0 (EApp t1 ho op) stream)
 fM (In op mQ mG stream) = do
     stream' <- fM stream
     case stream' of
-        (EApp _ (EApp _ (BB _ Map) f) xs) ->
-            case mG of
-                Nothing -> fM (In op mQ (Just f) xs)
-                Just g -> do
-                    h <- f `compose` g
-                    fM (In op mQ (Just h) xs)
         (EApp _ (EApp _ (BB _ Filter) p) xs) ->
             case mQ of
                 Nothing -> fM (In op (Just p) mG xs)
@@ -98,6 +94,10 @@ fM (In op mQ mG stream) = do
                     x <- nN "x" xT
                     let xE=Var xT x
                     fM (In op (Just $ Lam (TyArr xT tyB) x (p `andE` EApp tyB q xE)) mG (Implicit t e))
+        (EApp _ (EApp _ (BB _ Map) f) (EApp _ (EApp _ (BB _ Filter) p) xs)) ->
+            undefined
+        (EApp _ (EApp _ (BB _ Map) f) (Guarded t p e)) ->
+            undefined
         (EApp _ (UB _ CatMaybes) xs) ->
             undefined
         (EApp _ (EApp _ (BB _ MapMaybe) f) xs) ->
@@ -108,11 +108,12 @@ fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1
 fM (Lam t n e) = Lam t n <$> fM e
 fM e = pure e
 
-compose :: E T -> E T -> M (E T)
-compose f g | TyArr xT yT <- eLoc g, TyArr _ cod <- eLoc f = do
+-- f <=< g -- λx. option None f (g x)
+composeM :: E T -> E T -> M (E T)
+composeM f g | TyArr xT yT <- eLoc g, TyArr _ cod <- eLoc f = do
     x <- nN "x" xT
     let xE=Var xT x
-    pure $ Lam (TyArr xT cod) x (EApp cod f (EApp yT g xE))
+    pure $ Lam (TyArr xT cod) x (EApp cod (EApp undefined (EApp undefined (TB undefined Option) (NB cod None)) f) (EApp yT g xE))
 
 andE :: E T -> E T -> E T
 andE x y | tX <- eLoc x, tY <- eLoc y = EApp tyB (EApp (TyArr tY tyB) (BB (TyArr tX (TyArr tY tyB)) Or) x) y
