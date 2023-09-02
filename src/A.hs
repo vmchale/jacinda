@@ -236,7 +236,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
-         | In { oop :: E a, ip :: Maybe (E a), iop :: Maybe (E a), istream :: E a }
+         | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          deriving (Functor, Generic)
 
 instance Recursive (E a) where
