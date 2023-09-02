@@ -33,6 +33,7 @@ import           U
 
 φ :: E T -> Int
 φ (TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStream) _) _))) Fold) = 1
+φ (BB (TyArr _ (TyArr (TyApp (TyB TyStream) _) _)) Fold1)          = 1
 φ (EApp _ e0 e1)                                                   = φ e0+φ e1
 φ (Tup _ es)                                                       = sum (φ<$>es)
 φ (OptionVal _ (Just e))                                           = φ e
@@ -118,6 +119,7 @@ gf (Lam t n e) = Lam t n <$> gf e
 gf e@BB{} = pure e; gf e@TB{} = pure e; gf e@UB{} = pure e; gf e@NB{} = pure e
 gf e@StrLit{} = pure e; gf e@FLit{} = pure e; gf e@ILit{} = pure e; gf e@BLit{} = pure e
 gf e@RC{} = pure e; gf e@Var{} = pure e
+gf In{} = error "Not yet implemented."
 
 ug :: IM.IntMap (E T) -> E T -> E T
 ug st (Var _ n@(Nm _ (U i) _)) =
