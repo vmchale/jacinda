@@ -88,7 +88,7 @@ bin/mips64-linux-ja: $(HS_SRC)
 
 bin/powerpc64le-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc powerpc64le-linux-gnu-ghc-9.2.4 --with-ghc-pkg powerpc64le-linux-gnu-ghc-pkg-9.2.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/powerpc64le-linux
+	@cabal build --with-ghc powerpc64le-linux-gnu-ghc-9.2.4 --with-ghc-pkg powerpc64le-linux-gnu-ghc-pkg-9.2.4 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/powerpc64le-linux
 	export BIN=$$(fd 'ppc64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    powerpc64le-linux-gnu-strip $@
