@@ -31,9 +31,18 @@ import           System.IO                  (hFlush, stdout)
 import           Ty.Const
 import           U
 
+φ1 :: E T -> Int
+φ1 (BB (TyArr _ (TyArr (TyApp (TyB TyStream) _) _)) Fold1) = 1
+φ1 (EApp _ e0 e1)                                          = φ1 e0+φ1 e1
+φ1 (Tup _ es)                                              = sum (φ1<$>es)
+φ1 (OptionVal _ (Just e))                                  = φ1 e
+φ1 (Cond _ p e0 e1)                                        = φ1 p+φ1 e0+φ1 e1
+φ1 (Lam _ _ e)                                             = φ1 e
+φ1 _                                                       = 0
+
+
 φ :: E T -> Int
 φ (TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStream) _) _))) Fold) = 1
-φ (BB (TyArr _ (TyArr (TyApp (TyB TyStream) _) _)) Fold1)          = 1
 φ (EApp _ e0 e1)                                                   = φ e0+φ e1
 φ (Tup _ es)                                                       = sum (φ<$>es)
 φ (OptionVal _ (Just e))                                           = φ e
@@ -41,12 +50,15 @@ import           U
 φ (Lam _ _ e)                                                      = φ e
 φ _                                                                = 0
 
+noleak :: E T -> Bool
+noleak e = φ e > 1 && φ1 e < 1
+
 runJac :: RurePtr -- ^ Record separator
        -> Bool -- ^ Flush output?
        -> Int
        -> E T
        -> Either StreamError ([BS.ByteString] -> IO ())
-runJac re f i e = ϝ (bsProcess re f) (if φ e > 1 then fuse i e else (e, i)) where ϝ = uncurry.flip
+runJac re f i e = ϝ (bsProcess re f) (if noleak e then fuse i e else (e, i)) where ϝ = uncurry.flip
 
 data StreamError = NakedField deriving (Show)
 
@@ -119,7 +131,6 @@ gf (Lam t n e) = Lam t n <$> gf e
 gf e@BB{} = pure e; gf e@TB{} = pure e; gf e@UB{} = pure e; gf e@NB{} = pure e
 gf e@StrLit{} = pure e; gf e@FLit{} = pure e; gf e@ILit{} = pure e; gf e@BLit{} = pure e
 gf e@RC{} = pure e; gf e@Var{} = pure e
-gf In{} = error "Not yet implemented."
 
 ug :: IM.IntMap (E T) -> E T -> E T
 ug st (Var _ n@(Nm _ (U i) _)) =
@@ -149,7 +160,7 @@ scanM op seed xs = sequence $
     scanl' go (pure seed) xs where go seedϵ x = do {seedϵ' <- seedϵ; op seedϵ' x}
 
 eF :: Int -> RurePtr -> E T -> [BS.ByteString] -> E T
-eF u r e | φ e > 1 = \bs ->
+eF u r e | noleak e = \bs ->
     let (eHoley, (_, folds)) = runState (gf e) (0, [])
         (filledHoles, u') = foldAll u r folds bs
         in eB u' (pure.ug (IM.fromList filledHoles)) eHoley

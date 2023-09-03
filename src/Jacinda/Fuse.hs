@@ -56,64 +56,7 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
                 fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB (TyArr sTy (TyArr undefined (TyArr xMT sTy))) Option) sE) (EApp undefined op sE)) xE))
             fM (EApp sTy (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sTy (TyArr (TyApp (TyB TyStream) xMT) sTy))) Fold) fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 ho op) seed) stream')
-fM (EApp t0 (EApp t1 ho@(BB _ Fold1) op) stream) | TyApp (TyB TyStream) _ <- eLoc stream = do
-    stream' <- fM stream
-    case stream' of
-        (EApp _ (EApp _ (BB _ Filter) p) xs) ->
-            fM (In op (Just p) Nothing xs)
-        (EApp _ (EApp _ (BB _ MapMaybe) f) xs) ->
-            fM (In op Nothing (Just f) xs)
-        (Guarded t p e) -> do
-            let xT=eLoc e
-            x <- nN "x" xT
-            fM (In op (Just $ Lam (TyArr xT tyB) x p) Nothing (Implicit t e))
-        (EApp _ (EApp _ (BB _ Map) f) (EApp _ (EApp _ (BB _ Filter) p) xs)) ->
-            undefined
-        (EApp _ (EApp _ (BB _ Map) f) (Guarded t p e)) ->
-            undefined
-        (EApp _ (UB _ CatMaybes) xs) ->
-            undefined
-        _ -> pure (EApp t0 (EApp t1 ho op) stream)
-fM (In op mQ mG stream) = do
-    stream' <- fM stream
-    case stream' of
-        (EApp _ (EApp _ (BB _ Filter) p) xs) ->
-            case mQ of
-                Nothing -> fM (In op (Just p) mG xs)
-                Just q | TyArr xT _ <- eLoc q -> do
-                    x <- nN "x" xT
-                    let xE=Var xT x
-                    fM (In op (Just $ Lam (TyArr xT tyB) x (EApp tyB p xE `andE` EApp tyB q xE)) mG xs)
-        (Guarded t p e) ->
-            case mQ of
-                Nothing -> do
-                    let xT=eLoc e
-                    x <- nN "x" xT
-                    fM (In op (Just $ Lam (TyArr xT tyB) x p) Nothing (Implicit t e))
-                Just q | TyArr xT _ <- eLoc q -> do
-                    x <- nN "x" xT
-                    let xE=Var xT x
-                    fM (In op (Just $ Lam (TyArr xT tyB) x (p `andE` EApp tyB q xE)) mG (Implicit t e))
-        (EApp _ (EApp _ (BB _ Map) f) (EApp _ (EApp _ (BB _ Filter) p) xs)) ->
-            undefined
-        (EApp _ (EApp _ (BB _ Map) f) (Guarded t p e)) ->
-            undefined
-        (EApp _ (UB _ CatMaybes) xs) ->
-            undefined
-        (EApp _ (EApp _ (BB _ MapMaybe) f) xs) ->
-            undefined
-        _ -> pure (In op mQ mG stream')
 fM (Tup t es) = Tup t <$> traverse fM es
 fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1
 fM (Lam t n e) = Lam t n <$> fM e
 fM e = pure e
-
--- f <=< g -- λx. option None f (g x)
-composeM :: E T -> E T -> M (E T)
-composeM f g | TyArr xT yT <- eLoc g, TyArr _ cod <- eLoc f = do
-    x <- nN "x" xT
-    let xE=Var xT x
-    pure $ Lam (TyArr xT cod) x (EApp cod (EApp undefined (EApp undefined (TB undefined Option) (NB cod None)) f) (EApp yT g xE))
-
-andE :: E T -> E T -> E T
-andE x y | tX <- eLoc x, tY <- eLoc y = EApp tyB (EApp (TyArr tY tyB) (BB (TyArr tX (TyArr tY tyB)) Or) x) y
