@@ -56,4 +56,7 @@ rwE = cata a where
     a (EAppF l e0@(TB _ Option) (EApp lϵ e1 e2))                                        = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
+    a (EAppF l (RwB l0 b) (EApp lϵ e1 e2))                                              = EApp l (EApp lϵ (BB l0 b) e1) e2
+    a (EAppF l (RwT l0 t) (EApp lϵ (EApp lϵϵ e1 e2) e3))                                = EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
+    a (EAppF l (RwT l0 t) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                                = EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
     a x                                                                                 = embed x

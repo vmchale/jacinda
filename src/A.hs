@@ -237,6 +237,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
+         | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
          deriving (Functor, Generic)
 
 instance Recursive (E a) where
@@ -276,6 +277,7 @@ data EF a x = ColumnF a Int
             | OptionValF a (Maybe x)
             | CondF a x x x
             | InF x (Maybe x) (Maybe x) x
+            | RwBF a BBin | RwTF a BTer
             deriving (Generic, Functor, Foldable, Traversable)
 
 type instance Base (E a) = (EF a)
@@ -340,6 +342,12 @@ instance Pretty (E a) where
     pretty (OptionVal _ (Just e))                                 = "Some" <+> pretty e
     pretty (OptionVal _ Nothing)                                  = "None"
     pretty (Cond _ e0 e1 e2)                                      = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
+    pretty (RwB _ MapMaybe)                                       = "mapMaybe"
+    pretty (RwB _ DedupOn)                                        = "dedupOn"
+    pretty (RwB _ Filter)                                         = "filter"
+    pretty (RwT _ Fold)                                           = "fold"
+    pretty (RwT _ Scan)                                           = "scan"
+    pretty (RwB _ Fold1)                                          = "fold1"
 
 instance Show (E a) where show=show.pretty
 
@@ -374,6 +382,8 @@ instance Eq (E a) where
     (==) _ RC{}                                 = error "Cannot compare compiled regex!"
     (==) (Paren _ e) e'                         = e == e'
     (==) e (Paren _ e')                         = e == e'
+    (==) (RwB _ b) (RwB _ b')                   = b == b'
+    (==) (RwT _ b) (RwT _ b')                   = b == b'
     (==) _ _                                    = False
 
 data C = IsNum | IsEq | IsOrd

@@ -137,6 +137,12 @@ import Prettyprinter (Pretty (pretty), (<+>))
     none { TokBuiltin $$ BuiltinNone }
     fp { TokBuiltin $$ BuiltinFp }
     captures { TokBuiltin $$ BuiltinCaptures }
+    mapMaybeL { TokBuiltin $$ BuiltinMapMaybe }
+    dedupOnL { TokBuiltin $$ BuiltinDedupOn }
+    filterL { TokBuiltin $$ BuiltinFilt }
+    foldL { TokBuiltin $$ BuiltinFold }
+    fold1L { TokBuiltin $$ BuiltinFold1 }
+    scanL { TokBuiltin $$ BuiltinScan }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -273,6 +279,12 @@ E :: { E AlexPosn }
   | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
   | min { BB $1 Min }
   | max { BB $1 Max }
+  | mapMaybeL { RwB $1 MapMaybe }
+  | dedupOnL { RwB $1 DedupOn }
+  | filterL { RwB $1 Filter }
+  | foldL { RwT $1 Fold }
+  | fold1L { RwB $1 Fold1 }
+  | scanL { RwT $1 Scan }
   | split { BB $1 Split }
   | match { BB $1 Match }
   | splitc { BB $1 Splitc }
