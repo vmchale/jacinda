@@ -1,3 +1,6 @@
+  * Add `mapMaybe`, `dedup`, `filter`, `fold`, `fold1`, `scan`, `dedupOn`,
+    `catMaybes` synonyms.
+
 # 2.0.0.0
 
   * Scrap `HasField` typeclass; add row types

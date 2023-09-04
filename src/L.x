@@ -116,8 +116,10 @@ tokens :-
         "|."                     { mkSym FloorSym }
         ⌊                        { mkSym FloorSym }
         "~."                     { mkSym DedupTok }
+        dedup                    { mkSym DedupTok }
         "~.*"                    { mkSym DedupOnTok }
         ".?"                     { mkSym CatMaybesTok }
+        catMaybes                { mkSym CatMaybesTok }
         ":?"                     { mkSym MapMaybeTok }
         "~*"                     { mkSym CapTok }
         "-."                     { mkSym NegTok }
@@ -155,6 +157,12 @@ tokens :-
         Some                     { mkBuiltin BuiltinSome }
         None                     { mkBuiltin BuiltinNone }
         fp                       { mkBuiltin BuiltinFp }
+        mapMaybe                 { mkBuiltin BuiltinMapMaybe }
+        dedupOn                  { mkBuiltin BuiltinDedupOn }
+        filter                   { mkBuiltin BuiltinFilt }
+        fold                     { mkBuiltin BuiltinFold }
+        fold1                    { mkBuiltin BuiltinFold1 }
+        scan                     { mkBuiltin BuiltinScan }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -394,6 +402,12 @@ data Builtin = BuiltinIParse
              | BuiltinSome
              | BuiltinNone
              | BuiltinFp
+             | BuiltinMapMaybe
+             | BuiltinDedupOn
+             | BuiltinFilt
+             | BuiltinFold
+             | BuiltinFold1
+             | BuiltinScan
 
 instance Pretty Builtin where
     pretty BuiltinIParse   = ":i"
@@ -410,6 +424,12 @@ instance Pretty Builtin where
     pretty BuiltinNone     = "None"
     pretty BuiltinFp       = "fp"
     pretty BuiltinCaptures = "captures"
+    pretty BuiltinMapMaybe = "mapMaybe"
+    pretty BuiltinDedupOn  = "dedupOn"
+    pretty BuiltinFilt     = "filter"
+    pretty BuiltinFold     = "fold"
+    pretty BuiltinFold1    = "fold1"
+    pretty BuiltinScan     = "scan"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
