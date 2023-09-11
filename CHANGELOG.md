@@ -1,3 +1,5 @@
+# 2.0.1.0
+
   * Add `mapMaybe`, `dedup`, `filter`, `fold`, `fold1`, `scan`, `dedupOn`,
     `catMaybes` synonyms.
 
