@@ -79,7 +79,8 @@ library jacinda-lib
         microlens-mtl >=0.1.8.0,
         vector >=0.12.2.0,
         recursion >=1.0.0.0,
-        split
+        split,
+        deepseq
 
     if !flag(cross)
         build-tool-depends: alex:alex >=3.4.0.0, happy:happy

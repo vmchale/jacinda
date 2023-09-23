@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveAnyClass    #-}
 {-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
@@ -15,6 +16,7 @@ module A ( E (..)
          , D (..)
          , Program (..)
          , C (..)
+         , L (..)
          , N (..)
          , mapExpr
          , getFS, flushD
@@ -22,6 +24,7 @@ module A ( E (..)
          , EF (..)
          ) where
 
+import           Control.DeepSeq    (NFData)
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
@@ -202,6 +205,8 @@ instance Pretty DfnVar where pretty X = "x"; pretty Y = "y"
 -- 0-ary
 data N = Ix | Nf | None | Fp deriving (Eq)
 
+data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData, Eq)
+
 -- expression
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } -- always a column
@@ -217,11 +222,8 @@ data E a = Column { eLoc :: a, col :: Int }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: !(Nm a) }
-         | ILit { eLoc :: a, eInt :: !Integer }
-         | BLit { eLoc :: a, eBool :: !Bool }
-         | StrLit { eLoc :: a, eStr :: BS.ByteString }
+         | Lit { eLoc :: a, lit :: !L }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
-         | FLit { eLoc :: a, eFloat :: !Double }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a }
          | BB { eLoc :: a, eBin :: BBin }
@@ -257,11 +259,8 @@ data EF a x = ColumnF a Int
             | ImplicitF a x
             | LetF a (Nm a, x) x
             | VarF a (Nm a)
-            | ILitF a Integer
-            | BLitF a Bool
-            | StrLitF a BS.ByteString
+            | LitF a !L
             | RegexLitF a BS.ByteString
-            | FLitF a Double
             | LamF a (Nm a) x
             | DfnF a x
             | BBF a BBin
@@ -284,6 +283,13 @@ type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix = "⍳"; pretty Nf = "nf"; pretty None = "None"; pretty Fp = "fp"
+
+instance Pretty L where
+    pretty (ILit i)     = pretty i
+    pretty (FLit d)     = pretty d
+    pretty (BLit True)  = "#t"
+    pretty (BLit False) = "#f"
+    pretty (StrLit str) = pretty (decodeUtf8 str)
 
 instance Pretty (E a) where
     pretty (Column _ i)                                           = "$" <> pretty i
@@ -318,15 +324,11 @@ instance Pretty (E a) where
     pretty (EApp _ (UB _ Parse) e')                               = pretty e' <> ":"
     pretty (EApp _ e@UB{} e')                                     = pretty e <> pretty e'
     pretty (EApp _ e e')                                          = pretty e <+> pretty e'
+    pretty (Lit _ l)                                              = pretty l
     pretty (Var _ n)                                              = pretty n
-    pretty (ILit _ i)                                             = pretty i
     pretty (RegexLit _ rr)                                        = "/" <> pretty (decodeUtf8 rr) <> "/"
-    pretty (FLit _ f)                                             = pretty f
-    pretty (BLit _ True)                                          = "#t"
-    pretty (BLit _ False)                                         = "#f"
     pretty (BB _ b)                                               = parens (pretty b)
     pretty (UB _ u)                                               = pretty u
-    pretty (StrLit _ str)                                         = pretty (decodeUtf8 str)
     pretty (ResVar _ x)                                           = pretty x
     pretty (Tup _ es)                                             = jacTup es
     pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
@@ -366,11 +368,8 @@ instance Eq (E a) where
     (==) (Let _ (n, eϵ) e) (Let _ (n', eϵ') e') = eqName n n' && e == e' && eϵ == eϵ'
     (==) (Var _ n) (Var _ n')                   = eqName n n'
     (==) (Lam _ n e) (Lam _ n' e')              = eqName n n' && e == e'
-    (==) (ILit _ i) (ILit _ j)                  = i == j
-    (==) (FLit _ u) (FLit _ v)                  = u == v
-    (==) (StrLit _ str) (StrLit _ str')         = str == str'
+    (==) (Lit _ l) (Lit _ l')                   = l == l'
     (==) (RegexLit _ rr) (RegexLit _ rr')       = rr == rr'
-    (==) (BLit _ b) (BLit _ b')                 = b == b'
     (==) (BB _ b) (BB _ b')                     = b == b'
     (==) (TB _ b) (TB _ b')                     = b == b'
     (==) (UB _ unOp) (UB _ unOp')               = unOp == unOp'

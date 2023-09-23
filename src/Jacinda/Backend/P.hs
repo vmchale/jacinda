@@ -77,10 +77,10 @@ instance Exception EvalErr where
 v ! ix = case v V.!? ix of {Just x  -> x; Nothing -> throw $ IndexOutOfBounds ix}
 
 parseAsEInt :: BS.ByteString -> E T
-parseAsEInt = mkI . readDigits
+parseAsEInt = mkI.readDigits
 
 parseAsF :: BS.ByteString -> E T
-parseAsF = FLit tyF . readFloat
+parseAsF = mkF.readFloat
 
 readFloat :: BS.ByteString -> Double
 readFloat = read . ASCII.unpack
@@ -129,7 +129,7 @@ gf (OptionVal ty e) = OptionVal ty <$> traverse gf e
 gf (Cond ty p e e') = Cond ty <$> gf p <*> gf e <*> gf e'
 gf (Lam t n e) = Lam t n <$> gf e
 gf e@BB{} = pure e; gf e@TB{} = pure e; gf e@UB{} = pure e; gf e@NB{} = pure e
-gf e@StrLit{} = pure e; gf e@FLit{} = pure e; gf e@ILit{} = pure e; gf e@BLit{} = pure e
+gf e@Lit{} = pure e
 gf e@RC{} = pure e; gf e@Var{} = pure e
 
 ug :: IM.IntMap (E T) -> E T -> E T
@@ -221,13 +221,13 @@ eStream u r (Guarded _ p e) bs =
     in catMaybes $ zipWith (\fs i -> if asB (eB u (pure.eCtx fs i) p) then Just (eB u (pure.eCtx fs i) e) else Nothing) bss [1..]
 
 asS :: E T -> BS.ByteString
-asS (StrLit _ s) = s; asS e = throw (InternalCoercionError e TyStr)
+asS (Lit _ (StrLit s)) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E T -> Integer
-asI (ILit _ i) = i; asI e = throw (InternalCoercionError e TyInteger)
+asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
 
 asF :: E T -> Double
-asF (FLit _ x) = x; asF e = throw (InternalCoercionError e TyFloat)
+asF (Lit _ (FLit x)) = x; asF e = throw (InternalCoercionError e TyFloat)
 
 asR :: E T -> RurePtr
 asR (RC r) = r; asR e = throw (InternalCoercionError e TyR)
@@ -236,7 +236,7 @@ asM :: E T -> Maybe (E T)
 asM (OptionVal _ e) = e; asM e = throw (InternalCoercionError e TyOption)
 
 asB :: E T -> Bool
-asB (BLit _ b) = b; asB e = throw (InternalCoercionError e TyBool)
+asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
 
 asV :: E T -> V.Vector (E T)
 asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)

@@ -62,7 +62,7 @@ pAst =
             (EApp ()
                 (UB () Tally)
                 (AllField ())))
-        (ILit () 72)
+        (Lit () (ILit 72))
 
 splitWhitespaceT :: BS.ByteString -> [BS.ByteString] -> TestTree
 splitWhitespaceT haystack expected =
@@ -86,7 +86,7 @@ sumBytesAST =
             (EApp ()
                 (TB () Fold)
                 (BB () Plus))
-            (ILit () 0))
+            (Lit () (ILit 0)))
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
