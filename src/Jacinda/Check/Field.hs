@@ -23,8 +23,8 @@ cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e)
 cF e@Field{} = Just (NF e); cF e@AllField{} = Just (NF e); cF e@LastField{} = Just (NF e)
 cF e@(NB _ Ix) = Just (NF e); cF e@(NB _ Nf) = Just (NF e)
 cF IParseCol{} = Nothing; cF FParseCol{} = Nothing; cF ParseCol{} = Nothing; cF Column{} = Nothing
-cF AllColumn{} = Nothing; cF Guarded{} = Nothing; cF Implicit{} = Nothing; cF ILit{} = Nothing
-cF BLit{} = Nothing; cF RegexLit{} = Nothing; cF FLit{} = Nothing; cF StrLit{} = Nothing
+cF AllColumn{} = Nothing; cF Guarded{} = Nothing; cF Implicit{} = Nothing
+cF Lit{} = Nothing; cF RegexLit{} = Nothing;
 cF NB{} = Nothing; cF UB{} = Nothing; cF BB{} = Nothing; cF TB{} = Nothing
 cF Var{} = Nothing; cF (Tup _ es) = foldMapAlternative cF es; cF (Anchor _ es) = foldMapAlternative cF es
 cF (Arr _ es) = foldMapAlternative cF es; cF (EApp _ e e') = cF e <|> cF e'

@@ -221,13 +221,14 @@ Library :: { Library }
 
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
+        
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }
-  | intLit { ILit (loc $1) (int $1) }
-  | floatLit { FLit (loc $1) (float $1) }
-  | boolLit { BLit (loc $1) (boolTok $1) }
-  | strLit { StrLit (loc $1) (encodeUtf8 $ strTok $1) }
+  | intLit { Lit (loc $1) (ILit (int $1)) }
+  | floatLit { Lit (loc $1) (FLit (float $1)) }
+  | boolLit { Lit (loc $1) (BLit (boolTok $1)) }
+  | strLit { Lit (loc $1) (StrLit (encodeUtf8 $ strTok $1)) }
   | column { Column (loc $1) (ix $1) }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
