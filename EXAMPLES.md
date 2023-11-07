@@ -43,6 +43,15 @@ https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school
 pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}' | pbcopy
 ```
 
+# Tag Releases
+
+Use the following to create a git tag by extracting the current version number
+from the `.cabal` file:
+
+```
+git tag "$(ja '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
+```
+
 # Display Name of Terminal
 
 Modification of a [StackExchange](https://askubuntu.com/a/476663) one-liner
