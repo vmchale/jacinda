@@ -4,8 +4,7 @@ module A.E ( M, nN, eta ) where
 
 import           A
 import           Control.Monad              ((<=<))
-import           Control.Monad.State.Strict (State, get, modify)
-import           Data.Functor               (($>))
+import           Control.Monad.State.Strict (State, state)
 import qualified Data.Text                  as T
 import           Nm
 import           U
@@ -13,7 +12,7 @@ import           U
 type M = State Int
 
 nN :: T.Text -> a -> M (Nm a)
-nN n l = do {i <- get; modify (+1) $> Nm n (U$i+1) l}
+nN n l = state (\i -> (Nm n (U$i+1) l, i+1))
 
 doms :: T -> [T]
 doms (TyArr t t') = t:doms t'; doms _ = []
