@@ -1,3 +1,26 @@
+# Tag Releases
+
+Use the following to create a git tag by extracting the current version number
+from the `.cabal` file:
+
+```
+git tag "$(ja '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
+```
+
+```
+git tag "$(awk '/^\s*version:/ {print $2}' jacinda.cabal)"
+```
+
+or more rigorously:
+
+```
+git tag "$(ja '.?{|`0 ~* 1 /^\s*version:\s*((\d+\.)*\d+)/}' -i jacinda.cabal)"
+```
+
+```
+git tag $(rg '^\s*version:\s*((\d+\.)*\d+)' jacinda.cabal -r '$1')
+```
+
 # Last Field of First Line
 
 ```awk
