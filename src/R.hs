@@ -14,7 +14,7 @@ import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
 import           Lens.Micro                 (Lens', over)
-import           Lens.Micro.Mtl             (modifying, use, (%=), (.=))
+import           Lens.Micro.Mtl             (use, (%=), (.=))
 import           Nm
 import           U
 
@@ -54,9 +54,21 @@ replaceVar (Nm n u l) = do
 
 dummyName :: (MonadState s m, HasRenames s) => a -> T.Text -> m (Nm a)
 dummyName l n = do
+    rename.maxLens %= (+1)
     st <- use (rename.maxLens)
-    Nm n (U$st+1) l
-        <$ modifying (rename.maxLens) (+1)
+    pure $ Nm n (U st) l
+
+doLocal :: (HasRenames s, MonadState s m) => m a -> m a
+doLocal act = do
+    preB <- use (rename.boundLens)
+    act <* (rename.boundLens .= preB)
+
+freshen :: (HasRenames s, MonadState s m) => Nm a -> m (Nm a)
+freshen (Nm n (U i) l) = do
+    rename.maxLens %= (+1)
+    nU <- use (rename.maxLens)
+    rename.boundLens %= IM.insert i nU
+    pure (Nm n (U nU) l)
 
 withRenames :: (HasRenames s, MonadState s m) => (Renames -> Renames) -> m a -> m a
 withRenames modSt act = do
@@ -66,16 +78,6 @@ withRenames modSt act = do
     postMax <- use (rename.maxLens)
     rename .= setMax postMax preSt
     pure res
-
-withName :: (HasRenames s, MonadState s m) => Nm a -> m (Nm a, Renames -> Renames)
-withName (Nm t (U i) l) = do
-    m <- use (rename.maxLens)
-    let newUniq = m+1
-    rename.maxLens .= newUniq
-    pure (Nm t (U newUniq) l, mapBound (IM.insert i (m+1)))
-
-mapBound :: (IM.IntMap Int -> IM.IntMap Int) -> Renames -> Renames
-mapBound f (Renames m b) = Renames m (f b)
 
 setMax :: Int -> Renames -> Renames
 setMax i (Renames _ b) = Renames i b
@@ -127,9 +129,9 @@ rE :: (HasRenames s, MonadState s m) => E a -> m (E a)
 rE (EApp l e e')   = EApp l <$> rE e <*> rE e'
 rE (Tup l es)      = Tup l <$> traverse rE es
 rE (Var l n)       = Var l <$> replaceVar n
-rE (Lam l n e)     = do
-    (n', modR) <- withName n
-    Lam l n' <$> withRenames modR (rE e)
+rE (Lam l n e)     = doLocal $ do
+    n' <- freshen n
+    Lam l n' <$> rE e
 rE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
     x@(Nm nX uX _) <- dummyName l "x"
     y@(Nm nY uY _) <- dummyName l "y"
@@ -140,10 +142,10 @@ rE (Dfn l e) | {-# SCC "hasY" #-} hasY e = do
 rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
 rE (Implicit l e) = Implicit l <$> rE e
 rE ResVar{} = error "Bare reserved variable."
-rE (Let l (n, eϵ) e') = do
+rE (Let l (n, eϵ) e') = doLocal $ do
     eϵ' <- rE eϵ
-    (n', modR) <- withName n
-    Let l (n', eϵ') <$> withRenames modR (rE e')
+    n' <- freshen n
+    Let l (n', eϵ') <$> rE e'
 rE (Paren _ e) = rE e
 rE (Arr l es) = Arr l <$> traverse rE es
 rE (Anchor l es) = Anchor l <$> traverse rE es
