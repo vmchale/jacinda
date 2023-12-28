@@ -105,7 +105,7 @@ maM (TyB b) (TyB b') | b == b' = Right mempty
 maM (TyVar n) (TyVar n') | n == n' = Right mempty
 maM (TyVar (Nm _ (U i) _)) t = Right (IM.singleton i t)
 maM (TyArr t0 t1) (TyArr t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- TODO: I think <> is right
-maM (TyTup ts) (TyTup ts')        = fmap mconcat (zipWithM maM ts ts')
+maM (TyTup ts) (TyTup ts') | length ts == length ts' = fmap mconcat (zipWithM maM ts ts')
 maM (Rho n _) (Rho n' _) | n == n' = Right mempty
 maM (Rho n rs) t@(Rho _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
 maM (Rho n rs) t@(TyTup ts) | length ts >= fst (IM.findMax rs) = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
