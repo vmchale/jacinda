@@ -123,7 +123,6 @@ executable ja
         -Wredundant-constraints -Widentities -Wcpp-undef
         -Wmissing-export-lists -Wunused-packages
 
-
 test-suite jacinda-test
     import:           warnings
     type:             exitcode-stdio-1.0
