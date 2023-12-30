@@ -86,16 +86,12 @@ library jacinda-lib
         build-tool-depends: alex:alex >=3.4.0.0, happy:happy
         build-tool-depends: alex:alex >= 3.3.0, happy:happy
 
-    if impl(ghc >=8.0)
-        ghc-options:
-            -Wincomplete-uni-patterns -Wincomplete-record-updates
-            -Wredundant-constraints -Widentities
+    ghc-options:
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wredundant-constraints -Widentities -Wcpp-undef
 
     if impl(ghc >=8.4)
         ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.2)
-        ghc-options: -Wcpp-undef
 
     if impl(ghc >=8.10)
         ghc-options: -Wunused-packages
@@ -113,16 +109,12 @@ executable ja
         optparse-applicative >=0.14.1.0,
         text
 
-    if impl(ghc >=8.0)
-        ghc-options:
-            -Wincomplete-uni-patterns -Wincomplete-record-updates
-            -Wredundant-constraints -Widentities
+    ghc-options:
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wredundant-constraints -Widentities -Wcpp-undef
 
     if impl(ghc >=8.4)
         ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.2)
-        ghc-options: -Wcpp-undef
 
     if impl(ghc >=8.10)
         ghc-options: -Wunused-packages
@@ -141,16 +133,12 @@ test-suite jacinda-test
         text,
         tasty-hunit
 
-    if impl(ghc >=8.0)
-        ghc-options:
-            -Wincomplete-uni-patterns -Wincomplete-record-updates
-            -Wredundant-constraints -Widentities
+    ghc-options:
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wredundant-constraints -Widentities -Wcpp-undef
 
     if impl(ghc >=8.4)
         ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.2)
-        ghc-options: -Wcpp-undef
 
     if impl(ghc >=8.10)
         ghc-options: -Wunused-packages
@@ -169,16 +157,12 @@ benchmark jacinda-bench
         text,
         silently
 
-    if impl(ghc >=8.0)
-        ghc-options:
-            -Wincomplete-uni-patterns -Wincomplete-record-updates
-            -Wredundant-constraints -Widentities
+    ghc-options:
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wredundant-constraints -Widentities -Wcpp-undef
 
     if impl(ghc >=8.4)
         ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.2)
-        ghc-options: -Wcpp-undef
 
     if impl(ghc >=8.10)
         ghc-options: -Wunused-packages
