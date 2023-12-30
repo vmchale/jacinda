@@ -230,15 +230,8 @@ alexInitUserState = (0, mempty, mempty)
 gets_alex :: (AlexState -> a) -> Alex a
 gets_alex f = Alex (Right . (id &&& f))
 
-get_ust :: Alex AlexUserState
-get_ust = gets_alex alex_ust
-
 get_pos :: Alex AlexPosn
 get_pos = gets_alex alex_pos
-
-set_ust :: AlexUserState -> Alex ()
-set_ust st = Alex (Right . (go &&& (const ())))
-    where go s = s { alex_ust = st }
 
 alexEOF = EOF <$> get_pos
 
@@ -474,9 +467,9 @@ freshName t = do
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Nm AlexPosn)
 newIdentAlex pos t = do
-    st <- get_ust
+    st <- alexGetUserState
     let (st', n) = newIdent pos t st
-    set_ust st' $> (n $> pos)
+    alexSetUserState st' $> (n $> pos)
 
 newIdent :: AlexPosn -> T.Text -> AlexUserState -> (AlexUserState, Nm AlexPosn)
 newIdent pos t pre@(max', names, uniqs) =
