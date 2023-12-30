@@ -83,7 +83,7 @@ library jacinda-lib
         deepseq
 
     if !flag(cross)
-        build-tool-depends: alex:alex >=3.4.0.0, happy:happy
+        build-tool-depends: alex:alex >=3.5.0.0, happy:happy
 
     ghc-options:
         -Wincomplete-uni-patterns -Wincomplete-record-updates
