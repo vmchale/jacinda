@@ -19,6 +19,14 @@ strings $(which ja) | ja '~.[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-
 cabal-plan dot | ja '~.{%/"/}{`1}'
 ```
 
+# Imitate killall
+
+To kill all running GHC processes:
+
+```
+kill $(ps aux | ja "[x+' '+y]|>{%/ghc/}{\`2}")
+```
+
 # Count lines of code
 
 ```
