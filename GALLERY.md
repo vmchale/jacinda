@@ -27,6 +27,12 @@ To kill all running GHC processes:
 kill $(ps aux | ja "[x+' '+y]|>{%/ghc/}{\`2}")
 ```
 
+# Format All Code In a Haskell Project
+
+```
+fd '\.hs$' $(ja "[x+' '+y]|>{%/hs-source-dirs/}{\`2}" -i jacinda.cabal) -x stylish-haskell -i
+```
+
 # Count lines of code
 
 ```
