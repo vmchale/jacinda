@@ -109,3 +109,5 @@ bench/data/ulysses.txt: $(dir $@)
 check:
 	cabal build
 	fd .jac examples/ -x cabal run ja -- tc
+fmt:
+	fd '[A-Z][[:alpha:]]+.*\.hs$$' $$(ja '.?{|`0 ~* 1 /^\s*hs-source-dirs:\s*(.*)/}' -i jacinda.cabal) -x stylish-haskell -i
