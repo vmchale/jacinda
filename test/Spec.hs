@@ -20,8 +20,7 @@ import           Ty.Const
 main :: IO ()
 main = defaultMain $
     testGroup "Jacinda interpreter"
-        [ testCase "parses no error" (parseNoErr sumBytes)
-        , testCase "parse as" (parseTo sumBytes sumBytesAST)
+        [ testCase "parse as" (parseTo sumBytes sumBytesAST)
         , testCase "parse as" (parseTo "#`0>72" pAst)
         , parseFile "test/examples/ab.jac"
         , splitWhitespaceT "1 1.3\tj" ["1", "1.3", "j"]
@@ -47,6 +46,16 @@ main = defaultMain $
         , testCase "length eval" (evalTo "#*split '01-23-1987' /-/" "3")
         , testCase "captureE" (evalTo "'01-23-1987' ~* 3 /(\\d{2})-(\\d{2})-(\\d{4})/" "Some 1987")
         , testCase "if...then...else" (evalTo "if #t then 0 else 1" "0")
+        , testGroup "Examples should be well-typed"
+            [ testCase (T.unpack s) (tyRight s) |
+                s <- [ "(||)|#f {#`0>110}{#t}"
+                     , "(&)|#t (>)\\. {|`1:f}"
+                     , "[y]|> {|`0~/^$/}"
+                     , "(max|_1 #¨$0) > 110"
+                     , "(||)|#f {#`0>110}{#t}"
+                     , "(+)|0 {`5 ~ /^\\d+$/}{`5:}"
+                     ]
+            ]
         ]
 
 evalTo :: T.Text -> String -> Assertion
@@ -91,6 +100,9 @@ sumBytesAST =
 
 tyFile :: FilePath -> Assertion
 tyFile = tcIO [] <=< TIO.readFile
+
+tyRight :: T.Text -> Assertion
+tyRight src = assertBool (T.unpack src) (tySrc src `seq` True)
 
 tyOfT :: T.Text -> T -> Assertion
 tyOfT src expected =
