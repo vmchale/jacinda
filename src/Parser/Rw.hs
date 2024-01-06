@@ -51,12 +51,7 @@ rwE = cata a where
     -- TODO rewrite dfn
     a (EAppF l e0@Var{} (EApp l0 e1 (EApp l1 (EApp l2 op@BB{} e2) e3)))                 = EApp l1 (EApp l2 op (EApp l (EApp l0 e0 e1) e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ e1 e2))                                                = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Max) (EApp lϵ e1 e2))                                           = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Min) (EApp lϵ e1 e2))                                           = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Split) (EApp lϵ e1 e2))                                         = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Match) (EApp lϵ e1 e2))                                         = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Splitc) (EApp lϵ e1 e2))                                        = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ Sprintf) (EApp lϵ e1 e2))                                       = EApp l (EApp lϵ e0 e1) e2
+    a (EAppF l e0@(BB _ op) (EApp lϵ e1 e2)) | Nothing <- mFi op                        = EApp l (EApp lϵ e0 e1) e2
     a (EAppF l e0@(TB _ Substr) (EApp lϵ (EApp lϵϵ e1 e2) e3))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ Substr) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ Option) (EApp lϵ (EApp lϵϵ e1 e2) e3))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
