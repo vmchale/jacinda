@@ -54,7 +54,7 @@ rwE :: E a -> E a
 rwE = cata a where
     a (EAppF l e0@(UB _ op) (EApp lϵ (EApp lϵϵ e1@(BB _ bop) e2) e3))
         | Just{} <- mFi bop
-        , isPre op
+        , isPre op && op /= Dedup
                                                                                         = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
     a (EAppF l e0@(EApp _ (BB _ op0) _) (EApp l1 (EApp l2 e1@(BB _ op1) e2) e3))
         | Just f0 <- mFi op0
