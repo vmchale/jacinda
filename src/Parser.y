@@ -149,9 +149,9 @@ import Prettyprinter (Pretty (pretty), (<+>))
 
     rr { $$@(TokRR _ _) }
 
-%right const
-%left paren iParse fParse
 %nonassoc leq geq gt lt neq eq
+%left plus minus
+%left times percent
 
 %%
 
