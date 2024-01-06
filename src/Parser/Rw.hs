@@ -13,32 +13,40 @@ rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
 rwD :: D a -> D a
 rwD (FunDecl n bs e) = FunDecl n bs (rwE e); rwD d = d
 
+mFi :: BBin -> Maybe Int
+mFi And        = Just 3
+mFi Or         = Just 2
+mFi Eq         = Just 4
+mFi Geq        = Just 4
+mFi Gt         = Just 4
+mFi Lt         = Just 4
+mFi Leq        = Just 4
+mFi Neq        = Just 4
+mFi Exp        = Just 8
+mFi Plus       = Just 6
+mFi Minus      = Just 6
+mFi Times      = Just 7
+mFi Div        = Just 7
+mFi Map        = Just 5
+mFi MapMaybe   = Just 5
+mFi Filter     = Just 5
+mFi Fold1      = Just 5
+mFi Matches    = Just 5
+mFi NotMatches = Just 5
+mFi Min        = Nothing
+mFi Max        = Nothing
+mFi Split      = Nothing
+mFi Splitc     = Nothing
+mFi Sprintf    = Nothing
+mFi Match      = Nothing
+mFi Prior      = Just 5
+mFi DedupOn    = Just 5
+
 rwE :: E a -> E a
 rwE = cata a where
     a (EAppF l e0@(UB _ Tally) (EApp lϵ (EApp lϵϵ e1@BB{} e2) e3))                      = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
     a (EAppF l e0@(UB _ Const) (EApp lϵ (EApp lϵϵ e1@(BB _ Map) e2) e3))                = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Eq) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Eq) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))          = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Neq) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))        = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Neq) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Gt) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Gt) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))          = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Lt) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Lt) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))          = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Leq) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))        = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Leq) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Geq) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))        = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Geq) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))         = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Matches) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3))    = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Matches) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))     = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ NotMatches) _) (EApp l1 (EApp l2 e1@(BB _ And) e2) e3)) = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ NotMatches) _) (EApp l1 (EApp l2 e1@(BB _ Or) e2) e3))  = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Eq) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Neq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Gt) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Geq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Leq) e2) e3))      = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ Fold1) _) (EApp l1 (EApp l2 e1@(BB _ Lt) e2) e3))       = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BB _ op0) _) (EApp l1 (EApp l2 e1@(BB _ op1) e2) e3)) | Just f0 <- mFi op0, Just f1 <- mFi op1, f0 > f1 = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ (EApp lϵϵ e1 e2) e3))                                  = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     -- TODO rewrite dfn
     a (EAppF l e0@Var{} (EApp l0 e1 (EApp l1 (EApp l2 op@BB{} e2) e3)))                 = EApp l1 (EApp l2 op (EApp l (EApp l0 e0 e1) e2)) e3
