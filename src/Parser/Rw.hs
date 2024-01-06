@@ -42,11 +42,25 @@ mFi Match      = Nothing
 mFi Prior      = Just 5
 mFi DedupOn    = Just 5
 
+isPre :: BUn -> Bool
+isPre At{}     = False
+isPre Select{} = False
+isPre IParse   = False
+isPre FParse   = False
+isPre Parse    = False
+isPre _        = True
+
 rwE :: E a -> E a
 rwE = cata a where
-    a (EAppF l e0@(UB _ Tally) (EApp lϵ (EApp lϵϵ e1@BB{} e2) e3))                      = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
-    a (EAppF l e0@(UB _ Const) (EApp lϵ (EApp lϵϵ e1@(BB _ Map) e2) e3))                = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ op0) _) (EApp l1 (EApp l2 e1@(BB _ op1) e2) e3)) | Just f0 <- mFi op0, Just f1 <- mFi op1, f0 > f1 = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
+    a (EAppF l e0@(UB _ op) (EApp lϵ (EApp lϵϵ e1@(BB _ bop) e2) e3))
+        | Just{} <- mFi bop
+        , isPre op
+                                                                                        = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
+    a (EAppF l e0@(EApp _ (BB _ op0) _) (EApp l1 (EApp l2 e1@(BB _ op1) e2) e3))
+        | Just f0 <- mFi op0
+        , Just f1 <- mFi op1
+        , f0 > f1
+                                                                                        = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
     a (EAppF l e0@Var{} (EApp lϵ (EApp lϵϵ e1 e2) e3))                                  = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     -- TODO rewrite dfn
     a (EAppF l e0@Var{} (EApp l0 e1 (EApp l1 (EApp l2 op@BB{} e2) e3)))                 = EApp l1 (EApp l2 op (EApp l (EApp l0 e0 e1) e2)) e3
@@ -57,6 +71,8 @@ rwE = cata a where
     a (EAppF l e0@(TB _ Option) (EApp lϵ (EApp lϵϵ e1 e2) e3))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ Option) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ Option) (EApp lϵ e1 e2))                                        = EApp l (EApp lϵ e0 e1) e2
+    a (EAppF l e0@(TB _ Captures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                        = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
+    a (EAppF l e0@(TB _ Captures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                        = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
     a (EAppF l (RwB l0 b) (EApp lϵ e1 e2))                                              = EApp l (EApp lϵ (BB l0 b) e1) e2
