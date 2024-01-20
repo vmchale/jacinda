@@ -1,0 +1,9 @@
+#!/usr/bin/env zsh
+
+bench "ja '{%/(Bloom|Molly|Leopold)/}{\`0}' -i bench/data/ulysses.txt" \
+    "awk '/(Bloom|Molly|Leopold)/ {print \$0}' bench/data/ulysses.txt" \
+    "mawk '/(Bloom|Molly|Leopold)/ {print \$0}' bench/data/ulysses.txt"
+
+bench "ja '(+)|0 {%/Bloom/}{1}' -i bench/data/ulysses.txt" \
+    "awk '/Bloom/ { total += 1; } END { print total }' bench/data/ulysses.txt" \
+    "mawk '/Bloom/ { total += 1; } END { print total }' bench/data/ulysses.txt"
