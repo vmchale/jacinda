@@ -1,8 +1,6 @@
 {-# LANGUAGE DeriveAnyClass    #-}
-{-# LANGUAGE DeriveFoldable    #-}
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
@@ -277,7 +275,7 @@ data EF a x = ColumnF a Int
             | CondF a x x x
             | InF x (Maybe x) (Maybe x) x
             | RwBF a BBin | RwTF a BTer
-            deriving (Generic, Functor, Foldable, Traversable)
+            deriving (Generic, Functor)
 
 type instance Base (E a) = (EF a)
 
