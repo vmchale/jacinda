@@ -18,6 +18,7 @@ import           Data.Maybe                 (catMaybes, mapMaybe)
 import           Data.Semigroup             ((<>))
 import qualified Data.Vector                as V
 import           Data.Word                  (Word8)
+import           Foreign.C.String           (CString)
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.Parse
 import           Jacinda.Backend.Printf
@@ -28,6 +29,7 @@ import           Prettyprinter              (hardline, pretty)
 import           Prettyprinter.Render.Text  (putDoc)
 import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
 import           System.IO                  (hFlush, stdout)
+import           System.IO.Unsafe           (unsafeDupablePerformIO)
 import           Ty.Const
 import           U
 
@@ -83,7 +85,9 @@ parseAsF :: BS.ByteString -> E T
 parseAsF = mkF.readFloat
 
 readFloat :: BS.ByteString -> Double
-readFloat = read . ASCII.unpack
+readFloat = unsafeDupablePerformIO . (`BS.useAsCString` atof)
+
+foreign import ccall unsafe atof :: CString -> IO Double
 
 the :: BS.ByteString -> Word8
 the bs = case BS.uncons bs of
