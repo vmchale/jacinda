@@ -82,6 +82,15 @@ library jacinda-lib
         split,
         deepseq
 
+    other-extensions:
+        OverloadedStrings
+        OverloadedLists
+        DeriveFunctor
+        FlexibleContexts
+        DeriveAnyClass
+        DeriveGeneric
+        TypeFamilies
+
     if !flag(cross)
         build-tool-depends: alex:alex >=3.5.0.0, happy:happy
 
