@@ -4,7 +4,8 @@
 - [ ] Anchored streams
 - [ ] Bug: fold1
   - [ ] two expressions with fold1 (and also gather-folds)
-  - [ ] fold: catmaybes, mapMaybes
+  - [x] fold: catmaybes, mapMaybes
+  - [ ] fold-of-scan-of-mapMaybe...
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
@@ -69,6 +70,7 @@
 - [ ] http://cowlark.com/mercat/
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
+  - [ ] mach syscalls (print+summarize)
 # Bugs
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
@@ -86,3 +88,5 @@
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
+- [ ] https://github.com/gunnarmorling/1brc
+  - [ ] min/max
