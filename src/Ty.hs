@@ -373,25 +373,25 @@ tyES s (BB _ Div) = pure (BB (tyF ~> tyF ~> tyF) Div, s)
 tyES s (UB _ Not) = pure (UB (tyB ~> tyB) Not, s)
 tyES s (BB _ And) = pure (BB (tyB ~> tyB ~> tyB) And, s)
 tyES s (BB _ Or) = pure (BB (tyB ~> tyB ~> tyB) Or, s)
-tyES s (BB _ Match) = pure (BB (tyStr ~> tyR ~> (tyOpt $ TyTup [tyI, tyI])) Match, s)
+tyES s (BB _ Match) = pure (BB (tyStr ~> tyR ~> tyOpt (TyTup [tyI, tyI])) Match, s)
 tyES s (TB _ Substr) = pure (TB (tyStr ~> tyI ~> (tyI ~> tyStr)) Substr, s)
-tyES s (UB _ IParse) = pure (UB (tyArr tyStr tyI) IParse, s)
+tyES s (UB _ IParse) = pure (UB (tyStr ~> tyI) IParse, s)
 tyES s (UB _ FParse) = pure (UB (tyArr tyStr tyF) FParse, s)
 tyES s (UB _ Floor) = pure (UB (tyArr tyF tyI) Floor, s)
-tyES s (UB _ Ceiling) = pure (UB (tyArr tyF tyI) Ceiling, s)
-tyES s (UB _ TallyList) = do {a <- var <$> freshName "a"; pure (UB (tyArr a tyI) TallyList, s)}
+tyES s (UB _ Ceiling) = pure (UB (tyF ~> tyI) Ceiling, s)
+tyES s (UB _ TallyList) = do {a <- var <$> freshName "a"; pure (UB (a ~> tyI) TallyList, s)}
 tyES s (UB l Negate) = do {a <- freshName "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
 tyES s (UB _ Some) = do {a <- var <$> freshName "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
 tyES s (NB _ None) = do {a <- freshName "a"; pure (NB (tyOpt (var a)) None, s)}
 tyES s (ParseCol l i) = do {a <- freshName "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
 tyES s (UB l Parse) = do {a <- freshName "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyArr tyStr (var a)) Parse, s)}
-tyES s (BB l Sprintf) = do {a <- freshName "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyArr tyStr (tyArr (var a) tyStr)) Sprintf, s)}
-tyES s (BB l DedupOn) = do {a <- var <$> freshName "a"; b <- freshName "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (tyArr a b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
+tyES s (BB l Sprintf) = do {a <- freshName "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyStr ~> (var a ~> tyStr)) Sprintf, s)}
+tyES s (BB l DedupOn) = do {a <- var <$> freshName "a"; b <- freshName "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
 tyES s (UB _ (At i)) = do {a <- var <$> freshName "a"; pure (UB (tyArr (tyV a) a) (At i), s)}
-tyES s (UB l Dedup) = do {a <- freshName "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (tyArr sA sA) Dedup, s)}
-tyES s (UB _ Const) = do {a <- var <$> freshName "a"; b <- var <$> freshName "b"; pure (UB (tyArr a (tyArr b a)) Const, s)}
+tyES s (UB l Dedup) = do {a <- freshName "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
+tyES s (UB _ Const) = do {a <- var <$> freshName "a"; b <- var <$> freshName "b"; pure (UB (a ~> (b ~> a)) Const, s)}
 tyES s (UB l CatMaybes) = do {a <- freshName "a"; f <- freshName "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (TyApp f' (tyOpt a')) (TyApp f' a')) CatMaybes, s)}
-tyES s (BB l Filter) = do {a <- freshName "a"; f <- freshName "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=TyApp f' a' in pure (BB (tyArr (tyArr a' tyB) (tyArr w w)) Filter, s)}
+tyES s (BB l Filter) = do {a <- freshName "a"; f <- freshName "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=TyApp f' a' in pure (BB (tyArr (tyArr a' tyB) (w ~> w)) Filter, s)}
 tyES s (UB _ (Select i)) = do
     ρ <- freshName "ρ"; a <- var <$> freshName "a"
     pure (UB (tyArr (Rho ρ (IM.singleton i a)) a) (Select i), s)
@@ -400,39 +400,39 @@ tyES s (BB l MapMaybe) = do
     f <- freshName "f"
     modify (mapCV (addC f (Witherable, l)))
     let f'=var f
-    pure (BB (tyArr (tyArr a (tyOpt b)) (tyArr (TyApp f' a) (TyApp f' b))) MapMaybe, s)
+    pure (BB (tyArr (a ~> tyOpt b) (tyArr (TyApp f' a) (TyApp f' b))) MapMaybe, s)
 tyES s (BB l Map) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Functor, l)))
-    pure (BB (tyArr (tyArr a b) (tyArr (TyApp f' a) (TyApp f' b))) Map, s)
+    pure (BB (tyArr (a ~> b) (tyArr (TyApp f' a) (TyApp f' b))) Map, s)
 tyES s (TB l Fold) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (TB (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (TyApp f' a) b))) Fold, s)
+    pure (TB (tyArr (b ~> (a ~> b)) (b ~> tyArr (TyApp f' a) b)) Fold, s)
 tyES s (BB l Fold1) = do
     a <- var <$> freshName "a"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (BB (tyArr (tyArr a (tyArr a a)) (tyArr (TyApp f' a) a)) Fold1, s)
-tyES s (TB _ Captures) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyR (tyOpt tyStr)))) Captures, s)
+    pure (BB (tyArr (a ~> (a ~> a)) (tyArr (TyApp f' a) a)) Fold1, s)
+tyES s (TB _ Captures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyOpt tyStr))) Captures, s)
 tyES s (BB _ Prior) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (BB (tyArr (tyArr a (tyArr a b)) (tyArr (tyStream a) (tyStream b))) Prior, s)
+    pure (BB (tyArr (a ~> (a ~> b)) (tyArr (tyStream a) (tyStream b))) Prior, s)
 tyES s (TB _ ZipW) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"; c <- var <$> freshName "c"
-    pure (TB (tyArr (tyArr a (tyArr b c)) (tyArr (tyStream a) (tyArr (tyStream b) (tyStream c)))) ZipW, s)
+    pure (TB (tyArr (a ~> (b ~> c)) (tyArr (tyStream a) (tyArr (tyStream b) (tyStream c)))) ZipW, s)
 tyES s (TB _ Scan) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (TB (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (tyStream a) (tyStream b)))) Scan, s)
+    pure (TB (tyArr (b ~> (a ~> b)) (b ~> tyArr (tyStream a) (tyStream b))) Scan, s)
 tyES s (TB _ Option) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (TB (b ~> (tyArr (a ~> b) (tyArr (tyOpt a) b))) Option, s)
-tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> (tyV tyStr)))) AllCaptures, s)
+    pure (TB (b ~> tyArr (a ~> b) (tyArr (tyOpt a) b)) Option, s)
+tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyV tyStr))) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
 tyES s (Guarded l e se) = do
     (se', s0) <- tyES s se
@@ -451,7 +451,7 @@ tyES s (Lam _ n@(Nm _ (U i) _) e) = do
     a <- var <$> freshName "a"
     modify (addVarEnv i a)
     (e', s') <- tyES s e
-    pure (Lam (a ~> (eLoc e')) (n$>a) e', s')
+    pure (Lam (a ~> eLoc e') (n$>a) e', s')
 tyES s (Let _ (n@(Nm _ (U i) _), eϵ) e) = do
     (eϵ', s0) <- tyES s eϵ
     let bTy=eLoc eϵ'
