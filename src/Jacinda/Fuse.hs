@@ -33,17 +33,17 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
                 (TyArr sTy _) = eLoc op
             s <- nN "seed" sTy; x <- nN "x" xTy
             let sE=Var sTy s; xE=Var xTy x
-                popT=TyArr xTy sTy; fopT=TyArr sTy popT
+                popT=xTy ~> sTy; fopT=sTy ~> popT
                 fop=Lam fopT s (Lam popT x (EApp undefined (EApp undefined op sE) (EApp yTy f xE)))
-            fM (EApp sTy (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sTy (TyArr (TyApp (TyB TyStream) xTy) sTy))) Fold) fop) seed) xs)
+            fM (EApp sTy (EApp undefined (EApp undefined (TB (fopT ~> (sTy ~> TyArr (TyApp (TyB TyStream) xTy) sTy)) Fold) fop) seed) xs)
         (EApp _ (EApp _ (BB _ MapMaybe) f) xs) -> do
             -- op | seed (f:?xs) -> [option x (x `op`) (f y)] | seed xs
             let TyArr xT yT=eLoc f
                 sT=eLoc seed
             s <- nN "seed" sT; x <- nN "x" xT
             let sE=Var sT s; xE=Var xT x
-                popT=TyArr xT sT; fopT=TyArr sT popT
-                fop=Lam fopT s (Lam popT x (EApp sT (EApp undefined (EApp undefined (TB (TyArr sT (TyArr undefined (TyArr yT sT))) Option) sE) (EApp undefined op sE)) (EApp yT f xE)))
+                popT=xT ~> sT; fopT=sT ~> popT
+                fop=Lam fopT s (Lam popT x (EApp sT (EApp undefined (EApp undefined (TB (sT ~> TyArr undefined (yT ~> sT)) Option) sE) (EApp undefined op sE)) (EApp yT f xE)))
             fM (EApp sT (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sT (TyArr (TyApp (TyB TyStream) xT) sT))) Fold) fop) seed) xs)
         (EApp _ (UB _ CatMaybes) xs) -> do
             -- op | seed (.? xs) -> [option x (x `op`) y] | seed xs
@@ -52,9 +52,9 @@ fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyApp (TyB TySt
                 sTy=eLoc seed
             s <- nN "seed" sTy; x <- nN "x" xMT
             let sE=Var sTy s; xE=Var xMT x
-                popT=TyArr xMT sTy; fopT=TyArr sTy popT
-                fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB (TyArr sTy (TyArr undefined (TyArr xMT sTy))) Option) sE) (EApp undefined op sE)) xE))
-            fM (EApp sTy (EApp undefined (EApp undefined (TB (TyArr fopT (TyArr sTy (TyArr (TyApp (TyB TyStream) xMT) sTy))) Fold) fop) seed) xs)
+                popT=xMT ~> sTy; fopT=sTy ~> popT
+                fop=Lam fopT s (Lam popT x (EApp sTy (EApp undefined (EApp undefined (TB (sTy ~> TyArr undefined (xMT ~> sTy)) Option) sE) (EApp undefined op sE)) xE))
+            fM (EApp sTy (EApp undefined (EApp undefined (TB (fopT ~> (sTy ~> TyArr (TyApp (TyB TyStream) xMT) sTy)) Fold) fop) seed) xs)
         _ -> pure (EApp t0 (EApp t1 (EApp t2 ho op) seed) stream')
 fM (Tup t es) = Tup t <$> traverse fM es
 fM (EApp t e0 e1) = EApp t <$> fM e0 <*> fM e1

@@ -6,6 +6,7 @@
 
 module A ( E (..)
          , T (..)
+         , (~>)
          , TB (..)
          , BBin (..)
          , BTer (..)
@@ -63,6 +64,11 @@ tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
 
 jacTup :: Pretty a => [a] -> Doc ann
 jacTup = tupledBy " . " . fmap pretty
+
+infixr 0 ~>
+
+(~>) :: T -> T -> T
+(~>) = TyArr
 
 data T = TyB { tyBuiltin :: TB }
        | TyApp { tyApp0 :: T, tyApp1 :: T }
