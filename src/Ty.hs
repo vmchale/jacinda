@@ -295,28 +295,28 @@ tyNumOp l = do
     m <- freshName "m"
     modify (mapCV (addC m (IsNum, l)))
     let m' = var m
-    pure $ tyArr m' (tyArr m' m')
+    pure $ m' ~> m' ~> m'
 
 tySemiOp :: Ord a => a -> TyM a T
 tySemiOp l = do
     m <- freshName "m"
     modify (mapCV (addC m (IsSemigroup, l)))
     let m' = var m
-    pure $ tyArr m' (tyArr m' m')
+    pure $ m' ~> m' ~> m'
 
 tyOrd :: Ord a => a -> TyM a T
 tyOrd l = do
     a <- freshName "a"
     modify (mapCV (addC a (IsOrd, l)))
     let a' = var a
-    pure $ tyArr a' (tyArr a' tyB)
+    pure $ a' ~> a' ~> tyB
 
 tyEq :: Ord a => a -> TyM a T
 tyEq l = do
     a <- freshName "a"
     modify (mapCV (addC a (IsEq, l)))
     let a' = var a
-    pure $ tyArr a' (tyArr a' tyB)
+    pure $ a' ~> a' ~> tyB
 
 -- min/max
 tyM :: Ord a => a -> TyM a T
@@ -324,7 +324,7 @@ tyM l = do
     a <- freshName "a"
     modify (mapCV (addC a (IsOrd, l)))
     let a' = var a
-    pure $ tyArr a' (tyArr a' a')
+    pure $ a' ~> a' ~> a'
 
 desugar :: a
 desugar = error "Should have been de-sugared in an earlier stage!"
@@ -364,17 +364,17 @@ tyES s (BB l Eq)    = do {t <- tyEq l; pure (BB t Eq, s)}
 tyES s (BB l Neq)   = do {t <- tyEq l; pure (BB t Neq, s)}
 tyES s (BB l Min)   = do {t <- tyM l; pure (BB t Min, s)}
 tyES s (BB l Max)   = do {t <- tyM l; pure (BB t Max, s)}
-tyES s (BB _ Split) = pure (BB (tyArr tyStr (tyArr tyR (tyV tyStr))) Split, s)
-tyES s (BB _ Splitc) = pure (BB (tyArr tyStr (tyArr tyStr (tyV tyStr))) Splitc, s)
-tyES s (BB _ Matches) = pure (BB (tyArr tyStr (tyArr tyR tyB)) Matches, s)
-tyES s (BB _ NotMatches) = pure (BB (tyArr tyStr (tyArr tyR tyB)) NotMatches, s)
-tyES s (UB _ Tally) = pure (UB (tyArr tyStr tyI) Tally, s)
-tyES s (BB _ Div) = pure (BB (tyArr tyF (tyArr tyF tyF)) Div, s)
-tyES s (UB _ Not) = pure (UB (tyArr tyB tyB) Not, s)
-tyES s (BB _ And) = pure (BB (tyArr tyB (tyArr tyB tyB)) And, s)
-tyES s (BB _ Or) = pure (BB (tyArr tyB (tyArr tyB tyB)) Or, s)
-tyES s (BB _ Match) = pure (BB (tyArr tyStr (tyArr tyR (tyOpt $ TyTup [tyI, tyI]))) Match, s)
-tyES s (TB _ Substr) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyI tyStr))) Substr, s)
+tyES s (BB _ Split) = pure (BB (tyStr ~> tyR ~> tyV tyStr) Split, s)
+tyES s (BB _ Splitc) = pure (BB (tyStr ~> tyStr ~> tyV tyStr) Splitc, s)
+tyES s (BB _ Matches) = pure (BB (tyStr ~> tyR ~> tyB) Matches, s)
+tyES s (BB _ NotMatches) = pure (BB (tyStr ~> tyR ~> tyB) NotMatches, s)
+tyES s (UB _ Tally) = pure (UB (tyStr ~> tyI) Tally, s)
+tyES s (BB _ Div) = pure (BB (tyF ~> tyF ~> tyF) Div, s)
+tyES s (UB _ Not) = pure (UB (tyB ~> tyB) Not, s)
+tyES s (BB _ And) = pure (BB (tyB ~> tyB ~> tyB) And, s)
+tyES s (BB _ Or) = pure (BB (tyB ~> tyB ~> tyB) Or, s)
+tyES s (BB _ Match) = pure (BB (tyStr ~> tyR ~> (tyOpt $ TyTup [tyI, tyI])) Match, s)
+tyES s (TB _ Substr) = pure (TB (tyStr ~> tyI ~> (tyI ~> tyStr)) Substr, s)
 tyES s (UB _ IParse) = pure (UB (tyArr tyStr tyI) IParse, s)
 tyES s (UB _ FParse) = pure (UB (tyArr tyStr tyF) FParse, s)
 tyES s (UB _ Floor) = pure (UB (tyArr tyF tyI) Floor, s)
@@ -431,8 +431,8 @@ tyES s (TB _ Scan) = do
     pure (TB (tyArr (tyArr b (tyArr a b)) (tyArr b (tyArr (tyStream a) (tyStream b)))) Scan, s)
 tyES s (TB _ Option) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (TB (tyArr b (tyArr (tyArr a b) (tyArr (tyOpt a) b))) Option, s)
-tyES s (TB _ AllCaptures) = pure (TB (tyArr tyStr (tyArr tyI (tyArr tyR (tyV tyStr)))) AllCaptures, s)
+    pure (TB (b ~> (tyArr (a ~> b) (tyArr (tyOpt a) b))) Option, s)
+tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> (tyV tyStr)))) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
 tyES s (Guarded l e se) = do
     (se', s0) <- tyES s se
@@ -441,7 +441,7 @@ tyES s (Guarded l e se) = do
     pure (Guarded (tyStream (eLoc se')) e' se', s2)
 tyES s (EApp l e0 e1)     = do
     a <- freshName "a"; b <- freshName "b"
-    let a'=var a; b'=var b; e0Ty=tyArr a' b'
+    let a'=var a; b'=var b; e0Ty=a' ~> b'
     (e0', s0) <- tyES s e0
     (e1', s1) <- tyES s0 e1
     s2 <- liftEither $ mguPrep l s1 (eLoc e0') e0Ty
@@ -451,7 +451,7 @@ tyES s (Lam _ n@(Nm _ (U i) _) e) = do
     a <- var <$> freshName "a"
     modify (addVarEnv i a)
     (e', s') <- tyES s e
-    pure (Lam (tyArr a (eLoc e')) (n$>a) e', s')
+    pure (Lam (a ~> (eLoc e')) (n$>a) e', s')
 tyES s (Let _ (n@(Nm _ (U i) _), eϵ) e) = do
     (eϵ', s0) <- tyES s eϵ
     let bTy=eLoc eϵ'
