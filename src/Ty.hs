@@ -394,44 +394,44 @@ tyES s (UB l CatMaybes) = do {a <- freshName "a"; f <- freshName "f"; modify (ma
 tyES s (BB l Filter) = do {a <- freshName "a"; f <- freshName "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=TyApp f' a' in pure (BB (tyArr (tyArr a' tyB) (w ~> w)) Filter, s)}
 tyES s (UB _ (Select i)) = do
     ρ <- freshName "ρ"; a <- var <$> freshName "a"
-    pure (UB (tyArr (Rho ρ (IM.singleton i a)) a) (Select i), s)
+    pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
 tyES s (BB l MapMaybe) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
     f <- freshName "f"
     modify (mapCV (addC f (Witherable, l)))
     let f'=var f
-    pure (BB (tyArr (a ~> tyOpt b) (tyArr (TyApp f' a) (TyApp f' b))) MapMaybe, s)
+    pure (BB (tyArr (a ~> tyOpt b) (TyApp f' a ~> TyApp f' b)) MapMaybe, s)
 tyES s (BB l Map) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Functor, l)))
-    pure (BB (tyArr (a ~> b) (tyArr (TyApp f' a) (TyApp f' b))) Map, s)
+    pure (BB (tyArr (a ~> b) (TyApp f' a ~> TyApp f' b)) Map, s)
 tyES s (TB l Fold) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (TB (tyArr (b ~> (a ~> b)) (b ~> tyArr (TyApp f' a) b)) Fold, s)
+    pure (TB ((b ~> (a ~> b)) ~> (b ~> TyApp f' a ~> b)) Fold, s)
 tyES s (BB l Fold1) = do
     a <- var <$> freshName "a"
     f <- freshName "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (BB (tyArr (a ~> (a ~> a)) (tyArr (TyApp f' a) a)) Fold1, s)
+    pure (BB ((a ~> (a ~> a)) ~> (TyApp f' a ~> a)) Fold1, s)
 tyES s (TB _ Captures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyOpt tyStr))) Captures, s)
 tyES s (BB _ Prior) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (BB (tyArr (a ~> (a ~> b)) (tyArr (tyStream a) (tyStream b))) Prior, s)
+    pure (BB (tyArr (a ~> (a ~> b)) (tyStream a ~> tyStream b)) Prior, s)
 tyES s (TB _ ZipW) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"; c <- var <$> freshName "c"
-    pure (TB (tyArr (a ~> (b ~> c)) (tyArr (tyStream a) (tyArr (tyStream b) (tyStream c)))) ZipW, s)
+    pure (TB (tyArr (a ~> (b ~> c)) (tyStream a ~> (tyStream b ~> tyStream c))) ZipW, s)
 tyES s (TB _ Scan) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (TB (tyArr (b ~> (a ~> b)) (b ~> tyArr (tyStream a) (tyStream b))) Scan, s)
+    pure (TB (tyArr (b ~> (a ~> b)) (b ~> tyStream a ~> tyStream b)) Scan, s)
 tyES s (TB _ Option) = do
     a <- var <$> freshName "a"; b <- var <$> freshName "b"
-    pure (TB (b ~> tyArr (a ~> b) (tyArr (tyOpt a) b)) Option, s)
+    pure (TB (b ~> (a ~> b) ~> (tyOpt a ~> b)) Option, s)
 tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyV tyStr))) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
 tyES s (Guarded l e se) = do
