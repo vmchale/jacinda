@@ -57,6 +57,7 @@
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
   - [ ] foldMaybe
 - [ ] Builtins
+- [ ] helios distribution? https://github.com/oxidecomputer/helios
 ## Syntax
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
