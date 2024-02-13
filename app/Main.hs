@@ -11,7 +11,7 @@ import           System.IO           (stdin)
 
 data Command = TypeCheck !FilePath ![FilePath]
              | Run !FilePath !(Maybe FilePath) ![FilePath]
-             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) ![FilePath]
+             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
 
 jacFile :: Parser FilePath
@@ -19,6 +19,12 @@ jacFile = argument str
     (metavar "JACFILE"
     <> help "Source code"
     <> jacCompletions)
+
+jacRs :: Parser (Maybe T.Text)
+jacRs = optional $ option str
+    (short 'R'
+    <> metavar "REGEXP"
+    <> help "Record separator")
 
 jacFs :: Parser (Maybe T.Text)
 jacFs = optional $ option str
@@ -49,7 +55,7 @@ commandP = hsubparser
     where
         tcP = TypeCheck <$> jacFile <*> includes
         runP = Run <$> jacFile <*> inpFile <*> includes
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> includes
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
 includes :: Parser [FilePath]
@@ -76,9 +82,9 @@ main :: IO ()
 main = run =<< execParser wrapper
 
 run :: Command -> IO ()
-run (TypeCheck fp is)         = tcIO is =<< TIO.readFile fp
-run (Run fp Nothing is)       = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing stdin }
-run (Run fp (Just dat) is)    = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing dat }
-run (Expr eb Nothing fs is)   = runOnHandle is eb fs stdin
-run (Expr eb (Just fp) fs is) = runOnFile is eb fs fp
-run (Eval e)                  = print (exprEval e)
+run (TypeCheck fp is)            = tcIO is =<< TIO.readFile fp
+run (Run fp Nothing is)          = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing stdin }
+run (Run fp (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing dat }
+run (Expr eb Nothing fs rs is)   = runOnHandle is eb fs stdin
+run (Expr eb (Just fp) fs rs is) = runOnFile is eb fs fp
+run (Eval e)                     = print (exprEval e)
