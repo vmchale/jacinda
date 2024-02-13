@@ -65,6 +65,8 @@ parseWithMax' = fmap (uncurry rP . second (rwP . snd)) . parseWithMax
 
 type FileBS = BS.ByteString
 
+tcompile=compileDefault.encodeUtf8
+
 compileR :: FileBS
          -> E T
          -> E T
@@ -83,8 +85,7 @@ exprEval src =
             in eB j pure (compileR (error "nf not defined.") inlined)
 
 compileFS :: Maybe T.Text -> RurePtr
-compileFS (Just bs) = compileDefault (encodeUtf8 bs)
-compileFS Nothing   = defaultRurePtr
+compileFS = maybe defaultRurePtr tcompile
 
 runOnBytes :: [FilePath]
            -> FilePath -- ^ Data file name, for @nf@
@@ -99,9 +100,11 @@ runOnBytes incls fp src cliFS cliRS contents = do
     (typed, i) <- yIO $ runTyM m (tyP ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
-    cont <- yIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
-    -- FIXME lines
-    cont $ fmap BSL.toStrict (ASCIIL.lines contents)
+    let ~(afs, ars) = getS ast
+    cont <- yIO $ runJac (compileFS (cliFS <|> afs)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
+    case cliRS <|> ars of
+        Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
+        Just rs -> cont $ lazySplit (tcompile rs) contents
 
 runOnHandle :: [FilePath]
             -> T.Text -- ^ Program
