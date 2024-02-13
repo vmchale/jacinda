@@ -9,7 +9,6 @@ import           Control.Monad              (foldM, (<=<))
 import           Control.Monad.State.Strict (State, evalState, get, modify, runState)
 import           Data.Bifunctor             (bimap)
 import qualified Data.ByteString            as BS
-import qualified Data.ByteString.Char8      as ASCII
 import           Data.Containers.ListUtils  (nubOrdOn)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
