@@ -14,6 +14,8 @@ data Command = TypeCheck !FilePath ![FilePath]
              | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
 
+-- TODO: --usv flag
+
 jacFile :: Parser FilePath
 jacFile = argument str
     (metavar "JACFILE"
@@ -83,8 +85,8 @@ main = run =<< execParser wrapper
 
 run :: Command -> IO ()
 run (TypeCheck fp is)            = tcIO is =<< TIO.readFile fp
-run (Run fp Nothing is)          = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing stdin }
-run (Run fp (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing dat }
-run (Expr eb Nothing fs rs is)   = runOnHandle is eb fs stdin
-run (Expr eb (Just fp) fs rs is) = runOnFile is eb fs fp
+run (Run fp Nothing is)          = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
+run (Run fp (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
+run (Expr eb Nothing fs rs is)   = runOnHandle is eb fs rs stdin
+run (Expr eb (Just fp) fs rs is) = runOnFile is eb fs rs fp
 run (Eval e)                     = print (exprEval e)

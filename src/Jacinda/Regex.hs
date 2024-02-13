@@ -3,6 +3,7 @@
 
 module Jacinda.Regex ( splitBy
                      , defaultRurePtr
+                     , asciiFsRurePtr
                      , isMatch'
                      , find'
                      , compileDefault
@@ -18,17 +19,26 @@ import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureFlags, RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
 
+asciiFs :: BS.ByteString
+asciiFs = "\31"
+
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
-    where genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
+
+genFlags :: RureFlags
+genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
+
+{-# NOINLINE asciiFsRurePtr #-}
+asciiFsRurePtr :: RurePtr
+asciiFsRurePtr = unsafePerformIO $ yIO =<< compile genFlags asciiFs
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ-begin)
