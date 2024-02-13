@@ -18,7 +18,7 @@ module A ( E (..)
          , L (..)
          , N (..)
          , mapExpr
-         , getFS, flushD
+         , getS, flushD
          -- * Base functors
          , EF (..)
          ) where
@@ -27,6 +27,7 @@ import           Control.DeepSeq    (NFData)
 import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
+import           Data.List          (foldl')
 import           Data.Maybe         (listToMaybe)
 import           Data.Semigroup     ((<>))
 import qualified Data.Text          as T
@@ -437,8 +438,11 @@ instance Show (Program a) where show=show.pretty
 flushD :: Program a -> Bool
 flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
-getFS :: Program a -> Maybe T.Text
-getFS (Program ds _) = listToMaybe (concatMap go (reverse ds)) where go (SetFS bs) = [bs]; go SetAsv{} = ["\31"]; go _ = []
+getS :: Program a -> (Maybe T.Text, Maybe T.Text)
+getS (Program ds _) = foldl' go (Nothing, Nothing) ds where
+    go (_, rs) (SetFS bs) = (Just bs, rs)
+    go (fs, _) (SetRS bs) = (fs, Just bs)
+    go next _             = next
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)

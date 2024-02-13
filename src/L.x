@@ -139,6 +139,7 @@ tokens :-
         else                     { mkKw KwElse }
 
         fs                       { mkRes VarFs }
+        rs                       { mkRes VarRs }
         ix                       { mkRes VarIx }
         ⍳                        { mkRes VarIx }
         nf                       { mkRes VarNf }
@@ -357,6 +358,7 @@ data Keyword = KwLet
 data Var = VarX
          | VarY
          | VarFs
+         | VarRs
          | VarIx
          | VarMin
          | VarMax
@@ -366,6 +368,7 @@ instance Pretty Var where
     pretty VarX     = "x"
     pretty VarY     = "y"
     pretty VarFs    = "fs"
+    pretty VarRs    = "rs"
     pretty VarIx    = "⍳"
     pretty VarNf    = "nf"
     pretty VarMin   = "min"
