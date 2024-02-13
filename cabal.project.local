@@ -1,2 +1,0 @@
-package jacinda
-  ld-options: -lmimalloc -L/usr/local/lib/mimalloc-2.1
