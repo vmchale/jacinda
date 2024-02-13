@@ -48,6 +48,7 @@
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
 - [ ] Expose captures
+- [ ] `\`$` as "all fields, as list" or something
 - [ ] `dedupBy` builtin
 - [ ] Infix operators
   - [ ] `$>` (ice cream cone?)

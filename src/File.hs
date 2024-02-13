@@ -90,30 +90,34 @@ runOnBytes :: [FilePath]
            -> FilePath -- ^ Data file name, for @nf@
            -> T.Text -- ^ Program
            -> Maybe T.Text -- ^ Field separator
+           -> Maybe T.Text -- ^ Record separator
            -> BSL.ByteString
            -> IO ()
-runOnBytes incls fp src cliFS contents = do
+runOnBytes incls fp src cliFS cliRS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yIO $ runTyM m (tyP ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
     cont <- yIO $ runJac (compileFS (cliFS <|> getFS ast)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
+    -- FIXME lines
     cont $ fmap BSL.toStrict (ASCIIL.lines contents)
 
 runOnHandle :: [FilePath]
             -> T.Text -- ^ Program
             -> Maybe T.Text -- ^ Field separator
+            -> Maybe T.Text -- ^ Record separator
             -> Handle
             -> IO ()
-runOnHandle is src cliFS = runOnBytes is "(runOnBytes)" src cliFS <=< BSL.hGetContents
+runOnHandle is src cliFS cliRS = runOnBytes is "(runOnBytes)" src cliFS cliRS <=< BSL.hGetContents
 
 runOnFile :: [FilePath]
           -> T.Text
           -> Maybe T.Text
+          -> Maybe T.Text
           -> FilePath
           -> IO ()
-runOnFile is e fs fp = runOnBytes is fp e fs =<< BSL.readFile fp
+runOnFile is e fs rs fp = runOnBytes is fp e fs rs =<< BSL.readFile fp
 
 tcIO :: [FilePath] -> T.Text -> IO ()
 tcIO incls src = do

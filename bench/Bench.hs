@@ -13,9 +13,9 @@ main :: IO ()
 main =
     defaultMain [ bgroup "eval"
                       [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/"
-                      , bench "runOnFile" $ nfIO (silence $ runOnFile [] "(+)|0 {%/Bloom/}{1}" Nothing "bench/data/ulysses.txt")
-                      , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/wc.jac" ; runOnFile [] contents Nothing "bench/data/ulysses.txt" })
-                      , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/span2.jac" ; runOnFile [] contents Nothing "bench/data/span.txt" })
+                      , bench "runOnFile" $ nfIO (silence $ runOnFile [] "(+)|0 {%/Bloom/}{1}" Nothing Nothing "bench/data/ulysses.txt")
+                      , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/wc.jac" ; runOnFile [] contents Nothing Nothing "bench/data/ulysses.txt" })
+                      , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/span2.jac" ; runOnFile [] contents Nothing Nothing "bench/data/span.txt" })
                       ]
                 ]
 
