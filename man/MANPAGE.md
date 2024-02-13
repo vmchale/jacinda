@@ -38,6 +38,12 @@ ja - Jacinda: data filtering, processing, reporting
 **-I** **-\-include**
 :   Include directory for imports
 
+**-F**
+:   Field separator regex
+
+**-R**
+:   Record separator regex
+
 # LANGUAGE
 
 ## REGEX
@@ -180,6 +186,8 @@ a boolean expression.
 ## DECLARATIONS
 
 **:set fs=/REGEX/;** Set field separator
+
+**:set rs=/REGEX/;** Set record separator
 
 **:flush;** Flush stdout for every line
 
