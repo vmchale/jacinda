@@ -367,7 +367,7 @@ instance Eq (E a) where
     (==) (FParseCol _ i) (FParseCol _ j)        = i == j
     (==) (Field _ i) (Field _ j)                = i == j
     (==) LastField{} LastField{}                = True
-    (==) FieldList{} FieldList{}               = True
+    (==) FieldList{} FieldList{}                = True
     (==) AllColumn{} AllColumn{}                = True
     (==) AllField{} AllField{}                  = True
     (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'
@@ -414,13 +414,14 @@ instance Pretty C where
 instance Show C where show=show.pretty
 
 -- decl
-data D a = SetFS T.Text
+data D a = SetFS T.Text | SetRS T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
          deriving (Functor)
 
 instance Pretty (D a) where
-    pretty (SetFS bs)       = ":set" <+> "/" <> pretty bs <> "/;"
+    pretty (SetFS bs)       = ":set fs :=" <+> "/" <> pretty bs <> "/;"
+    pretty (SetRS rs)       = ":set rs :=" <+> "/" <> pretty rs <> "/;"
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
 
