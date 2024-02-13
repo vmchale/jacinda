@@ -1,7 +1,8 @@
 {-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Regex ( splitBy
+module Jacinda.Regex ( lazySplit
+                     , splitBy
                      , defaultRurePtr
                      , isMatch'
                      , find'
@@ -14,6 +15,8 @@ module Jacinda.Regex ( splitBy
 import           Control.Exception        (Exception, throwIO)
 import           Control.Monad            ((<=<))
 import qualified Data.ByteString.Internal as BS
+import qualified Data.ByteString.Lazy     as BSL
+import           Data.List                (unsnoc)
 import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
@@ -55,15 +58,29 @@ findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> f
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
 find' re str = unsafeDupablePerformIO $ find re str 0
 
-lazySplit=undefined
+lazySplit :: RurePtr -> BSL.ByteString -> [BS.ByteString]
+lazySplit rp bs = let c=BSL.toChunks bs in go Nothing c
+        where go Nothing []      = []
+              go Nothing (c:cs)  = let ss=splitByA rp c
+                    in case unsnoc ss of
+                        Just (iss,lss) -> iss++go (Just lss) cs
+                        Nothing        -> go Nothing cs
+              go (Just c) []     = let ss=splitByA rp c in ss
+              go (Just e) (c:cs) = let ss=splitByA rp (e<>c)
+                    in case unsnoc ss of
+                        Just (iss,lss) -> iss++go (Just lss) cs
+                        Nothing        -> go Nothing cs
+
+splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
+splitBy = (V.fromList .) . splitByA
 
 {-# NOINLINE splitBy #-}
-splitBy :: RurePtr
+splitByA :: RurePtr
         -> BS.ByteString
-        -> V.Vector BS.ByteString
-splitBy _ "" = mempty
-splitBy re haystack@(BS.BS fp l) =
-    (\sp -> V.fromList [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- sp]) slicePairs
+        -> [BS.ByteString]
+splitByA _ "" = mempty
+splitByA re haystack@(BS.BS fp l) =
+    [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- slicePairs]
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
