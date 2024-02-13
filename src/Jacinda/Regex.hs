@@ -3,7 +3,6 @@
 
 module Jacinda.Regex ( splitBy
                      , defaultRurePtr
-                     , asciiFsRurePtr
                      , isMatch'
                      , find'
                      , compileDefault
@@ -26,19 +25,12 @@ import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerform
 defaultFs :: BS.ByteString
 defaultFs = "\\s+"
 
-asciiFs :: BS.ByteString
-asciiFs = "\31"
-
 {-# NOINLINE defaultRurePtr #-}
 defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
 
 genFlags :: RureFlags
 genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
-
-{-# NOINLINE asciiFsRurePtr #-}
-asciiFsRurePtr :: RurePtr
-asciiFsRurePtr = unsafePerformIO $ yIO =<< compile genFlags asciiFs
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ-begin)
@@ -63,7 +55,8 @@ findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> f
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
 find' re str = unsafeDupablePerformIO $ find re str 0
 
--- FIXME: splitBy '\s+' '' should be [] not ['']
+lazySplit=undefined
+
 {-# NOINLINE splitBy #-}
 splitBy :: RurePtr
         -> BS.ByteString
@@ -84,7 +77,7 @@ isMatch' :: RurePtr
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
-compileDefault = unsafeDupablePerformIO . (yIO <=< compile rureDefaultFlags) -- TODO: rureFlagDotNL
+compileDefault = unsafeDupablePerformIO . (yIO <=< compile genFlags)
 
 newtype RureExe = RegexCompile String deriving (Show)
 

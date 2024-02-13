@@ -417,6 +417,7 @@ instance Show C where show=show.pretty
 data D a = SetFS T.Text | SetRS T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
+         | SetAsv
          deriving (Functor)
 
 instance Pretty (D a) where
@@ -424,6 +425,7 @@ instance Pretty (D a) where
     pretty (SetRS rs)       = ":set rs :=" <+> "/" <> pretty rs <> "/;"
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
+    pretty SetAsv           = ":set asv;"
 
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 
@@ -436,7 +438,7 @@ flushD :: Program a -> Bool
 flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
 getFS :: Program a -> Maybe T.Text
-getFS (Program ds _) = listToMaybe (concatMap go ds) where go (SetFS bs) = [bs]; go _ = []
+getFS (Program ds _) = listToMaybe (concatMap go (reverse ds)) where go (SetFS bs) = [bs]; go SetAsv{} = ["\31"]; go _ = []
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)
