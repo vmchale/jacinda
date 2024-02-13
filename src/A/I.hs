@@ -78,7 +78,7 @@ bM (Implicit l e) = Implicit l <$> bM e
 bM (Guarded l e0 e1) = Guarded l <$> bM e0 <*> bM e1
 bM (Cond l p e0 e1) = Cond l <$> bM p <*> bM e0 <*> bM e1
 bM e@Column{} = pure e; bM e@IParseCol{} = pure e; bM e@FParseCol{} = pure e; bM e@AllField{} = pure e
-bM e@LastField{} = pure e; bM e@Field{} = pure e; bM e@ParseCol{} = pure e; bM e@AllColumn{} = pure e; bM e@RC{} = pure e
+bM e@LastField{} = pure e; bM e@Field{} = pure e; bM e@FieldList{} = pure e; bM e@ParseCol{} = pure e; bM e@AllColumn{} = pure e; bM e@RC{} = pure e
 bM e@Lit{} = pure e; bM e@RegexLit{} = pure e
 bM e@BB{} = pure e; bM e@NB{} = pure e; bM e@UB{} = pure e; bM e@TB{} = pure e
 bM ResVar{} = desugar; bM Dfn{} = desugar; bM Paren{} = desugar
@@ -86,7 +86,7 @@ bM ResVar{} = desugar; bM Dfn{} = desugar; bM Paren{} = desugar
 iE :: E T -> RM T (E T)
 iE e@NB{} = pure e; iE e@UB{} = pure e; iE e@BB{} = pure e; iE e@TB{} = pure e
 iE e@Column{} = pure e; iE e@ParseCol{} = pure e; iE e@IParseCol{} = pure e; iE e@FParseCol{} = pure e
-iE e@Field{} = pure e; iE e@LastField{} = pure e; iE e@AllField{} = pure e; iE e@AllColumn{} = pure e
+iE e@Field{} = pure e; iE e@LastField{} = pure e; iE e@AllField{} = pure e; iE e@FieldList{} = pure e; iE e@AllColumn{} = pure e
 iE e@Lit{} = pure e
 iE e@RegexLit{} = pure e; iE e@RC{} = pure e
 iE (EApp t e e') = EApp t <$> iE e <*> iE e'

@@ -142,7 +142,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
-**captures** Return all captures (nth capture group)
+**captures** Return all aptures (nth capture group)
 :   Str -> Int -> Regex -> List Str
 
 **:?** mapMaybe
@@ -159,9 +159,16 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **`n** nth field
 
+**`0** current line
+
 **`\*** last field
 
+**`$** all fields
+:   List Str
+
 **$n** nth column
+
+**$0** stream of lines
 
 **{%\<pattern>}{\<expr>}** Filtered stream on lines matching \<pattern>, defined by \<expr>
 
