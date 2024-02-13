@@ -248,12 +248,16 @@ asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)
 asT :: E T -> [E T]
 asT (Tup _ es) = es; asT e = throw (ExpectedTup e)
 
+vS :: V.Vector BS.ByteString -> E T
+vS = Arr (tyV tyStr).fmap mkStr
+
 eCtx :: (BS.ByteString, V.Vector BS.ByteString) -- ^ Line, split by field separator
      -> Integer -- ^ Line number
      -> E T -> E T
 eCtx ~(f, _) _ AllField{}  = mkStr f
 eCtx (_, fs) _ (Field _ i) = mkStr (fs ! (i-1))
 eCtx (_, fs) _ LastField{} = mkStr (V.last fs)
+eCtx (_, fs) _ FieldList{} = vS fs
 eCtx _ i (NB _ Ix)         = mkI i
 eCtx (_, fs) _ (NB _ Nf)   = mkI (fromIntegral$V.length fs)
 eCtx _ _ e                 = e
@@ -400,10 +404,10 @@ eBM f (EApp _ (EApp _ (BB _ NotMatches) s) r) = do
     pure $ mkB (not$isMatch' r' s')
 eBM f (EApp _ (EApp _ (BB _ Split) s) r) = do
     s' <- asS<$>eBM f s; r' <- asR<$>eBM f r
-    pure (Arr (tyV tyStr) (mkStr<$>splitBy r' s'))
+    pure (vS (splitBy r' s'))
 eBM f (EApp _ (EApp _ (BB _ Splitc) s) c) = do
     s' <- asS<$>eBM f s; c' <- the.asS<$>eBM f c
-    pure (Arr (tyV tyStr) (mkStr <$> V.fromList (BS.split c' s')))
+    pure (vS (V.fromList (BS.split c' s')))
 eBM f (EApp _ (UB _ FParse) x) = do {x' <- eBM f x; pure (parseAsF (asS x'))}
 eBM f (EApp _ (UB _ IParse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}
 eBM f (EApp (TyB TyInteger) (UB _ Parse) x) = do {x' <- eBM f x; pure (parseAsEInt (asS x'))}

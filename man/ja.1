@@ -131,7 +131,7 @@ Int)
 \f[B]\[ti]*\f[R] Match, returning nth capture group
 Str \-> Int \-> Regex \-> Option Str
 .TP
-\f[B]captures\f[R] Return all captures (nth capture group)
+\f[B]captures\f[R] Return all aptures (nth capture group)
 Str \-> Int \-> Regex \-> List Str
 .TP
 \f[B]:?\f[R] mapMaybe
@@ -146,9 +146,16 @@ Witherable f :=> f (Option a) \-> f a
 .SS SYNTAX
 \f[B]\[ga]n\f[R] nth field
 .PP
+\f[B]\[ga]0\f[R] current line
+.PP
 \f[B]\[ga]*\f[R] last field
+.TP
+\f[B]\[ga]$\f[R] all fields
+List Str
 .PP
 \f[B]$n\f[R] nth column
+.PP
+\f[B]$0\f[R] stream of lines
 .PP
 \f[B]{%<pattern>}{<expr>}\f[R] Filtered stream on lines matching
 <pattern>, defined by <expr>

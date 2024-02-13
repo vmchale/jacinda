@@ -102,7 +102,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     allField { TokFieldLit $$ 0 }
     column { $$@(TokStreamLit _ _) }
     field { $$@(TokFieldLit _ _) }
-    lastField { TokSym $$ LastFieldTok } -- TokSym is maybe insensible but whatever
+    lastField { TokSym $$ LastFieldTok }
+    listField { TokSym $$ FieldListTok }
 
     let { TokKeyword $$ KwLet }
     in { TokKeyword $$ KwIn }
@@ -234,6 +235,7 @@ E :: { E AlexPosn }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
   | lastField { LastField $1 }
+  | listField { FieldList $1 }
   | field iParse { EApp (loc $1) (UB $2 IParse) (Field (loc $1) (ix $1)) }
   | field fParse { EApp (loc $1) (UB $2 FParse) (Field (loc $1) (ix $1)) }
   | name iParse { EApp (Nm.loc $1) (UB $2 IParse) (Var (Nm.loc $1) $1) }
