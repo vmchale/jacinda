@@ -11,16 +11,19 @@ import           System.IO           (stdin)
 
 data Command = TypeCheck !FilePath ![FilePath]
              | Run !FilePath !(Maybe FilePath) ![FilePath]
-             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !(Maybe T.Text) ![FilePath]
+             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
-
--- TODO: --usv flag
 
 jacFile :: Parser FilePath
 jacFile = argument str
     (metavar "JACFILE"
     <> help "Source code"
     <> jacCompletions)
+
+asv :: Parser Bool
+asv = switch
+    (long "asv"
+    <> help "Read from ASV")
 
 jacRs :: Parser (Maybe T.Text)
 jacRs = optional $ option str
@@ -57,7 +60,7 @@ commandP = hsubparser
     where
         tcP = TypeCheck <$> jacFile <*> includes
         runP = Run <$> jacFile <*> inpFile <*> includes
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> jacRs <*> includes
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
 includes :: Parser [FilePath]
@@ -83,10 +86,14 @@ versionMod = infoOption (V.showVersion P.version) (short 'V' <> long "version" <
 main :: IO ()
 main = run =<< execParser wrapper
 
+ap :: Bool -> Maybe T.Text -> Maybe T.Text
+ap True Just{} = errorWithoutStackTrace "--asv specified with field separator."
+ap _ fs        = fs
+
 run :: Command -> IO ()
-run (TypeCheck fp is)            = tcIO is =<< TIO.readFile fp
-run (Run fp Nothing is)          = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
-run (Run fp (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
-run (Expr eb Nothing fs rs is)   = runOnHandle is eb fs rs stdin
-run (Expr eb (Just fp) fs rs is) = runOnFile is eb fs rs fp
-run (Eval e)                     = print (exprEval e)
+run (TypeCheck fp is)              = tcIO is =<< TIO.readFile fp
+run (Run fp Nothing is)            = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
+run (Run fp (Just dat) is)         = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
+run (Expr eb Nothing fs a rs is)   = runOnHandle is eb (ap a fs) rs stdin
+run (Expr eb (Just fp) fs a rs is) = runOnFile is eb (ap a fs) rs fp
+run (Eval e)                       = print (exprEval e)
