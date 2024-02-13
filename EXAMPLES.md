@@ -121,6 +121,8 @@ We'd get:
 curl -sL https://data.cdc.gov/api/views/9mfq-cb36/rows.csv | sort | csvformat -D'|' | ja -F'\|' ',[(x.y)] ((-)\. {%/2021.*TX/}{`3:i}) {%/2021.*TX/}{`1}'
 ```
 
+<!-- csvformat -D$'\x1f' -->
+
 # NYC Vaccine Effectiveness
 
 ```
