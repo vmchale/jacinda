@@ -31,7 +31,6 @@ doc/guide.html: doc/guide.md
 
 install: bin/x86_64-linux-ja man/ja.1
 	cp bin/x86_64-linux-ja ~/.local/bin/ja
-	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
