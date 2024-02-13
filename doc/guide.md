@@ -530,6 +530,9 @@ process"step^(0 . '') $0
 
 We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.1.1/scripts/csvformat.html), viz.
 
+
+<!-- csvformat -D$'\x1f' -->
+
 ```
 csvformat file.csv -D'|' | ja -F'\|' '$1'
 ```
