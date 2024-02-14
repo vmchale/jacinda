@@ -4,19 +4,10 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeFamilies      #-}
 
-module A ( E (..)
-         , T (..)
-         , (~>)
-         , TB (..)
-         , BBin (..)
-         , BTer (..)
-         , BUn (..)
-         , DfnVar (..)
-         , D (..)
-         , Program (..)
-         , C (..)
-         , L (..)
-         , N (..)
+module A ( E (..), T (..), (~>), TB (..), C (..)
+         , L (..), N (..), BBin (..), BTer (..)
+         , BUn (..), DfnVar (..)
+         , D (..), Program (..)
          , mapExpr
          , getS, flushD
          -- * Base functors
@@ -47,14 +38,10 @@ infixr 6 <##>
 (<##>) :: Doc a -> Doc a -> Doc a
 (<##>) x y = x <> hardline <> hardline <> y
 
-data TB = TyInteger
-        | TyFloat
+data TB = TyInteger | TyFloat
         | TyStr | TyR
-        | TyStream
-        | TyVec
-        | TyBool
-        | TyOption
-        | TyUnit
+        | TyStream | TyVec | TyOption
+        | TyBool | TyUnit
         deriving (Eq, Ord)
 
 tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
@@ -108,16 +95,11 @@ instance Show T where show=show.pretty
 data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
-         | At Int
-         | Select Int
-         | IParse
-         | FParse
-         | Parse
-         | Floor
-         | Ceiling
+         | At Int | Select Int
+         | IParse | FParse | Parse
+         | Floor | Ceiling
          | Some
-         | Dedup
-         | CatMaybes
+         | Dedup | CatMaybes
          | Negate
          | TallyList -- length of vector
          deriving (Eq)
@@ -165,43 +147,20 @@ data BBin = Plus | Times | Div
           | And | Or
           | Min | Max
           | Split | Splitc
-          | Prior
-          | Filter
-          | Sprintf
-          | Match
-          | MapMaybe
-          | Fold1
-          | DedupOn
+          | Prior | DedupOn | MapMaybe
+          | Filter | Fold1
+          | Match | Sprintf
           deriving (Eq)
 
 instance Pretty BBin where
-    pretty Plus       = "+"
-    pretty Times      = "*"
-    pretty Div        = "%"
-    pretty Minus      = "-"
-    pretty Eq         = "="
-    pretty Gt         = ">"
-    pretty Lt         = "<"
-    pretty Geq        = ">="
-    pretty Leq        = "<="
-    pretty Neq        = "!="
-    pretty Map        = "¨"
-    pretty Matches    = "~"
-    pretty NotMatches = "!~"
-    pretty And        = "&"
-    pretty Or         = "||"
-    pretty Max        = "max"
-    pretty Min        = "min"
-    pretty Prior      = "\\."
-    pretty Filter     = "#."
-    pretty Split      = "split"
-    pretty Splitc     = "splitc"
-    pretty Sprintf    = "sprintf"
-    pretty Match      = "match"
-    pretty MapMaybe   = ":?"
-    pretty Fold1      = "|>"
-    pretty Exp        = "**"
-    pretty DedupOn    = "~.*"
+    pretty Plus = "+"; pretty Times = "*"; pretty Div = "%"; pretty Minus = "-"
+    pretty Eq = "="; pretty Gt = ">"; pretty Lt = "<"; pretty Geq = ">="
+    pretty Leq = "<="; pretty Neq = "!="; pretty Map = "¨"; pretty Matches = "~"
+    pretty NotMatches = "!~"; pretty And = "&"; pretty Or = "||"
+    pretty Max = "max"; pretty Min = "min"; pretty Prior = "\\."; pretty Filter = "#."
+    pretty Split = "split"; pretty Splitc = "splitc"; pretty Sprintf = "sprintf"
+    pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"
+    pretty Exp = "**"; pretty DedupOn = "~.*"
 
 data DfnVar = X | Y deriving (Eq)
 
@@ -249,31 +208,21 @@ data E a = Column { eLoc :: a, col :: Int }
          deriving (Functor, Generic)
 
 instance Recursive (E a) where
-
 instance Corecursive (E a) where
 
 data EF a x = ColumnF a Int
-            | IParseColF a Int
-            | FParseColF a Int
-            | ParseColF a Int
-            | FieldF a Int
-            | LastFieldF a
-            | FieldListF a
-            | AllFieldF a
+            | IParseColF a Int | FParseColF a Int | ParseColF a Int
+            | FieldF a Int | LastFieldF a | FieldListF a | AllFieldF a
             | AllColumnF a
             | EAppF a x x
-            | GuardedF a x x
-            | ImplicitF a x
+            | GuardedF a x x | ImplicitF a x
             | LetF a (Nm a, x) x
             | VarF a (Nm a)
             | LitF a !L
             | RegexLitF a BS.ByteString
             | LamF a (Nm a) x
             | DfnF a x
-            | BBF a BBin
-            | TBF a BTer
-            | UBF a BUn
-            | NBF a N
+            | BBF a BBin | TBF a BTer | UBF a BUn | NBF a N
             | TupF a [x]
             | ResVarF a DfnVar
             | RCF RurePtr
@@ -402,15 +351,10 @@ data C = IsNum | IsEq | IsOrd
        deriving (Eq, Ord)
 
 instance Pretty C where
-    pretty IsNum       = "Num"
-    pretty IsEq        = "Eq"
-    pretty IsOrd       = "Ord"
-    pretty IsParse     = "Parseable"
-    pretty IsSemigroup = "Semigroup"
-    pretty Functor     = "Functor"
-    pretty Foldable    = "Foldable"
-    pretty IsPrintf    = "Printf"
-    pretty Witherable  = "Witherable"
+    pretty IsNum = "Num"; pretty IsEq = "Eq"; pretty IsOrd = "Ord"
+    pretty IsParse = "Parseable"; pretty IsSemigroup = "Semigroup"
+    pretty Functor = "Functor"; pretty Foldable = "Foldable"
+    pretty IsPrintf = "Printf"; pretty Witherable = "Witherable"
 
 instance Show C where show=show.pretty
 
@@ -441,6 +385,7 @@ flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 getS :: Program a -> (Maybe T.Text, Maybe T.Text)
 getS (Program ds _) = foldl' go (Nothing, Nothing) ds where
     go (_, rs) (SetFS bs) = (Just bs, rs)
+    go (_, rs) SetAsv     = (Just "\\x1f", rs)
     go (fs, _) (SetRS bs) = (fs, Just bs)
     go next _             = next
 
