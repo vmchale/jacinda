@@ -35,7 +35,7 @@ install: bin/x86_64-linux-ja man/ja.1
 
 clean:
 	make -C vscode clean
-	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data bin
+	rm -rf dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data/*.txt bin
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
