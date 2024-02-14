@@ -2,7 +2,6 @@
 
 module Main (main) where
 
-import           Data.Semigroup      ((<>))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V

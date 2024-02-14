@@ -22,7 +22,6 @@ import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (($>))
 import qualified Data.IntMap as IM
 import qualified Data.Map as M
-import Data.Semigroup ((<>))
 import qualified Data.Text as T
 import Nm
 import Prettyprinter (Pretty (pretty), (<+>), colon, squotes)

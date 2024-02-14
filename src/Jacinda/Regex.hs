@@ -17,7 +17,6 @@ import           Control.Monad            ((<=<))
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
 import           Data.List                (unsnoc)
-import           Data.Semigroup           ((<>))
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
