@@ -19,8 +19,6 @@ import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.List          (foldl')
-import           Data.Maybe         (listToMaybe)
-import           Data.Semigroup     ((<>))
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
