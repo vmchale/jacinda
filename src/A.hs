@@ -36,10 +36,9 @@ infixr 6 <##>
 (<##>) :: Doc a -> Doc a -> Doc a
 (<##>) x y = x <> hardline <> hardline <> y
 
-data TB = TyInteger | TyFloat
-        | TyStr | TyR
+data TB = TyInteger | TyFloat | TyStr
         | TyStream | TyVec | TyOption
-        | TyBool | TyUnit
+        | TyR | TyBool | TyUnit
         deriving (Eq, Ord)
 
 tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
@@ -65,15 +64,9 @@ data T = TyB { tyBuiltin :: TB }
        deriving (Eq, Ord)
 
 instance Pretty TB where
-    pretty TyInteger = "Integer"
-    pretty TyStream  = "Stream"
-    pretty TyBool    = "Bool"
-    pretty TyStr     = "Str"
-    pretty TyFloat   = "Float"
-    pretty TyVec     = "List"
-    pretty TyOption  = "Optional"
-    pretty TyUnit    = "𝟙"
-    pretty TyR       = "Regex"
+    pretty TyInteger = "Integer"; pretty TyStr = "Str"; pretty TyFloat = "Float"
+    pretty TyStream = "Stream"; pretty TyVec = "List"; pretty TyOption = "Optional"
+    pretty TyBool = "Bool"; pretty TyUnit = "𝟙"; pretty TyR = "Regex"
 
 instance Show TB where show=show.pretty
 
@@ -171,12 +164,8 @@ data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString derivi
 
 -- expression
 data E a = Column { eLoc :: a, col :: Int }
-         | IParseCol { eLoc :: a, col :: Int } -- always a column
-         | FParseCol { eLoc :: a, col :: Int }
-         | ParseCol { eLoc :: a, col :: Int }
-         | Field { eLoc :: a, eField :: Int }
-         | LastField { eLoc :: a }
-         | FieldList { eLoc :: a }
+         | IParseCol { eLoc :: a, col :: Int } | FParseCol { eLoc :: a, col :: Int } | ParseCol { eLoc :: a, col :: Int }
+         | Field { eLoc :: a, eField :: Int } | LastField { eLoc :: a } | FieldList { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
@@ -189,9 +178,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a }
-         | BB { eLoc :: a, eBin :: BBin }
-         | TB { eLoc :: a, eTer :: BTer }
-         | UB { eLoc :: a, eUn :: BUn }
+         | BB { eLoc :: a, eBin :: BBin } | TB { eLoc :: a, eTer :: BTer } | UB { eLoc :: a, eUn :: BUn }
          | NB { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
