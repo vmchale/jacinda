@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Main (main) where
 
 import           Data.Semigroup      ((<>))
@@ -87,8 +89,9 @@ main :: IO ()
 main = run =<< execParser wrapper
 
 ap :: Bool -> Maybe T.Text -> Maybe T.Text
-ap True Just{} = errorWithoutStackTrace "--asv specified with field separator."
-ap _ fs        = fs
+ap True Just{}  = errorWithoutStackTrace "--asv specified with field separator."
+ap True Nothing = Just "\\x1f"
+ap _ fs         = fs
 
 run :: Command -> IO ()
 run (TypeCheck fp is)              = tcIO is =<< TIO.readFile fp
