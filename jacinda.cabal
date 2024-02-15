@@ -1,7 +1,7 @@
-cabal-version:      2.0
+cabal-version:      2.2
 name:               jacinda
 version:            2.0.1.0
-license:            AGPL-3
+license:            AGPL-3.0-only
 license-file:       COPYING
 maintainer:         vamchale@gmail.com
 author:             Vanessa McHale
@@ -33,7 +33,14 @@ flag cross
     default:     False
     manual:      True
 
+common warnings
+    ghc-options:
+        -Wincomplete-uni-patterns -Wincomplete-record-updates
+        -Wredundant-constraints -Widentities -Wcpp-undef
+        -Wmissing-export-lists -Wunused-packages
+
 library jacinda-lib
+    import:           warnings
     exposed-modules:
         Parser
         Parser.Rw
@@ -94,17 +101,8 @@ library jacinda-lib
     if !flag(cross)
         build-tool-depends: alex:alex >=3.5.0.0, happy:happy
 
-    ghc-options:
-        -Wincomplete-uni-patterns -Wincomplete-record-updates
-        -Wredundant-constraints -Widentities -Wcpp-undef
-
-    if impl(ghc >=8.4)
-        ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.10)
-        ghc-options: -Wunused-packages
-
 executable ja
+    import:           warnings
     main-is:          Main.hs
     hs-source-dirs:   app
     other-modules:    Paths_jacinda
@@ -120,14 +118,11 @@ executable ja
     ghc-options:
         -Wincomplete-uni-patterns -Wincomplete-record-updates
         -Wredundant-constraints -Widentities -Wcpp-undef
+        -Wmissing-export-lists -Wunused-packages
 
-    if impl(ghc >=8.4)
-        ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.10)
-        ghc-options: -Wunused-packages
 
 test-suite jacinda-test
+    import:           warnings
     type:             exitcode-stdio-1.0
     main-is:          Spec.hs
     hs-source-dirs:   test
@@ -141,17 +136,8 @@ test-suite jacinda-test
         text,
         tasty-hunit
 
-    ghc-options:
-        -Wincomplete-uni-patterns -Wincomplete-record-updates
-        -Wredundant-constraints -Widentities -Wcpp-undef
-
-    if impl(ghc >=8.4)
-        ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.10)
-        ghc-options: -Wunused-packages
-
 benchmark jacinda-bench
+    import:           warnings
     type:             exitcode-stdio-1.0
     main-is:          Bench.hs
     hs-source-dirs:   bench
@@ -164,13 +150,3 @@ benchmark jacinda-bench
         deepseq,
         text,
         silently
-
-    ghc-options:
-        -Wincomplete-uni-patterns -Wincomplete-record-updates
-        -Wredundant-constraints -Widentities -Wcpp-undef
-
-    if impl(ghc >=8.4)
-        ghc-options: -Wmissing-export-lists
-
-    if impl(ghc >=8.10)
-        ghc-options: -Wunused-packages
