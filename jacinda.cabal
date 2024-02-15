@@ -14,6 +14,7 @@ category:           Language, Interpreters, Text, Data
 build-type:         Simple
 data-files:
     lib/*.jac
+    lib/csv/*.jac
     prelude/*.jac
 
 extra-source-files:
