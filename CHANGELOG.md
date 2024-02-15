@@ -1,3 +1,8 @@
+
+  * Add support for custom record separators
+  * Faster float parsing
+  * Add \`$ builtin
+
 # 2.0.1.0
 
   * Add `mapMaybe`, `dedup`, `filter`, `fold`, `fold1`, `scan`, `dedupOn`,
