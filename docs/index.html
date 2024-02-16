@@ -540,9 +540,9 @@ fn process(x) :=
 process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
-<p>We can process <code>.csv</code> data with the aid of <a
-href="https://github.com/BurntSushi/xsv">xsv</a>, viz.</p>
-<pre><code>xsv fmt file.csv --out-delimiter=$&#39;\x1f&#39; | ja --asv &#39;$1&#39;</code></pre>
+<p>We can convert <code>.csv</code> data to use the ASCII separator with
+the aid of <a href="https://github.com/BurntSushi/xsv">xsv</a>, viz.</p>
+<pre><code>xsv fmt file.csv -t$&#39;\x1f&#39; | ja --asv &#39;$1&#39;</code></pre>
 <p>For “well-behaved” csv data, we can simply split on
 <code>,</code>:</p>
 <pre><code>ja -F, &#39;$1&#39;</code></pre>
@@ -569,6 +569,13 @@ breakthroughs</a>.</p>
 0.9692181407757029</code></pre>
 <p>This extracts the 5th and 11th columns (discarding headers), and then
 computes effectiveness.</p>
+<h4 id="inflation">Inflation</h4>
+<p>We start with New Zealand’s food price index:</p>
+<pre><code>curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv</code></pre>
+<p>This data is not “well-behaved” so we convert to ASV:</p>
+<pre><code>xsv fmt -t$&#39;\x1f&#39; food-price-index-september-2023-weighted-average-prices.csv | ja --asv &#39;(%)\. {%/Apple/}{`3:}&#39;</code></pre>
+<p>This uses <code>(\.)</code> (prior) to do something <code>xsv</code>
+cannot.</p>
 <h1 id="machinery">Machinery</h1>
 <h2 id="typeclasses">Typeclasses</h2>
 <p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These

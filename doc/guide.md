@@ -528,11 +528,11 @@ process"step^(0 . '') $0
 
 ### CSV Processing
 
-We can process `.csv` data with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
+We can convert `.csv` data to use the ASCII separator with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
 
 
 ```
-xsv fmt file.csv --out-delimiter=$'\x1f' | ja --asv '$1'
+xsv fmt file.csv -t$'\x1f' | ja --asv '$1'
 ```
 
 For "well-behaved" csv data, we can simply split on `,`:
@@ -576,6 +576,22 @@ As of writing:
 
 This extracts the 5th and 11th columns (discarding headers), and then computes
 effectiveness.
+
+#### Inflation
+
+We start with New Zealand's food price index:
+
+```
+curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
+```
+
+This data is not "well-behaved" so we convert to ASV:
+ 
+```
+xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
+```
+
+This uses `(\.)` (prior) to do something `xsv` cannot.
 
 # Machinery
 
