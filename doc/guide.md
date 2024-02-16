@@ -483,6 +483,15 @@ To emulate `head -n60`, for instance:
 {ix<=60}{`0}
 ```
 
+### basename
+
+```
+fn fileName(x) :=
+  x ~* 2 /([^\/]*\/)*(.*)/;
+```
+
+will remove the directory part of a filename.
+
 ### uniq
 
 ```
