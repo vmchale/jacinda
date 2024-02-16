@@ -92,3 +92,7 @@
 - [ ] https://awk.dev/
 - [ ] https://github.com/gunnarmorling/1brc
   - [ ] min/max
+- [ ] https://www.stats.govt.nz/large-datasets/csv-files-for-download/
+- [ ] https://catalog.data.gov/dataset/?res_format=CSV
+- [ ] checksum?
+- [ ] `basename`, `pathchk` (lol)
