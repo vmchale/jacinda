@@ -3,6 +3,7 @@
   * Faster float parsing
   * Add \`$ builtin
   * Allow escaped `/` within regex
+  * Round out support for `$0:f` &c.
 
 # 2.0.1.0
 
