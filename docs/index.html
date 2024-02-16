@@ -541,9 +541,8 @@ process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
 <p>We can process <code>.csv</code> data with the aid of <a
-href="https://csvkit.readthedocs.io/en/1.1.1/scripts/csvformat.html">csvformat</a>,
-viz.</p>
-<pre><code>csvformat file.csv -D&#39;|&#39; | ja -F&#39;\|&#39; &#39;$1&#39;</code></pre>
+href="https://github.com/BurntSushi/xsv">xsv</a>, viz.</p>
+<pre><code>xsv fmt file.csv --out-delimiter=$&#39;\x1f&#39; | ja --asv &#39;$1&#39;</code></pre>
 <p>For “well-behaved” csv data, we can simply split on
 <code>,</code>:</p>
 <pre><code>ja -F, &#39;$1&#39;</code></pre>
