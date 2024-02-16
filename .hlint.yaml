@@ -1,1 +1,2 @@
 - fixity: infixr 0 ~>
+- fixity: infixr 0 :$

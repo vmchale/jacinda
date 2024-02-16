@@ -31,8 +31,8 @@ main = defaultMain $
         , splitWhitespaceT "" []
         , splitWhitespaceT "5" ["5"]
         , testCase "type of" (tyOfT sumBytes (TyB TyInteger))
-        , testCase "type of" (tyOfT krakRegex (TyApp (TyB TyStream) (TyB TyStr))) -- stream of str
-        , testCase "type of" (tyOfT krakCol (TyApp (TyB TyStream) (TyB TyStr))) -- stream of str
+        , testCase "type of" (tyOfT krakRegex (TyB TyStream :$ TyB TyStr)) -- stream of str
+        , testCase "type of" (tyOfT krakCol (TyB TyStream :$ TyB TyStr)) -- stream of str
         , testCase "type of (zip)" (tyOfT ",(-) $3:i $6:i" (tyStream tyI))
         , testCase "type of (filter)" (tyOfT "(>110) #. #\"$0" (tyStream tyI))
         , testCase "typechecks dfn" (tyOfT "[(+)|0 x] $1:i" tyI)

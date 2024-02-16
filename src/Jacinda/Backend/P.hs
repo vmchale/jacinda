@@ -32,7 +32,7 @@ import           Ty.Const
 import           U
 
 φ1 :: E T -> Int
-φ1 (BB (TyArr _ (TyArr (TyApp (TyB TyStream) _) _)) Fold1) = 1
+φ1 (BB (TyArr _ (TyArr (TyB TyStream:$_) _)) Fold1) = 1
 φ1 (EApp _ e0 e1)                                          = φ1 e0+φ1 e1
 φ1 (Tup _ es)                                              = sum (φ1<$>es)
 φ1 (OptionVal _ (Just e))                                  = φ1 e
@@ -42,7 +42,7 @@ import           U
 
 
 φ :: E T -> Int
-φ (TB (TyArr _ (TyArr _ (TyArr (TyApp (TyB TyStream) _) _))) Fold) = 1
+φ (TB (TyArr _ (TyArr _ (TyArr (TyB TyStream:$_) _))) Fold) = 1
 φ (EApp _ e0 e1)                                                   = φ e0+φ e1
 φ (Tup _ es)                                                       = sum (φ<$>es)
 φ (OptionVal _ (Just e))                                           = φ e
@@ -120,7 +120,7 @@ foldAll i r xs bs = runState (foldMultiple seeds streams ctxStream ixStream) i
           allHeads = foldr seq ()
 
 gf :: E T -> State (Int, [(Int, E T, E T, E T)]) (E T)
-gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | t@(TyApp (TyB TyStream) _) <- eLoc stream = do
+gf (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) stream) | t@(TyB TyStream:$_) <- eLoc stream = do
     (i,_) <- get
     modify (bimap (+1) ((i, op, seed, stream) :))
     pure $ mkFoldVar i t
@@ -147,7 +147,7 @@ bsProcess :: RurePtr
 bsProcess _ _ _ AllField{} = Left NakedField
 bsProcess _ _ _ Field{}    = Left NakedField
 bsProcess _ _ _ (NB _ Ix)  = Left NakedField
-bsProcess r f u e | (TyApp (TyB TyStream) _) <- eLoc e = Right (pS f.eStream u r e)
+bsProcess r f u e | (TyB TyStream:$_) <- eLoc e = Right (pS f.eStream u r e)
 bsProcess r f u (Anchor _ es) = Right (\bs -> pS f $ takeConcatMap (\e -> eStream u r e bs) es)
 bsProcess r _ u e =
     Right $ \bs -> pDocLn (eF u r e bs)
@@ -204,21 +204,21 @@ eStream u r (Implicit _ e) bs = zipWith (\fs i -> eB u (pure.eCtx fs i) e) [(b, 
 eStream _ _ AllColumn{} bs = mkStr<$>bs
 eStream _ _ IParseAllCol{} bs = parseAsEInt<$>bs
 eStream _ _ FParseAllCol{} bs = parseAsF<$>bs
-eStream _ _ (ParseAllCol (TyApp _ (TyB TyInteger))) bs = parseAsEInt<$>bs
-eStream _ _ (ParseAllCol (TyApp _ (TyB TyFloat))) bs = parseAsF<$>bs
+eStream _ _ (ParseAllCol (_:$TyB TyInteger)) bs = parseAsEInt<$>bs
+eStream _ _ (ParseAllCol (_:$TyB TyFloat)) bs = parseAsF<$>bs
 eStream _ r (Column _ i) bs = mkStr.(! (i-1)).splitBy r<$>bs
 eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
-eStream _ r (ParseCol (TyApp _ (TyB TyInteger)) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyInteger) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
 eStream _ r (FParseCol _ n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
-eStream _ r (ParseCol (TyApp _ (TyB TyFloat)) n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyFloat) n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
 eStream i r (EApp _ (EApp _ (BB _ Filter) p) e) bs = let xs=eStream i r e bs; ps=fmap (asB.c1 i p) xs in [x | (pϵ,x) <- zip ps xs, pϵ]
 eStream i r (EApp _ (EApp _ (EApp _ (TB _ ZipW) f) e0) e1) bs = let xs0=eStream i r e0 bs; xs1=eStream i r e1 bs in zipWith (c2 i f) xs0 xs1
-eStream i r (EApp (TyApp _ (TyB TyStr)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
-eStream i r (EApp (TyApp _ (TyB TyInteger)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asI s
-eStream i r (EApp (TyApp _ (TyB TyFloat)) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asF s
+eStream i r (EApp (_:$TyB TyStr) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asS s
+eStream i r (EApp (_:$TyB TyInteger) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asI s
+eStream i r (EApp (_:$TyB TyFloat) (UB _ Dedup) e) bs = let s = eStream i r e bs in nubOrdOn asF s
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ (TyB TyStr) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asS.c1 i op) xs
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ (TyB TyInteger) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asI.c1 i op) xs
 eStream i r (EApp _ (EApp _ (BB _ DedupOn) op) e) bs | TyArr _ (TyB TyFloat) <- eLoc op = let xs = eStream i r e bs in nubOrdOn (asF.c1 i op) xs
@@ -374,13 +374,13 @@ eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Exp) x0) x1) = do
 eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Exp) x0) x1) = do
     x0' <- asF <$> eBM f x0; x1' <- asF<$>eBM f x1
     pure (mkF (x0'**x1'))
-eBM f (EApp _ (EApp _ (BB (TyArr (TyApp (TyB TyVec) t) _) Eq) x0) x1) = do
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyVec:$t) _) Eq) x0) x1) = do
     x0' <- asV<$>eBM f x0; x1' <- asV<$>eBM f x1
     mkB <$> if V.length x0'==V.length x1'
         then all asB <$> V.zipWithM (c2Mϵ f op) x0' x1'
         else pure False
     where op = BB (TyArr t (TyArr t tyB)) Eq
-eBM f (EApp _ (EApp _ (BB (TyArr (TyApp (TyB TyOption) t) _) Eq) x0) x1) = do
+eBM f (EApp _ (EApp _ (BB (TyArr (TyB TyOption:$t) _) Eq) x0) x1) = do
     x0' <- asM<$>eBM f x0; x1' <- asM<$>eBM f x1
     case (x0',x1') of
         (Nothing, Nothing) -> pure (mkB True)
@@ -437,17 +437,17 @@ eBM f (EApp _ (EApp _ (BB _ Sprintf) fs) s) = do
 eBM f (EApp _ (EApp _ (BB _ Match) s) r) = do
     s' <- eBM f s; r' <- eBM f r
     pure $ asTup (find' (asR r') (asS s'))
-eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) | TyApp (TyB TyVec) _ <- eLoc xs = do
+eBM f (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) | TyB TyVec:$_ <- eLoc xs = do
     op' <- eBM f op; seed' <- eBM f seed; xs' <- eBM f xs
     V.foldM (c2Mϵ f op') seed' (asV xs')
-eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) | TyApp (TyB TyVec) _ <- eLoc xs = do
+eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) | TyB TyVec:$_ <- eLoc xs = do
     op' <- eBM f op; xs' <- eBM f xs
     let xsV=asV xs'; Just (seed, xs'') = V.uncons xsV
     V.foldM (c2Mϵ f op') seed xs''
-eBM f (EApp yT@(TyApp (TyB TyOption) _) (EApp _ (BB _ Map) g) x) = do
+eBM f (EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
     OptionVal yT <$> traverse (eBM f <=< a1 g') (asM x')
-eBM f (EApp yT@(TyApp (TyB TyVec) _) (EApp _ (BB _ Map) g) x) = do
+eBM f (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
     Arr yT <$> traverse (eBM f <=< a1 g') (asV x')
 eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
