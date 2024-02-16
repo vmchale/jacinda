@@ -247,6 +247,9 @@ E :: { E AlexPosn }
   | lastField iParse { EApp $1 (UB $2 IParse) (LastField $1) }
   | lastField fParse { EApp $1 (UB $2 FParse) (LastField $1) }
   | lastField colon { EApp $1 (UB $2 Parse) (LastField $1) }
+  | allField fParse { EApp $1 (UB $2 FParse) (AllField $1) }
+  | allField iParse { EApp $1 (UB $2 IParse) (AllField $1) }
+  | allField colon { EApp $1 (UB $2 Parse) (AllField $1) }
   | x colon { EApp $1 (UB $2 Parse) (ResVar $1 X) }
   | y colon { EApp $1 (UB $2 Parse) (ResVar $1 Y) }
   | x iParse { EApp $1 (UB $2 IParse) (ResVar $1 X) }
