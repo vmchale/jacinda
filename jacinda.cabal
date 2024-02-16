@@ -15,6 +15,7 @@ build-type:         Simple
 data-files:
     lib/*.jac
     lib/csv/*.jac
+    lib/fs/*.jac
     prelude/*.jac
 
 extra-source-files:
