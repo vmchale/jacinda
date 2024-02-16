@@ -528,13 +528,11 @@ process"step^(0 . '') $0
 
 ### CSV Processing
 
-We can process `.csv` data with the aid of [csvformat](https://csvkit.readthedocs.io/en/1.1.1/scripts/csvformat.html), viz.
+We can process `.csv` data with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
 
-
-<!-- csvformat -D$'\x1f' -->
 
 ```
-csvformat file.csv -D'|' | ja -F'\|' '$1'
+xsv fmt file.csv --out-delimiter=$'\x1f' | ja --asv '$1'
 ```
 
 For "well-behaved" csv data, we can simply split on `,`:
