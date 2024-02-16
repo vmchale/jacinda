@@ -43,6 +43,10 @@ $str_special = [\\\']
 
 @string = \' ([^ $str_special] | @escape_str)* \'
 
+@escape_rr = \\ [\\\/]
+
+@rr = "/" ([^\/] | @escape_rr)* "/"
+
 @name = [a-z] @follow_char*
 @tyname = [A-Z] @follow_char*
 
@@ -185,7 +189,7 @@ tokens :-
         @string                  { tok (\p s -> alex $ TokStr p (escReplace $ T.init $ T.tail s)) }
 
         -- TODO: allow chars to be escaped
-        "/"[^\/]*"/"             { tok (\p s -> alex $ TokRR p (T.init $ T.tail s)) }
+        @rr                      { tok (\p s -> alex $ TokRR p (escRr $ T.init $ T.tail s)) }
 
         @name                    { tok (\p s -> TokName p <$> newIdentAlex p s) }
         @tyname                  { tok (\p s -> TokTyName p <$> newIdentAlex p s) }
@@ -218,6 +222,9 @@ escReplace =
       T.replace "\\\"" "\""
     . T.replace "\\n" "\n"
     . T.replace "\\t" "\t"
+
+escRr :: T.Text -> T.Text
+escRr = T.replace "\\/" "/"
 
 instance Pretty AlexPosn where
     pretty (AlexPn _ line col) = pretty line <> colon <> pretty col
