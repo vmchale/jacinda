@@ -210,6 +210,7 @@ id="toc-unix-command-line-tools">Unix Command-Line Tools</a>
 <li><a href="#grep" id="toc-grep">grep</a></li>
 <li><a href="#wc" id="toc-wc">wc</a></li>
 <li><a href="#head" id="toc-head">head</a></li>
+<li><a href="#basename" id="toc-basename">basename</a></li>
 <li><a href="#uniq" id="toc-uniq">uniq</a></li>
 <li><a href="#nl" id="toc-nl">nl</a></li>
 </ul></li>
@@ -511,6 +512,10 @@ familiar tools:</p>
 <h3 id="head">head</h3>
 <p>To emulate <code>head -n60</code>, for instance:</p>
 <pre><code>{ix&lt;=60}{`0}</code></pre>
+<h3 id="basename">basename</h3>
+<pre><code>fn fileName(x) :=
+  x ~* 2 /([^\/]*\/)*(.*)/;</code></pre>
+<p>will remove the directory part of a filename.</p>
 <h3 id="uniq">uniq</h3>
 <pre><code>fn step(acc, this) :=
   if this = acc-&gt;1
