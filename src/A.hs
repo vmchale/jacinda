@@ -168,6 +168,9 @@ data E a = Column { eLoc :: a, col :: Int }
          | Field { eLoc :: a, eField :: Int } | LastField { eLoc :: a } | FieldList { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
+         | IParseAllCol { eLoc :: a } -- ^ @$0@, parsed as an integer
+         | FParseAllCol { eLoc :: a } -- ^ @$0@, parsed as a float
+         | ParseAllCol { eLoc :: a }
          | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
          | Guarded { eLoc :: a, eP :: E a, eGuarded :: E a }
          | Implicit { eLoc :: a, eImplicit :: E a }
@@ -198,7 +201,7 @@ instance Corecursive (E a) where
 data EF a x = ColumnF a Int
             | IParseColF a Int | FParseColF a Int | ParseColF a Int
             | FieldF a Int | LastFieldF a | FieldListF a | AllFieldF a
-            | AllColumnF a
+            | AllColumnF a | IParseAllColF a | FParseAllColF a | ParseAllColF a
             | EAppF a x x
             | GuardedF a x x | ImplicitF a x
             | LetF a (Nm a, x) x
@@ -235,6 +238,9 @@ instance Pretty L where
 instance Pretty (E a) where
     pretty (Column _ i)                                           = "$" <> pretty i
     pretty AllColumn{}                                            = "$0"
+    pretty IParseAllCol{}                                         = "$0:i"
+    pretty FParseAllCol{}                                         = "$0:f"
+    pretty ParseAllCol{}                                          = "$0:"
     pretty (IParseCol _ i)                                        = "$" <> pretty i <> ":i"
     pretty (FParseCol _ i)                                        = "$" <> pretty i <> ":f"
     pretty (ParseCol _ i)                                         = "$" <> pretty i <> ":"

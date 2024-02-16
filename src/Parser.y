@@ -256,6 +256,9 @@ E :: { E AlexPosn }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | column colon { ParseCol (loc $1) (ix $1) }
+  | allColumn iParse { IParseAllCol $1 }
+  | allColumn fParse { FParseAllCol $1 }
+  | allColumn colon { ParseAllCol $1 }
   | parens(iParse) { UB $1 IParse }
   | parens(fParse) { UB $1 FParse }
   | parens(colon) { UB $1 Parse }
