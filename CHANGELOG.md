@@ -2,6 +2,7 @@
   * Add support for custom record separators
   * Faster float parsing
   * Add \`$ builtin
+  * Allow escaped `/` within regex
 
 # 2.0.1.0
 
