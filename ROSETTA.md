@@ -300,9 +300,16 @@ curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>[x ~* 1 /csv(\d(\
 
 ```
 curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
-csvformat -D$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '~.{ix>1}{`8}'
+xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '~.{ix>1}{`8}'
 ```
 
 ```
 xsv select Series_title_1 food-price-index-september-2023-weighted-average-prices.csv | xsv frequency -l0
+```
+
+# Compute Percent Increase
+
+```
+curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
+xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
 ```
