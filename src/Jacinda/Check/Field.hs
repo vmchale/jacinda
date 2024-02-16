@@ -35,7 +35,7 @@ cF RC{} = error "Sanity check failed. Regex should not be compiled at this time.
 cF Dfn{} = desugar; cF Paren{} = desugar; cF ResVar{} = desugar
 
 isS :: T -> Bool
-isS (TyApp (TyB TyStream) _) = True; isS _ = False
+isS (TyB TyStream:$_) = True; isS _ = False
 
 foldMapAlternative :: (Traversable t, Alternative f) => (a -> f b) -> t a -> f b
 foldMapAlternative f xs = asum (f <$> xs)

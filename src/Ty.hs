@@ -88,7 +88,7 @@ aT um (Rho n@(Nm _ (U i) _) rs) =
         Just ty         -> aT um ty
         Nothing         -> Rho n (fmap (aT um) rs)
 aT _ ty'@TyB{} = ty'
-aT um (TyApp ty ty') = TyApp (aT um ty) (aT um ty')
+aT um (ty:$ty') = aT um ty :$ aT um ty'
 aT um (TyArr ty ty') = TyArr (aT um ty) (aT um ty')
 aT um (TyTup tys)    = TyTup (aT um <$> tys)
 
@@ -114,7 +114,7 @@ occ :: T -> IS.IntSet
 occ (TyVar (Nm _ (U i) _))  = IS.singleton i
 occ TyB{}                   = IS.empty
 occ (TyTup ts)              = foldMap occ ts
-occ (TyApp t t')            = occ t <> occ t'
+occ (t:$t')                 = occ t <> occ t'
 occ (TyArr t t')            = occ t <> occ t'
 occ (Rho (Nm _ (U i) _) rs) = IS.insert i (foldMap occ (IM.elems rs))
 
@@ -126,7 +126,7 @@ mgu l s t t'@(TyVar (Nm _ (U k) _)) | k `IS.notMember` occ t = Right $ IM.insert
 mgu l s t@(TyVar (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.insert k t' s
                                       | otherwise = Left $ Occ l t t'
 mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
-mgu l s (TyApp t0 t1) (TyApp t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
+mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
 mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
@@ -147,7 +147,7 @@ substInt :: IM.IntMap T -> Int -> Maybe T
 substInt tys k =
     case IM.lookup k tys of
         Just ty'@TyVar{}     -> Just $ aT (IM.delete k tys) ty'
-        Just (TyApp ty0 ty1) -> Just $ let tys'=IM.delete k tys in TyApp (aT tys' ty0) (aT tys' ty1)
+        Just (ty0:$ty1)      -> Just $ let tys'=IM.delete k tys in aT tys' ty0 :$ aT tys' ty1
         Just (TyArr ty0 ty1) -> Just $ let tys'=IM.delete k tys in TyArr (aT tys' ty0) (aT tys' ty1)
         Just (TyTup tysϵ)    -> Just $ let tys'=IM.delete k tys in TyTup (aT tys' <$> tysϵ)
         Just ty'             -> Just ty'
@@ -188,43 +188,43 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
                         let j' = U$k+1
                         TyVar (Nm n j' l') <$ modify (\(u, s) -> (u+1, IM.insert j j' s))
           cloneTyM (TyArr tyϵ ty')               = TyArr <$> cloneTyM tyϵ <*> cloneTyM ty'
-          cloneTyM (TyApp tyϵ ty')               = TyApp <$> cloneTyM tyϵ <*> cloneTyM ty'
+          cloneTyM (tyϵ:$ty')                    = (:$) <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup tys)                   = TyTup <$> traverse cloneTyM tys
           cloneTyM tyϵ@TyB{}                     = pure tyϵ
 
 checkType :: Ord a => T -> (C, a) -> TyM a ()
-checkType TyVar{} _                             = pure ()
-checkType (TyB TyStr) (IsSemigroup, _)          = pure ()
-checkType (TyB TyInteger) (IsSemigroup, _)      = pure ()
-checkType (TyB TyFloat) (IsSemigroup, _)        = pure ()
-checkType (TyB TyInteger) (IsNum, _)            = pure ()
-checkType (TyB TyFloat) (IsNum, _)              = pure ()
-checkType (TyB TyInteger) (IsEq, _)             = pure ()
-checkType (TyB TyFloat) (IsEq, _)               = pure ()
-checkType (TyB TyBool) (IsEq, _)                = pure ()
-checkType (TyB TyStr) (IsEq, _)                 = pure ()
-checkType (TyTup tys) (c@IsEq, l)               = traverse_ (`checkType` (c, l)) tys
-checkType (Rho _ rs) (c@IsEq, l)                = traverse_ (`checkType` (c, l)) (IM.elems rs)
-checkType (TyApp (TyB TyVec) ty) (c@IsEq, l)    = checkType ty (c, l)
-checkType (TyApp (TyB TyOption) ty) (c@IsEq, l) = checkType ty (c, l)
-checkType (TyB TyInteger) (IsParse, _)          = pure ()
-checkType (TyB TyFloat) (IsParse, _)            = pure ()
-checkType (TyB TyFloat) (IsOrd, _)              = pure ()
-checkType (TyB TyInteger) (IsOrd, _)            = pure ()
-checkType (TyB TyStr) (IsOrd, _)                = pure ()
-checkType (TyB TyVec) (Functor, _)              = pure ()
-checkType (TyB TyStream) (Functor, _)           = pure ()
-checkType (TyB TyOption) (Functor, _)           = pure ()
-checkType (TyB TyStream) (Witherable, _)        = pure ()
-checkType (TyB TyVec) (Foldable, _)             = pure ()
-checkType (TyB TyStream) (Foldable, _)          = pure ()
-checkType (TyB TyStr) (IsPrintf, _)             = pure ()
-checkType (TyB TyFloat) (IsPrintf, _)           = pure ()
-checkType (TyB TyInteger) (IsPrintf, _)         = pure ()
-checkType (TyB TyBool) (IsPrintf, _)            = pure ()
-checkType (TyTup tys) (c@IsPrintf, l)           = traverse_ (`checkType` (c, l)) tys
-checkType (Rho _ rs) (c@IsPrintf, l)            = traverse_ (`checkType` (c, l)) (IM.elems rs)
-checkType ty (c, l)                             = throwError $ Doesn'tSatisfy l ty c
+checkType TyVar{} _                        = pure ()
+checkType (TyB TyStr) (IsSemigroup, _)     = pure ()
+checkType (TyB TyInteger) (IsSemigroup, _) = pure ()
+checkType (TyB TyFloat) (IsSemigroup, _)   = pure ()
+checkType (TyB TyInteger) (IsNum, _)       = pure ()
+checkType (TyB TyFloat) (IsNum, _)         = pure ()
+checkType (TyB TyInteger) (IsEq, _)        = pure ()
+checkType (TyB TyFloat) (IsEq, _)          = pure ()
+checkType (TyB TyBool) (IsEq, _)           = pure ()
+checkType (TyB TyStr) (IsEq, _)            = pure ()
+checkType (TyTup tys) (c@IsEq, l)          = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ rs) (c@IsEq, l)           = traverse_ (`checkType` (c, l)) (IM.elems rs)
+checkType (TyB TyVec:$ty) (c@IsEq, l)      = checkType ty (c, l)
+checkType (TyB TyOption:$ty) (c@IsEq, l)   = checkType ty (c, l)
+checkType (TyB TyInteger) (IsParse, _)     = pure ()
+checkType (TyB TyFloat) (IsParse, _)       = pure ()
+checkType (TyB TyFloat) (IsOrd, _)         = pure ()
+checkType (TyB TyInteger) (IsOrd, _)       = pure ()
+checkType (TyB TyStr) (IsOrd, _)           = pure ()
+checkType (TyB TyVec) (Functor, _)         = pure ()
+checkType (TyB TyStream) (Functor, _)      = pure ()
+checkType (TyB TyOption) (Functor, _)      = pure ()
+checkType (TyB TyStream) (Witherable, _)   = pure ()
+checkType (TyB TyVec) (Foldable, _)        = pure ()
+checkType (TyB TyStream) (Foldable, _)     = pure ()
+checkType (TyB TyStr) (IsPrintf, _)        = pure ()
+checkType (TyB TyFloat) (IsPrintf, _)      = pure ()
+checkType (TyB TyInteger) (IsPrintf, _)    = pure ()
+checkType (TyB TyBool) (IsPrintf, _)       = pure ()
+checkType (TyTup tys) (c@IsPrintf, l)      = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ rs) (c@IsPrintf, l)       = traverse_ (`checkType` (c, l)) (IM.elems rs)
+checkType ty (c, l)                        = throwError $ Doesn'tSatisfy l ty c
 
 checkClass :: Ord a
            => IM.IntMap T -- ^ Unification result
@@ -260,7 +260,7 @@ tyDS _ FunDecl{}   = error "Internal error. Should have been desugared by now."
 isAmbiguous :: T -> Bool
 isAmbiguous TyVar{}        = True
 isAmbiguous (TyArr ty ty') = isAmbiguous ty || isAmbiguous ty'
-isAmbiguous (TyApp ty ty') = isAmbiguous ty || isAmbiguous ty'
+isAmbiguous (ty:$ty')      = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyTup tys)    = any isAmbiguous tys
 isAmbiguous TyB{}          = False
 isAmbiguous Rho{}          = True
@@ -397,8 +397,8 @@ tyES s (BB l DedupOn) = do {a <- var <$> freshN "a"; b <- freshN "b"; modify (ma
 tyES s (UB _ (At i)) = do {a <- var <$> freshN "a"; pure (UB (tyArr (tyV a) a) (At i), s)}
 tyES s (UB l Dedup) = do {a <- freshN "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
 tyES s (UB _ Const) = do {a <- var <$> freshN "a"; b <- var <$> freshN "b"; pure (UB (a ~> (b ~> a)) Const, s)}
-tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (TyApp f' (tyOpt a')) (TyApp f' a')) CatMaybes, s)}
-tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=TyApp f' a' in pure (BB (tyArr (tyArr a' tyB) (w ~> w)) Filter, s)}
+tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (f':$tyOpt a') (f':$a')) CatMaybes, s)}
+tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=f':$a' in pure (BB (tyArr (tyArr a' tyB) (w ~> w)) Filter, s)}
 tyES s (UB _ (Select i)) = do
     ρ <- freshN "ρ"; a <- var <$> freshN "a"
     pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
@@ -407,25 +407,25 @@ tyES s (BB l MapMaybe) = do
     f <- freshN "f"
     modify (mapCV (addC f (Witherable, l)))
     let f'=var f
-    pure (BB (tyArr (a ~> tyOpt b) (TyApp f' a ~> TyApp f' b)) MapMaybe, s)
+    pure (BB (tyArr (a ~> tyOpt b) ((f':$a) ~> (f':$b))) MapMaybe, s)
 tyES s (BB l Map) = do
     a <- var <$> freshN "a"; b <- var <$> freshN "b"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Functor, l)))
-    pure (BB (tyArr (a ~> b) (TyApp f' a ~> TyApp f' b)) Map, s)
+    pure (BB (tyArr (a ~> b) ((f':$a) ~> (f':$b))) Map, s)
 tyES s (TB l Fold) = do
     a <- var <$> freshN "a"; b <- var <$> freshN "b"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (TB ((b ~> (a ~> b)) ~> (b ~> TyApp f' a ~> b)) Fold, s)
+    pure (TB ((b ~> (a ~> b)) ~> (b ~> (f':$a) ~> b)) Fold, s)
 tyES s (BB l Fold1) = do
     a <- var <$> freshN "a"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
-    pure (BB ((a ~> (a ~> a)) ~> (TyApp f' a ~> a)) Fold1, s)
+    pure (BB ((a ~> (a ~> a)) ~> ((f':$a) ~> a)) Fold1, s)
 tyES s (TB _ Captures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyOpt tyStr))) Captures, s)
 tyES s (BB _ Prior) = do
     a <- var <$> freshN "a"; b <- var <$> freshN "b"

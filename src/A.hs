@@ -55,8 +55,10 @@ infixr 0 ~>
 (~>) :: T -> T -> T
 (~>) = TyArr
 
+infixr 0 :$
+
 data T = TyB { tyBuiltin :: TB }
-       | TyApp { tyApp0 :: T, tyApp1 :: T }
+       | (:$) { tyApp0 :: T, tyApp1 :: T } -- TODO: :$
        | TyArr { tyArr0 :: T, tyArr1 :: T }
        | TyVar { tyVar :: Nm () }
        | TyTup { tyTups :: [T] }
@@ -72,7 +74,7 @@ instance Show TB where show=show.pretty
 
 instance Pretty T where
     pretty (TyB b)        = pretty b
-    pretty (TyApp ty ty') = pretty ty <+> pretty ty'
+    pretty (ty:$ty')      = pretty ty <+> pretty ty'
     pretty (TyVar n)      = pretty n
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup tys)    = jacTup tys
