@@ -1,3 +1,6 @@
+  * Handle some parsing/currying cases (still hinky)
+  * Add `sub1` builtin like AWK's `sub`
+
 # 2.0.2.0
 
   * Add support for custom record separators
