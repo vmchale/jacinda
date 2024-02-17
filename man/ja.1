@@ -135,7 +135,7 @@ Int)
 Str \-> Int \-> Regex \-> Option Str
 .TP
 \f[B]captures\f[R] Return all aptures (nth capture group)
-Str \-> Int \-> Regex \-> List Str
+Str \-> Int \-> Regex \-> Str
 .TP
 \f[B]:?\f[R] mapMaybe
 Witherable f :=> (a \-> Option b) \-> f a \-> f b
@@ -146,6 +146,8 @@ Witherable f :=> f (Option a) \-> f a
 \f[B]fp\f[R] Filename
 .PP
 \f[B]nf\f[R] Number of fields
+.PP
+\f[B]⍬\f[R] Empty string/empty list
 .SS SYNTAX
 \f[B]\[ga]n\f[R] nth field
 .PP

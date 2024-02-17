@@ -421,6 +421,8 @@ eBM f (EApp _ (UB _ Ceiling) x) = do {xr <- asF<$>eBM f x; pure $ mkI (ceiling x
 eBM f (EApp (TyB TyInteger) (UB _ Negate) i) = do {i' <- eBM f i; pure $ mkI (negate (asI i'))}
 eBM f (EApp (TyB TyFloat) (UB _ Negate) x) = do {x' <- eBM f x; pure $ mkF (negate (asF x'))}
 eBM f (EApp t (UB _ Some) e) = do {e' <- eBM f e; pure (OptionVal t (Just e'))}
+eBM _ (NB (TyB TyStr) MZ) = pure (mkStr BS.empty)
+eBM _ (NB t@(TyB TyVec:$_) MZ) = pure (Arr t V.empty)
 eBM _ (NB t None) = pure (OptionVal t Nothing)
 eBM f (EApp _ (UB _ Tally) e) = do
     s' <- eBM f e

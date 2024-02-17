@@ -86,6 +86,7 @@ tokens :-
         \"                       { mkSym Quot }
         "^"                      { mkSym Caret }
         "|>"                     { mkSym Fold1Tok }
+        ⍬                        { mkSym Zilde }
 
         "="                      { mkSym EqTok }
         "!="                     { mkSym NeqTok }
@@ -282,6 +283,7 @@ data Sym = PlusTok
          | LBraceBar
          | Exclamation
          | Caret
+         | Zilde
          | Backslash
          | BackslashDot
          | FilterTok
@@ -328,6 +330,7 @@ instance Pretty Sym where
     pretty Comma         = ","
     pretty Dot           = "."
     pretty TallyTok      = "#"
+    pretty Zilde         = "⍬"
     pretty LengthTok     = "#*"
     pretty Quot          = "¨"
     pretty Caret         = "^"

@@ -75,6 +75,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fold { TokSym $$ FoldTok }
     fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
+    z { TokSym $$ Zilde }
     quot { TokSym $$ Quot }
     mapMaybe { TokSym $$ MapMaybeTok }
     catMaybes { TokSym $$ CatMaybesTok }
@@ -314,6 +315,7 @@ E :: { E AlexPosn }
   | catMaybes { UB $1 CatMaybes }
   | neg { UB $1 Negate }
   | ix { NB $1 Ix }
+  | z { NB $1 MZ }
   | nf { NB $1 Nf }
   | none { NB $1 None }
   | fp { NB $1 Fp }
