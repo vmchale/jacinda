@@ -168,6 +168,7 @@ tokens :-
         fold                     { mkBuiltin BuiltinFold }
         fold1                    { mkBuiltin BuiltinFold1 }
         scan                     { mkBuiltin BuiltinScan }
+        "sub1"                   { mkBuiltin BuiltinSub1 }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -413,6 +414,7 @@ data Builtin = BuiltinIParse
              | BuiltinFold
              | BuiltinFold1
              | BuiltinScan
+             | BuiltinSub1
 
 instance Pretty Builtin where
     pretty BuiltinIParse   = ":i"
@@ -435,6 +437,7 @@ instance Pretty Builtin where
     pretty BuiltinFold     = "fold"
     pretty BuiltinFold1    = "fold1"
     pretty BuiltinScan     = "scan"
+    pretty BuiltinSub1     = "sub1"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

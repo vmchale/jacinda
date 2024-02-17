@@ -116,7 +116,7 @@ instance Pretty BUn where
 
 data BTer = ZipW
           | Fold | Scan
-          | Substr
+          | Substr | Sub1
           | Option
           | Captures | AllCaptures
           deriving (Eq)
@@ -129,6 +129,7 @@ instance Pretty BTer where
     pretty Option      = "option"
     pretty Captures    = "~*"
     pretty AllCaptures = "captures"
+    pretty Sub1        = "sub1"
 
 -- builtin
 data BBin = Plus | Times | Div
@@ -264,6 +265,7 @@ instance Pretty (E a) where
     pretty (EApp _ (EApp _ (EApp _ (TB _ Scan) e) e') e'')        = pretty e <> "^" <> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) e') e'')       = "," <> pretty op <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TB _ Substr) e) e') e'')      = "substr" <+> pretty e <+> pretty e' <+> pretty e''
+    pretty (EApp _ (EApp _ (EApp _ (TB _ Sub1) e) e') e'')        = "sub1" <+> pretty e <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TB _ Option) e) e') e'')      = "option" <+> pretty e <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TB _ AllCaptures) e) e') e'') = "captures" <+> pretty e <+> pretty e' <+> pretty e''
     pretty (EApp _ (EApp _ (EApp _ (TB _ Captures) e) e') e'')    = pretty e <+> "~*" <+> pretty e' <+> pretty e''

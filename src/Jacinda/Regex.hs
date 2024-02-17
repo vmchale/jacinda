@@ -6,6 +6,7 @@ module Jacinda.Regex ( lazySplit
                      , defaultRurePtr
                      , isMatch'
                      , find'
+                     , sub1
                      , compileDefault
                      , substr
                      , findCapture
@@ -14,6 +15,7 @@ module Jacinda.Regex ( lazySplit
 
 import           Control.Exception        (Exception, throwIO)
 import           Control.Monad            ((<=<))
+import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
 import qualified Data.Vector              as V
@@ -51,6 +53,12 @@ findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> f
             let e' = fromIntegral e
                 s' = fromIntegral s
                 in BS.BS (fp `plusForeignPtr` s') (e'-s')
+
+sub1 :: RurePtr -> BS.ByteString -> BS.ByteString -> BS.ByteString
+sub1 re bs ss =
+    case find' re bs of
+        Nothing              -> bs
+        Just (RureMatch s e) -> BS.take (fromIntegral s) bs <> ss <> BS.drop (fromIntegral e) bs
 
 {-# NOINLINE find' #-}
 find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
