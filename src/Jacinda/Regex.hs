@@ -16,7 +16,6 @@ import           Control.Exception        (Exception, throwIO)
 import           Control.Monad            ((<=<))
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
-import           Data.List                (unsnoc)
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
@@ -69,6 +68,9 @@ lazySplit rp bs = let c=BSL.toChunks bs in go Nothing c
                     in case unsnoc ss of
                         Just (iss,lss) -> iss++go (Just lss) cs
                         Nothing        -> go Nothing cs
+
+unsnoc :: [a] -> Maybe ([a], a)
+unsnoc = foldr (\x acc -> Just $ case acc of {Nothing -> ([], x); Just ~(a, b) -> (x:a, b)}) Nothing
 
 splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
 splitBy = (V.fromList .) . splitByA
