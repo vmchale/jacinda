@@ -458,6 +458,9 @@ eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
     i0' <- eBM f i0; i1' <- eBM f i1; s' <- eBM f s
     pure $ mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
+eBM f (EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) = do
+    r' <- eBM f r; s0' <- eBM f s0; s1' <- eBM f s1
+    pure $ mkStr (sub1 (asR r') (asS s1') (asS s0'))
 eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
 eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
 eBM f e = f e

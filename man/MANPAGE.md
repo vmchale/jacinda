@@ -116,6 +116,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **substr** Extract substring
 :   Str -> Int -> Int -> Str
 
+**sub1** Substitute first occurrence
+:   Regex -> Str -> Str -> Str
+
 **split** Split a string by regex
 :   Str -> Regex -> List Str
 
