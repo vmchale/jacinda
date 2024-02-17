@@ -146,7 +146,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 :   Str -> Int -> Regex -> Option Str
 
 **captures** Return all aptures (nth capture group)
-:   Str -> Int -> Regex -> List Str
+:   Str -> Int -> Regex ->  Str
 
 **:?** mapMaybe
 :   Witherable f :=> (a -> Option b) -> f a -> f b
@@ -157,6 +157,8 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **fp** Filename
 
 **nf** Number of fields
+
+**⍬** Empty string/empty list
 
 ## SYNTAX
 

@@ -161,7 +161,7 @@ data DfnVar = X | Y deriving (Eq)
 instance Pretty DfnVar where pretty X = "x"; pretty Y = "y"
 
 -- 0-ary
-data N = Ix | Nf | None | Fp deriving (Eq)
+data N = Ix | Nf | None | Fp | MZ deriving (Eq)
 
 data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData, Eq)
 
@@ -229,7 +229,7 @@ data EF a x = ColumnF a Int
 type instance Base (E a) = (EF a)
 
 instance Pretty N where
-    pretty Ix = "⍳"; pretty Nf = "nf"; pretty None = "None"; pretty Fp = "fp"
+    pretty Ix="⍳"; pretty Nf="nf"; pretty None="None"; pretty Fp="fp"; pretty MZ="⍬"
 
 instance Pretty L where
     pretty (ILit i)     = pretty i
@@ -340,7 +340,7 @@ instance Eq (E a) where
 
 data C = IsNum | IsEq | IsOrd
        | IsParse | IsPrintf
-       | IsSemigroup
+       | IsSemigroup | IsMonoid
        | Functor -- ^ For map (@"@)
        | Foldable | Witherable
        deriving (Eq, Ord)
@@ -350,6 +350,7 @@ instance Pretty C where
     pretty IsParse = "Parseable"; pretty IsSemigroup = "Semigroup"
     pretty Functor = "Functor"; pretty Foldable = "Foldable"
     pretty IsPrintf = "Printf"; pretty Witherable = "Witherable"
+    pretty IsMonoid = "Monoid"
 
 instance Show C where show=show.pretty
 
