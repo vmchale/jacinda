@@ -1,3 +1,4 @@
+# 2.0.2.0
 
   * Add support for custom record separators
   * Faster float parsing
