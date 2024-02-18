@@ -274,7 +274,7 @@ instance Pretty (E a) where
     pretty (EApp _ (UB _ IParse) e')                              = pretty e' <> ":i"
     pretty (EApp _ (UB _ FParse) e')                              = pretty e' <> ":f"
     pretty (EApp _ (UB _ Parse) e')                               = pretty e' <> ":"
-    pretty (EApp _ e@UB{} e')                                     = pretty e <> pretty e'
+    pretty (EApp _ e@UB{} e')                                     = pretty e <> parens (pretty e')
     pretty (EApp _ e e')                                          = pretty e <+> pretty e'
     pretty (Lit _ l)                                              = pretty l
     pretty (Var _ n)                                              = pretty n
