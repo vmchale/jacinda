@@ -105,7 +105,9 @@ isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 compileDefault :: BS.ByteString -> RurePtr
 compileDefault = unsafeDupablePerformIO . (yIO <=< compile genFlags)
 
-newtype RureExe = RegexCompile String deriving (Show)
+newtype RureExe = RegexCompile String
+
+instance Show RureExe where show (RegexCompile str) = str
 
 instance Exception RureExe where
 
