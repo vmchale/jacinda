@@ -1,5 +1,6 @@
   * Handle some parsing/currying cases (still hinky)
   * Add `sub1` builtin like AWK's `sub`
+  * Better presentation of regex engine errors
 
 # 2.0.2.0
 
