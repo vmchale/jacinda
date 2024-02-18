@@ -384,24 +384,15 @@ fn path(x) :=
 path&quot;$0</code></pre>
 <p><code>intercalate</code> is defined in
 <code>lib/string.jac</code>.</p>
-<h4 id="example">Example</h4>
-<p>Suppose we want to mimic some functionality of <code>sed</code> -
-we’d like to replace some regular expression with a string (no capture
-groups, only first replacement per line)</p>
-<pre><code>@include&#39;prelude/fn.jac&#39;
-
-fn replace1(re, str, line) :=
-  let
-    val insert := \line. \str. \ixes.
-      take (ixes-&gt;1) line + str + drop (ixes-&gt;2) line
-  in option line (insert line str) (match line re) end;</code></pre>
-<p>Then we could trim whitespace from a file with</p>
-<pre><code>@include&#39;lib/sed.jac&#39;
-
-(replace1 /\s+$/ &#39;&#39;)&quot;$0</code></pre>
+<h4 id="in-place-file-modification">In-Place File Modification</h4>
+<p>We could trim whitespace from lines with:</p>
+<pre><code>(sub1 /\s+$/ ⍬)&quot;$0</code></pre>
+<p><code>sub1</code> is like AWK’s <code>sub</code> and only substitutes
+the first occurrence. <code>⍬</code> is zilde, and can be used to
+represent an empty string or vector.</p>
 <p>Jacinda does not modify files in-place so one would need to use <a
-href="https://joeyh.name/code/moreutils/">sponge</a> perhaps:</p>
-<pre><code>ja run trimwhitespace.jac -i FILE | sponge FILE</code></pre>
+href="https://joeyh.name/code/moreutils/">sponge</a>, viz.</p>
+<pre><code>ja &#39;(sub1 /\s+$/ ⍬)¨$0&#39; -i FILE | sponge FILE</code></pre>
 <h4 id="parting-shots">Parting Shots</h4>
 <pre><code>or := [(||)|#f x]
 
