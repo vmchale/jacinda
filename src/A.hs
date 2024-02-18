@@ -293,7 +293,7 @@ instance Pretty (E a) where
     pretty (Paren _ e)                                            = parens (pretty e)
     pretty (Arr _ es)                                             = tupledByFunky "," (V.toList $ pretty <$> es)
     pretty (Anchor _ es)                                          = "&" <> tupledBy "." (pretty <$> es)
-    pretty (OptionVal _ (Just e))                                 = "Some" <+> pretty e
+    pretty (OptionVal _ (Just e))                                 = "Some" <+> parens (pretty e)
     pretty (OptionVal _ Nothing)                                  = "None"
     pretty (Cond _ e0 e1 e2)                                      = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
     pretty (RwB _ MapMaybe)                                       = "mapMaybe"
