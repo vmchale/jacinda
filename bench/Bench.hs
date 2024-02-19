@@ -12,13 +12,15 @@ import           System.IO.Silently (silence)
 main :: IO ()
 main =
     defaultMain [ bgroup "eval"
-                      [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/"
-                      , bench "path" $ nfIO (silence $ runOnFile [] "{|[x+'\\n'+y]|>`$}" (Just ":") Nothing "bench/data/PATH")
+                      [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/" ]
+                , bgroup "stream"
+                      [ bench "path" $ nfIO (silence $ runOnFile [] "{|[x+'\\n'+y]|>`$}" (Just ":") Nothing "bench/data/PATH")
                       , bench "RS" $ nfIO (silence $ runOnFile [] "$0" Nothing (Just ":") "bench/data/PATH")
                       , bench "runOnFile" $ nfIO (silence $ runOnFile [] "(+)|0 {%/Bloom/}{1}" Nothing Nothing "bench/data/ulysses.txt")
                       , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/wc.jac" ; runOnFile [] contents Nothing Nothing "bench/data/ulysses.txt" })
                       , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/span2.jac" ; runOnFile [] contents Nothing Nothing "bench/data/span.txt" })
-                      , bench "runOnFile (gnused.jac)" $ nfIO (silence $ do { contents <- TIO.readFile "examples/gnused.jac" ; runOnFile [] contents Nothing Nothing "test/examples/data/1.txt" })
+                      , bench "gnused.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/gnused.jac" ; runOnFile [] contents Nothing Nothing "test/examples/data/1.txt" })
+                      , bench "fungnused.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/fungnused.jac" ; runOnFile [] contents Nothing Nothing "test/examples/data/1.txt" })
                       ]
                 ]
 
