@@ -80,6 +80,8 @@ instance Pretty T where
     pretty (TyTup tys)    = jacTup tys
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
 
+parensp True=parens; parensp False=id
+
 prettyFields :: [(Int, T)] -> Doc ann
 prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":" <+> pretty t
 
@@ -165,6 +167,8 @@ data N = Ix | Nf | None | Fp | MZ deriving (Eq)
 
 data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData, Eq)
 
+class PS a where ps :: Int -> a -> Doc ann
+
 -- expression
 data E a = Column { eLoc :: a, col :: Int }
          | IParseCol { eLoc :: a, col :: Int } | FParseCol { eLoc :: a, col :: Int } | ParseCol { eLoc :: a, col :: Int }
@@ -237,6 +241,20 @@ instance Pretty L where
     pretty (BLit True)  = "#t"
     pretty (BLit False) = "#f"
     pretty (StrLit str) = pretty (decodeUtf8 str)
+
+mPrec :: BBin -> Maybe Int
+mPrec Prior = Just 4
+mPrec Map = Just 5
+mPrec _ = Nothing
+
+instance PS (E a) where
+    ps _ (Column _ i)   = "$" <> pretty i
+    ps _ AllColumn{}    = "$0"
+    ps _ IParseCol{}    = "$0:i"
+    ps _ FParseCol{}    = "$0:f"
+    ps _ ParseCol{}     = "$0:"
+    ps d (EApp _ (EApp _ (BB _ op) e0) e1) | Just d' <- mPrec op = parensp (d>d') (ps (d'+1) e0 <+> pretty op <+> ps (d'+1) e1)
+    ps d (EApp _ e0 e1) = parensp (d>10) (ps 10 e0 <+> ps 11 e1)
 
 instance Pretty (E a) where
     pretty (Column _ i)                                           = "$" <> pretty i
