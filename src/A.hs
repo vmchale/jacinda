@@ -19,6 +19,7 @@ import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.List          (foldl')
+import           Data.Maybe         (isJust)
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
@@ -243,83 +244,83 @@ instance Pretty L where
     pretty (StrLit str) = pretty (decodeUtf8 str)
 
 mPrec :: BBin -> Maybe Int
-mPrec Prior = Just 4
-mPrec Map = Just 5
-mPrec _ = Nothing
+mPrec Prior      = Just 5
+mPrec DedupOn    = Just 5
+mPrec MapMaybe   = Just 5
+mPrec Map        = Just 5
+mPrec Filter     = Just 5
+mPrec Fold1      = Just 5
+mPrec Exp        = Just 8
+mPrec Plus       = Just 6
+mPrec Minus      = Just 6
+mPrec Times      = Just 7
+mPrec Div        = Just 7
+mPrec Eq         = Just 4
+mPrec Neq        = Just 4
+mPrec Geq        = Just 4
+mPrec Gt         = Just 4
+mPrec Lt         = Just 4
+mPrec Leq        = Just 4
+mPrec Matches    = Just 4
+mPrec NotMatches = Just 4
+mPrec And        = Just 3
+mPrec Or         = Just 2
+mPrec _          = Nothing
 
 instance PS (E a) where
-    ps _ (Column _ i)   = "$" <> pretty i
-    ps _ AllColumn{}    = "$0"
-    ps _ IParseCol{}    = "$0:i"
-    ps _ FParseCol{}    = "$0:f"
-    ps _ ParseCol{}     = "$0:"
+    ps _ (Column _ i)    = "$" <> pretty i
+    ps _ AllColumn{}     = "$0"
+    ps _ IParseAllCol{}  = "$0:i"
+    ps _ FParseAllCol{}  = "$0:f"
+    ps _ ParseAllCol{}   = "$0:"
+    ps _ (IParseCol _ i) = "$" <> pretty i <> ":i"
+    ps _ (FParseCol _ i) = "$" <> pretty i <> ":f"
+    ps _ (ParseCol _ i)  = "$" <> pretty i <> ":"
+    ps _ AllField{}      = "`0"
+    ps _ (Field _ i)     = "`" <> pretty i
+    ps _ LastField{}     = "`*"
+    ps _ FieldList{}     = "`$"
     ps d (EApp _ (EApp _ (BB _ op) e0) e1) | Just d' <- mPrec op = parensp (d>d') (ps (d'+1) e0 <+> pretty op <+> ps (d'+1) e1)
+    ps _ (EApp _ (BB _ op) e) | isJust (mPrec op) = parens (pretty e <+> pretty op)
+    ps d (EApp _ (UB _ (At i)) e)     = parensp (d>0) (ps 1 e) <> "." <> pretty i
+    ps d (EApp _ (UB _ (Select i)) e) = parensp (d>0) (ps 1 e) <> "->" <> pretty i
+    ps _ (EApp _ (UB _ IParse) e')    = pretty e' <> ":i"
+    ps _ (EApp _ (UB _ FParse) e')    = pretty e' <> ":f"
+    ps _ (EApp _ (UB _ Parse) e')     = pretty e' <> ":"
+    ps d (EApp _ (EApp _ (EApp _ (TB _ Fold) e) e') e'')     = parensp (d>5) (ps 6 e <> "|" <> ps 6 e' <+> ps 7 e'')
+    ps d (EApp _ (EApp _ (EApp _ (TB _ Scan) e) e') e'')     = parensp (d>5) (ps 6 e <> "^" <> ps 6 e' <+> ps 7 e'')
+    ps d (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) e') e'')    = parensp (d>5) ("," <> ps 6 op <+> ps 7 e' <+> ps 8 e'')
+    ps d (EApp _ (EApp _ (EApp _ (TB _ Captures) e) e') e'') = parensp (d>6) (ps 7 e <+> "~*" <+> ps 7 e' <+> ps 8 e'')
     ps d (EApp _ e0 e1) = parensp (d>10) (ps 10 e0 <+> ps 11 e1)
+    ps d (OptionVal _ (Just e)) = parensp (d>10) ("Some" <+> ps 11 e)
+    ps _ (OptionVal _ Nothing) = "None"
+    ps _ (BB _ op)         = parens (pretty op)
+    ps _ (Lit _ l)         = pretty l
+    ps _ (Var _ n)         = pretty n
+    ps _ (RegexLit _ rr)   = "/" <> pretty (decodeUtf8 rr) <> "/"
+    ps _ (UB _ u)          = pretty u
+    ps _ (ResVar _ x)      = pretty x
+    ps _ (Dfn _ e)         = brackets (pretty e)
+    ps _ (NB _ n)          = pretty n
+    ps _ RC{}              = "(compiled regex)"
+    ps _ (Guarded _ p e)   = braces (pretty p) <> braces (pretty e)
+    ps _ (Implicit _ e)    = braces ("|" <+> pretty e)
+    ps _ (Paren _ e)       = parens (pretty e)
+    ps _ (RwB _ MapMaybe)  = "mapMaybe"
+    ps _ (RwB _ DedupOn)   = "dedupOn"
+    ps _ (RwB _ Filter)    = "filter"
+    ps _ (RwT _ Fold)      = "fold"
+    ps _ (RwT _ Scan)      = "scan"
+    ps _ (RwB _ Fold1)     = "fold1"
+    ps _ (Cond _ e0 e1 e2) = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
+    ps _ (Tup _ es)        = jacTup es
+    ps _ (Arr _ es)        = tupledByFunky "," (V.toList $ pretty <$> es)
+    ps _ (Anchor _ es)     = "&" <> tupledBy "." (pretty <$> es)
+    ps _ (Let _ (n, b) e)  = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
+    ps d (Lam _ n e)       = parensp (d>1) ("λ" <> pretty n <> "." <+> ps 2 e)
+    ps _ (TB _ g)          = pretty g
 
-instance Pretty (E a) where
-    pretty (Column _ i)                                           = "$" <> pretty i
-    pretty AllColumn{}                                            = "$0"
-    pretty IParseAllCol{}                                         = "$0:i"
-    pretty FParseAllCol{}                                         = "$0:f"
-    pretty ParseAllCol{}                                          = "$0:"
-    pretty (IParseCol _ i)                                        = "$" <> pretty i <> ":i"
-    pretty (FParseCol _ i)                                        = "$" <> pretty i <> ":f"
-    pretty (ParseCol _ i)                                         = "$" <> pretty i <> ":"
-    pretty AllField{}                                             = "`0"
-    pretty (Field _ i)                                            = "`" <> pretty i
-    pretty LastField{}                                            = "`*"
-    pretty FieldList{}                                            = "`$"
-    pretty (EApp _ (EApp _ (BB _ Prior) e) e')                    = pretty e <> "\\." <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Max) e) e')                      = "max" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Min) e) e')                      = "min" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Split) e) e')                    = "split" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Splitc) e) e')                   = "splitc" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Match) e) e')                    = "match" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Sprintf) e) e')                  = "sprintf" <+> pretty e <+> pretty e'
-    pretty (EApp _ (EApp _ (BB _ Map) e) e')                      = pretty e <> "¨" <> pretty e'
-    pretty (EApp _ (EApp _ (BB _ b) e) e')                        = pretty e <+> pretty b <+> pretty e'
-    pretty (EApp _ (BB _ b) e)                                    = parens (pretty e <> pretty b)
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Fold) e) e') e'')        = pretty e <> "|" <> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Scan) e) e') e'')        = pretty e <> "^" <> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) e') e'')       = "," <> pretty op <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Substr) e) e') e'')      = "substr" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Sub1) e) e') e'')        = "sub1" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Option) e) e') e'')      = "option" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ AllCaptures) e) e') e'') = "captures" <+> pretty e <+> pretty e' <+> pretty e''
-    pretty (EApp _ (EApp _ (EApp _ (TB _ Captures) e) e') e'')    = pretty e <+> "~*" <+> pretty e' <+> pretty e''
-    pretty (EApp _ (UB _ (At i)) e)                               = pretty e <> "." <> pretty i
-    pretty (EApp _ (UB _ (Select i)) e)                           = pretty e <> "->" <> pretty i
-    pretty (EApp _ (UB _ IParse) e')                              = pretty e' <> ":i"
-    pretty (EApp _ (UB _ FParse) e')                              = pretty e' <> ":f"
-    pretty (EApp _ (UB _ Parse) e')                               = pretty e' <> ":"
-    pretty (EApp _ e@UB{} e')                                     = pretty e <> parens (pretty e')
-    pretty (EApp _ e e')                                          = pretty e <+> pretty e'
-    pretty (Lit _ l)                                              = pretty l
-    pretty (Var _ n)                                              = pretty n
-    pretty (RegexLit _ rr)                                        = "/" <> pretty (decodeUtf8 rr) <> "/"
-    pretty (BB _ b)                                               = parens (pretty b)
-    pretty (UB _ u)                                               = pretty u
-    pretty (ResVar _ x)                                           = pretty x
-    pretty (Tup _ es)                                             = jacTup es
-    pretty (Lam _ n e)                                            = parens ("λ" <> pretty n <> "." <+> pretty e)
-    pretty (Dfn _ e)                                              = brackets (pretty e)
-    pretty (Guarded _ p e)                                        = braces (pretty p) <> braces (pretty e)
-    pretty (Implicit _ e)                                         = braces ("|" <+> pretty e)
-    pretty (NB _ n)                                               = pretty n
-    pretty RC{}                                                   = "(compiled regex)"
-    pretty (Let _ (n, b) e)                                       = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
-    pretty (Paren _ e)                                            = parens (pretty e)
-    pretty (Arr _ es)                                             = tupledByFunky "," (V.toList $ pretty <$> es)
-    pretty (Anchor _ es)                                          = "&" <> tupledBy "." (pretty <$> es)
-    pretty (OptionVal _ (Just e))                                 = "Some" <+> parens (pretty e)
-    pretty (OptionVal _ Nothing)                                  = "None"
-    pretty (Cond _ e0 e1 e2)                                      = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
-    pretty (RwB _ MapMaybe)                                       = "mapMaybe"
-    pretty (RwB _ DedupOn)                                        = "dedupOn"
-    pretty (RwB _ Filter)                                         = "filter"
-    pretty (RwT _ Fold)                                           = "fold"
-    pretty (RwT _ Scan)                                           = "scan"
-    pretty (RwB _ Fold1)                                          = "fold1"
+instance Pretty (E a) where pretty=ps 0
 
 instance Show (E a) where show=show.pretty
 
