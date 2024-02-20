@@ -284,15 +284,15 @@ in (total . white . black . draw) end
 # Get Version
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | rg 'csv(\d(\.\d+)*).tar.gz' -o -r '$1' | head -n1
+curl https://www.python.org/downloads/ | rg 'Python-(\d(\.\d+)*).tar.xz' -o -r '$1' | head -n1
 ```
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>.?{|`0 ~* 1 /csv(\d(\.\d+)*).tar.gz/}'
+curl -s https://www.python.org/downloads/ | ja '[:|>.?{|`0 ~* 1 /Python-(\d(\.\d+)*).tar.xz/}')
 ```
 
 ```
-curl -s https://github.com/cisco/ChezScheme/releases | ja '[:|>[x ~* 1 /csv(\d(\.\d+)*).tar.gz/]:?$0'
+curl -s https://www.python.org/downloads/ | ja '[:|>[x ~* 1 /Python-(\d(\.\d+)*).tar.xz/]:?$0')
 ```
 
 
