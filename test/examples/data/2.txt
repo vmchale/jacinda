@@ -1,0 +1,11 @@
+Subject: Hello
+    World
+Content-Type: multipart/alternative;
+    boundary=94eb2c190cc6370f06054535da6a
+Date: Tue, 3 Jan 2017 19:41:16 +0000 (GMT)
+Authentication-Results: mx.gnu.org;
+       dkim=pass header.i=@gnu.org;
+       spf=pass
+Message-ID: <abcdef@gnu.org>
+From: John Doe <jdoe@gnu.org>
+To: Jane Smith <jsmith@gnu.org>

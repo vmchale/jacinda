@@ -24,7 +24,7 @@ jacFile = argument str
 asv :: Parser Bool
 asv = switch
     (long "asv"
-    <> help "Read from ASV")
+    <> help "Process as ASV")
 
 jacRs :: Parser (Maybe T.Text)
 jacRs = optional $ option str
