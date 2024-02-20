@@ -4,23 +4,27 @@ module Jacinda.Backend.Printf ( sprintf
                               ) where
 
 import           A
-import qualified Data.ByteString    as BS
-import qualified Data.Text          as T
-import           Data.Text.Encoding (decodeUtf8, encodeUtf8)
+import qualified Data.ByteString                   as BS
+import           Data.ByteString.Builder           (toLazyByteString)
+import           Data.ByteString.Builder.RealFloat (doubleDec)
+import qualified Data.ByteString.Lazy              as BSL
+import qualified Data.Text                         as T
+import           Data.Text.Encoding                (decodeUtf8, encodeUtf8)
 
 sprintf :: BS.ByteString -- ^ Format string
         -> E a
         -> BS.ByteString
 sprintf fmt e = encodeUtf8 (sprintf' (decodeUtf8 fmt) e)
 
--- TODO: https://hackage.haskell.org/package/floatshow
---
+pf :: Double -> T.Text
+pf = decodeUtf8 . BSL.toStrict . toLazyByteString . doubleDec
+
 -- TODO: interpret precision, like %0.6f %.6
 
 sprintf' :: T.Text -> E a -> T.Text
 sprintf' fmt (Lit _ (FLit f)) =
     let (prefix, fmt') = T.breakOn "%f" fmt
-        in prefix <> T.pack (show f) <> T.drop 2 fmt'
+        in prefix <> pf f <> T.drop 2 fmt'
 sprintf' fmt (Lit _ (ILit i)) =
     let (prefix, fmt') = T.breakOn "%i" fmt
         in prefix <> T.pack (show i) <> T.drop 2 fmt'
