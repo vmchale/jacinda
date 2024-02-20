@@ -306,3 +306,15 @@ xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | 
 ```
 xsv select Series_title_1 food-price-index-september-2023-weighted-average-prices.csv | xsv frequency -l0
 ```
+
+# StackOverflow
+
+From [this answer](https://unix.stackexchange.com/a/449459):
+
+```awk
+awk -F'[/:]+' '{ sub("^www\.", "", $2); print $2 }'
+```
+
+```
+ja -F'[/:]+' "{|sub1 /^www\./ '' \`2}"
+```
