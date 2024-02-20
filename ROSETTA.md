@@ -288,23 +288,26 @@ curl https://www.python.org/downloads/ | rg 'Python-(\d(\.\d+)*).tar.xz' -o -r '
 ```
 
 ```
-curl -s https://www.python.org/downloads/ | ja '[:|>.?{|`0 ~* 1 /Python-(\d(\.\d+)*).tar.xz/}')
+curl -s https://www.python.org/downloads/ | ja '[:|>.?{|`0 ~* 1 /Python-(\d(\.\d+)*).tar.xz/}'
 ```
 
+`[:|>` selects the first line in a stream by folding with the constant function `[:`.
+
 ```
-curl -s https://www.python.org/downloads/ | ja '[:|>[x ~* 1 /Python-(\d(\.\d+)*).tar.xz/]:?$0')
+curl -s https://www.python.org/downloads/ | ja '[:|>[x ~* 1 /Python-(\d(\.\d+)*).tar.xz/]:?$0'
 ```
 
+This is perhaps not worth the loss in portability but it shows functional programming doing the heavy lifting (instead of toggling command-line flags).
 
 # Categorize
 
 ```
-curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
-xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '~.{ix>1}{`8}'
+xsv select Series_title_1 food-price-index-september-2023-weighted-average-prices.csv | xsv frequency -l0
 ```
 
 ```
-xsv select Series_title_1 food-price-index-september-2023-weighted-average-prices.csv | xsv frequency -l0
+curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
+xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '~.{ix>1}{`8}'
 ```
 
 # StackOverflow
