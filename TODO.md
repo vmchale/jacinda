@@ -20,9 +20,13 @@
 - [ ] ♯ in front of type variables
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
+- [x] ⍬
 # Features
+- [ ] "mod"
+- [ ] `$>` operator like awk's `END`, allow stream to print and then present
+  summary
 - [ ] `Ord` for tuples, vectors
-- [ ] occurs check
+- [x] occurs check
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
 - [ ] `$1:` etc. parseable columns
@@ -96,3 +100,4 @@
 - [ ] https://catalog.data.gov/dataset/?res_format=CSV
 - [ ] checksum?
 - [ ] `basename`, `pathchk` (lol)
+- [ ] https://github.com/curl/trurl
