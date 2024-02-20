@@ -33,22 +33,22 @@ import           U
 
 φ1 :: E T -> Int
 φ1 (BB (TyArr _ (TyArr (TyB TyStream:$_) _)) Fold1) = 1
-φ1 (EApp _ e0 e1)                                          = φ1 e0+φ1 e1
-φ1 (Tup _ es)                                              = sum (φ1<$>es)
-φ1 (OptionVal _ (Just e))                                  = φ1 e
-φ1 (Cond _ p e0 e1)                                        = φ1 p+φ1 e0+φ1 e1
-φ1 (Lam _ _ e)                                             = φ1 e
-φ1 _                                                       = 0
+φ1 (EApp _ e0 e1)                                   = φ1 e0+φ1 e1
+φ1 (Tup _ es)                                       = sum (φ1<$>es)
+φ1 (OptionVal _ (Just e))                           = φ1 e
+φ1 (Cond _ p e0 e1)                                 = φ1 p+φ1 e0+φ1 e1
+φ1 (Lam _ _ e)                                      = φ1 e
+φ1 _                                                = 0
 
 
 φ :: E T -> Int
 φ (TB (TyArr _ (TyArr _ (TyArr (TyB TyStream:$_) _))) Fold) = 1
-φ (EApp _ e0 e1)                                                   = φ e0+φ e1
-φ (Tup _ es)                                                       = sum (φ<$>es)
-φ (OptionVal _ (Just e))                                           = φ e
-φ (Cond _ p e0 e1)                                                 = φ p+φ e0+φ e1
-φ (Lam _ _ e)                                                      = φ e
-φ _                                                                = 0
+φ (EApp _ e0 e1)                                            = φ e0+φ e1
+φ (Tup _ es)                                                = sum (φ<$>es)
+φ (OptionVal _ (Just e))                                    = φ e
+φ (Cond _ p e0 e1)                                          = φ p+φ e0+φ e1
+φ (Lam _ _ e)                                               = φ e
+φ _                                                         = 0
 
 noleak :: E T -> Bool
 noleak e = φ e > 1 && φ1 e < 1
