@@ -22,6 +22,7 @@
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
+- [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
   summary
@@ -62,6 +63,7 @@
   - [ ] foldMaybe
 - [ ] Builtins
 - [ ] helios distribution? https://github.com/oxidecomputer/helios
+- [ ] csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`
 ## Syntax
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
@@ -103,3 +105,7 @@
 - [ ] `basename`, `pathchk` (lol)
 - [ ] https://github.com/curl/trurl
 - [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
+## sed
+- [ ] https://sed.sourceforge.io/grabbag/
+- [ ] https://sed.sourceforge.io/
+- [ ] seq 6 | sed -n 'N;l;D'
