@@ -4,30 +4,32 @@ module Jacinda.Backend.P ( EvalErr (..), runJac, eB ) where
 
 import           A
 import           A.I
-import           Control.Exception          (Exception, throw)
-import           Control.Monad              (foldM, (<=<))
-import           Control.Monad.State.Strict (State, evalState, get, modify, runState)
-import           Data.Bifunctor             (bimap)
-import qualified Data.ByteString            as BS
-import           Data.Containers.ListUtils  (nubOrdOn)
-import           Data.Foldable              (traverse_)
-import qualified Data.IntMap                as IM
-import           Data.List                  (scanl', transpose, uncons, unzip4)
-import           Data.Maybe                 (catMaybes, mapMaybe)
-import qualified Data.Vector                as V
-import           Data.Word                  (Word8)
-import           Foreign.C.String           (CString)
+import           Control.Exception                 (Exception, throw)
+import           Control.Monad                     (foldM, (<=<))
+import           Control.Monad.State.Strict        (State, evalState, get, modify, runState)
+import           Data.Bifunctor                    (bimap)
+import qualified Data.ByteString                   as BS
+import           Data.ByteString.Builder           (hPutBuilder)
+import           Data.ByteString.Builder.RealFloat (doubleDec)
+import           Data.Containers.ListUtils         (nubOrdOn)
+import           Data.Foldable                     (traverse_)
+import qualified Data.IntMap                       as IM
+import           Data.List                         (scanl', transpose, uncons, unzip4)
+import           Data.Maybe                        (catMaybes, mapMaybe)
+import qualified Data.Vector                       as V
+import           Data.Word                         (Word8)
+import           Foreign.C.String                  (CString)
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.Parse
 import           Jacinda.Backend.Printf
 import           Jacinda.Fuse
 import           Jacinda.Regex
 import           Nm
-import           Prettyprinter              (hardline, pretty)
-import           Prettyprinter.Render.Text  (putDoc)
-import           Regex.Rure                 (RureMatch (RureMatch), RurePtr)
-import           System.IO                  (hFlush, stdout)
-import           System.IO.Unsafe           (unsafeDupablePerformIO)
+import           Prettyprinter                     (hardline, pretty)
+import           Prettyprinter.Render.Text         (putDoc)
+import           Regex.Rure                        (RureMatch (RureMatch), RurePtr)
+import           System.IO                         (hFlush, stdout)
+import           System.IO.Unsafe                  (unsafeDupablePerformIO)
 import           Ty.Const
 import           U
 
@@ -152,7 +154,9 @@ bsProcess r f u (Anchor _ es) = Right (\bs -> pS f $ takeConcatMap (\e -> eStrea
 bsProcess r _ u e =
     Right $ \bs -> pDocLn (eF u r e bs)
 
-pDocLn = putDoc.(<>hardline).pretty
+pDocLn :: E T -> IO ()
+pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
+pDocLn e                = putDoc (pretty e <> hardline)
 
 pS p = traverse_ g where g | p = (*>fflush).pDocLn | otherwise = pDocLn
                          fflush = hFlush stdout
