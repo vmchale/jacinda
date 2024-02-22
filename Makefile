@@ -24,7 +24,7 @@ docs/index.html: doc/guide.html
 	cp $^ $@
 
 doc/guide.pdf: doc/guide.md
-	pandoc $^ -o $@ --toc
+	pandoc $^ -o $@ --toc --pdf-engine=lualatex -V 'monofont:JetBrains Mono'
 
 doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
@@ -97,13 +97,13 @@ bin/powerpc64le-linux-ja: $(HS_SRC)
 tags: $(JAC_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@
 
-bench/data/:
-	mkdir -p $@
+bench/data/lines.txt: test/examples/data/1.txt
+	perl -0777pe '$$_=$$_ x 10' $^ > $@
 
-bench/data/span.txt: examples/span.txt $(dir $@)
+bench/data/span.txt: examples/span.txt
 	perl -0777pe '$$_=$$_ x 10000' $^ > $@
 
-bench/data/ulysses.txt: $(dir $@)
+bench/data/ulysses.txt:
 	curl https://www.gutenberg.org/files/4300/4300-0.txt -o $@
 
 check:
