@@ -2,7 +2,7 @@
 @include'prelude/fn.jac'
 
 fn go(acc, line) :=
-  let 
+  let
     val accStr := fromMaybe '' (acc->1)
   in
     option (None . Some (accStr+line)) [(Some (accStr+x) . None)] (line ~* 1 /([^\\]*)\\/)
