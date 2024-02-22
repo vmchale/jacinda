@@ -1,3 +1,5 @@
+# 2.0.3.0
+
   * Handle some parsing/currying cases (still hinky)
   * Add `sub1` builtin like AWK's `sub`
   * Better presentation of regex engine errors
