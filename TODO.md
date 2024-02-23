@@ -81,6 +81,7 @@
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 # Performance
+- [ ] print redexes idk
 - [ ] don't bother with `imap` if `ix` isn't used?
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
@@ -101,3 +102,4 @@
 - [ ] checksum?
 - [ ] `basename`, `pathchk` (lol)
 - [ ] https://github.com/curl/trurl
+- [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
