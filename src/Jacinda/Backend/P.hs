@@ -68,6 +68,7 @@ instance Exception StreamError where
 
 data EvalErr = EmptyFold
              | IndexOutOfBounds Int
+             | NoSuchField Int BS.ByteString
              | InternalCoercionError (E T) TB
              | ExpectedTup (E T)
              | BadHole (Nm T)
@@ -75,8 +76,11 @@ data EvalErr = EmptyFold
 
 instance Exception EvalErr where
 
+fieldOf :: RurePtr -> BS.ByteString -> Int -> BS.ByteString
+fieldOf r b n = case splitBy r b V.!? (n-1) of {Just x -> x; Nothing -> throw $ NoSuchField n b}
+
 (!) :: V.Vector a -> Int -> a
-v ! ix = case v V.!? ix of {Just x  -> x; Nothing -> throw $ IndexOutOfBounds ix}
+v ! ix = case v V.!? ix of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
 
 parseAsEInt :: BS.ByteString -> E T
 parseAsEInt = mkI.readDigits
@@ -210,11 +214,11 @@ eStream _ _ IParseAllCol{} bs = parseAsEInt<$>bs
 eStream _ _ FParseAllCol{} bs = parseAsF<$>bs
 eStream _ _ (ParseAllCol (_:$TyB TyInteger)) bs = parseAsEInt<$>bs
 eStream _ _ (ParseAllCol (_:$TyB TyFloat)) bs = parseAsF<$>bs
-eStream _ r (Column _ i) bs = mkStr.(! (i-1)).splitBy r<$>bs
-eStream _ r (IParseCol _ n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
-eStream _ r (ParseCol (_:$TyB TyInteger) n) bs = [parseAsEInt (splitBy r b ! (n-1)) | b <- bs]
-eStream _ r (FParseCol _ n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
-eStream _ r (ParseCol (_:$TyB TyFloat) n) bs = [parseAsF (splitBy r b ! (n-1)) | b <- bs]
+eStream _ r (Column _ i) bs = mkStr.(\b -> fieldOf r b i)<$>bs
+eStream _ r (IParseCol _ n) bs = [parseAsEInt (fieldOf r b (n-1)) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyInteger) n) bs = [parseAsEInt (fieldOf r b (n-1)) | b <- bs]
+eStream _ r (FParseCol _ n) bs = [parseAsF (fieldOf r b (n-1)) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyFloat) n) bs = [parseAsF (fieldOf r b (n-1)) | b <- bs]
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
@@ -260,13 +264,13 @@ vS = Arr (tyV tyStr).fmap mkStr
 eCtx :: (BS.ByteString, V.Vector BS.ByteString) -- ^ Line, split by field separator
      -> Integer -- ^ Line number
      -> E T -> E T
-eCtx ~(f, _) _ AllField{}  = mkStr f
-eCtx (_, fs) _ (Field _ i) = mkStr (fs ! (i-1))
-eCtx (_, fs) _ LastField{} = mkStr (V.last fs)
-eCtx (_, fs) _ FieldList{} = vS fs
-eCtx _ i (NB _ Ix)         = mkI i
-eCtx (_, fs) _ (NB _ Nf)   = mkI (fromIntegral$V.length fs)
-eCtx _ _ e                 = e
+eCtx ~(f, _) _ AllField{}   = mkStr f
+eCtx ~(f, fs) _ (Field _ i) = mkStr (case fs V.!? (i-1) of {Just b -> b; Nothing -> throw $ NoSuchField i f})
+eCtx (_, fs) _ LastField{}  = mkStr (V.last fs)
+eCtx (_, fs) _ FieldList{}  = vS fs
+eCtx _ i (NB _ Ix)          = mkI i
+eCtx (_, fs) _ (NB _ Nf)    = mkI (fromIntegral$V.length fs)
+eCtx _ _ e                  = e
 
 eB :: Int -> (E T -> UM (E T)) -> E T -> E T
 eB i f x = evalState (eBM f x) i
