@@ -1,3 +1,5 @@
+  * Better error messages when a field is out of bounds
+
 # 2.0.3.0
 
   * Handle some parsing/currying cases (still hinky)
