@@ -87,15 +87,17 @@ versionMod = infoOption (V.showVersion P.version) (short 'V' <> long "version" <
 main :: IO ()
 main = run =<< execParser wrapper
 
-ap :: Bool -> Maybe T.Text -> Maybe T.Text
-ap True Just{}  = errorWithoutStackTrace "--asv specified with field separator."
-ap True Nothing = Just "\\x1f"
-ap _ fs         = fs
+-- TODO: set record separator \\x1e
+ap :: Bool -> Maybe T.Text -> Maybe T.Text -> (Maybe T.Text, Maybe T.Text)
+ap True Just{} _        = errorWithoutStackTrace "--asv and field separator both speficied."
+ap True _ Just{}        = errorWithoutStackTrace "--asv and field separator both speficied."
+ap True Nothing Nothing = (Just "\\x1f", Just "\\x1e")
+ap _ fs rs              = (fs,rs)
 
 run :: Command -> IO ()
 run (TypeCheck fp is)              = tcIO is =<< TIO.readFile fp
 run (Run fp Nothing is)            = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
 run (Run fp (Just dat) is)         = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
-run (Expr eb Nothing fs a rs is)   = runOnHandle is eb (ap a fs) rs stdin
-run (Expr eb (Just fp) fs a rs is) = runOnFile is eb (ap a fs) rs fp
+run (Expr eb Nothing fs a rs is)   = let (fs',rs') = ap a fs rs in runOnHandle is eb fs' rs' stdin
+run (Expr eb (Just fp) fs a rs is) = let (fs',rs') = ap a fs rs in runOnFile is eb fs' rs' fp
 run (Eval e)                       = print (exprEval e)
