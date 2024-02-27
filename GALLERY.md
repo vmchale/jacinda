@@ -139,12 +139,6 @@ Is there a line >110 bytes?
 (max|_1 #¨$0) > 110
 ```
 
-# Count Bytes in Directory
-
-```
-ls -l | ja '(+)|0 {ix>1}{`5:}'
-```
-
 # Library Functions
 
 One could write
