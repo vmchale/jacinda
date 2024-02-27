@@ -1,5 +1,5 @@
-Jacinda is a functional, expression-oriented data processing language,
-complementing [AWK](http://www.awklang.org).
+Jacinda is a functional pattern sifting language,
+a smaller [AWK](http://www.awklang.org).
 
 # Installation
 
@@ -23,11 +23,31 @@ cabal install jacinda
 
 There is a [vim plugin](https://github.com/vmchale/jacinda-vim) and a [VSCode extension](https://marketplace.visualstudio.com/items?itemName=vmchale.jacinda).
 
-# SHOCK & AWE
+# Usefulness
+
+Unix uses record separators in many places; we can display one entry in the
+`PATH` variable with:
 
 ```
-curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | \
-    ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`17:}' -F,
+echo $PATH | ja -F: "{|[x+'\n'+y]|>\`$}"
+```
+
+Many Unix tools output much information separated with spaces. We use regular
+expressions to match relevant lines and then select the field with the data
+itself, viz.
+
+```
+otool -l $(locate librure.dylib) | ja '{`1 ~ /^name/}{`2}'
+```
+
+To get the value of a variable (say, `PATH`) from the output of `printenv`:
+
+```
+printenv | ja -F= '{%/^PATH/}{`2}'
+```
+
+```
+cabal-plan | ja '{%/UnitId/}{`2}'
 ```
 
 ## Rosetta
