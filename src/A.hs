@@ -400,7 +400,7 @@ flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 getS :: Program a -> (Maybe T.Text, Maybe T.Text)
 getS (Program ds _) = foldl' go (Nothing, Nothing) ds where
     go (_, rs) (SetFS bs) = (Just bs, rs)
-    go (_, rs) SetAsv     = (Just "\\x1f", rs)
+    go _ SetAsv           = (Just "\\x1f", Just "\\x1e")
     go (fs, _) (SetRS bs) = (fs, Just bs)
     go next _             = next
 
