@@ -6,6 +6,9 @@
 Jacinda is well-suited to processing the output of Unix tools: regular
 expressions scan for relevant output and one can split on separators.
 
+There is additionally support for filters, maps and folds that are familiar to
+functional programmers.
+
 On Mac, one can use `otool -l` to show load commands and then
 
 ```
@@ -15,9 +18,6 @@ otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
 ```
 printenv | ja -F= '{%/^PATH/}{`2}'
 ```
-
-Jacinda has support for filters, maps and folds that are familiar to
-functional programmers.
 
 ## Language
 
@@ -293,7 +293,7 @@ Jacinda does not modify files in-place so one would need to use [sponge](https:/
 ja '(sub1 /\s+$/ ⍬)¨$0' -i FILE | sponge FILE
 ```
 
-#### Parting Shots
+#### Prelude
 
 ```
 or := [(||)|#f x]
@@ -320,63 +320,6 @@ path"$0
 ```
 
 # Examples
-
-## Error Span
-
-Suppose we wish to extract span information from compiler output for editor
-integration. Vim ships with a similar script, `mve.awk`, to present column information in a suitable format.
-
-```
-src/Jacinda/Backend/TreeWalk.hs:319:58: error:
-    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
-    • In the pattern:
-        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
-      In the pattern:
-        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
-      In the pattern:
-        TBuiltin (TyArr _ _
-                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
-                 Fold
-    |
-319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
-    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-```
-
-To get what we want, we use `match`, which returns indices that match a regex
-- in our case, `/\^+/`, which spans the error location.
-
-From the manpages, we see it has type
-
-```
-match : Str -> Regex -> Option (Int . Int)
-```
-
-```
-:set fs:=/\|/;
-
-fn printSpan(str) :=
-  (sprintf '%i-%i')"(match str /\^+/);
-
-printSpan:?{% /\|/}{`2}
-```
-
-Our program uses `|` as a file separator, thus ``2` will present us with:
-
-```
-                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-```
-
-which is exactly the relevant bit.
-
-First, note that `"` is used to map `(sprintf '%i-%i')` over `(match ...)`. This
-works because `match` returns an `Option`, which is a functor. The builtin `:?`
-is [`mapMaybe`](https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe). Thus, we define a stream
-
-```
-printSpan:?{% /\|/}{`2}
-```
-
-which only collects when `printSpan` returns a `Some`.
 
 ## Vim Tags
 
@@ -423,26 +366,66 @@ split : Str -> Regex -> List Str
 
 `.2` is the syntax for accessing a list - `line.2` extracts the second element.
 
-## Enforcing Style Rules
+## Error Span
 
-Suppose our style guide says that lines can be at most 80 characters. We can
-show any such lines we've introduced with:
+Suppose we wish to extract span information from compiler output for editor
+integration. Vim ships with a similar script, `mve.awk`, to present column information in a suitable format.
 
 ```
-git diff origin/master | ja '[#x>81]#.{%/^\+/}{`}'
+src/Jacinda/Backend/TreeWalk.hs:319:58: error:
+    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
+    • In the pattern:
+        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
+      In the pattern:
+        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
+      In the pattern:
+        TBuiltin (TyArr _ _
+                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
+                 Fold
+    |
+319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ```
 
-(81 to allow for the leading `+`)
+To get what we want, we use `match`, which returns indices that match a regex
+- in our case, `/\^+/`, which spans the error location.
+
+From the manpages, we see it has type
+
+```
+match : Str -> Regex -> Option (Int . Int)
+```
+
+```
+:set fs:=/\|/;
+
+fn printSpan(str) :=
+  (sprintf '%i-%i')"(match str /\^+/);
+
+printSpan:?{% /\|/}{`2}
+```
+
+Our program uses `|` as a field separator, thus ``2` will present us with:
+
+```
+                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+```
+
+which is exactly the relevant bit.
+
+First, note that `"` is used to map `(sprintf '%i-%i')` over `(match ...)`. This
+works because `match` returns an `Option`, which is a functor. The builtin `:?`
+is [`mapMaybe`](https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe). Thus, we define a stream
+
+```
+printSpan:?{% /\|/}{`2}
+```
+
+which only collects when `printSpan` returns a `Some`.
 
 ## Unix Command-Line Tools
 
 To get a flavor of Jacinda, see how it can be used in place of familiar tools:
-
-### grep
-
-```
-ja '{%/the/}{`0}' -i FILE
-```
 
 ### wc
 
