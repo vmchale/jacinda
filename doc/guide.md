@@ -3,19 +3,27 @@
 
 # Tutorial
 
-Jacinda has fluent support for filters, maps and folds that are familiar to
-functional programmers; the syntax in particular is derivative of J or APL.
+Jacinda is well-suited to processing the output of Unix tools: regular
+expressions scan for relevant output and one can split on separators.
 
-Jacinda is at its best when piped through other command-line tools (including
-awk).
+On Mac, one can use `otool -l` to show load commands and then
+
+```
+otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
+```
+
+```
+printenv | ja -F= '{%/^PATH/}{`2}'
+```
+
+Jacinda has support for filters, maps and folds that are familiar to
+functional programmers.
 
 ## Language
 
 ### Patterns + Implicits, Streams
 
-Awk is oriented around patterns and actions. Jacinda has support for a similar
-style: one defines a pattern and an expression defined by the lines that this
-matches, viz.
+In Jacinda, one writes a pattern and an expression defined on matching lines, viz.
 
 ```
 {% <pattern>}{<expr>}
@@ -29,7 +37,7 @@ One can search a file for all occurrences of a string:
 ja '{% /Bloom/}{`0}' -i ulysses.txt
 ```
 
-``0` here functions like `$0` in awk: it means the whole line. <!-- mention type -->
+``0` here functions like `$0` in awk: it means the whole line.
 
 Thus, the above functions like ripgrep. We could imitate fd with, say:
 
@@ -55,7 +63,7 @@ context. An example:
 This defines a stream of lines that are more than 110 bytes (`#` is 'tally', it
 returns the length of a string).
 
-There is also a syntax that defines a stream on *all* lines,
+There is also a syntax that defines a stream on all lines,
 
 ```
 {|<expr>}
@@ -524,11 +532,11 @@ process"step^(0 . '') $0
 
 ### CSV Processing
 
-We can convert `.csv` data to use the ASCII separator with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
+We can convert `.csv` data to use ASCII separators with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
 
 
 ```
-xsv fmt file.csv -t$'\x1f' | ja --asv '$1'
+xsv fmt file.csv --ascii | ja --asv '$1'
 ```
 
 For "well-behaved" csv data, we can simply split on `,`:
@@ -582,9 +590,9 @@ curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-ind
 ```
 
 This data is not "well-behaved" so we convert to ASV:
- 
+
 ```
-xsv fmt -t$'\x1f' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
+xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
 ```
 
 This uses `(\.)` (prior) to do something `xsv` cannot.
