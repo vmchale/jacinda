@@ -31,6 +31,16 @@ NR==1{print $NF}
 {ix=1}{`*}
 ```
 
+# [Print All Disk Space Across Filesystems](https://stackoverflow.com/a/424776)
+
+```awk
+df -m | awk '{p+=$3}; END {print p}'
+```
+
+```
+df -m | ja '(+)|0 {ix>1}{`3:i}'
+```
+
 # Print Long Lines with Context
 
 ```awk
