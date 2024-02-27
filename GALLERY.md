@@ -49,35 +49,7 @@ fd '\.hs$' $(rg '^\s*hs-source-dirs:\s*(.*)' -N -o -r '$1' jacinda.cabal) -x sty
 fd '\.(c|h)$' -x wc -l | ja '(+)|0 $1:i'
 ```
 
-# Long Lines in Source Code
-
-```
-fd '\.hs$' -x ja "{|sprintf '%i %s:%i %s' (#\`0.fp.ix.\`0)}" -i | sort -n
-```
-
-# Label lines
-
-```
-(+)^0 [:1"$0
-```
-
-# Imitate fd
-
-```
-ls -1 -R | ja '{% /\.hs$/}{`0}'
-```
-
-(Find all Haskell source files in a directory)
-
 # Linecount
-
-```
-(+)|0 [:1"$0
-```
-
-```
-(+)|0 {|1}
-```
 
 Count nonblank lines:
 
@@ -89,16 +61,6 @@ Count blank lines:
 
 ```
 (+)|0 {%/^$/}{1}
-```
-
-# Bytecount
-
-```
-(+)|0 #"$0
-```
-
-```
-(+)|0 {|#`0}
 ```
 
 # Count Occurrences
@@ -139,7 +101,7 @@ Is there a line >110 bytes?
 (max|_1 #¨$0) > 110
 ```
 
-# Library Functions
+# Prelude
 
 One could write
 

@@ -52,14 +52,6 @@ using Awk.
 ps -aux | rg "$(ps -p $$ -o ppid=)" | ja '{ix=1}{`*}'
 ```
 
-# Show All Lines Introduced in a Diff >80 Characters
-
-```
-git diff origin/master | ja '[#x>81]#.{%/^\+/}{`0}'
-```
-
-Note the `81` to account for the leading `+`.
-
 # Find all distinct language extensions used in a project
 
 ```
@@ -126,13 +118,6 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
 
 ```
 ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(⍳.`1)}' -i /development/dhall/dhall-kitty/conf.dhall
-```
-
-# Sum Total Population
-
-```
-wget https://burntsushi.net/stuff/worldcitiespop_mil.csv -O /tmp/worldcitiespop_mil.csv
-ja -F, '(+)|0 {`5 ~ /\d+/}{`5:}' -i /tmp/worldcitiespop_mil.csv
 ```
 
 # Inflation
