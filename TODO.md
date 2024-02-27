@@ -105,6 +105,8 @@
 - [ ] `basename`, `pathchk` (lol)
 - [ ] https://github.com/curl/trurl
 - [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
+- [ ] https://github.com/epogrebnyak/justpath
+- [ ] https://github.com/socialfoundations/folktables
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/

@@ -46,10 +46,6 @@ To get the value of a variable (say, `PATH`) from the output of `printenv`:
 printenv | ja -F= '{%/^PATH/}{`2}'
 ```
 
-```
-cabal-plan | ja '{%/UnitId/}{`2}'
-```
-
 ## Rosetta
 
 Replace
