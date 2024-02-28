@@ -30,17 +30,7 @@ kill $(ps aux | ja "[x+' '+y]|>{%/ghc/}{\`2}")
 # Format All Code In a Haskell Project
 
 ```
-fd '\.hs$' $(ja "[x+' '+y]|>{%/hs-source-dirs/}{\`2}" -i jacinda.cabal) -x stylish-haskell -i
-```
-
-More rigorously:
-
-```
-fd '\.hs$' $(ja '.?{|`0 ~* 1 /^\s*hs-source-dirs:\s*(.*)/}' -i jacinda.cabal) -x stylish-haskell -i
-```
-
-```
-fd '\.hs$' $(rg '^\s*hs-source-dirs:\s*(.*)' -N -o -r '$1' jacinda.cabal) -x stylish-haskell -i
+fd '\.hs$' $(ja -F':\s+' "{%/hs-source-dirs/}{\`2}" -i jacinda.cabal) -x stylish-haskell -i
 ```
 
 # Count lines of code
