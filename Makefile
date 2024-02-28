@@ -110,4 +110,4 @@ check:
 	cabal build
 	fd .jac examples/ -x cabal run ja -- tc
 fmt:
-	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja '.?{|`0 ~* 1 /^\s*hs-source-dirs:\s*(.*)/}' -i jacinda.cabal) -x stylish-haskell -i
+	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja -F':\s+' "{%/hs-source-dirs/}{\`2}" -i jacinda.cabal) -x stylish-haskell -i
