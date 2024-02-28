@@ -1,4 +1,5 @@
-Language Time
-J 30ms
-NumPy 24ms
-BQN 6ms
+Language/Library | Time
+J (Linux) | 30ms
+J (Windows) | 20ms
+NumPy | 24ms
+BQN | 6ms
