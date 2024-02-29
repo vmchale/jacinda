@@ -9,14 +9,11 @@ expressions scan for relevant output and one can split on separators.
 There is additionally support for filters, maps and folds that are familiar to
 functional programmers.
 
-On Mac, one can use `otool -l` to show load commands and then
+On Mac, one can use `otool -l` to show load commands and then select lines
+specifying the `name`, extracting the second field:
 
 ```
 otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
-```
-
-```
-printenv | ja -F= '{%/^PATH/}{`2}'
 ```
 
 ## Language
@@ -31,21 +28,14 @@ In Jacinda, one writes a pattern and an expression defined on matching lines, vi
 
 This defines a stream of expressions.
 
-One can search a file for all occurrences of a string:
+One can specify the field separator with `-F`:
 
 ```
-ja '{% /Bloom/}{`0}' -i ulysses.txt
+printenv | ja -F= '{% /^PATH/}{`2}'
 ```
 
-``0` here functions like `$0` in awk: it means the whole line.
-
-Thus, the above functions like ripgrep. We could imitate fd with, say:
-
-```
-ls -1 -R | ja '{% /\.hs$/}{`0}'
-```
-
-This would print all Haskell source files in the current directory.
+``2` here is like `$2` in awk: it is the second field in a line. So the above
+matches all lines that start with `PATH` and prints the second field.
 
 There is another form,
 
@@ -314,7 +304,7 @@ so:
 #!/usr/bin/env -S ja run
 
 fn path(x) :=
-  ([x+'\n'+y])|'' (splitc x ':');
+  ([x+'\n'+y])|> (splitc x ':');
 
 path"$0
 ```
