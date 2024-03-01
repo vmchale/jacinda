@@ -30,7 +30,7 @@ cabal-plan dot | ja '~.{%/"/}{`1}'
 To kill all running GHC processes:
 
 ```
-kill $(ps aux | ja "[x+' '+y]|>{%/ghc/}{\`2}")
+kill $(ps aux | ja '{%/ghc/}{`2}')
 ```
 
 # Format All Code In a Haskell Project
