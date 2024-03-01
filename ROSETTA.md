@@ -21,6 +21,28 @@ git tag "$(ja '.?{|`0 ~* 1 /^\s*version:\s*((\d+\.)*\d+)/}' -i jacinda.cabal)"
 git tag $(rg '^\s*version:\s*((\d+\.)*\d+)' jacinda.cabal -r '$1')
 ```
 
+# [AWK one-liners](https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt)
+
+## Last Line of File
+
+```
+ja '[y]|>$0'
+```
+
+```awk
+awk 'END{print}'
+```
+
+## Word Count
+
+```awk
+awk '{ total = total + NF }; END {print total}'
+```
+
+```
+ja '(+)|0 {|#*`$}
+```
+
 # Last Field of First Line
 
 ```awk
