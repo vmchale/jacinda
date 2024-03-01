@@ -1,4 +1,5 @@
   * Better error messages when a field is out of bounds
+  * Better error message on empty `|>` (`fold1`)
 
 # 2.0.3.0
 
