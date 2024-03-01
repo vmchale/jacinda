@@ -13,6 +13,12 @@ strings $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a
 (+)|'' (intercalate '\n')¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
+# Show Dynamic Library Dependencies
+
+```
+readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
+```
+
 # Get Library Versions
 
 ```
