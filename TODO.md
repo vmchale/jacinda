@@ -11,6 +11,7 @@
 - [ ] tuples
 - [ ] Document `%i`, `%s` in manpages
 # Unicode
+- [ ] `reintercalate` builtin
 - [ ] ∅ for monoidal identity
 - [x] defeq ≔
   - [ ] ≜
@@ -22,6 +23,8 @@
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
+- [ ] "scan-with-context?" Also "filter context" i.e. output of `objdump -D`
+  after `Disassembly of section` (bookend)
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
@@ -116,6 +119,7 @@ wrong result??
 - [ ] https://github.com/epogrebnyak/justpath
 - [ ] https://github.com/socialfoundations/folktables
 - [ ] https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt
+- [ ] http://www.awklang.org/action/?nvgexp&child
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
