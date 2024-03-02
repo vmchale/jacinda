@@ -25,6 +25,12 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 cabal-plan dot | ja '~.{%/"/}{`1}'
 ```
 
+# Present `RUNPATH` for a shared object
+
+```
+readelf -d libapple.so | ja '.?{%/RUNPATH/}{`5 ~* 1 /\[(.*)\]/}' | ja -F: "{|[x+'\n'+y]|>\`$}"
+```
+
 # Imitate killall
 
 To kill all running GHC processes:
