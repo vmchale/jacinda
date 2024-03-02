@@ -10,3 +10,6 @@ fn redact(re, x) :=
 
 fn empty(str) :=
   #str = 0;
+
+fn unlines(strs) :=
+  intercalate '\n' strs;

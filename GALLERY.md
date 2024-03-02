@@ -19,10 +19,10 @@ strings $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a
 readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 ```
 
-# Get Library Versions
+# Show Dynamic Library Dependencies (Mac)
 
 ```
-cabal-plan dot | ja '~.{%/"/}{`1}'
+otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
 ```
 
 # Present `RUNPATH` for a shared object
