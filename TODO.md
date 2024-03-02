@@ -31,6 +31,7 @@
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
 - [ ] `$1:` etc. parseable columns
+- [ ] `:?` parsemaybe idk
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
 - [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
@@ -64,6 +65,7 @@
 - [ ] Builtins
 - [ ] helios distribution? https://github.com/oxidecomputer/helios
 - [ ] csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`
+- [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
 ## Syntax
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
@@ -81,7 +83,13 @@
   - [ ] mach syscalls (print+summarize)
 # Bugs
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
+- [ ] 
+```
+echo $PATH | ja -F: "[x ~ /usr/] #. {|[x+'\n'+y]|>\`$}"
+```
+wrong result??
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
+- [ ] `ix` (line number) on filtered streams?
 # Performance
 - [ ] print redexes idk
 - [ ] don't bother with `imap` if `ix` isn't used?
@@ -107,6 +115,7 @@
 - [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
 - [ ] https://github.com/epogrebnyak/justpath
 - [ ] https://github.com/socialfoundations/folktables
+- [ ] https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
