@@ -25,6 +25,9 @@
 # Features
 - [ ] "scan-with-context?" Also "filter context" i.e. output of `objdump -D`
   after `Disassembly of section` (bookend)
+```
+nm --defined-only /usr/local/lib/libgmp.a
+```
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
