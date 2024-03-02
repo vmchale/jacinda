@@ -25,6 +25,12 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
 ```
 
+# Show Machine Architecture (ELF)
+
+```
+readelf -h $(locate libpng.so | tail -n1) | ja -F':\s*' '{%/Machine/}{`2}'
+```
+
 # Imitate killall
 
 To kill all running GHC processes:
