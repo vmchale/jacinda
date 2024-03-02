@@ -47,11 +47,11 @@ where the initial expression is of boolean type, possibly involving the line
 context. An example:
 
 ```
-{#`0>110}{`0}
+{ix>1}{`0}
 ```
 
-This defines a stream of lines that are more than 110 bytes (`#` is 'tally', it
-returns the length of a string).
+`ix` is the line number, and ``0` is like `$0` in awk, i.e. the whole line. So
+this prints everything after the first line.
 
 There is also a syntax that defines a stream on all lines,
 
@@ -110,6 +110,8 @@ let val
   sum := [(+)|0 x]
 in sum {% /Bloom/}{1} end
 ```
+
+<!-- [y]|>$ example --> 
 
 In Jacinda, one can define functions with a [dfn](https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm) syntax in, like in
 APL. We do not need to bind `x`; the variables `x` and `y` are implicit. Since
