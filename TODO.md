@@ -102,6 +102,11 @@ wrong result??
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
 - [ ] not a fan of prettyprint
 # Examples
+- [ ] "context" builtin, like scan...
+```
+otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
+```
+with `LD_ID_DYLIB` vs. `LD_LOAD_DYLIB` as "context"
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
