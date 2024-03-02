@@ -19,6 +19,12 @@ strings $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a
 readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 ```
 
+# Show Dynamic Library Dependencies (Mac)
+
+```
+otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
+```
+
 # Get Library Versions
 
 ```
