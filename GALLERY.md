@@ -25,12 +25,6 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
 ```
 
-# Get Library Versions
-
-```
-cabal-plan dot | ja '~.{%/"/}{`1}'
-```
-
 # Imitate killall
 
 To kill all running GHC processes:
