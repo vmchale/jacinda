@@ -25,10 +25,10 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
 ```
 
-# Present `RUNPATH` for a shared object
+# Show Machine Architecture (ELF)
 
 ```
-readelf -d libapple.so | ja '.?{%/RUNPATH/}{`5 ~* 1 /\[(.*)\]/}' | ja -F: "{|[x+'\n'+y]|>\`$}"
+readelf -h $(locate libpng.so | tail -n1) | ja -F':\s*' '{%/Machine/}{`2}'
 ```
 
 # Imitate killall
