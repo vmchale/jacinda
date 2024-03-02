@@ -23,8 +23,6 @@
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
-- [ ] "scan-with-context?" Also "filter context" i.e. output of `objdump -D`
-  after `Disassembly of section` (bookend)
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
@@ -106,10 +104,12 @@ wrong result??
 - [ ] not a fan of prettyprint
 # Examples
 - [ ] "context" builtin, like scan...
-```
-otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
-```
-with `LD_ID_DYLIB` vs. `LD_LOAD_DYLIB` as "context"
+  ```
+  otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
+  ```
+  with `LD_ID_DYLIB` vs. `LD_LOAD_DYLIB` as "context"
+  output of `objdump -D`
+  after `Disassembly of section` (bookend)
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
