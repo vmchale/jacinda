@@ -37,7 +37,7 @@ expressions to match relevant lines and then select the field with the data
 itself, viz.
 
 ```
-otool -l $(locate librure.dylib) | ja '{`1 ~ /^name/}{`2}'
+otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
 ```
 
 To get the value of a variable (say, `PATH`) from the output of `printenv`:
