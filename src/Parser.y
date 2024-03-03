@@ -47,6 +47,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     rparen { TokSym $$ RParen }
     semicolon { TokSym $$ Semicolon }
     backslash { TokSym $$ Backslash }
+    questionMark { TokSym $$ QuestionMark }
     tilde { TokSym $$ Tilde }
     notMatch { TokSym $$ NotMatchTok }
     dot { TokSym $$ Dot }
@@ -226,7 +227,7 @@ Library :: { Library }
 
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
-        
+
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }
@@ -326,6 +327,7 @@ E :: { E AlexPosn }
   | backslash name dot E { Lam $1 $2 $4 }
   | parens(E) { Paren (eLoc $1) $1 }
   | if E then E else E { Cond $1 $2 $4 $6 }
+  | questionMark E semicolon E semicolon E { Cond $1 $2 $4 $6 }
 
 {
 

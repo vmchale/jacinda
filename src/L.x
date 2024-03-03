@@ -130,6 +130,7 @@ tokens :-
         "-."                     { mkSym NegTok }
         "`*"                     { mkSym LastFieldTok }
         "`$"                     { mkSym FieldListTok }
+        \?                       { mkSym QuestionMark }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -288,6 +289,7 @@ data Sym = PlusTok
          | Zilde
          | Backslash
          | BackslashDot
+         | QuestionMark
          | FilterTok
          | FloorSym
          | CeilSym
@@ -354,6 +356,7 @@ instance Pretty Sym where
     pretty LastFieldTok  = "`*"
     pretty FieldListTok  = "`$"
     pretty IceCreamCone  = "$>"
+    pretty QuestionMark  = "?"
 
 data Keyword = KwLet
              | KwIn
