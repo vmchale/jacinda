@@ -195,6 +195,8 @@ a boolean expression.
 
 **@include\'/path/file.jac'** File include
 
+**?\<expr>; \<expr>; \<expr>** If... then... else
+
 ## DECLARATIONS
 
 **:set fs=/REGEX/;** Set field separator
