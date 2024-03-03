@@ -1,12 +1,3 @@
-# Tag Releases
-
-Use the following to create a git tag by extracting the current version number
-from the `.cabal` file:
-
-```
-git tag "$(ja -F':\s*' '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
-```
-
 # [AWK one-liners](https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt)
 
 ## Last Line of File

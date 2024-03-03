@@ -31,6 +31,15 @@ otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYL
 readelf -h $(locate libpng.so | tail -n1) | ja -F':\s*' '{%/Machine/}{`2}'
 ```
 
+# Tag Releases
+
+Use the following to create a git tag by extracting the current version number
+from the `.cabal` file:
+
+```
+git tag "$(ja -F':\s*' '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
+```
+
 # Imitate killall
 
 To kill all running GHC processes:
