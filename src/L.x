@@ -99,6 +99,7 @@ tokens :-
         "("                      { mkSym LParen }
         ")"                      { mkSym RParen }
         "&("                     { mkSym LAnchor }
+        "$>"                     { mkSym IceCreamCone }
         "{%"                     { mkSym LBracePercent }
         "{|"                     { mkSym LBraceBar }
         "]"                      { mkSym RSqBracket `andBegin` 0 }
@@ -250,6 +251,7 @@ data Sym = PlusTok
          | PercentTok
          | ExpTok
          | FoldTok
+         | IceCreamCone
          | Fold1Tok
          | Quot
          | TimesTok
@@ -351,6 +353,7 @@ instance Pretty Sym where
     pretty NegTok        = "-."
     pretty LastFieldTok  = "`*"
     pretty FieldListTok  = "`$"
+    pretty IceCreamCone  = "$>"
 
 data Keyword = KwLet
              | KwIn
