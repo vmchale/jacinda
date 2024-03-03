@@ -1,22 +1,16 @@
 - inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
 - [ ] xattr -d com.apple.quarantine
-
 # Release
-
 - [ ] Anchored streams
 - [ ] Bug: fold1
   - [ ] two expressions with fold1 (and also gather-folds)
   - [x] fold: catmaybes, mapMaybes
   - [ ] fold-of-scan-of-mapMaybe...
-
 # Documentation
-
 - [ ] Document escaped characters
 - [ ] tuples
 - [ ] Document `%i`, `%s` in manpages
-
 # Unicode
-
 - [ ] `reintercalate` builtin
 - [ ] ∅ for monoidal identity
 - [x] defeq ≔
@@ -28,9 +22,7 @@
 - [ ] 〈〈⟨⟩
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
-
 # Features
-
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
@@ -75,7 +67,6 @@
 - [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
   - [ ] OFS
   - [ ] ORS
-
 ## Syntax
 
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
@@ -84,9 +75,7 @@
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
 - [ ] `0$` or something... line, split by field separator,
-
 # Examples
-
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] https://muhammadraza.me/2022/data-oneliners/
@@ -94,23 +83,16 @@
 - [ ] mve.awk
 - [ ] Awk scripts for building glibc
   - [ ] mach syscalls (print+summarize)
-
 # Bugs
-
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ]
-
 ```
 echo $PATH | ja -F: "[x ~ /usr/] #. {|[x+'\n'+y]|>\`$}"
 ```
-
 wrong result??
-
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 - [ ] `ix` (line number) on filtered streams?
-
 # Performance
-
 - [ ] print redexes idk
 - [ ] don't bother with `imap` if `ix` isn't used?
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
@@ -121,9 +103,7 @@ wrong result??
 - [x] 32m to normalize expression (eClosed) on chess example
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
 - [ ] not a fan of prettyprint
-
 # Examples
-
 - [ ] "context" builtin, like scan...
   ```
   otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
@@ -146,9 +126,7 @@ wrong result??
 - [ ] https://github.com/socialfoundations/folktables
 - [ ] https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt
 - [ ] http://www.awklang.org/action/?nvgexp&child
-
 ## sed
-
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
 - [ ] seq 6 | sed -n 'N;l;D'
