@@ -215,10 +215,10 @@ eStream _ _ FParseAllCol{} bs = parseAsF<$>bs
 eStream _ _ (ParseAllCol (_:$TyB TyInteger)) bs = parseAsEInt<$>bs
 eStream _ _ (ParseAllCol (_:$TyB TyFloat)) bs = parseAsF<$>bs
 eStream _ r (Column _ i) bs = mkStr.(\b -> fieldOf r b i)<$>bs
-eStream _ r (IParseCol _ n) bs = [parseAsEInt (fieldOf r b (n-1)) | b <- bs]
-eStream _ r (ParseCol (_:$TyB TyInteger) n) bs = [parseAsEInt (fieldOf r b (n-1)) | b <- bs]
-eStream _ r (FParseCol _ n) bs = [parseAsF (fieldOf r b (n-1)) | b <- bs]
-eStream _ r (ParseCol (_:$TyB TyFloat) n) bs = [parseAsF (fieldOf r b (n-1)) | b <- bs]
+eStream _ r (IParseCol _ n) bs = [parseAsEInt (fieldOf r b n) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyInteger) n) bs = [parseAsEInt (fieldOf r b n) | b <- bs]
+eStream _ r (FParseCol _ n) bs = [parseAsF (fieldOf r b n) | b <- bs]
+eStream _ r (ParseCol (_:$TyB TyFloat) n) bs = [parseAsF (fieldOf r b n) | b <- bs]
 eStream i r (EApp _ (EApp _ (BB _ MapMaybe) f) e) bs = let xs = eStream i r e bs in mapMaybe (asM.c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Map) f) e) bs = let xs=eStream i r e bs in fmap (c1 i f) xs
 eStream i r (EApp _ (EApp _ (BB _ Prior) op) e) bs = let xs=eStream i r e bs in zipWith (c2 i op) (tail xs) xs
