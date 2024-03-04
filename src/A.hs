@@ -312,7 +312,7 @@ instance PS (E a) where
     ps _ (RwT _ Fold)      = "fold"
     ps _ (RwT _ Scan)      = "scan"
     ps _ (RwB _ Fold1)     = "fold1"
-    ps _ (Cond _ e0 e1 e2) = "if" <+> pretty e0 <+> "then" <+> pretty e1 <+> "else" <+> pretty e2
+    ps _ (Cond _ e0 e1 e2) = "?" <> pretty e0 <> ";" <+> pretty e1 <> ";" <+> pretty e2
     ps _ (Tup _ es)        = jacTup es
     ps _ (Arr _ es)        = tupledByFunky "," (V.toList $ pretty <$> es)
     ps _ (Anchor _ es)     = "&" <> tupledBy "." (pretty <$> es)

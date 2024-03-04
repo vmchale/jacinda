@@ -4,9 +4,7 @@
 @include'lib/maybe.jac'
 
 fn mMatch(str, re) :=
-  if str ~ re
-    then Some str
-    else None;
+  ?str ~ re; Some str; None;
 
 fn step(ctx, line) :=
   let

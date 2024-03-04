@@ -23,25 +23,19 @@
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
-- [ ] "scan-with-context?" Also "filter context" i.e. output of `objdump -D`
-  after `Disassembly of section` (bookend)
-```
-nm --defined-only /usr/local/lib/libgmp.a
-```
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
-  summary
+      summary
 - [ ] `Ord` for tuples, vectors
 - [x] occurs check
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
-- [ ] `$1:` etc. parseable columns
-- [ ] `:?` parsemaybe idk
+- [x] `$1:` etc. parseable columns
+- [ ] `:?` parsemaybe
 - [ ] 0 literal could be a float
 - [ ] `fail : a` builtin (unicode bottom?)
-- [ ] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
-- [ ] `fail : a` builtin (unicode bottom?)
+- [x] Error when type is ambiguous (e.g. `3: - 2:` or w/e)
 - [x] mapMaybe, catMaybes? for `Witherable`...
   - [ ] vectors/lists should be a member!
 - [ ] iota for vectors etc.
@@ -50,18 +44,17 @@ nm --defined-only /usr/local/lib/libgmp.a
 - [ ] ignore case?
 - [ ] environment variables
 - [x] `x` need only be a keyword inside anonymous functions (dfns?)... otherwise it
-  can be a variable!
+      can be a variable!
   - [ ] that introduced a bug w/ nested dfns (euh)
 - [x] `.1` etc. to extract tuples (arrays?)
   - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
-- [ ] parse dates
+- [ ] ~~parse dates~~
 - [½] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
 - [ ] list comprehensions or w/e
-- [ ] Expose captures
-- [ ] `\`$` as "all fields, as list" or something
-- [ ] `dedupBy` builtin
+- [x] `\`$` as "all fields, as list" or something
+- [x] `dedupBy` builtin
 - [ ] Infix operators
   - [ ] `$>` (ice cream cone?)
   - [ ] `~?` (maybe match)
@@ -70,9 +63,12 @@ nm --defined-only /usr/local/lib/libgmp.a
   - [ ] foldMaybe
 - [ ] Builtins
 - [ ] helios distribution? https://github.com/oxidecomputer/helios
-- [ ] csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`
+- [ ] ~~csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`~~
 - [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
+  - [ ] OFS
+  - [ ] ORS
 ## Syntax
+
 - [ ] `.[ ... ]` dfn where you specify that it's binary? lol
 - [ ] `?` for if... then? lol
 - [ ] lineLength := (#")
@@ -89,7 +85,7 @@ nm --defined-only /usr/local/lib/libgmp.a
   - [ ] mach syscalls (print+summarize)
 # Bugs
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
-- [ ] 
+- [ ]
 ```
 echo $PATH | ja -F: "[x ~ /usr/] #. {|[x+'\n'+y]|>\`$}"
 ```
@@ -108,6 +104,15 @@ wrong result??
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
 - [ ] not a fan of prettyprint
 # Examples
+- [ ] "context" builtin, like scan...
+  ```
+  otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
+  ```
+  with `LD_ID_DYLIB` vs. `LD_LOAD_DYLIB` as "context"
+  output of `objdump -D` after `Disassembly of section` (bookend)
+  ```
+  nm --defined-only /usr/local/lib/libgmp.a
+  ```
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
