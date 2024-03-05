@@ -107,6 +107,9 @@ wrong result??
   ```
   with `LD_ID_DYLIB` vs. `LD_LOAD_DYLIB` as "context"
   output of `objdump -D` after `Disassembly of section` (bookend)
+  ```
+  nm --defined-only /usr/local/lib/libgmp.a
+  ```
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/

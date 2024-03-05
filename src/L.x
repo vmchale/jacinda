@@ -373,8 +373,8 @@ data Keyword = KwLet
 -- | Reserved/special variables
 data Var = VarX
          | VarY
-         | VarFs
-         | VarRs
+         | VarFs | VarRs
+         | VarOfs | VarOrs
          | VarIx
          | VarMin
          | VarMax
@@ -385,6 +385,8 @@ instance Pretty Var where
     pretty VarY     = "y"
     pretty VarFs    = "fs"
     pretty VarRs    = "rs"
+    pretty VarOrs   = "ors"
+    pretty VarOfs   = "ofs"
     pretty VarIx    = "⍳"
     pretty VarNf    = "nf"
     pretty VarMin   = "min"
