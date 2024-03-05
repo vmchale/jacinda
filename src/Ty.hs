@@ -249,10 +249,12 @@ tyOf :: Ord a => E a -> TyM a T
 tyOf = fmap eLoc . tyE
 
 tyDS :: Ord a => Subst -> D a -> TyM a (D T, Subst)
-tyDS s (SetFS bs) = pure (SetFS bs, s)
-tyDS s (SetRS bs) = pure (SetRS bs, s)
-tyDS s SetAsv     = pure (SetAsv, s)
-tyDS s FlushDecl  = pure (FlushDecl, s)
+tyDS s (SetFS bs)  = pure (SetFS bs, s)
+tyDS s (SetRS bs)  = pure (SetRS bs, s)
+tyDS s (SetOFS bs) = pure (SetOFS bs, s)
+tyDS s (SetORS bs) = pure (SetORS bs, s)
+tyDS s SetAsv      = pure (SetAsv, s)
+tyDS s FlushDecl   = pure (FlushDecl, s)
 tyDS s (FunDecl n@(Nm _ (U i) _) [] e) = do
     (e', s') <- tyES s e
     let t=eLoc e'

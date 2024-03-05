@@ -128,6 +128,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     nf { TokResVar $$ VarNf }
     fs { TokResVar $$ VarFs }
     rs { TokResVar $$ VarRs }
+    ofs { TokResVar $$ VarOfs }
+    ors { TokResVar $$ VarOrs }
 
     split { TokBuiltin $$ BuiltinSplit }
     splitc { TokBuiltin $$ BuiltinSplitc }
@@ -212,6 +214,8 @@ Args :: { [(Nm AlexPosn)] }
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (rr $4) }
   | set rs defEq rr semicolon { SetRS (rr $4) }
+  | set ofs defEq strLit semicolon { SetOFS (strTok $4) }
+  | set ors defEq strLit semicolon { SetORS (strTok $4) }
   | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }

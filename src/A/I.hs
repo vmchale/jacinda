@@ -41,7 +41,8 @@ lβ e = state (`β` e)
 
 iD :: D T -> RM T ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
-iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD FlushDecl{} = pure ()
+iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure ()
+iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
