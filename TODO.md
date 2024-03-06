@@ -23,6 +23,7 @@
 - [ ] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
+- [ ] named columns (e.g. ``Ndx` for output of `readelf -Ws`)
 - [ ] scan1
 - [ ] "mod"
 - [ ] `$>` operator like awk's `END`, allow stream to print and then present
@@ -128,6 +129,7 @@ wrong result??
 - [ ] https://github.com/socialfoundations/folktables
 - [ ] https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt
 - [ ] http://www.awklang.org/action/?nvgexp&child
+- [ ] JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;34"
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
