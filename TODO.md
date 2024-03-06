@@ -1,5 +1,4 @@
-- inspiration: AWK, Haskell, J/APL/k, C (include), ATS... (some architectural decisions mime GHC)
-- [ ] xattr -d com.apple.quarantine
+- inspiration: AWK, Haskell, J/APL/k, C (include)... (some architectural decisions mime GHC)
 # Release
 - [ ] Anchored streams
 - [ ] Bug: fold1
@@ -12,7 +11,7 @@
 - [ ] Document `%i`, `%s` in manpages
 # Unicode
 - [ ] `reintercalate` builtin
-- [ ] ∅ for monoidal identity
+- [x] ∅ for monoidal identity
 - [x] defeq ≔
   - [ ] ≜
 - [x] arrows (types)
@@ -20,7 +19,7 @@
 - [x] lambda
 - [ ] ♯ in front of type variables
 - [ ] 〈〈⟨⟩
-- [ ] unicode/apl for floor+ceiling
+- [x] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
 - [ ] named columns (e.g. ``Ndx` for output of `readelf -Ws`)
@@ -62,16 +61,14 @@
 - [x] fold without seed
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
   - [ ] foldMaybe
-- [ ] Builtins
 - [ ] helios distribution? https://github.com/oxidecomputer/helios
 - [ ] ~~csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`~~
 - [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
   - [ ] OFS
   - [ ] ORS
 ## Syntax
-
-- [ ] `.[ ... ]` dfn where you specify that it's binary? lol
-- [ ] `?` for if... then? lol
+- [ ] `.[ ... ]` dfn where you specify that it's binary?
+- [x] `?` for if... then?
 - [ ] lineLength := (#")
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
@@ -81,7 +78,7 @@
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
 - [ ] https://muhammadraza.me/2022/data-oneliners/
 - [ ] http://cowlark.com/mercat/
-- [ ] mve.awk
+- [x] mve.awk
 - [ ] Awk scripts for building glibc
   - [ ] mach syscalls (print+summarize)
 # Bugs
@@ -118,11 +115,11 @@ wrong result??
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
 - [ ] https://github.com/gunnarmorling/1brc
-  - [ ] min/max
+  - [x] min/max
 - [ ] https://www.stats.govt.nz/large-datasets/csv-files-for-download/
 - [ ] https://catalog.data.gov/dataset/?res_format=CSV
 - [ ] checksum?
-- [ ] `basename`, `pathchk` (lol)
+- [½] `basename`, `pathchk` (lol)
 - [ ] https://github.com/curl/trurl
 - [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
 - [ ] https://github.com/epogrebnyak/justpath
