@@ -1,5 +1,6 @@
   * Better error messages when a field is out of bounds
   * Better error message on empty `|>` (`fold1`)
+  * Fix parsing bug in curried binary operators
 
 # 2.0.3.0
 
