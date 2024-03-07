@@ -454,7 +454,7 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) | TyB TyVec:$_ <- eLoc xs = do
     op' <- eBM f op; xs' <- eBM f xs
     let xsV=asV xs'
     let (seed, xs'') = case V.uncons xsV of
-          Just v -> v
+          Just v  -> v
           Nothing -> throw EmptyFold
     V.foldM (c2Mϵ f op') seed xs''
 eBM f (EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) g) x) = do

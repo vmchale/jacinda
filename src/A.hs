@@ -386,8 +386,8 @@ instance Pretty (D a) where
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
     pretty SetAsv           = ":set asv;"
-    pretty (SetOFS sep) = ":set ofs :=" <+> "'" <> pretty sep <> "';"
-    pretty (SetORS sep) = ":set ors :=" <+> "'" <> pretty sep <> "';"
+    pretty (SetOFS sep)     = ":set ofs :=" <+> "'" <> pretty sep <> "';"
+    pretty (SetORS sep)     = ":set ors :=" <+> "'" <> pretty sep <> "';"
 
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 

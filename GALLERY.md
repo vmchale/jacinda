@@ -51,7 +51,7 @@ kill $(ps aux | ja '{%/ghc/}{`2}')
 # Format All Code In a Haskell Project
 
 ```
-fd '\.hs$' $(ja -F':\s+' "{%/hs-source-dirs/}{\`2}" -i jacinda.cabal) -x stylish-haskell -i
+fd '\.hs$' $(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x stylish-haskell -i
 ```
 
 # Count lines of code
