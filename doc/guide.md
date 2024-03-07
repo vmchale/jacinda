@@ -9,12 +9,9 @@ expressions scan for relevant output and one can split on separators.
 There is additionally support for filters, maps and folds that are familiar to
 functional programmers.
 
-On Mac, one can use `otool -l` to show load commands and then select lines
-specifying the `name`, extracting the second field:
+<!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
 
-```
-otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
-```
+<!-- printenv | ja -F= '{% /^PATH/}{`2}' -->
 
 ## Language
 
@@ -28,14 +25,21 @@ In Jacinda, one writes a pattern and an expression defined on matching lines, vi
 
 This defines a stream of expressions.
 
-One can specify the field separator with `-F`:
+One can search a file for all occurrences of a string:
 
 ```
-printenv | ja -F= '{% /^PATH/}{`2}'
+ja '{% /Bloom/}{`0}' -i ulysses.txt
 ```
 
-``2` here is like `$2` in awk: it is the second field in a line. So the above
-matches all lines that start with `PATH` and prints the second field.
+``0` here functions like `$0` in awk: it means the whole line. So this would print all lines that match the pattern `Bloom`.
+
+We could imitate fd with, say:
+
+```
+ls -1 -R | ja '{% /\.hs$/}{`0}'
+```
+
+This would print all Haskell source files in the current directory.
 
 There is another form,
 
@@ -47,11 +51,11 @@ where the initial expression is of boolean type, possibly involving the line
 context. An example:
 
 ```
-{ix>1}{`0}
+{#`0>110}{`0}
 ```
 
-`ix` is the line number, and ``0` is like `$0` in awk, i.e. the whole line. So
-this prints everything after the first line.
+This defines a stream of lines that are more than 110 bytes (`#` is 'tally', it
+returns the length of a string).
 
 There is also a syntax that defines a stream on all lines,
 
@@ -111,7 +115,7 @@ let val
 in sum {% /Bloom/}{1} end
 ```
 
-<!-- [y]|>$ example --> 
+<!-- [y]|>$ example -->
 
 In Jacinda, one can define functions with a [dfn](https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm) syntax in, like in
 APL. We do not need to bind `x`; the variables `x` and `y` are implicit. Since
