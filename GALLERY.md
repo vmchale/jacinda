@@ -1,8 +1,8 @@
 # Extract Library Versions
 
 ```
-strings $(which ja) | ja '.?{| `0 ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{64}$/}'
-strings $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{64}$/]:? $0'
+strings -d $(which ja) | ja '.?{| `0 ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{64}$/}'
+strings -d $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{64}$/]:? $0'
 ```
 
 ## Extract Library Versions (Unstripped)
