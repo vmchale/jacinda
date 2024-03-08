@@ -10,7 +10,7 @@ strings $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a
 ```
 @include'lib/string.jac'
 
-(+)|'' (intercalate '\n')¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
+(intercalate '\n')¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
 # Show Dynamic Library Dependencies
@@ -37,7 +37,7 @@ Use the following to create a git tag by extracting the current version number
 from the `.cabal` file:
 
 ```
-git tag "$(ja -F':\s*' '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
+git tag "$(ja -F'\s*:\s*' '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
 ```
 
 # Imitate killall
