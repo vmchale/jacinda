@@ -63,7 +63,7 @@ There is also a syntax that defines a stream on all lines,
 {|<expr>}
 ```
 
-So `{|``0}` would define a stream of text corresponding to the lines in the file.
+So `{|` ``0` `}` would define a stream of text corresponding to the lines in the file.
 
 ### Fold
 
