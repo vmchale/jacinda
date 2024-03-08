@@ -37,7 +37,7 @@ Use the following to create a git tag by extracting the current version number
 from the `.cabal` file:
 
 ```
-git tag "$(ja -F'\s*:\s*' '{%/^\s*version:/}{`2}' -i jacinda.cabal)"
+git tag "$(ja -F'\s*:\s*' '{%/^\s*version/}{`2}' -i jacinda.cabal)"
 ```
 
 # Imitate killall
