@@ -217,7 +217,6 @@ a boolean expression.
 {#\`0>72}{\`0}
 :   Print lines longer than 72 bytes
 
-
 {ix=3}{`0}
 :   Select only the third line
 
@@ -253,9 +252,6 @@ a boolean expression.
 
 [y]|> {|`0~/^$/}
 :   Is the last line blank?
-
-.?{|`1 ~* 1 /([^\?]*)/}
-:   Trim URL
 
 # BUGS
 
