@@ -200,17 +200,15 @@ Interaction</a></li>
 </ul></li>
 <li><a href="#examples" id="toc-examples">Examples</a>
 <ul>
-<li><a href="#error-span" id="toc-error-span">Error Span</a></li>
 <li><a href="#vim-tags" id="toc-vim-tags">Vim Tags</a></li>
-<li><a href="#enforcing-style-rules"
-id="toc-enforcing-style-rules">Enforcing Style Rules</a></li>
+<li><a href="#error-span" id="toc-error-span">Error Span</a></li>
 <li><a href="#unix-command-line-tools"
 id="toc-unix-command-line-tools">Unix Command-Line Tools</a>
 <ul>
-<li><a href="#grep" id="toc-grep">grep</a></li>
 <li><a href="#wc" id="toc-wc">wc</a></li>
 <li><a href="#head" id="toc-head">head</a></li>
 <li><a href="#basename" id="toc-basename">basename</a></li>
+<li><a href="#tr" id="toc-tr">tr</a></li>
 <li><a href="#uniq" id="toc-uniq">uniq</a></li>
 <li><a href="#nl" id="toc-nl">nl</a></li>
 </ul></li>
@@ -236,12 +234,10 @@ Processing</a></li>
 <p>Jacinda is well-suited to processing the output of Unix tools:
 regular expressions scan for relevant output and one can split on
 separators.</p>
-<p>On Mac, one can use <code>otool -l</code> to show load commands and
-then</p>
-<pre><code>otool -l $(locate libpng.dylib) | ja &#39;{`1 ~ /^name/}{`2}&#39;</code></pre>
-<pre><code>printenv | ja -F= &#39;{%/^PATH/}{`2}&#39;</code></pre>
-<p>Jacinda has support for filters, maps and folds that are familiar to
-functional programmers.</p>
+<p>There is additionally support for filters, maps and folds that are
+familiar to functional programmers.</p>
+<!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
+<!-- printenv | ja -F= '{% /^PATH/}{`2}' -->
 <h2 id="language">Language</h2>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>In Jacinda, one writes a pattern and an expression defined on
@@ -251,12 +247,13 @@ matching lines, viz.</p>
 <p>One can search a file for all occurrences of a string:</p>
 <pre><code>ja &#39;{% /Bloom/}{`0}&#39; -i ulysses.txt</code></pre>
 <p>`<code>0</code> here functions like <code>$0</code> in awk: it means
-the whole line.</p>
-<p>Thus, the above functions like ripgrep. We could imitate fd with,
-say:</p>
+the whole line. So this would print all lines that match the pattern
+<code>Bloom</code>.</p>
+<p>We could imitate fd with, say:</p>
 <pre><code>ls -1 -R | ja &#39;{% /\.hs$/}{`0}&#39;</code></pre>
 <p>This would print all Haskell source files in the current
 directory.</p>
+<!-- echo JQ_COLORS | ja -R':' -F';' '~.$1' -->
 <p>There is another form,</p>
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving
@@ -266,8 +263,8 @@ the line context. An example:</p>
 (<code>#</code> is ‘tally’, it returns the length of a string).</p>
 <p>There is also a syntax that defines a stream on all lines,</p>
 <pre><code>{|&lt;expr&gt;}</code></pre>
-<p>So <code>{|``0}</code> would define a stream of text corresponding to
-the lines in the file.</p>
+<p>So <code>{|</code> `<code>0</code> <code>}</code> would define a
+stream of text corresponding to the lines in the file.</p>
 <h3 id="fold">Fold</h3>
 <p>To count lines with the word “Bloom”:</p>
 <pre><code>ja &#39;(+)|0 {% /Bloom/}{1}&#39; -i ulysses.txt</code></pre>
@@ -297,6 +294,7 @@ so:</p>
 <pre><code>let val
   sum := [(+)|0 x]
 in sum {% /Bloom/}{1} end</code></pre>
+<!-- [y]|>$ example -->
 <p>In Jacinda, one can define functions with a <a
 href="https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm">dfn</a>
 syntax in, like in APL. We do not need to bind <code>x</code>; the
@@ -395,7 +393,7 @@ represent an empty string or vector.</p>
 <p>Jacinda does not modify files in-place so one would need to use <a
 href="https://joeyh.name/code/moreutils/">sponge</a>, viz.</p>
 <pre><code>ja &#39;(sub1 /\s+$/ ⍬)¨$0&#39; -i FILE | sponge FILE</code></pre>
-<h4 id="parting-shots">Parting Shots</h4>
+<h4 id="prelude">Prelude</h4>
 <pre><code>or := [(||)|#f x]
 
 and := [(&amp;)|#t x]
@@ -408,52 +406,10 @@ could write a script like so:</p>
 <pre><code>#!/usr/bin/env -S ja run
 
 fn path(x) :=
-  ([x+&#39;\n&#39;+y])|&#39;&#39; (splitc x &#39;:&#39;);
+  ([x+&#39;\n&#39;+y])|&gt; (splitc x &#39;:&#39;);
 
 path&quot;$0</code></pre>
 <h1 id="examples">Examples</h1>
-<h2 id="error-span">Error Span</h2>
-<p>Suppose we wish to extract span information from compiler output for
-editor integration. Vim ships with a similar script,
-<code>mve.awk</code>, to present column information in a suitable
-format.</p>
-<pre><code>src/Jacinda/Backend/TreeWalk.hs:319:58: error:
-    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
-    • In the pattern:
-        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
-      In the pattern:
-        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
-      In the pattern:
-        TBuiltin (TyArr _ _
-                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
-                 Fold
-    |
-319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
-    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
-<p>To get what we want, we use <code>match</code>, which returns indices
-that match a regex - in our case, <code>/\^+/</code>, which spans the
-error location.</p>
-<p>From the manpages, we see it has type</p>
-<pre><code>match : Str -&gt; Regex -&gt; Option (Int . Int)</code></pre>
-<pre><code>:set fs:=/\|/;
-
-fn printSpan(str) :=
-  (sprintf &#39;%i-%i&#39;)&quot;(match str /\^+/);
-
-printSpan:?{% /\|/}{`2}</code></pre>
-<p>Our program uses <code>|</code> as a file separator, thus
-`<code>2</code> will present us with:</p>
-<pre><code>                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
-<p>which is exactly the relevant bit.</p>
-<p>First, note that <code>"</code> is used to map
-<code>(sprintf '%i-%i')</code> over <code>(match ...)</code>. This works
-because <code>match</code> returns an <code>Option</code>, which is a
-functor. The builtin <code>:?</code> is <a
-href="https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe"><code>mapMaybe</code></a>.
-Thus, we define a stream</p>
-<pre><code>printSpan:?{% /\|/}{`2}</code></pre>
-<p>which only collects when <code>printSpan</code> returns a
-<code>Some</code>.</p>
 <h2 id="vim-tags">Vim Tags</h2>
 <p>Suppose we wish to generate vim tag files for our Jacinda programs.
 According to <code>:help tags-file-format</code> the desired format
@@ -483,16 +439,51 @@ type</p>
 <pre><code>split : Str -&gt; Regex -&gt; List Str</code></pre>
 <p><code>.2</code> is the syntax for accessing a list -
 <code>line.2</code> extracts the second element.</p>
-<h2 id="enforcing-style-rules">Enforcing Style Rules</h2>
-<p>Suppose our style guide says that lines can be at most 80 characters.
-We can show any such lines we’ve introduced with:</p>
-<pre><code>git diff origin/master | ja &#39;[#x&gt;81]#.{%/^\+/}{`}&#39;</code></pre>
-<p>(81 to allow for the leading <code>+</code>)</p>
+<h2 id="error-span">Error Span</h2>
+<p>Suppose we wish to extract span information from compiler output for
+editor integration. Vim ships with a similar script,
+<code>mve.awk</code>, to present column information in a suitable
+format.</p>
+<pre><code>src/Jacinda/Backend/TreeWalk.hs:319:58: error:
+    • The constructor ‘TyArr’ should have 3 arguments, but has been given 4
+    • In the pattern:
+        TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _
+      In the pattern:
+        TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)
+      In the pattern:
+        TBuiltin (TyArr _ _
+                        (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _))
+                 Fold
+    |
+319 | eWith re i (EApp _ (EApp _ (EApp _ (TBuiltin (TyArr _ _ (TyArr _ _ (TyArr _ (TyApp _ (TyB _ TyStream) _)) _)) Fold) op) seed) stream) = foldWithCtx re i op seed stream
+    |                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+<p>To get what we want, we use <code>match</code>, which returns indices
+that match a regex - in our case, <code>/\^+/</code>, which spans the
+error location.</p>
+<p>From the manpages, we see it has type</p>
+<pre><code>match : Str -&gt; Regex -&gt; Option (Int . Int)</code></pre>
+<pre><code>:set fs:=/\|/;
+
+fn printSpan(str) :=
+  (sprintf &#39;%i-%i&#39;)&quot;(match str /\^+/);
+
+printSpan:?{% /\|/}{`2}</code></pre>
+<p>Our program uses <code>|</code> as a field separator, thus
+`<code>2</code> will present us with:</p>
+<pre><code>                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
+<p>which is exactly the relevant bit.</p>
+<p>First, note that <code>"</code> is used to map
+<code>(sprintf '%i-%i')</code> over <code>(match ...)</code>. This works
+because <code>match</code> returns an <code>Option</code>, which is a
+functor. The builtin <code>:?</code> is <a
+href="https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe"><code>mapMaybe</code></a>.
+Thus, we define a stream</p>
+<pre><code>printSpan:?{% /\|/}{`2}</code></pre>
+<p>which only collects when <code>printSpan</code> returns a
+<code>Some</code>.</p>
 <h2 id="unix-command-line-tools">Unix Command-Line Tools</h2>
 <p>To get a flavor of Jacinda, see how it can be used in place of
 familiar tools:</p>
-<h3 id="grep">grep</h3>
-<pre><code>ja &#39;{%/the/}{`0}&#39; -i FILE</code></pre>
 <h3 id="wc">wc</h3>
 <p>To count lines:</p>
 <pre><code>(+)|0 [:1&quot;$0</code></pre>
@@ -509,6 +500,13 @@ familiar tools:</p>
 <pre><code>fn fileName(x) :=
   x ~* 2 /([^\/]*\/)*(.*)/;</code></pre>
 <p>will remove the directory part of a filename.</p>
+<h3 id="tr">tr</h3>
+<p>We can present the <code>PATH</code> with</p>
+<pre><code>echo $PATH | tr &#39;:&#39; &#39;\n&#39;</code></pre>
+<p>To do so in Jacinda, we use <code>:</code> as field separator,
+viz.</p>
+<pre><code>echo $PATH | ja -F: &quot;{|[x+&#39;\n&#39;+y]|&gt;\`$}&quot;</code></pre>
+<p>`<code>$</code> is all fields in a line, as a list.</p>
 <h3 id="uniq">uniq</h3>
 <pre><code>fn step(acc, this) :=
   if this = acc-&gt;1
@@ -536,6 +534,11 @@ fn process(x) :=
     else &#39;&#39;;
 
 process&quot;step^(0 . &#39;&#39;) $0</code></pre>
+<p>We could write <code>process</code> as</p>
+<pre><code>fn process(x) :=
+  ?!empty (x-&gt;2); sprintf &#39;    %i\t%s&#39; x; &#39;&#39;;</code></pre>
+<p>using the laconic syntax for conditionals,
+<code>?&lt;bool&gt;;&lt;expr&gt;;&lt;expr&gt;</code></p>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
 <p>We can convert <code>.csv</code> data to use ASCII separators with
