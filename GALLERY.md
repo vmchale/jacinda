@@ -10,7 +10,7 @@ strings -d $(which ja) | ja '[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0
 ```
 @include'lib/string.jac'
 
-(intercalate '\n')¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
+unlines¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
 # Show Dynamic Library Dependencies
@@ -23,6 +23,14 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 
 ```
 otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
+```
+
+# Present RUNPATH (ELF)
+
+```
+readelf -d libapple.so | \
+    ja '.?{%/RUNPATH/}{`5 ~* 1 /\[(.*)\]/}' | \
+    tr ':' '\n'
 ```
 
 # Show Machine Architecture (ELF)
