@@ -184,6 +184,8 @@
 id="toc-patterns-implicits-streams">Patterns + Implicits,
 Streams</a></li>
 <li><a href="#fold" id="toc-fold">Fold</a></li>
+<li><a href="#custom-field-separators"
+id="toc-custom-field-separators">Custom Field Separators</a></li>
 <li><a href="#map" id="toc-map">Map</a></li>
 <li><a href="#functions" id="toc-functions">Functions</a></li>
 <li><a href="#zips" id="toc-zips">Zips</a></li>
@@ -237,7 +239,6 @@ separators.</p>
 <p>There is additionally support for filters, maps and folds that are
 familiar to functional programmers.</p>
 <!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
-<!-- printenv | ja -F= '{% /^PATH/}{`2}' -->
 <h2 id="language">Language</h2>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>In Jacinda, one writes a pattern and an expression defined on
@@ -246,7 +247,7 @@ matching lines, viz.</p>
 <p>This defines a stream of expressions.</p>
 <p>One can search a file for all occurrences of a string:</p>
 <pre><code>ja &#39;{% /Bloom/}{`0}&#39; -i ulysses.txt</code></pre>
-<p>`<code>0</code> here functions like <code>$0</code> in awk: it means
+<p>`<code>0</code> here functions like <code>$0</code> in AWK: it means
 the whole line. So this would print all lines that match the pattern
 <code>Bloom</code>.</p>
 <p>We could imitate fd with, say:</p>
@@ -275,6 +276,12 @@ as arguments. The general syntax is:</p>
 <p>It takes a binary operator, a seed, and a stream and returns an
 expression.</p>
 <p>There is also <code>|&gt;</code>, which folds without a seed.</p>
+<h3 id="custom-field-separators">Custom Field Separators</h3>
+<p>Like AWK, Jacinda allows us to define custom field separators:</p>
+<pre><code>printenv | ja -F= &#39;{% /^PATH/}{`2}&#39;</code></pre>
+<p>This splits on <code>=</code> and matches lines beginning with
+<code>PATH</code>, returning the second field—in this case, the value of
+<code>PATH</code>.</p>
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file.</p>
 <pre><code>(+)|0 {|1}</code></pre>
@@ -340,7 +347,7 @@ write</p>
 operator.</p>
 <pre><code>~.$0</code></pre>
 <p>This is far better than <code>sort | uniq</code> as it preserves
-order; it is equivalent to <code>!a[$0]++</code> in awk.</p>
+order; it is equivalent to <code>!a[$0]++</code> in AWK.</p>
 <h3 id="filter">Filter</h3>
 <p>We can filter an extant stream with <code>#.</code>, viz.</p>
 <pre><code>(&gt;110) #. $1:i</code></pre>
@@ -350,7 +357,7 @@ a boolean.</p>
 <p>would filter to those lines &gt;110 bytes wide.</p>
 <h3 id="formatting-output">Formatting Output</h3>
 <p>One can format output with <code>sprintf</code>, which works like
-<code>printf</code> in Awk or C.</p>
+<code>printf</code> in AWK or C.</p>
 <p>As an example,</p>
 <pre><code>{|sprintf &#39;%i: %s&#39; (ix.`0)}</code></pre>
 <p>would display a file annotated with line numbers. Note the atypical
