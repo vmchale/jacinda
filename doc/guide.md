@@ -11,8 +11,6 @@ functional programmers.
 
 <!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
 
-<!-- printenv | ja -F= '{% /^PATH/}{`2}' -->
-
 ## Language
 
 ### Patterns + Implicits, Streams
@@ -31,7 +29,7 @@ One can search a file for all occurrences of a string:
 ja '{% /Bloom/}{`0}' -i ulysses.txt
 ```
 
-``0` here functions like `$0` in awk: it means the whole line. So this would print all lines that match the pattern `Bloom`.
+``0` here functions like `$0` in AWK: it means the whole line. So this would print all lines that match the pattern `Bloom`.
 
 We could imitate fd with, say:
 
@@ -84,6 +82,16 @@ Note the *fold*, `|`. It is a ternary operator taking `(+)`, `0`, and `{%/Bloom/
 It takes a binary operator, a seed, and a stream and returns an expression.
 
 There is also `|>`, which folds without a seed.
+
+### Custom Field Separators
+
+Like AWK, Jacinda allows us to define custom field separators:
+
+```
+printenv | ja -F= '{% /^PATH/}{`2}'
+```
+
+This splits on `=` and matches lines beginning with `PATH`, returning the second field---in this case, the value of `PATH`.
 
 ### Map
 
@@ -200,7 +208,7 @@ Jacinda has stream deduplication built in with the `~.` operator.
 ```
 
 This is far better than `sort | uniq` as it preserves order; it is equivalent to `!a[$0]++`
-in awk.
+in AWK.
 
 ### Filter
 
@@ -220,7 +228,7 @@ would filter to those lines >110 bytes wide.
 
 ### Formatting Output
 
-One can format output with `sprintf`, which works like `printf` in Awk or C.
+One can format output with `sprintf`, which works like `printf` in AWK or C.
 
 As an example,
 
