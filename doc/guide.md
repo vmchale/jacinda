@@ -39,6 +39,8 @@ ls -1 -R | ja '{% /\.hs$/}{`0}'
 
 This would print all Haskell source files in the current directory.
 
+<!-- echo JQ_COLORS | ja -R':' -F';' '~.$1' -->
+
 There is another form,
 
 ```
@@ -474,6 +476,22 @@ fn fileName(x) :=
 
 will remove the directory part of a filename.
 
+### tr
+
+We can present the `PATH` with
+
+```
+echo $PATH | tr ':' '\n'
+```
+
+To do so in Jacinda, we use `:` as field separator, viz.
+
+```
+echo $PATH | ja -F: "{|[x+'\n'+y]|>\`$}"
+```
+
+``$` is all fields in a line, as a list.
+
 ### uniq
 
 ```
@@ -514,6 +532,15 @@ fn process(x) :=
 
 process"step^(0 . '') $0
 ```
+
+We could write `process` as
+
+```
+fn process(x) :=
+  ?!empty (x->2); sprintf '    %i\t%s' x; '';
+```
+
+using the laconic syntax for conditionals, `?<bool>;<expr>;<expr>`
 
 ## Data Processing
 
