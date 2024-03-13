@@ -1,7 +1,8 @@
   * Better error messages when a field is out of bounds
   * Better error message on empty `|>` (`fold1`)
   * Fix parsing bug in curried binary operators
-  * Add `--usv` command-line flag
+  * Add `--asv` and `--usv` command-line flags
+  * Add `:set asv;` `:set usv;` to language
 
 # 2.0.3.0
 
