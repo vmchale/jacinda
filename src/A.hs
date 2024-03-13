@@ -377,7 +377,7 @@ instance Show C where show=show.pretty
 data D a = SetFS T.Text | SetRS T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
-         | SetAsv | SetOFS T.Text | SetORS T.Text
+         | SetAsv | SetUsv | SetOFS T.Text | SetORS T.Text
          deriving (Functor)
 
 instance Pretty (D a) where
@@ -386,6 +386,7 @@ instance Pretty (D a) where
     pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
     pretty FlushDecl        = ":flush;"
     pretty SetAsv           = ":set asv;"
+    pretty SetUsv           = ":set usv;"
     pretty (SetOFS sep)     = ":set ofs :=" <+> "'" <> pretty sep <> "';"
     pretty (SetORS sep)     = ":set ors :=" <+> "'" <> pretty sep <> "';"
 
@@ -403,6 +404,7 @@ getS :: Program a -> (Maybe T.Text, Maybe T.Text)
 getS (Program ds _) = foldl' go (Nothing, Nothing) ds where
     go (_, rs) (SetFS bs) = (Just bs, rs)
     go _ SetAsv           = (Just "\\x1f", Just "\\x1e")
+    go _ SetUsv           = (Just "␞",Just "␟")
     go (fs, _) (SetRS bs) = (fs, Just bs)
     go next _             = next
 

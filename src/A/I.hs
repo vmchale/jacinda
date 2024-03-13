@@ -41,7 +41,7 @@ lβ e = state (`β` e)
 
 iD :: D T -> RM T ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
-iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure ()
+iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD SetUsv = pure ()
 iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
 

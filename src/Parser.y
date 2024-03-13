@@ -118,6 +118,8 @@ import Prettyprinter (Pretty (pretty), (<+>))
     if { TokKeyword $$ KwIf }
     then { TokKeyword $$ KwThen }
     else { TokKeyword $$ KwElse }
+    usv { TokKeyword $$ KwUsv }
+    asv { TokKeyword $$ KwAsv }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -216,6 +218,8 @@ D :: { D AlexPosn }
   | set rs defEq rr semicolon { SetRS (rr $4) }
   | set ofs defEq strLit semicolon { SetOFS (strTok $4) }
   | set ors defEq strLit semicolon { SetORS (strTok $4) }
+  | set asv semicolon { SetAsv }
+  | set usv semicolon { SetUsv }
   | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }
