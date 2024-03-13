@@ -9,8 +9,6 @@ expressions scan for relevant output and one can split on separators.
 There is additionally support for filters, maps and folds that are familiar to
 functional programmers.
 
-<!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
-
 ## Language
 
 ### Patterns + Implicits, Streams
@@ -38,8 +36,6 @@ ls -1 -R | ja '{% /\.hs$/}{`0}'
 ```
 
 This would print all Haskell source files in the current directory.
-
-<!-- echo JQ_COLORS | ja -R':' -F';' '~.$1' -->
 
 There is another form,
 
