@@ -12,7 +12,7 @@ import           System.IO           (stdin)
 
 data Command = TypeCheck !FilePath ![FilePath]
              | Run !FilePath !(Maybe FilePath) ![FilePath]
-             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !(Maybe T.Text) ![FilePath]
+             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
 
 jacFile :: Parser FilePath
@@ -25,6 +25,12 @@ asv :: Parser Bool
 asv = switch
     (long "asv"
     <> help "Process as ASV")
+
+usv :: Parser Bool
+usv = switch
+    (long "usv"
+    <> short 'u'
+    <> help "Process as USV")
 
 jacRs :: Parser (Maybe T.Text)
 jacRs = optional $ option str
@@ -61,7 +67,7 @@ commandP = hsubparser
     where
         tcP = TypeCheck <$> jacFile <*> includes
         runP = Run <$> jacFile <*> inpFile <*> includes
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> jacRs <*> includes
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
 includes :: Parser [FilePath]
@@ -87,17 +93,20 @@ versionMod = infoOption (V.showVersion P.version) (short 'V' <> long "version" <
 main :: IO ()
 main = run =<< execParser wrapper
 
--- TODO: set record separator \\x1e
-ap :: Bool -> Maybe T.Text -> Maybe T.Text -> (Maybe T.Text, Maybe T.Text)
-ap True Just{} _        = errorWithoutStackTrace "--asv and field separator both speficied."
-ap True _ Just{}        = errorWithoutStackTrace "--asv and field separator both speficied."
-ap True Nothing Nothing = (Just "\\x1f", Just "\\x1e")
-ap _ fs rs              = (fs,rs)
+ap :: Bool -> Bool -> Maybe T.Text -> Maybe T.Text -> (Maybe T.Text, Maybe T.Text)
+ap True True _ _          = errorWithoutStackTrace "--asv and --usv both specified."
+ap _ True Just{} _        = errorWithoutStackTrace "--usv and field separator both speficied."
+ap _ True _ Just{}        = errorWithoutStackTrace "--usv and record separator both speficied."
+ap True _ Just{} _        = errorWithoutStackTrace "--asv and field separator both speficied."
+ap True _ _ Just{}        = errorWithoutStackTrace "--asv and record separator both speficied."
+ap True _ Nothing Nothing = (Just "\\x1f", Just "\\x1e")
+ap _ True Nothing Nothing = (Just "␟", Just "␞")
+ap _ _ fs rs              = (fs,rs)
 
 run :: Command -> IO ()
-run (TypeCheck fp is)              = tcIO is =<< TIO.readFile fp
-run (Run fp Nothing is)            = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
-run (Run fp (Just dat) is)         = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
-run (Expr eb Nothing fs a rs is)   = let (fs',rs') = ap a fs rs in runOnHandle is eb fs' rs' stdin
-run (Expr eb (Just fp) fs a rs is) = let (fs',rs') = ap a fs rs in runOnFile is eb fs' rs' fp
-run (Eval e)                       = print (exprEval e)
+run (TypeCheck fp is)                = tcIO is =<< TIO.readFile fp
+run (Run fp Nothing is)              = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
+run (Run fp (Just dat) is)           = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
+run (Expr eb Nothing fs a u rs is)   = let (fs',rs') = ap a u fs rs in runOnHandle is eb fs' rs' stdin
+run (Expr eb (Just fp) fs a u rs is) = let (fs',rs') = ap a u fs rs in runOnFile is eb fs' rs' fp
+run (Eval e)                         = print (exprEval e)
