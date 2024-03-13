@@ -136,6 +136,14 @@ fn path(x) :=
 path¨$0
 ```
 
+# Display Running Processes
+
+```
+ps u | ja '{ix=1 || `11 ~ /zsh/}{`0}'
+```
+
+This is equivalent to `ps u -C zsh` where applicable.
+
 # Ttyplot
 
 In combination with [ttyplot](https://github.com/tenox7/ttyplot):

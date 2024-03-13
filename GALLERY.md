@@ -53,7 +53,7 @@ git tag "$(ja -F'\s*:\s*' '{%/^\s*version/}{`2}' -i jacinda.cabal)"
 To kill all running GHC processes:
 
 ```
-kill $(ps aux | ja '{%/ghc/}{`2}')
+kill $(ps u | ja '{%/ghc/}{`2}')
 ```
 
 # Format All Code In a Haskell Project

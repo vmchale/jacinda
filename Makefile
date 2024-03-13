@@ -29,8 +29,9 @@ doc/guide.pdf: doc/guide.md
 doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
-install: bin/x86_64-linux-ja man/ja.1
-	cp bin/x86_64-linux-ja ~/.local/bin/ja
+install: man/ja.1
+	cabal install
+	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
 clean:
