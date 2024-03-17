@@ -3,6 +3,7 @@
   * Fix parsing bug in curried binary operators
   * Add `--asv` and `--usv` command-line flags
   * Add `:set asv;` `:set usv;` to language
+  * Add `Witherable` instance for `List`
 
 # 2.0.3.0
 
