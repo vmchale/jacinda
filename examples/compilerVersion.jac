@@ -7,6 +7,4 @@
 fn tr(str) :=
   captures str 1 /([^\n]*)\n+/;
 
-let
-  val rr := /GHC|GCC|clang|mold|rustc|gold/
-in unlines"{% rr}{tr (unlines ((~rr) #. `$))} end
+unlines¨{% /[^\s]/}{tr (unlines ([x ~ /GHC|GCC|clang|mold|rustc|gold/] #. `$))}
