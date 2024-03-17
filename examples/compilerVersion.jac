@@ -1,3 +1,4 @@
+{. readelf -p .comment -p .note.gnu.gold-version $(which ja) | ja run compilerVersion.jac
 @include'lib/string.jac'
 
 :set rs:=/String dump of section '[\.a-z\-]*':\n/;
