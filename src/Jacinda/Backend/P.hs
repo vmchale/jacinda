@@ -466,6 +466,9 @@ eBM f (EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) g) x) = do
 eBM f (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
     Arr yT <$> traverse (eBM f <=< a1 g') (asV x')
+eBM f (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) = do
+    g' <- eBM f g; x' <- eBM f x
+    Arr yT <$> V.mapMaybeM (fmap asM.eBM f <=< a1 g') (asV x')
 eBM f (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) = do
     x' <- eBM f x; g' <- eBM f g; y' <- eBM f y
     case asM y' of
