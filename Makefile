@@ -29,8 +29,9 @@ doc/guide.pdf: doc/guide.md
 doc/guide.html: doc/guide.md
 	pandoc -s $^ -o $@ --toc
 
-install: man/ja.1
-	cabal install
+install: $(HS_SRC) man/ja.1
+	cabal build --enable-executable-static
+	cp $$(cabal-plan list-bins ja | awk '{print $$2}') ~/.local/bin
 	strip $$(which ja)
 	cp man/ja.1 $(HOME)/.local/share/man/man1
 
