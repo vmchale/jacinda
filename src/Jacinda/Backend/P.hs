@@ -457,6 +457,9 @@ eBM f (EApp _ (EApp _ (BB _ Fold1) op) xs) | TyB TyVec:$_ <- eLoc xs = do
           Just v  -> v
           Nothing -> throw EmptyFold
     V.foldM (c2Mϵ f op') seed xs''
+eBM f (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Filter) p) xs) = do
+    p' <- eBM f p; xs' <- eBM f xs
+    Arr yT <$> V.filterM (fmap asB.eBM f <=< a1 p') (asV xs')
 eBM f (EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) g) x) = do
     g' <- eBM f g; x' <- eBM f x
     OptionVal yT <$> traverse (eBM f <=< a1 g') (asM x')
@@ -474,6 +477,17 @@ eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) = do
     r' <- eBM f r; s0' <- eBM f s0; s1' <- eBM f s1
     pure $ mkStr (sub1 (asR r') (asS s1') (asS s0'))
+-- eBM f (EApp t g e) =
+    -- do {g' <- eBM f g; traceShow (g',e) $ pure (EApp t g' e)}
+    -- basically an option can evaluate to a function... so ((option ...) x)
+    -- needs to be reduced! but nothing will detect that...
+    -- (when can a builtin etc. return a FUNCTION? if...then...else could!)
+    --
+    -- Question: would (f x) ever need for x to be inspected in order for things
+    -- to proceed?? I think no...
+    --
+    -- thabove returns g'=(and another +) e=line (should be further reduced!)
+    -- but g'=(+) and e=... will trip up
 eBM f (Cond _ p e e') = do {p' <- eBM f p; if asB p' then eBM f e else eBM f e'}
 eBM f (Tup t es) = Tup t <$> traverse (eBM f) es
 eBM f e = f e
