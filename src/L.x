@@ -260,25 +260,18 @@ data Sym = PlusTok
          | TimesTok
          | DefEq
          | Colon
-         | LBrace
-         | RBrace
+         | LBrace | RBrace
          | LParen
          | LAnchor
          | RParen
-         | LSqBracket
-         | RSqBracket
+         | LSqBracket | RSqBracket
          | Semicolon
          | Underscore
-         | EqTok
-         | LeqTok
-         | LtTok
-         | NeqTok
-         | GeqTok
-         | GtTok
-         | AndTok
-         | OrTok
-         | Tilde
-         | NotMatchTok
+         | EqTok | NeqTok
+         | GtTok | GeqTok
+         | LtTok | LeqTok
+         | AndTok | OrTok
+         | Tilde | NotMatchTok
          | Comma
          | Dot
          | TallyTok
