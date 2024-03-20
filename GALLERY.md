@@ -13,6 +13,14 @@ strings -d $(which ja) | ja '~..?{| `0 ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+
 unlines¨{% /-lHS/}{captures `0 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}
 ```
 
+```
+readelf -p '.debug-ghc-link-info' $(which pandoc) | ja -R, '.?{|`0 ~* 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}'
+```
+
+```
+readelf -p '.debug-ghc-link-info' $(which pandoc) | tr ',' '\n' | rg '\-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)' -o -r'$1'
+```
+
 # Show Dynamic Library Dependencies
 
 ```
