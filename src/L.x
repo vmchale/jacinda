@@ -106,6 +106,7 @@ tokens :-
         "~"                      { mkSym Tilde }
         "!~"                     { mkSym NotMatchTok }
         ","                      { mkSym Comma }
+        ",,"                     { mkSym DoubleComma }
         "."                      { mkSym Dot }
         "#"                      { mkSym TallyTok }
         "#*"                     { mkSym LengthTok }
@@ -273,6 +274,7 @@ data Sym = PlusTok
          | AndTok | OrTok
          | Tilde | NotMatchTok
          | Comma
+         | DoubleComma
          | Dot
          | TallyTok
          | LengthTok
@@ -327,6 +329,7 @@ instance Pretty Sym where
     pretty Tilde         = "~"
     pretty NotMatchTok   = "!~"
     pretty Comma         = ","
+    pretty DoubleComma   = ",,"
     pretty Dot           = "."
     pretty TallyTok      = "#"
     pretty Zilde         = "⍬"

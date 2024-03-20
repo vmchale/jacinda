@@ -73,6 +73,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     exp { TokSym $$ ExpTok }
 
     comma { TokSym $$ Comma }
+    doubleComma { TokSym $$ DoubleComma }
     fold { TokSym $$ FoldTok }
     fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
@@ -291,6 +292,7 @@ E :: { E AlexPosn }
   | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
   | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
+  | E doubleComma E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Bookend) $1) $3) $4 }
   | tally { UB $1 Tally }
   | tallyL { UB $1 TallyList }
   | const { UB $1 Const }

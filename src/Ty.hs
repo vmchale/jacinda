@@ -434,6 +434,7 @@ tyES s (BB l Fold1) = do
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
     pure (BB ((a ~> (a ~> a)) ~> ((f':$a) ~> a)) Fold1, s)
+tyES s (TB _ Bookend) = pure (TB (tyR ~> tyR ~> tyStream tyStr ~> tyStream tyStr) Bookend, s)
 tyES s (TB _ Captures) = pure (TB (tyStr ~> (tyI ~> (tyR ~> tyOpt tyStr))) Captures, s)
 tyES s (BB _ Prior) = do
     a <- var <$> freshN "a"; b <- var <$> freshN "b"

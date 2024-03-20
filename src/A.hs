@@ -122,6 +122,7 @@ data BTer = ZipW
           | Substr | Sub1
           | Option
           | Captures | AllCaptures
+          | Bookend
           deriving (Eq)
 
 instance Pretty BTer where
@@ -133,6 +134,7 @@ instance Pretty BTer where
     pretty Captures    = "~*"
     pretty AllCaptures = "captures"
     pretty Sub1        = "sub1"
+    pretty Bookend     = "bookend"
 
 -- builtin
 data BBin = Plus | Times | Div
@@ -287,6 +289,7 @@ instance PS (E a) where
     ps _ (EApp _ (UB _ IParse) e')    = pretty e' <> ":i"
     ps _ (EApp _ (UB _ FParse) e')    = pretty e' <> ":f"
     ps _ (EApp _ (UB _ Parse) e')     = pretty e' <> ":"
+    ps d (EApp _ (EApp _ (EApp _ (TB _ Bookend) e) e') e'')  = parensp (d>3) (ps 4 e <> ",," <> ps 4 e' <+> ps 5 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ Fold) e) e') e'')     = parensp (d>5) (ps 6 e <> "|" <> ps 6 e' <+> ps 7 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ Scan) e) e') e'')     = parensp (d>5) (ps 6 e <> "^" <> ps 6 e' <+> ps 7 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) e') e'')    = parensp (d>5) ("," <> ps 6 op <+> ps 7 e' <+> ps 8 e'')
