@@ -197,6 +197,8 @@ a boolean expression.
 
 **?\<expr>; \<expr>; \<expr>** If... then... else
 
+**\<pattern>,,\<pattern> \<expr>** Bookend a stream
+
 ## DECLARATIONS
 
 **:set fs=/REGEX/;** Set field separator
