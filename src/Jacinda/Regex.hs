@@ -6,7 +6,7 @@ module Jacinda.Regex ( lazySplit
                      , defaultRurePtr
                      , isMatch'
                      , find'
-                     , sub1
+                     , sub1, subs
                      , compileDefault
                      , substr
                      , findCapture
@@ -53,6 +53,13 @@ findCapture re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> f
             let e' = fromIntegral e
                 s' = fromIntegral s
                 in BS.BS (fp `plusForeignPtr` s') (e'-s')
+
+{-# NOINLINE subs #-}
+subs :: RurePtr -> BS.ByteString -> BS.ByteString -> BS.ByteString
+subs re haystack = let ms = unsafeDupablePerformIO $ matches' re haystack in go Nothing ms
+    where go _ [] _                                         = haystack
+          go (Just (RureMatch _ pe)) ((RureMatch ms _):_) _ | pe > ms = error "Overlapping matches."
+          go _ (m@(RureMatch ms me):s) substituend          = let next=go (Just m) s substituend in BS.take (fromIntegral ms) next <> substituend <> BS.drop (fromIntegral me) next
 
 sub1 :: RurePtr -> BS.ByteString -> BS.ByteString -> BS.ByteString
 sub1 re bs ss =

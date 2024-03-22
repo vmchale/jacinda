@@ -28,6 +28,9 @@ main = defaultMain $
             "drwxr-xr-x  12 vanessa  staff   384 Dec 26 19:43 _darcs"
             ["drwxr-xr-x","12","vanessa","staff","384","Dec","26","19:43","_darcs"]
         , splitWhitespaceT "      55 ./src/Jacinda/File.hs" ["55", "./src/Jacinda/File.hs"]
+        , testCase "subs" $
+            let actual = subs (compileDefault "zi") "vectorzm0zi13zi1zi0zmc80ea02f780be2984f831df2de071f6e6040c0f670b3dd2428e80f5d111d7f72_DataziVectorziGeneric_partition_closure" "."
+            in actual @?= "vectorzm0.13.1.0zmc80ea02f780be2984f831df2de071f6e6040c0f670b3dd2428e80f5d111d7f72_Data.Vector.Generic_partition_closure"
         , splitWhitespaceT "" []
         , splitWhitespaceT "5" ["5"]
         , testCase "type of" (tyOfT sumBytes (TyB TyInteger))
