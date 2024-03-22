@@ -404,25 +404,20 @@ instance Pretty Keyword where
     pretty KwUsv     = "usv"
     pretty KwAsv     = "asv"
 
-data Builtin = BuiltinIParse
-             | BuiltinFParse
+data Builtin = BuiltinIParse | BuiltinFParse
              | BuiltinSubstr
-             | BuiltinSplit
-             | BuiltinSplitc
+             | BuiltinSplit | BuiltinSplitc
              | BuiltinOption
              | BuiltinSprintf
-             | BuiltinFloor
-             | BuiltinCeil
+             | BuiltinFloor | BuiltinCeil
              | BuiltinMatch
              | BuiltinCaptures
-             | BuiltinSome
-             | BuiltinNone
+             | BuiltinSome | BuiltinNone
              | BuiltinFp
              | BuiltinMapMaybe
              | BuiltinDedupOn
              | BuiltinFilt
-             | BuiltinFold
-             | BuiltinFold1
+             | BuiltinFold | BuiltinFold1
              | BuiltinScan
              | BuiltinSub1
 
