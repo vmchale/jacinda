@@ -1,8 +1,9 @@
-# Extract Library Versions
+# Extract All Symbols
 
 ```
-strings -d $(which ja) | ja '~.[x ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-([0-9a-f]{64}$|[0-9a-f]{4})/]:? $0'
-strings -d $(which ja) | ja '~..?{| `0 ~* 1 /(^[A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-([0-9a-f]{64}|[0-9a-f]{4})/}'
+nm -D $(which pandoc) \
+    | sed 's/\([^z]\)zi/\1./g ;s/\([^z]\)zm/\1-/g; s/\([^z]\)zd/\1$/g; s/ZC/:/g; s/zz/z/g' \
+    | ja '~..?{|`0 ~* 1 /([A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{4}/}'
 ```
 
 ## Extract Library Versions (Unstripped)
