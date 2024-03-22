@@ -85,8 +85,8 @@ splitBy = (V.fromList .) . splitByA
 
 {-# NOINLINE splitBy #-}
 splitByA :: RurePtr
-        -> BS.ByteString
-        -> [BS.ByteString]
+         -> BS.ByteString
+         -> [BS.ByteString]
 splitByA _ "" = mempty
 splitByA re haystack@(BS.BS fp l) =
     [BS.BS (fp `plusForeignPtr` s) (e-s) | (s, e) <- slicePairs]
