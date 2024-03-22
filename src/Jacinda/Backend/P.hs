@@ -483,6 +483,9 @@ eBM f (EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) = do
 eBM f (EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) = do
     r' <- eBM f r; s0' <- eBM f s0; s1' <- eBM f s1
     pure $ mkStr (sub1 (asR r') (asS s1') (asS s0'))
+eBM f (EApp _ (EApp _ (EApp _ (TB _ Subs) r) s0) s1) = do
+    r' <- eBM f r; s0' <- eBM f s0; s1' <- eBM f s1
+    pure $ mkStr (subs (asR r') (asS s1') (asS s0'))
 -- eBM f (EApp t g e) =
     -- do {g' <- eBM f g; traceShow (g',e) $ pure (EApp t g' e)}
     -- basically an option can evaluate to a function... so ((option ...) x)

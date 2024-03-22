@@ -138,6 +138,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     splitc { TokBuiltin $$ BuiltinSplitc }
     substr { TokBuiltin $$ BuiltinSubstr }
     sub1 { TokBuiltin $$ BuiltinSub1 }
+    subs { TokBuiltin $$ BuiltinSubs }
     sprintf { TokBuiltin $$ BuiltinSprintf }
     floor { TokBuiltin $$ BuiltinFloor }
     ceil { TokBuiltin $$ BuiltinCeil }
@@ -314,6 +315,7 @@ E :: { E AlexPosn }
   | splitc { BB $1 Splitc }
   | substr { TB $1 Substr }
   | sub1 { TB $1 Sub1 }
+  | subs { TB $1 Subs }
   | sprintf { BB $1 Sprintf }
   | option { TB $1 Option }
   | captures { TB $1 AllCaptures }

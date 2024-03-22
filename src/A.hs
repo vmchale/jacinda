@@ -119,7 +119,7 @@ instance Pretty BUn where
 
 data BTer = ZipW
           | Fold | Scan
-          | Substr | Sub1
+          | Substr | Sub1 | Subs
           | Option
           | Captures | AllCaptures
           | Bookend
@@ -134,6 +134,7 @@ instance Pretty BTer where
     pretty Captures    = "~*"
     pretty AllCaptures = "captures"
     pretty Sub1        = "sub1"
+    pretty Subs        = "subs"
     pretty Bookend     = "bookend"
 
 -- builtin
