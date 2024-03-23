@@ -4,6 +4,7 @@
   * Add `--asv` and `--usv` command-line flags
   * Add `:set asv;` `:set usv;` to language
   * Add `Witherable` instance for `List`
+  * Add `subs` builtin
 
 # 2.0.3.0
 
