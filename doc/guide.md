@@ -542,11 +542,11 @@ using the laconic syntax for conditionals, `?<bool>;<expr>;<expr>`
 
 ### CSV Processing
 
-We can convert `.csv` data to use ASCII separators with the aid of [csvkit](https://csvkit.readthedocs.io/en/latest/scripts/csvformat.html), viz.
+We can convert `.csv` data to use ASCII separators with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
 
 
 ```
-csvformat -D$'\x1f' -M$'\x1e' file.csv | ja --asv '$1'
+xsv fmt file.csv --ascii | ja --asv '$1'
 ```
 
 For "well-behaved" csv data, we can simply split on `,`:
@@ -602,8 +602,10 @@ curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-ind
 This data is not "well-behaved" so we convert to ASV:
 
 ```
-csvformat -D$'\x1f' -M$'\x1e' food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
+xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
 ```
+
+This uses `(\.)` (prior) to do something `xsv` cannot.
 
 # Machinery
 

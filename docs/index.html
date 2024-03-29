@@ -238,6 +238,7 @@ regular expressions scan for relevant output and one can split on
 separators.</p>
 <p>There is additionally support for filters, maps and folds that are
 familiar to functional programmers.</p>
+<!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
 <h2 id="language">Language</h2>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>In Jacinda, one writes a pattern and an expression defined on
@@ -253,6 +254,7 @@ the whole line. So this would print all lines that match the pattern
 <pre><code>ls -1 -R | ja &#39;{% /\.hs$/}{`0}&#39;</code></pre>
 <p>This would print all Haskell source files in the current
 directory.</p>
+<!-- echo JQ_COLORS | ja -R':' -F';' '~.$1' -->
 <p>There is another form,</p>
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving
@@ -547,10 +549,8 @@ process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
 <p>We can convert <code>.csv</code> data to use ASCII separators with
-the aid of <a
-href="https://csvkit.readthedocs.io/en/latest/scripts/csvformat.html">csvkit</a>,
-viz.</p>
-<pre><code>csvformat -D$&#39;\x1f&#39; -M$&#39;\x1e&#39; file.csv | ja --asv &#39;$1&#39;</code></pre>
+the aid of <a href="https://github.com/BurntSushi/xsv">xsv</a>, viz.</p>
+<pre><code>xsv fmt file.csv --ascii | ja --asv &#39;$1&#39;</code></pre>
 <p>For “well-behaved” csv data, we can simply split on
 <code>,</code>:</p>
 <pre><code>ja -F, &#39;$1&#39;</code></pre>
@@ -581,7 +581,9 @@ computes effectiveness.</p>
 <p>We start with New Zealand’s food price index:</p>
 <pre><code>curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv</code></pre>
 <p>This data is not “well-behaved” so we convert to ASV:</p>
-<pre><code>csvformat -D$&#39;\x1f&#39; -M$&#39;\x1e&#39; food-price-index-september-2023-weighted-average-prices.csv | ja --asv &#39;(%)\. {%/Apple/}{`3:}&#39;</code></pre>
+<pre><code>xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv &#39;(%)\. {%/Apple/}{`3:}&#39;</code></pre>
+<p>This uses <code>(\.)</code> (prior) to do something <code>xsv</code>
+cannot.</p>
 <h1 id="machinery">Machinery</h1>
 <h2 id="typeclasses">Typeclasses</h2>
 <p>Under the hood, Jacinda has typeclasses, inspired by Haskell. These
