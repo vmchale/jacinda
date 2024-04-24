@@ -132,8 +132,12 @@ wrong result??
 - [ ] https://github.com/socialfoundations/folktables
 - [ ] https://catonmat.net/blog/wp-content/uploads/2008/09/awk1line.txt
 - [ ] http://www.awklang.org/action/?nvgexp&child
+- [ ] https://stackoverflow.com/q/2957684
 - [ ] JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;34"
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
 - [ ] seq 6 | sed -n 'N;l;D'
+- [ ] https://gist.github.com/rubyroobs/77cc19f8985a12ca81e7d53789c144c5
+- [ ] xz --robot --list *.xz | awk '/^totals/{print $5-$4}'
+- [ ] https://gynvael.coldwind.pl/?lang=en&id=782
