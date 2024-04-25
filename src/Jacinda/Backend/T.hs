@@ -35,6 +35,9 @@ asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
+(@!) :: E T -> Β -> E T
+e@Lit{} @! _ = e
+
 bind :: Nm T -> E T -> Β -> Β
 bind (Nm _ (U u) _) e = IM.insert u e
 
@@ -46,11 +49,7 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt env =
     let accO = env ! tgt; xO = env ! src
     in case (accO, xO) of
         (Just acc, Just x) ->
-            let res = bind nacc acc (bind nn x undefined)
+            let be=bind nacc acc (bind nn x mempty)
+                res=e@!be
             in IM.insert tgt (Just res) env
-        (Just acc, Nothing) -> env
-wF (BB _ Plus) src tgt env =
-    let accO = env ! tgt; xO = env ! src
-    in case (accO, xO) of
-        (Just acc, Just x)  -> IM.insert tgt (Just$Lit (eLoc acc) (ILit (asI acc+asI x))) env
         (Just acc, Nothing) -> env
