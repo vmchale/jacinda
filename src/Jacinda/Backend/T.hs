@@ -1,11 +1,11 @@
 module Jacinda.Backend.T ( wF ) where
 
 import           A
-import           Control.Exception     (Exception, throw)
-import qualified Data.ByteString       as BS
-import qualified Data.IntMap.Strict    as IM
-import qualified Data.Vector           as V
-import           Data.Word             (Word64)
+import           Control.Exception          (Exception, throw)
+import           Control.Monad.State.Strict (State, state)
+import qualified Data.ByteString            as BS
+import qualified Data.IntMap.Strict         as IM
+import qualified Data.Vector                as V
 import           Jacinda.Backend.Const
 import           Nm
 import           U
@@ -27,6 +27,15 @@ type Β = IM.IntMap (E T)
 
 (!) :: Env -> Tmp -> Maybe (E T)
 (!) m r = IM.findWithDefault (throw $ InternalReg r) r m
+
+
+type MM = State Int
+
+nI :: MM Int
+nI = state (\i -> (i, i+1))
+
+uf :: E T -> Tmp -> [BS.ByteString] -> [Env]
+uf AllColumn{} res bs = [IM.singleton res (Just$mkStr b) | b <- bs]
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
