@@ -52,14 +52,23 @@ me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 ms :: Nm T -> E T -> Β
 ms (Nm _ (U i) _) e = IM.singleton i e
 
+wM :: E T -> Tmp -> Tmp -> Env -> Env
+wM (Lam _ n e) src tgt env =
+    let xO=env!src
+    in case xO of
+        Just x ->
+            let be=ms n x; y=e@!be
+            in IM.insert tgt (Just y) env
+        Nothing -> IM.insert tgt Nothing env
+
 wP :: E T -> Tmp -> Tmp -> Env -> Env
 wP (Lam _ n e) src tgt env =
     let xO=env!src
     in case xO of
         Just x ->
-            let be=ms n x
-                p=e@!be
+            let be=ms n x; p=e@!be
             in IM.insert tgt (if asB p then Just x else Nothing) env
+        Nothing -> IM.insert tgt Nothing env
 
 wF :: E T -> Tmp -> Tmp -> Env -> Env
 wF (Lam _ nacc (Lam _ nn e)) src tgt env =
