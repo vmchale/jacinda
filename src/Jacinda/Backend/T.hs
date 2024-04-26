@@ -5,6 +5,7 @@ import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, state)
 import qualified Data.ByteString            as BS
 import qualified Data.IntMap.Strict         as IM
+import           Data.List                  (foldl')
 import qualified Data.Vector                as V
 import           Jacinda.Backend.Const
 import           Nm
@@ -22,6 +23,7 @@ data EvalErr = EmptyFold
 instance Exception EvalErr where
 
 type Env = IM.IntMap (Maybe (E T))
+-- data Tmp = Main | IO | Tmp !Int
 type Tmp = Int
 type Β = IM.IntMap (E T)
 
@@ -34,8 +36,19 @@ type MM = State Int
 nI :: MM Int
 nI = state (\i -> (i, i+1))
 
-uf :: E T -> Tmp -> [BS.ByteString] -> [Env]
-uf AllColumn{} res bs = [IM.singleton res (Just$mkStr b) | b <- bs]
+f' :: E T -> Tmp -> [BS.ByteString] -> MM Env
+f' (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) res bs = do
+    x <- nI
+    es <- uf xs x bs
+    acc <- nI
+    let iEnv=IM.singleton acc (Just seed)
+    let f=wF op x acc
+    pure $ foldl' (\accEnv xEnv -> f (accEnv<>xEnv)) iEnv es
+    -- this won't blow up the env buuuut not the "mutable env write in parallel" that we want...
+
+-- should be just one mutable env that we write to?
+uf :: E T -> Tmp -> [BS.ByteString] -> MM [Env]
+uf AllColumn{} res bs = pure [IM.singleton res (Just$mkStr b) | b <- bs]
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
