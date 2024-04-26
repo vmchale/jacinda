@@ -33,6 +33,9 @@ type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 asI :: E T -> Integer
 asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
 
+asB :: E T -> Bool
+asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
+
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
@@ -46,8 +49,17 @@ e@Lit{} @! _   = e
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 
+ms :: Nm T -> E T -> Β
+ms (Nm _ (U i) _) e = IM.singleton i e
+
 wP :: E T -> Tmp -> Tmp -> Env -> Env
-wP = undefined
+wP (Lam _ n e) src tgt env =
+    let xO=env!src
+    in case xO of
+        Just x ->
+            let be=ms n x
+                p=e@!be
+            in IM.insert tgt (if asB p then Just x else Nothing) env
 
 wF :: E T -> Tmp -> Tmp -> Env -> Env
 wF (Lam _ nacc (Lam _ nn e)) src tgt env =
@@ -57,4 +69,4 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt env =
             let be=me [(nacc, acc), (nn, x)]
                 res=e@!be
             in IM.insert tgt (Just res) env
-        (Just acc, Nothing) -> env
+        (Just acc, Nothing) -> IM.insert tgt (Just acc) env
