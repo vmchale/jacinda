@@ -5,10 +5,11 @@ import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, state)
 import qualified Data.ByteString            as BS
 import qualified Data.IntMap.Strict         as IM
-import           Data.List                  (foldl')
 import qualified Data.Vector                as V
 import           Jacinda.Backend.Const
+import           Jacinda.Regex
 import           Nm
+import           Regex.Rure                 (RurePtr)
 import           U
 
 data EvalErr = EmptyFold
@@ -22,9 +23,13 @@ data EvalErr = EmptyFold
 
 instance Exception EvalErr where
 
+data StreamError = NakedField deriving (Show)
+
+instance Exception StreamError where
+
 type Env = IM.IntMap (Maybe (E T))
 -- data Tmp = Main | IO | Tmp !Int
-type Tmp = Int
+type Tmp = Int -- -1 = Main
 type Β = IM.IntMap (E T)
 
 (!) :: Env -> Tmp -> Maybe (E T)
@@ -37,9 +42,19 @@ nI = state (\i -> (i, i+1))
 
 -- Β evaluate in little local context?
 data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
+-- substitute line context after? hmm... e.g. columnize $0 as `0...
 
-col :: E T -> Tmp -> LineCtx -> Env -> Env
-col AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
+summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM Env
+summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
+    let iEnv=IM.singleton main (Just seed)
+    t <- nI
+    let f=ctx xs t
+        ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
+        -- pass forward env between, but apply all the Env -> Env? (for each line idk hm then extract "main" after last line)
+    undefined
+
+ctx :: E T -> Tmp -> LineCtx -> Env -> Env
+ctx AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -63,7 +78,7 @@ me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 
 ms :: Nm T -> E T -> Β
-ms (Nm _ (U i) _) e = IM.singleton i e
+ms (Nm _ (U i) _) = IM.singleton i
 
 wM :: E T -> Tmp -> Tmp -> Env -> Env
 wM (Lam _ n e) src tgt env =
