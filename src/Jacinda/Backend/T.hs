@@ -30,25 +30,15 @@ type Β = IM.IntMap (E T)
 (!) :: Env -> Tmp -> Maybe (E T)
 (!) m r = IM.findWithDefault (throw $ InternalReg r) r m
 
-
 type MM = State Int
 
 nI :: MM Int
 nI = state (\i -> (i, i+1))
 
-f' :: E T -> Tmp -> [BS.ByteString] -> MM Env
-f' (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) res bs = do
-    x <- nI
-    es <- uf xs x bs
-    acc <- nI
-    let iEnv=IM.singleton acc (Just seed)
-    let f=wF op x acc
-    pure $ foldl' (\accEnv xEnv -> f (accEnv<>xEnv)) iEnv es
-    -- this won't blow up the env buuuut not the "mutable env write in parallel" that we want...
+data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
 
--- should be just one mutable env that we write to?
-uf :: E T -> Tmp -> [BS.ByteString] -> MM [Env]
-uf AllColumn{} res bs = pure [IM.singleton res (Just$mkStr b) | b <- bs]
+col :: E T -> Tmp -> LineCtx -> Env -> Env
+col AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
