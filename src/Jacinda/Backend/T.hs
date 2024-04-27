@@ -28,13 +28,14 @@ type Tmp = Int
 type Β = IM.IntMap (E T)
 
 (!) :: Env -> Tmp -> Maybe (E T)
-(!) m r = IM.findWithDefault (throw $ InternalReg r) r m
+(!) m r = IM.findWithDefault (throw$InternalReg r) r m
 
 type MM = State Int
 
 nI :: MM Int
 nI = state (\i -> (i, i+1))
 
+-- Β evaluate in little local context?
 data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
 
 col :: E T -> Tmp -> LineCtx -> Env -> Env
