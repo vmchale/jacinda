@@ -1,17 +1,25 @@
-module Jacinda.Backend.T ( wF ) where
+{-# LANGUAGE OverloadedStrings #-}
+
+module Jacinda.Backend.T ( run ) where
 
 import           A
-import           Control.Exception          (Exception, throw)
-import           Control.Monad.State.Strict (State, state)
-import qualified Data.ByteString            as BS
-import           Data.Function              ((&))
-import qualified Data.IntMap.Strict         as IM
-import           Data.List                  (foldl')
-import qualified Data.Vector                as V
+import           Control.Exception                 (Exception, throw)
+import           Control.Monad.State.Strict        (State, evalState, state)
+import qualified Data.ByteString                   as BS
+import           Data.ByteString.Builder           (hPutBuilder)
+import           Data.ByteString.Builder.RealFloat (doubleDec)
+import           Data.Function                     ((&))
+import qualified Data.IntMap.Strict                as IM
+import           Data.List                         (foldl')
+import           Data.Maybe                        (fromMaybe)
+import qualified Data.Vector                       as V
 import           Jacinda.Backend.Const
 import           Jacinda.Regex
 import           Nm
-import           Regex.Rure                 (RurePtr)
+import           Prettyprinter                     (hardline, pretty)
+import           Prettyprinter.Render.Text         (putDoc)
+import           Regex.Rure                        (RurePtr)
+import           System.IO                         (stdout)
 import           U
 
 data EvalErr = EmptyFold
@@ -47,7 +55,15 @@ nI = state (\i -> (i, i+1))
 data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
 -- substitute line context after? hmm... e.g. columnize $0 as `0...
 
-summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM Env
+run :: RurePtr -> E T -> [BS.ByteString] -> IO ()
+run _ e _ | TyB TyStream:$_ <- eLoc e = undefined
+run r e bs = pDocLn $ evalState (summar r e (-1) bs) 0
+
+pDocLn :: E T -> IO ()
+pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
+pDocLn e                = putDoc (pretty e <> hardline)
+
+summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM (E T)
 summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
     let iEnv=IM.singleton main (Just seed)
     t <- nI
@@ -55,7 +71,8 @@ summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
         ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         g=wF op t main
         updates=(g.).f<$>ctxs
-    pure $ foldl' (&) iEnv updates
+        finEnv=foldl' (&) iEnv updates
+    pure $ fromMaybe (error "internal error??") $ IM.findWithDefault (throw$InternalReg main) main finEnv
 
 ctx :: E T -> Tmp -> LineCtx -> Env -> Env
 ctx AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
