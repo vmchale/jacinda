@@ -6,12 +6,13 @@ module File ( tcIO
             ) where
 
 import           A
+import           A.E
 import           A.I
 import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
 import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.State.Strict (StateT, get, put, runStateT)
+import           Control.Monad.State.Strict (StateT, evalState, get, put, runStateT)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
@@ -99,10 +100,11 @@ runOnBytes incls fp src cliFS cliRS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yIO $ runTyM m (tyP ast)
-    let (eI, _) = ib i typed
+    let (eI, j) = ib i typed
     m'Throw $ cF eI
     let ~(afs, ars) = getS ast
-    let cont=run (compileFS (cliFS <|> afs)) (flushD typed) (compileR (encodeUtf8 $ T.pack fp) eI)
+    let e'=evalState (eta eI) j
+    let cont=run (compileFS (cliFS <|> afs)) (flushD typed) (compileR (encodeUtf8 $ T.pack fp) e')
     case cliRS <|> ars of
         Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
         Just rs -> cont $ lazySplit (tcompile rs) contents

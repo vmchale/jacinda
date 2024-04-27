@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module A.E ( M, nN ) where
+module A.E ( M, nN, eta ) where
 
 import           A
 import           Control.Monad              ((<=<))

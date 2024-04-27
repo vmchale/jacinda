@@ -67,17 +67,23 @@ summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM (E T)
 summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
     let iEnv=IM.singleton main (Just seed)
     t <- nI
-    let f=ctx xs t
-        ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
+    f <- ctx xs t
+    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         g=wF op t main
         updates=(g.).f<$>ctxs
         finEnv=foldl' (&) iEnv updates
     pure $ fromMaybe (error "internal error??") $ IM.findWithDefault (throw$InternalReg main) main finEnv
 
-ctx :: E T -> Tmp -> LineCtx -> Env -> Env
-ctx AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
+ctx :: E T -> Tmp -> MM (LineCtx -> Env -> Env)
+ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$mkStr b)
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; sb <- ctx xs t; pure (\l -> wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; sb <- ctx xs t; pure (\l -> wP p t o.sb l)}
+ctx e _                                    = error (show e)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
+
+asS :: E T -> BS.ByteString
+asS (Lit _ (StrLit s)) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E T -> Integer
 asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
@@ -94,6 +100,16 @@ e@Lit{} @! _   = e
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkI (asI x0e+asI x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Minus) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkI (asI x0e-asI x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Times) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkI (asI x0e*asI x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Eq) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkB (asS x0e==asS x1e)
+(EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
