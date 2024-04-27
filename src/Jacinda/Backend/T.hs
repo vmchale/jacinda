@@ -4,7 +4,9 @@ import           A
 import           Control.Exception          (Exception, throw)
 import           Control.Monad.State.Strict (State, state)
 import qualified Data.ByteString            as BS
+import           Data.Function              ((&))
 import qualified Data.IntMap.Strict         as IM
+import           Data.List                  (foldl')
 import qualified Data.Vector                as V
 import           Jacinda.Backend.Const
 import           Jacinda.Regex
@@ -19,6 +21,7 @@ data EvalErr = EmptyFold
              | ExpectedTup (E T)
              | InternalReg Tmp
              | InternalNm (Nm T)
+             | InternalArityOrEta Int (E T)
              deriving (Show)
 
 instance Exception EvalErr where
@@ -50,8 +53,9 @@ summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
     t <- nI
     let f=ctx xs t
         ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        -- pass forward env between, but apply all the Env -> Env? (for each line idk hm then extract "main" after last line)
-    undefined
+        g=wF op t main
+        updates=(g.).f<$>ctxs
+    pure $ foldl' (&) iEnv updates
 
 ctx :: E T -> Tmp -> LineCtx -> Env -> Env
 ctx AllColumn{} res ~(b, _, _) = IM.insert res (Just$mkStr b)
@@ -88,6 +92,7 @@ wM (Lam _ n e) src tgt env =
             let be=ms n x; y=e@!be
             in IM.insert tgt (Just y) env
         Nothing -> IM.insert tgt Nothing env
+wM e _ _ _ = throw$InternalArityOrEta 1 e
 
 wP :: E T -> Tmp -> Tmp -> Env -> Env
 wP (Lam _ n e) src tgt env =
@@ -97,6 +102,7 @@ wP (Lam _ n e) src tgt env =
             let be=ms n x; p=e@!be
             in IM.insert tgt (if asB p then Just x else Nothing) env
         Nothing -> IM.insert tgt Nothing env
+wP e _ _ _ = throw $ InternalArityOrEta 1 e
 
 wF :: E T -> Tmp -> Tmp -> Env -> Env
 wF (Lam _ nacc (Lam _ nn e)) src tgt env =
@@ -107,3 +113,4 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt env =
                 res=e@!be
             in IM.insert tgt (Just res) env
         (Just acc, Nothing) -> IM.insert tgt (Just acc) env
+wF e _ _ _ = throw $ InternalArityOrEta 2 e
