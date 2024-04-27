@@ -82,6 +82,9 @@ ctx e _                                    = error (show e)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
+asR :: E T -> RurePtr
+asR (RC r) = r; asR e = throw (InternalCoercionError e TyR)
+
 asS :: E T -> BS.ByteString
 asS (Lit _ (StrLit s)) = s; asS e = throw (InternalCoercionError e TyStr)
 
@@ -96,6 +99,7 @@ asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
 
 (@!) :: E T -> Β -> E T
 e@Lit{} @! _   = e
+e@RC{} @! _    = e
 (Var _ n) @! b = b !> n
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
@@ -110,6 +114,12 @@ e@Lit{} @! _   = e
     let x0e=x0@!b; x1e=x1@!b
     in mkB (asS x0e==asS x1e)
 (EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
+(EApp _ (EApp _ (BB _ Matches) s) r) @! b =
+    let se=s@!b; re=r@!b
+    in mkB (isMatch' (asR re) (asS se))
+(EApp _ (EApp _ (BB _ NotMatches) s) r) @! b =
+    let se=s@!b; re=r@!b
+    in mkB (not$isMatch' (asR re) (asS se))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
