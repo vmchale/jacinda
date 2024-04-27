@@ -25,7 +25,8 @@ import qualified Data.Text.IO               as TIO
 import           Data.Tuple                 (swap)
 import           Include
 import           Jacinda.Backend.Const
-import           Jacinda.Backend.P
+import           Jacinda.Backend.P          (eB)
+import           Jacinda.Backend.T
 import           Jacinda.Check.Field
 import           Jacinda.Regex
 import           L
@@ -98,10 +99,10 @@ runOnBytes incls fp src cliFS cliRS contents = do
     incls' <- defaultIncludes <*> pure incls
     (ast, m) <- parseEWithMax incls' src
     (typed, i) <- yIO $ runTyM m (tyP ast)
-    let (eI, j) = ib i typed
+    let (eI, _) = ib i typed
     m'Throw $ cF eI
     let ~(afs, ars) = getS ast
-    cont <- yIO $ runJac (compileFS (cliFS <|> afs)) (flushD typed) j (compileR (encodeUtf8 $ T.pack fp) eI)
+    let cont=run (compileFS (cliFS <|> afs)) (flushD typed) (compileR (encodeUtf8 $ T.pack fp) eI)
     case cliRS <|> ars of
         Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
         Just rs -> cont $ lazySplit (tcompile rs) contents
