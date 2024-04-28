@@ -111,6 +111,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ AllField{} ~(b, _, _)   = mkStr b
 κ (Field _ i) ~(_, bs, _) = mkStr $ bs `at` i
 κ (EApp ty e0 e1) line    = EApp ty (e0 `κ` line) (e1 `κ` line)
+κ (NB _ Ix) ~(_, _, fp)   = mkI fp
 κ e@BB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
