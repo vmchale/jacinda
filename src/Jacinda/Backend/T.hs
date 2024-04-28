@@ -190,10 +190,18 @@ e@RC{} @! _    = e
     let se=s@!b; re=r@!b
     in mkB (not$isMatch' (asR re) (asS se))
 (Tup ty es) @! b = Tup ty ((@!b)<$>es)
+(EApp _ (UB _ Tally) e) @! b =
+    let e'=e@!b
+        r=fromIntegral (BS.length$asS e')
+    in mkI r
 (EApp _ (UB _ TallyList) e) @! b =
     let e'=e@!b
         r=fromIntegral (V.length$asV e')
     in mkI r
+(EApp _ (EApp _ (BB _ Sprintf) fs) s) @! b =
+    let fs'=fs@!b; s'=s@!b
+    in mkStr (sprintf (asS fs') s')
+(Cond _ p e e') @! b = let p'=p@!b in if asB p' then e@!b else e'@!b
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
