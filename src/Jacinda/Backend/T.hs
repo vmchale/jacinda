@@ -55,9 +55,9 @@ nI = state (\i -> (i, i+1))
 data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
 -- substitute line context after? hmm... e.g. columnize $0 as `0...
 
-run :: RurePtr -> Bool -> E T -> [BS.ByteString] -> IO ()
-run _ _ e _ | TyB TyStream:$_ <- eLoc e = undefined
-run r _ e bs = pDocLn $ evalState (summar r e (-1) bs) 0
+run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
+run _ _ _ e _ | TyB TyStream:$_ <- eLoc e = undefined
+run r _ _ e bs = pDocLn $ evalState (summar r e (-1) bs) 0
 
 pDocLn :: E T -> IO ()
 pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")

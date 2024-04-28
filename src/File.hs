@@ -12,7 +12,7 @@ import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
 import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.State.Strict (StateT, evalState, get, put, runStateT)
+import           Control.Monad.State.Strict (StateT, get, put, runStateT, runState)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
@@ -103,8 +103,8 @@ runOnBytes incls fp src cliFS cliRS contents = do
     let (eI, j) = ib i typed
     m'Throw $ cF eI
     let ~(afs, ars) = getS ast
-    let e'=evalState (eta eI) j
-    let cont=run (compileFS (cliFS <|> afs)) (flushD typed) (compileR (encodeUtf8 $ T.pack fp) e')
+        (e', k) = runState (eta eI) j
+        cont=run (compileFS (cliFS <|> afs)) (flushD typed) k (compileR (encodeUtf8 $ T.pack fp) e')
     case cliRS <|> ars of
         Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
         Just rs -> cont $ lazySplit (tcompile rs) contents
