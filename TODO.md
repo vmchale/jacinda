@@ -63,10 +63,16 @@
   - [ ] foldMaybe
 - [ ] helios distribution? https://github.com/oxidecomputer/helios
 - [ ] ~~csv format: `FPAT = "([^,]*)|(\"[^\"]+\")"`~~
+- [ ] substitute multiple to process
+  ```
+  vectorzmstreamzm0zi1zi0zi1zmb52aad89fd7b09efa5330a0a5ffa6e096514cefa8231d7a1e742d7f529db8237_DataziStreamziMonadic_zzipWith6_slow
+  ```
+  https://gitlab.haskell.org/ghc/ghc/-/wikis/commentary/compiler/symbol-names#variable-characters
 - [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
   - [ ] OFS
   - [ ] ORS
 ## Syntax
+- [ ] `$$` synonym for newline?
 - [ ] `.[ ... ]` dfn where you specify that it's binary?
 - [x] `?` for if... then?
 - [ ] lineLength := (#")
