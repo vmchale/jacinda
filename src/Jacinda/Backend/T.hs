@@ -31,7 +31,6 @@ data EvalErr = EmptyFold
              | InternalReg Tmp
              | InternalNm (Nm T)
              | InternalArityOrEta Int (E T)
-             | Oops
              deriving (Show)
 
 instance Exception EvalErr where
@@ -41,10 +40,8 @@ data StreamError = NakedField deriving (Show)
 instance Exception StreamError where
 
 type Env = IM.IntMap (Maybe (E T))
--- data Tmp = Main | IO | Tmp !Int
-type Tmp = Int -- -1 = Main
+type Tmp = Int
 type Β = IM.IntMap (E T)
-type H = IM.IntMap Int
 
 at :: V.Vector a -> Int -> a
 v `at` ix = case v V.!? ix of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
@@ -60,10 +57,6 @@ nI = state (\i -> (i, i+1))
 nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
--- Β evaluate in little local context?
-data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
--- substitute line context after? hmm... e.g. columnize $0 as `0...
-
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
 run _ _ _ e _ | TyB TyStream:$_ <- eLoc e = undefined
 run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
@@ -74,9 +67,6 @@ pDocLn e                = putDoc (pretty e <> hardline)
 
 summar :: RurePtr -> E T -> [BS.ByteString] -> MM (E T)
 summar r e bs = do
-    -- TODO: Β environment? put in then evaluate them at the end idk.
-    -- (still gotta take from the last but basically replace with hole-name,
-    -- which is looked up to a temp, then... we go)
     (iEnv, g, e0) <- collect e
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
@@ -151,7 +141,7 @@ asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
 (@!) :: E T -> Β -> E T
 e@Lit{} @! _   = e
 e@RC{} @! _    = e
-(Var _ n) @! b = b !> n
+(Var _ n) @! b = b!>n
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkI (asI x0e+asI x1e)
