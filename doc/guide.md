@@ -121,11 +121,11 @@ let val
 in sum {% /Bloom/}{1} end
 ```
 
-<!-- [y]|>$ example -->
-
 In Jacinda, one can define functions with a [dfn](https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm) syntax in, like in
 APL. We do not need to bind `x`; the variables `x` and `y` are implicit. Since
 `[(+)|0 x]` only mentions `x`, it is treated as a unary function.
+
+`[y]` is treated as binary. Thus, `[y]|>$0` prints the last line.
 
 Note also that `:=` is used for definition. The general syntax is
 
