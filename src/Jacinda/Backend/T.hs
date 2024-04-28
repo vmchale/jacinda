@@ -8,6 +8,7 @@ import           Control.Monad.State.Strict        (State, evalState, state)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
+import Data.Foldable (fold)
 import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
 import           Data.List                         (foldl')
@@ -30,6 +31,7 @@ data EvalErr = EmptyFold
              | InternalReg Tmp
              | InternalNm (Nm T)
              | InternalArityOrEta Int (E T)
+             | Oops
              deriving (Show)
 
 instance Exception EvalErr where
@@ -42,6 +44,7 @@ type Env = IM.IntMap (Maybe (E T))
 -- data Tmp = Main | IO | Tmp !Int
 type Tmp = Int -- -1 = Main
 type Β = IM.IntMap (E T)
+type H = IM.IntMap Int
 
 (!) :: Env -> Tmp -> Maybe (E T)
 (!) m r = IM.findWithDefault (throw$InternalReg r) r m
@@ -51,31 +54,44 @@ type MM = State Int
 nI :: MM Int
 nI = state (\i -> (i, i+1))
 
+nN :: T -> MM (Nm T)
+nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
+ 
 -- Β evaluate in little local context?
 data IR = Wr Tmp (Maybe (E T)) | IO (Maybe (E T))
 -- substitute line context after? hmm... e.g. columnize $0 as `0...
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
 run _ _ _ e _ | TyB TyStream:$_ <- eLoc e = undefined
-run r _ _ e bs = pDocLn $ evalState (summar r e (-1) bs) 0
+run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
 
 pDocLn :: E T -> IO ()
 pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
 pDocLn e                = putDoc (pretty e <> hardline)
 
-summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM (E T)
-summar r e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) _) main bs = do
+summar :: RurePtr -> E T -> [BS.ByteString] -> MM (E T)
+summar r e bs = do
     -- TODO: Β environment? put in then evaluate them at the end idk.
     -- (still gotta take from the last but basically replace with hole-name,
     -- which is looked up to a temp, then... we go)
-    (iEnv, g) <- φ e main
+    (iEnv, g, e0) <- collect e
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) iEnv updates
-    pure $ fromMaybe (error "internal error??") $ IM.findWithDefault (throw$InternalReg main) main finEnv
+        env'=fmap (fromMaybe (throw EmptyFold)) finEnv
+    pure $ e0@!env'
 
-(+@) :: (Env, LineCtx -> Env -> Env) -> (Env, LineCtx -> Env -> Env) -> (Env, LineCtx -> Env -> Env)
-(s0, f) +@ (s1, g) = (s0<>s1, \l -> g l.f l)
+collect :: E T -> MM (Env, LineCtx -> Env -> Env, E T)
+collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
+    v <- nN ty
+    (iEnv, g) <- φ e (unU$unique v)
+    pure (iEnv, g, Var ty v)
+collect (Tup ty es) = do
+    (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
+    pure (fold seedEnvs, ts updates, Tup ty es')
+
+ts :: [LineCtx -> Env -> Env] -> LineCtx -> Env -> Env
+ts = foldl' (\f g l -> f l.g l) (const id)
 
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
@@ -131,6 +147,7 @@ e@RC{} @! _    = e
 (EApp _ (EApp _ (BB _ NotMatches) s) r) @! b =
     let se=s@!b; re=r@!b
     in mkB (not$isMatch' (asR re) (asS se))
+(Tup ty es) @! b = Tup ty ((@!b)<$>es)
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
