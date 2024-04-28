@@ -167,12 +167,8 @@ num :: Num a => BBin -> Maybe (a -> a -> a)
 num Plus = Just (+); num Minus = Just (-); num Times = Just (*); num _ = Nothing
 
 binRel :: Ord a => BBin -> Maybe (a -> a -> Bool)
-binRel Lt  = Just (<)
-binRel Gt  = Just (>)
-binRel Eq  = Just (==)
-binRel Neq = Just (/=)
-binRel Geq = Just (>=)
-binRel Leq = Just (<=)
+binRel Lt  = Just (<); binRel Gt  = Just (>); binRel Eq  = Just (==)
+binRel Neq = Just (/=); binRel Geq = Just (>=); binRel Leq = Just (<=)
 binRel _   = Nothing
 
 (@!) :: E T -> Β -> E T
