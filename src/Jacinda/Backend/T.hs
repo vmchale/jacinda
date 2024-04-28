@@ -163,6 +163,15 @@ vS = Arr (tyV tyStr).fmap mkStr
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
+binRel :: Ord a => BBin -> Maybe (a -> a -> Bool)
+binRel Lt  = Just (<)
+binRel Gt  = Just (>)
+binRel Eq  = Just (==)
+binRel Neq = Just (/=)
+binRel Geq = Just (>=)
+binRel Leq = Just (<=)
+binRel _   = Nothing
+
 (@!) :: E T -> Β -> E T
 e@Lit{} @! _   = e
 e@RC{} @! _    = e
@@ -194,9 +203,27 @@ e@RC{} @! _    = e
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Times) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkI (asI x0e*asI x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Eq) x0) x1) @! b =
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
-    in mkB (asS x0e==asS x1e)
+    in mkF (asF x0e+asF x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Minus) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkF (asF x0e-asF x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Times) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkF (asF x0e*asF x1e)
+(EApp _ (EApp _ (BB _ Div) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkF (asF x0e/asF x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @! b | Just rel <- binRel op =
+    let x0e=asI (x0@!b); x1e=asI (x1@!b)
+    in mkB (rel x0e x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @! b | Just rel <- binRel op =
+    let x0e=asF (x0@!b); x1e=asF (x1@!b)
+    in mkB (rel x0e x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @! b | Just rel <- binRel op =
+    let x0e=asS (x0@!b); x1e=asS (x1@!b)
+    in mkB (rel x0e x1e)
 (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkStr (asS x0e<>asS x1e)
