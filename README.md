@@ -80,8 +80,6 @@ The manpages document the builtins and provide a syntax reference.
   * No nested dfns
   * No list literal syntax
   * Postfix `:f` and `:i` are handled poorly
-  * Polymorphic functions can't be instantiated with separate types (global
-    monomorphism restriction)
 
 Intentionally missing features:
 
@@ -92,3 +90,7 @@ Intentionally missing features:
   * [Rust's regular expressions](https://docs.rs/regex/)
     - extensively documented with Unicode support
   * Deduplicate builtin
+
+# Contributing
+
+Bug reports are welcome contributions.
