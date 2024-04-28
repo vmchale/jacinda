@@ -88,6 +88,12 @@
 - [ ] Awk scripts for building glibc
   - [ ] mach syscalls (print+summarize)
 # Bugs
+```
+vanessa@Vanessas-Air jacinda % seq 100001 | cabal run ja -- run test/examples/evenOdd.jac
+(50000 . 50001)
+vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/evenOdd.jac
+(500002 . 500000)
+```
 - [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ]
 ```
