@@ -95,6 +95,10 @@ collect e@(EApp ty (EApp _ (BB _ Fold1) _) _) = do
 collect (Tup ty es) = do
     (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
     pure (fold seedEnvs, ts updates, Tup ty es')
+collect (EApp ty0 (EApp ty1 op@BB{} e0) e1) = do
+    (env0, f0, e0') <- collect e0
+    (env1, f1, e1') <- collect e1
+    pure (env0<>env1, \l -> f1 l.f0 l, EApp ty0 (EApp ty1 op e0') e1')
 
 ts :: [LineCtx -> Env -> Env] -> LineCtx -> Env -> Env
 ts = foldl' (\f g l -> f l.g l) (const id)
