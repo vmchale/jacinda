@@ -124,14 +124,12 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@BB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
-κ e l                     = error (show e)
 
 ctx :: E T -> Tmp -> MM (LineCtx -> Env -> Env)
 ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$!mkStr b)
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; sb <- ctx xs t; pure (\l -> wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; sb <- ctx xs t; pure (\l -> wP p t o.sb l)}
 ctx (Guarded _ p e) o                      = pure $ wG (p, e) o
-ctx e _                                    = error (show e)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
