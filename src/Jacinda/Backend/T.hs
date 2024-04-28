@@ -250,6 +250,9 @@ e@RC{} @! _    = e
 (EApp ty (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) @! b =
     let s'=s@!b; i'=i@!b; r'=r@!b
     in Arr ty (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
+(NB (TyB TyStr) MZ) @! _ = mkStr BS.empty
+(NB ty@(TyB TyVec:$_) MZ) @! _ = Arr ty V.empty
+(NB ty None) @! _ = OptionVal ty Nothing
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
