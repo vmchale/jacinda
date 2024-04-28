@@ -133,14 +133,20 @@ ctx (Guarded _ p e) o                      = pure $ wG (p, e) o
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
-asR :: E T -> RurePtr
-asR (RC r) = r; asR e = throw (InternalCoercionError e TyR)
-
 asS :: E T -> BS.ByteString
 asS (Lit _ (StrLit s)) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E T -> Integer
 asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
+
+asF :: E T -> Double
+asF (Lit _ (FLit x)) = x; asF e = throw (InternalCoercionError e TyFloat)
+
+asR :: E T -> RurePtr
+asR (RC r) = r; asR e = throw (InternalCoercionError e TyR)
+
+asM :: E T -> Maybe (E T)
+asM (OptionVal _ e) = e; asM e = throw (InternalCoercionError e TyOption)
 
 asB :: E T -> Bool
 asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
@@ -161,6 +167,24 @@ vS = Arr (tyV tyStr).fmap mkStr
 e@Lit{} @! _   = e
 e@RC{} @! _    = e
 (Var _ n) @! b = b!>n
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @! b =
+    let x0'=asI (x0@!b); x1'=asI (x1@!b)
+    in mkI (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @! b =
+    let x0'=asI (x0@!b); x1'=asI (x1@!b)
+    in mkI (min x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @! b =
+    let x0'=asF (x0@!b); x1'=asF (x1@!b)
+    in mkF (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @! b =
+    let x0'=asF (x0@!b); x1'=asF (x1@!b)
+    in mkF (min x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @! b =
+    let x0'=asS (x0@!b); x1'=asS (x1@!b)
+    in mkStr (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @! b =
+    let x0'=asS (x0@!b); x1'=asS (x1@!b)
+    in mkStr (min x0' x1')
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Plus) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkI (asI x0e+asI x1e)
@@ -202,6 +226,12 @@ e@RC{} @! _    = e
     let fs'=fs@!b; s'=s@!b
     in mkStr (sprintf (asS fs') s')
 (Cond _ p e e') @! b = let p'=p@!b in if asB p' then e@!b else e'@!b
+(EApp ty (EApp _ (EApp _ (TB _ Captures) s) i) r) @! b =
+    let s'=s@!b; i'=i@!b; r'=r@!b
+    in OptionVal ty (mkStr <$> findCapture (asR r') (asS s') (fromIntegral$asI i'))
+(EApp ty (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) @! b =
+    let s'=s@!b; i'=i@!b; r'=r@!b
+    in Arr ty (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
