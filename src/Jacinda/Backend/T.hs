@@ -85,6 +85,10 @@ collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
     v <- nN ty
     (iEnv, g) <- φ e (unU$unique v)
     pure (iEnv, g, Var ty v)
+collect e@(EApp ty (EApp _ (BB _ Fold1) _) _) = do
+    v <- nN ty
+    (iEnv, g) <- φ e (unU$unique v)
+    pure (iEnv, g, Var ty v)
 collect (Tup ty es) = do
     (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
     pure (fold seedEnvs, ts updates, Tup ty es')
@@ -95,6 +99,12 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
     let iEnv=IM.singleton tgt (Just$!seed)
+    t <- nI
+    f <- ctx xs t
+    let g=wF op t tgt
+    pure (iEnv, (g.).f)
+φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
+    let iEnv=IM.singleton tgt Nothing
     t <- nI
     f <- ctx xs t
     let g=wF op t tgt
