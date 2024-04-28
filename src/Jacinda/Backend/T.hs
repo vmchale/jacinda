@@ -64,15 +64,20 @@ pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
 pDocLn e                = putDoc (pretty e <> hardline)
 
 summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM (E T)
-summar r (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) main bs = do
-    let iEnv=IM.singleton main (Just seed)
-    t <- nI
-    f <- ctx xs t
+summar r e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) _) main bs = do
+    (iEnv, g) <- φ e main
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        g=wF op t main
-        updates=(g.).f<$>ctxs
+        updates=g<$>ctxs
         finEnv=foldl' (&) iEnv updates
     pure $ fromMaybe (error "internal error??") $ IM.findWithDefault (throw$InternalReg main) main finEnv
+
+φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
+φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
+    let iEnv=IM.singleton tgt (Just seed)
+    t <- nI
+    f <- ctx xs t
+    let g=wF op t tgt
+    pure (iEnv, (g.).f)
 
 ctx :: E T -> Tmp -> MM (LineCtx -> Env -> Env)
 ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$mkStr b)
