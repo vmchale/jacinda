@@ -23,6 +23,7 @@ import           Prettyprinter                     (hardline, pretty)
 import           Prettyprinter.Render.Text         (putDoc)
 import           Regex.Rure                        (RurePtr)
 import           System.IO                         (stdout)
+import           Ty.Const
 import           U
 
 data EvalErr = EmptyFold
@@ -144,6 +145,15 @@ asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
 asB :: E T -> Bool
 asB (Lit _ (BLit b)) = b; asB e = throw (InternalCoercionError e TyBool)
 
+asV :: E T -> V.Vector (E T)
+asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)
+
+asT :: E T -> [E T]
+asT (Tup _ es) = es; asT e = throw (ExpectedTup e)
+
+vS :: V.Vector BS.ByteString -> E T
+vS = Arr (tyV tyStr).fmap mkStr
+
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
@@ -173,7 +183,6 @@ e@RC{} @! _    = e
     let x0e=x0@!b; x1e=x1@!b
     in mkB (asB x0e||asB x1e)
 (EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
-(EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
 (EApp _ (EApp _ (BB _ Matches) s) r) @! b =
     let se=s@!b; re=r@!b
     in mkB (isMatch' (asR re) (asS se))
@@ -181,6 +190,10 @@ e@RC{} @! _    = e
     let se=s@!b; re=r@!b
     in mkB (not$isMatch' (asR re) (asS se))
 (Tup ty es) @! b = Tup ty ((@!b)<$>es)
+(EApp _ (UB _ TallyList) e) @! b =
+    let e'=e@!b
+        r=fromIntegral (V.length$asV e')
+    in mkI r
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
