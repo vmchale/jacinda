@@ -10,6 +10,7 @@ import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
 import           Data.Foldable                     (fold)
 import           Data.Function                     ((&))
+import Data.Word (Word8)
 import qualified Data.IntMap.Strict                as IM
 import           Data.List                         (foldl')
 import           Data.Maybe                        (fromMaybe)
@@ -160,6 +161,11 @@ asT (Tup _ es) = es; asT e = throw (ExpectedTup e)
 vS :: V.Vector BS.ByteString -> E T
 vS = Arr (tyV tyStr).fmap mkStr
 
+the :: BS.ByteString -> Word8
+the bs = case BS.uncons bs of
+    Nothing                -> error "Empty splitc char!"
+    Just (c,b) | BS.null b -> c
+    Just _                 -> error "Splitc takes only one char!"
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
@@ -249,6 +255,17 @@ e@RC{} @! _    = e
 (NB (TyB TyStr) MZ) @! _ = mkStr BS.empty
 (NB ty@(TyB TyVec:$_) MZ) @! _ = Arr ty V.empty
 (NB ty None) @! _ = OptionVal ty Nothing
+(EApp _ (UB _ Not) e) @! b = let e'=asB (e@!b) in mkB (not e')
+(EApp _ (EApp _ (BB _ Split) s) r) @! b =
+    let s'=asS (s@!b); r'=asR (r@!b)
+    in vS (splitBy r' s')
+(EApp _ (EApp _ (BB _ Splitc) s) c) @! b =
+    let s'=asS (s@!b); c'=the$asS (c@!b)
+    in vS (V.fromList (BS.split c' s'))
+(EApp _ (UB _ FParse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
+(EApp _ (UB _ IParse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
+(EApp (TyB TyInteger) (UB _ Parse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
+(EApp (TyB TyFloat) (UB _ Parse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
