@@ -65,11 +65,17 @@ pDocLn e                = putDoc (pretty e <> hardline)
 
 summar :: RurePtr -> E T -> Tmp -> [BS.ByteString] -> MM (E T)
 summar r e@(EApp _ (EApp _ (EApp _ (TB _ Fold) _) _) _) main bs = do
+    -- TODO: Β environment? put in then evaluate them at the end idk.
+    -- (still gotta take from the last but basically replace with hole-name,
+    -- which is looked up to a temp, then... we go)
     (iEnv, g) <- φ e main
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) iEnv updates
     pure $ fromMaybe (error "internal error??") $ IM.findWithDefault (throw$InternalReg main) main finEnv
+
+(+@) :: (Env, LineCtx -> Env -> Env) -> (Env, LineCtx -> Env -> Env) -> (Env, LineCtx -> Env -> Env)
+(s0, f) +@ (s1, g) = (s0<>s1, \l -> g l.f l)
 
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
