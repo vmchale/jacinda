@@ -1,7 +1,14 @@
-module Jacinda.Backend.Parse ( readDigits ) where
+module Jacinda.Backend.Parse ( readDigits, readFloat ) where
 
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as ASCII
+import           Foreign.C.String      (CString)
+import           System.IO.Unsafe      (unsafeDupablePerformIO)
+
+readFloat :: BS.ByteString -> Double
+readFloat = unsafeDupablePerformIO . (`BS.useAsCString` atof)
+
+foreign import ccall unsafe atof :: CString -> IO Double
 
 readDigits :: BS.ByteString -> Integer
 readDigits b | Just (45, bs) <- BS.uncons b = negate $ readDigits bs

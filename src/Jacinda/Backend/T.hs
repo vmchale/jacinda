@@ -15,6 +15,8 @@ import           Data.List                         (foldl')
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Vector                       as V
 import           Jacinda.Backend.Const
+import           Jacinda.Backend.Parse
+import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Nm
 import           Prettyprinter                     (hardline, pretty)
@@ -45,6 +47,12 @@ type Β = IM.IntMap (E T)
 
 at :: V.Vector a -> Int -> a
 v `at` ix = case v V.!? ix of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
+
+parseAsEInt :: BS.ByteString -> E T
+parseAsEInt = mkI.readDigits
+
+parseAsF :: BS.ByteString -> E T
+parseAsF = mkF.readFloat
 
 (!) :: Env -> Tmp -> Maybe (E T)
 (!) m r = IM.findWithDefault (throw$InternalReg r) r m
@@ -155,6 +163,16 @@ e@RC{} @! _    = e
 (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Eq) x0) x1) @! b =
     let x0e=x0@!b; x1e=x1@!b
     in mkB (asS x0e==asS x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkStr (asS x0e<>asS x1e)
+(EApp _ (EApp _ (BB _ And) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkB (asB x0e&&asB x1e)
+(EApp _ (EApp _ (BB _ Or) x0) x1) @! b =
+    let x0e=x0@!b; x1e=x1@!b
+    in mkB (asB x0e||asB x1e)
+(EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
 (EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
 (EApp _ (EApp _ (BB _ Matches) s) r) @! b =
     let se=s@!b; re=r@!b
