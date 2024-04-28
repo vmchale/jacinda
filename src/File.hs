@@ -12,7 +12,7 @@ import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad              ((<=<))
 import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.State.Strict (StateT, get, put, runStateT, runState)
+import           Control.Monad.State.Strict (StateT, get, put, runState, runStateT)
 import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
