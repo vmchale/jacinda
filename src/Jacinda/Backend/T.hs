@@ -266,6 +266,12 @@ e@RC{} @! _    = e
 (EApp _ (UB _ IParse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
 (EApp (TyB TyInteger) (UB _ Parse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
 (EApp (TyB TyFloat) (UB _ Parse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
+(EApp _ (UB _ (At i)) v) @! b = let v'=v@!b in asV v' `at` (i-1)
+(EApp _ (UB _ (Select i)) x) @! b = let x'=x@!b in asT x' !! (i-1)
+(EApp _ (UB _ Floor) x) @! b = mkI (floor (asF (x@!b)))
+(EApp _ (UB _ Ceiling) x) @! b = mkI (ceiling (asF (x@!b)))
+(EApp (TyB TyInteger) (UB _ Negate) i) @! b = mkI (negate (asI (i@!b)))
+(EApp (TyB TyFloat) (UB _ Negate) x) @! b = mkF (negate (asF (x@!b)))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
