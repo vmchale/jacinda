@@ -78,8 +78,7 @@ summar r e bs = do
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) iEnv updates
-        env'=fmap (fromMaybe (throw EmptyFold)) finEnv
-    pure $ e0@!env'
+    pure (e0@!(fromMaybe (throw EmptyFold)<$>finEnv))
 
 collect :: E T -> MM (Env, LineCtx -> Env -> Env, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
@@ -95,14 +94,14 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
-    let iEnv=IM.singleton tgt (Just seed)
+    let iEnv=IM.singleton tgt (Just$!seed)
     t <- nI
     f <- ctx xs t
     let g=wF op t tgt
     pure (iEnv, (g.).f)
 
 ctx :: E T -> Tmp -> MM (LineCtx -> Env -> Env)
-ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$mkStr b)
+ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$!mkStr b)
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; sb <- ctx xs t; pure (\l -> wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; sb <- ctx xs t; pure (\l -> wP p t o.sb l)}
 ctx e _                                    = error (show e)
@@ -161,7 +160,7 @@ wM (Lam _ n e) src tgt env =
     in case xO of
         Just x ->
             let be=ms n x; y=e@!be
-            in IM.insert tgt (Just y) env
+            in IM.insert tgt (Just$!y) env
         Nothing -> IM.insert tgt Nothing env
 wM e _ _ _ = throw$InternalArityOrEta 1 e
 
@@ -171,7 +170,7 @@ wP (Lam _ n e) src tgt env =
     in case xO of
         Just x ->
             let be=ms n x; p=e@!be
-            in IM.insert tgt (if asB p then Just x else Nothing) env
+            in IM.insert tgt (if asB p then Just$!x else Nothing) env
         Nothing -> IM.insert tgt Nothing env
 wP e _ _ _ = throw $ InternalArityOrEta 1 e
 
@@ -182,6 +181,6 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt env =
         (Just acc, Just x) ->
             let be=me [(nacc, acc), (nn, x)]
                 res=e@!be
-            in IM.insert tgt (Just res) env
-        (Just acc, Nothing) -> IM.insert tgt (Just acc) env
+            in IM.insert tgt (Just$!res) env
+        (Just acc, Nothing) -> IM.insert tgt (Just$!acc) env
 wF e _ _ _ = throw $ InternalArityOrEta 2 e
