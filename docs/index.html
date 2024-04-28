@@ -238,7 +238,6 @@ regular expressions scan for relevant output and one can split on
 separators.</p>
 <p>There is additionally support for filters, maps and folds that are
 familiar to functional programmers.</p>
-<!-- otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}' -->
 <h2 id="language">Language</h2>
 <h3 id="patterns-implicits-streams">Patterns + Implicits, Streams</h3>
 <p>In Jacinda, one writes a pattern and an expression defined on
@@ -254,7 +253,6 @@ the whole line. So this would print all lines that match the pattern
 <pre><code>ls -1 -R | ja &#39;{% /\.hs$/}{`0}&#39;</code></pre>
 <p>This would print all Haskell source files in the current
 directory.</p>
-<!-- echo JQ_COLORS | ja -R':' -F';' '~.$1' -->
 <p>There is another form,</p>
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving
@@ -301,13 +299,14 @@ so:</p>
 <pre><code>let val
   sum := [(+)|0 x]
 in sum {% /Bloom/}{1} end</code></pre>
-<!-- [y]|>$ example -->
 <p>In Jacinda, one can define functions with a <a
 href="https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm">dfn</a>
 syntax in, like in APL. We do not need to bind <code>x</code>; the
 variables <code>x</code> and <code>y</code> are implicit. Since
 <code>[(+)|0 x]</code> only mentions <code>x</code>, it is treated as a
 unary function.</p>
+<p><code>[y]</code> is treated as binary. Thus, <code>[y]|&gt;$0</code>
+prints the last line.</p>
 <p>Note also that <code>:=</code> is used for definition. The general
 syntax is</p>
 <pre><code>let (val &lt;name&gt; := &lt;expr&gt;)* in &lt;expr&gt; end</code></pre>
