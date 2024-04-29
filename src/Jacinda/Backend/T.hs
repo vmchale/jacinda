@@ -69,12 +69,12 @@ nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
 run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
-run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ pDocLn.flip evalState 0 $ do
+run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ pDocLn).flip evalState 0 $ do
     t <- nI
     (iEnv, μ) <- ctx e t
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         outs=μ<$>ctxs; es=scanl' (&) iEnv outs
-    pure (fromMaybe (throw$InternalTmp t).(! t)<$>es)
+    pure ((! t)<$>es)
 run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
 
 pDocLn :: E T -> IO ()
@@ -132,11 +132,16 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 
+ni t=IM.singleton t Nothing
+
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
-ctx AllColumn{} res                        = pure (mempty, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
+ctx AllColumn{} res                        = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
+ctx FParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$parseAsF b))
+ctx IParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$parseAsEInt b))
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
-ctx (Guarded _ p e) o                      = pure (mempty, wG (p, e) o)
+ctx (Guarded _ p e) o                      = pure (ni o, wG (p, e) o)
+ctx (Implicit _ e) o                       = pure (ni o, wI e o)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -304,6 +309,10 @@ wM (Lam _ n e) src tgt env =
             in IM.insert tgt (Just$!y) env
         Nothing -> IM.insert tgt Nothing env
 wM e _ _ _ = throw$InternalArityOrEta 1 e
+
+wI :: E T -> Tmp -> LineCtx -> Env -> Env
+wI e tgt line env =
+    let e'=e `κ` line in IM.insert tgt (Just$!e') env
 
 wG :: (E T, E T) -> Tmp -> LineCtx -> Env -> Env
 wG (p, e) tgt line env =
