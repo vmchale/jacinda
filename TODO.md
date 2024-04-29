@@ -140,6 +140,8 @@ wrong result??
 - [ ] http://www.awklang.org/action/?nvgexp&child
 - [ ] https://stackoverflow.com/q/2957684
 - [ ] JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;34"
+- [ ] https://github.com/rcoh/angle-grinder?tab=readme-ov-file#query-syntax
+  - [ ] https://www.brandur.org/logfmt
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
