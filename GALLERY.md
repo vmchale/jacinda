@@ -74,7 +74,7 @@ fd '\.hs$' $(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x styli
 # Count lines of code
 
 ```
-fd '\.(c|h)$' -x wc -l | ja '(+)|0 $1:i'
+fd '\.(c|h)$' -x wc -l | ja '(+)|0 $1:'
 ```
 
 # Linecount
