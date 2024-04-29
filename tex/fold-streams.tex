@@ -1,0 +1,35 @@
+\documentclass{article}
+
+\usepackage{hyperref}
+\usepackage{url}
+
+\begin{document}
+
+\title{Implementing a Functional Stream Processing Language}
+\author{V. E. McHale}
+\maketitle
+
+\begin{abstract}
+  Functional programming offers an eloquent take on stream processing.
+\end{abstract}
+
+\section{Introduction}
+
+AWK is a powerful stream-processing language\cite{awkbook} well-suited to structured text output common in Unix descendants.
+
+One defines actions per-pattern; 
+This can be used to filter a stream or generate reports.
+
+\section{Haskell Backend}
+
+We can take advantage of laziness to
+
+% cute way to show REAL FP aka lists of Env -> Env, composition as "gluing together streams"
+% vs. bytecode-of-steps
+
+% space leaks...
+
+\bibliographystyle{plain}
+\bibliography{fold-streams.bib}
+
+\end{document}
