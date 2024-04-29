@@ -134,8 +134,8 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 ctx AllColumn{} res                        = pure (mempty, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l -> wM f t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l -> wP p t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
 ctx (Guarded _ p e) o                      = pure (mempty, wG (p, e) o)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
