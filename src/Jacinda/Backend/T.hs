@@ -10,11 +10,11 @@ import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
 import           Data.Foldable                     (fold)
 import           Data.Function                     ((&))
-import Data.Word (Word8)
 import qualified Data.IntMap.Strict                as IM
 import           Data.List                         (foldl')
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Vector                       as V
+import           Data.Word                         (Word8)
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.Parse
 import           Jacinda.Backend.Printf
@@ -254,7 +254,6 @@ e@RC{} @! _    = e
     in Arr ty (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
 (NB (TyB TyStr) MZ) @! _ = mkStr BS.empty
 (NB ty@(TyB TyVec:$_) MZ) @! _ = Arr ty V.empty
-(NB ty None) @! _ = OptionVal ty Nothing
 (EApp _ (UB _ Not) e) @! b = let e'=asB (e@!b) in mkB (not e')
 (EApp _ (EApp _ (BB _ Split) s) r) @! b =
     let s'=asS (s@!b); r'=asR (r@!b)
@@ -272,6 +271,17 @@ e@RC{} @! _    = e
 (EApp _ (UB _ Ceiling) x) @! b = mkI (ceiling (asF (x@!b)))
 (EApp (TyB TyInteger) (UB _ Negate) i) @! b = mkI (negate (asI (i@!b)))
 (EApp (TyB TyFloat) (UB _ Negate) x) @! b = mkF (negate (asF (x@!b)))
+(EApp ty (UB _ Some) e) @! b = OptionVal ty (Just (e@!b))
+(NB ty None) @! _ = OptionVal ty Nothing
+(EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) @! b =
+    let i0'=i0@!b; i1'=i1@!b; s'=s@!b
+    in mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
+(EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) @! b =
+    let r'=r@!b; s0'=s0@!b; s1'=s1@!b
+    in mkStr (sub1 (asR r') (asS s1') (asS s0'))
+(EApp _ (EApp _ (EApp _ (TB _ Subs) r) s0) s1) @! b =
+    let r'=r@!b; s0'=s0@!b; s1'=s1@!b
+    in mkStr (subs (asR r') (asS s1') (asS s0'))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
