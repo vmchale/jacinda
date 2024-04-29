@@ -8,10 +8,10 @@ import           Control.Monad.State.Strict        (State, evalState, state)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
-import           Data.Foldable                     (fold)
+import           Data.Foldable                     (fold, traverse_)
 import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
-import           Data.List                         (foldl')
+import           Data.List                         (foldl', scanl')
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Vector                       as V
 import           Data.Word                         (Word8)
@@ -32,7 +32,7 @@ data EvalErr = EmptyFold
              | NoSuchField Int BS.ByteString
              | InternalCoercionError (E T) TB
              | ExpectedTup (E T)
-             | InternalReg Tmp
+             | InternalTmp Tmp
              | InternalNm (Nm T)
              | InternalArityOrEta Int (E T)
              deriving (Show)
@@ -57,7 +57,7 @@ parseAsF :: BS.ByteString -> E T
 parseAsF = mkF.readFloat
 
 (!) :: Env -> Tmp -> Maybe (E T)
-(!) m r = IM.findWithDefault (throw$InternalReg r) r m
+(!) m r = IM.findWithDefault (throw$InternalTmp r) r m
 
 type MM = State Int
 
@@ -68,8 +68,14 @@ nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
-run _ _ _ e _ | TyB TyStream:$_ <- eLoc e = undefined
+run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
 run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
+run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ pDocLn.flip evalState 0 $ do
+    t <- nI
+    μ <- ctx e t
+    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
+        outs=μ<$>ctxs; es=scanl' (&) mempty outs
+    pure (fromMaybe (throw$InternalTmp t).(! t)<$>es)
 
 pDocLn :: E T -> IO ()
 pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
