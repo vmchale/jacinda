@@ -10,9 +10,6 @@ import           Ty.Const
 fuse :: Int -> E T -> (E T, Int)
 fuse i = flip runState i.fM
 
--- fold1: needs a special "form" for fold1-of-map (pick seed through map)
--- also "filter-of-fold1" b/c we need to pick a seed that isn't filtered.
-
 fM :: E T -> M (E T)
 fM (EApp t0 (EApp t1 (EApp t2 ho@(TB _ Fold) op) seed) stream) | TyB TyStream :$ _ <- eLoc stream = do
     stream' <- fM stream

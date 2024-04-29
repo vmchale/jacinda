@@ -48,7 +48,7 @@ type Tmp = Int
 type Β = IM.IntMap (E T)
 
 at :: V.Vector a -> Int -> a
-v `at` ix = case v V.!? ix of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
+v `at` ix = case v V.!? (ix-1) of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
 
 fieldOf :: V.Vector BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
 fieldOf fs b n = case fs V.!? (n-1) of {Just x -> x; Nothing -> throw $ NoSuchField n b}
@@ -134,6 +134,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ (EApp ty e0 e1) line    = EApp ty (e0 `κ` line) (e1 `κ` line)
 κ (NB _ Ix) ~(_, _, fp)   = mkI fp
 κ e@BB{} _                = e
+κ e@UB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 
@@ -145,6 +146,8 @@ ctx FParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.in
 ctx IParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
 ctx (FParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
 ctx (IParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyFloat) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyInteger) i) res    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
 ctx (Guarded _ p e) o                      = pure (ni o, wG (p, e) o)
@@ -184,6 +187,7 @@ the bs = case BS.uncons bs of
     Nothing                -> error "Empty splitc char!"
     Just (c,b) | BS.null b -> c
     Just _                 -> error "Splitc takes only one char!"
+
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
@@ -281,8 +285,8 @@ e@RC{} @! _    = e
     in vS (V.fromList (BS.split c' s'))
 (EApp _ (UB _ FParse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
 (EApp _ (UB _ IParse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
-(EApp (TyB TyInteger) (UB _ Parse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
-(EApp (TyB TyFloat) (UB _ Parse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
+(EApp (TyB TyInteger) (UB _ Parse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
+(EApp (TyB TyFloat) (UB _ Parse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
 (EApp _ (UB _ (At i)) v) @! b = let v'=v@!b in asV v' `at` (i-1)
 (EApp _ (UB _ (Select i)) x) @! b = let x'=x@!b in asT x' !! (i-1)
 (EApp _ (UB _ Floor) x) @! b = mkI (floor (asF (x@!b)))
@@ -319,7 +323,7 @@ wM e _ _ _ = throw$InternalArityOrEta 1 e
 
 wI :: E T -> Tmp -> LineCtx -> Env -> Env
 wI e tgt line env =
-    let e'=e `κ` line in IM.insert tgt (Just$!e') env
+    let e'=e `κ` line in IM.insert tgt (Just$!(e'@!mempty)) env
 
 wG :: (E T, E T) -> Tmp -> LineCtx -> Env -> Env
 wG (p, e) tgt line env =
