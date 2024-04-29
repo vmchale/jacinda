@@ -50,6 +50,9 @@ type Β = IM.IntMap (E T)
 at :: V.Vector a -> Int -> a
 v `at` ix = case v V.!? ix of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
 
+fieldOf :: V.Vector BS.ByteString -> BS.ByteString -> Int -> BS.ByteString
+fieldOf fs b n = case fs V.!? (n-1) of {Just x -> x; Nothing -> throw $ NoSuchField n b}
+
 parseAsEInt :: BS.ByteString -> E T
 parseAsEInt = mkI.readDigits
 
@@ -138,8 +141,10 @@ ni t=IM.singleton t Nothing
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 ctx AllColumn{} res                        = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
-ctx FParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$parseAsF b))
-ctx IParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$parseAsEInt b))
+ctx FParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
+ctx IParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
+ctx (FParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (IParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
 ctx (Guarded _ p e) o                      = pure (ni o, wG (p, e) o)
