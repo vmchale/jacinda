@@ -72,9 +72,9 @@ run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
 run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
 run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ pDocLn.flip evalState 0 $ do
     t <- nI
-    μ <- ctx e t
+    (iEnv, μ) <- ctx e t
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        outs=μ<$>ctxs; es=scanl' (&) mempty outs
+        outs=μ<$>ctxs; es=scanl' (&) iEnv outs
     pure (fromMaybe (throw$InternalTmp t).(! t)<$>es)
 
 pDocLn :: E T -> IO ()
@@ -113,15 +113,15 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
     let iEnv=IM.singleton tgt (Just$!seed)
     t <- nI
-    f <- ctx xs t
+    (env, f) <- ctx xs t
     let g=wF op t tgt
-    pure (iEnv, (g.).f)
+    pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
     let iEnv=IM.singleton tgt Nothing
     t <- nI
-    f <- ctx xs t
+    (env, f) <- ctx xs t
     let g=wF op t tgt
-    pure (iEnv, (g.).f)
+    pure (env<>iEnv, (g.).f)
 
 κ :: E T -> LineCtx -> E T
 κ AllField{} ~(b, _, _)   = mkStr b
@@ -132,11 +132,11 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 
-ctx :: E T -> Tmp -> MM (LineCtx -> Env -> Env)
-ctx AllColumn{} res                        = pure $ \ ~(b, _, _) -> IM.insert res (Just$!mkStr b)
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; sb <- ctx xs t; pure (\l -> wM f t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; sb <- ctx xs t; pure (\l -> wP p t o.sb l)}
-ctx (Guarded _ p e) o                      = pure $ wG (p, e) o
+ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
+ctx AllColumn{} res                        = pure (mempty, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l -> wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l -> wP p t o.sb l)}
+ctx (Guarded _ p e) o                      = pure (mempty, wG (p, e) o)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
