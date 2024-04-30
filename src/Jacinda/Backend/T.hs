@@ -141,17 +141,18 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 ni t=IM.singleton t Nothing
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
-ctx AllColumn{} res                        = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
-ctx FParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
-ctx IParseAllCol{} res                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
-ctx (FParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (IParseCol _ i) res                    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyFloat) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyInteger) i) res    = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o    = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
-ctx (Guarded _ p e) o                      = pure (ni o, wG (p, e) o)
-ctx (Implicit _ e) o                       = pure (ni o, wI e o)
+ctx AllColumn{} res                          = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
+ctx FParseAllCol{} res                       = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
+ctx IParseAllCol{} res                       = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
+ctx (FParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (IParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyFloat) i) res        = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyInteger) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wMM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
+ctx (Guarded _ p e) o                        = pure (ni o, wG (p, e) o)
+ctx (Implicit _ e) o                         = pure (ni o, wI e o)
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -311,10 +312,22 @@ me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 ms :: Nm T -> E T -> Β
 ms (Nm _ (U i) _) = IM.singleton i
 
+wMM :: E T -> Tmp -> Tmp -> Env -> Env
+wMM (Lam _ n e) src tgt env =
+    let xϵ=env!src
+    in case xϵ of
+        Just x ->
+            let be=ms n x; y=e@!be
+            in case asM y of
+                Just yϵ -> IM.insert tgt (Just$!yϵ) env
+                Nothing -> IM.insert tgt Nothing env
+        Nothing -> IM.insert tgt Nothing env
+wMM e _ _ _ = throw$InternalArityOrEta 1 e
+
 wM :: E T -> Tmp -> Tmp -> Env -> Env
 wM (Lam _ n e) src tgt env =
-    let xO=env!src
-    in case xO of
+    let xϵ=env!src
+    in case xϵ of
         Just x ->
             let be=ms n x; y=e@!be
             in IM.insert tgt (Just$!y) env
@@ -334,8 +347,8 @@ wG (p, e) tgt line env =
 
 wP :: E T -> Tmp -> Tmp -> Env -> Env
 wP (Lam _ n e) src tgt env =
-    let xO=env!src
-    in case xO of
+    let xϵ=env!src
+    in case xϵ of
         Just x ->
             let be=ms n x; p=e@!be
             in IM.insert tgt (if asB p then Just$!x else Nothing) env
@@ -344,8 +357,8 @@ wP e _ _ _ = throw $ InternalArityOrEta 1 e
 
 wF :: E T -> Tmp -> Tmp -> Env -> Env
 wF (Lam _ nacc (Lam _ nn e)) src tgt env =
-    let accO = env ! tgt; xO = env ! src
-    in case (accO, xO) of
+    let accϵ = env ! tgt; xϵ = env ! src
+    in case (accϵ, xϵ) of
         (Just acc, Just x) ->
             let be=me [(nacc, acc), (nn, x)]
                 res=e@!be
