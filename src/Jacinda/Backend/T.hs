@@ -135,6 +135,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ (NB _ Ix) ~(_, _, fp)   = mkI fp
 κ e@BB{} _                = e
 κ e@UB{} _                = e
+κ e@TB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 
@@ -150,6 +151,7 @@ ctx (ParseCol (_:$TyB TyFloat) i) res        = pure (ni res, \ ~(b, bs, _) -> IM
 ctx (ParseCol (_:$TyB TyInteger) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wMM f t o.sb l)}
+ctx (EApp _ (UB _ CatMaybes) xs) o           = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wCM t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
 ctx (Guarded _ p e) o                        = pure (ni o, wG (p, e) o)
 ctx (Implicit _ e) o                         = pure (ni o, wI e o)
@@ -311,6 +313,13 @@ me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 
 ms :: Nm T -> E T -> Β
 ms (Nm _ (U i) _) = IM.singleton i
+
+wCM :: Tmp -> Tmp -> Env -> Env
+wCM src tgt env =
+    let xϵ=env!src
+    in case xϵ of
+        Just y -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
+        Nothing -> IM.insert tgt Nothing env
 
 wMM :: E T -> Tmp -> Tmp -> Env -> Env
 wMM (Lam _ n e) src tgt env =
