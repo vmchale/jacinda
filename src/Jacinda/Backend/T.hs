@@ -43,6 +43,7 @@ data StreamError = NakedField deriving (Show)
 
 instance Exception StreamError where
 
+-- TODO: dedup... tracking env!
 type Env = IM.IntMap (Maybe (E T))
 type Tmp = Int
 type Β = IM.IntMap (E T)
@@ -319,7 +320,7 @@ wCM :: Tmp -> Tmp -> Env -> Env
 wCM src tgt env =
     let xϵ=env!src
     in case xϵ of
-        Just y -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
+        Just y  -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
         Nothing -> IM.insert tgt Nothing env
 
 wMM :: E T -> Tmp -> Tmp -> Env -> Env
