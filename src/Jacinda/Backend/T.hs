@@ -140,6 +140,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@RC{} _                = e
 
 ni t=IM.singleton t Nothing
+na=IM.alter (\k -> case k of {Nothing -> Just Nothing; Just x -> Just x})
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 ctx AllColumn{} res                          = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
@@ -149,10 +150,10 @@ ctx (FParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM
 ctx (IParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (ParseCol (_:$TyB TyFloat) i) res        = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
 ctx (ParseCol (_:$TyB TyInteger) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wM f t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wMM f t o.sb l)}
-ctx (EApp _ (UB _ CatMaybes) xs) o           = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wCM t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; pure (env, \l->wP p t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wMM f t o.sb l)}
+ctx (EApp _ (UB _ CatMaybes) xs) o           = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wP p t o.sb l)}
 ctx (Guarded _ p e) o                        = pure (ni o, wG (p, e) o)
 ctx (Implicit _ e) o                         = pure (ni o, wI e o)
 
