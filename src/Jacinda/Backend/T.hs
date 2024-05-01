@@ -23,7 +23,7 @@ import           Nm
 import           Prettyprinter                     (hardline, pretty)
 import           Prettyprinter.Render.Text         (putDoc)
 import           Regex.Rure                        (RurePtr)
-import           System.IO                         (stdout)
+import           System.IO                         (hFlush, stdout)
 import           Ty.Const
 import           U
 
@@ -73,13 +73,15 @@ nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
 run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
-run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ pDocLn).flip evalState 0 $ do
+run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState 0 $ do
     t <- nI
     (iEnv, μ) <- ctx e t
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         outs=μ<$>ctxs; es=scanl' (&) iEnv outs
     pure ((! t)<$>es)
 run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
+
+pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
 
 pDocLn :: E T -> IO ()
 pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
