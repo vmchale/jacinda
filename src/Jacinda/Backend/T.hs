@@ -113,8 +113,8 @@ collect (EApp ty0 (EApp ty1 op@BB{} e0) e1) = do
     (env1, f1, e1') <- collect e1
     pure (env0<>env1, \l -> f1 l.f0 l, EApp ty0 (EApp ty1 op e0') e1')
 collect (EApp ty0 f@UB{} e) = do
-    (env, f', e') <- collect e
-    pure (env, f', EApp ty0 f e)
+    (env, fϵ, eϵ) <- collect e
+    pure (env, fϵ, EApp ty0 f eϵ)
 
 ts :: [LineCtx -> Env -> Env] -> LineCtx -> Env -> Env
 ts = foldl' (\f g l -> f l.g l) (const id)
