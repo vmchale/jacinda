@@ -73,13 +73,13 @@ nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
 run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
-run r flush _ e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState 0 $ do
+run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
     (iEnv, μ) <- ctx e t
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         outs=μ<$>ctxs; es=scanl' (&) iEnv outs
     pure ((! t)<$>es)
-run r _ _ e bs = pDocLn $ evalState (summar r e bs) 0
+run r _ j e bs = pDocLn $ evalState (summar r e bs) j
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
 
@@ -93,7 +93,8 @@ summar r e bs = do
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) iEnv updates
-    pure (e0@!(fromMaybe (throw EmptyFold)<$>finEnv))
+    u <- nI
+    pure (e0@!(u,fromMaybe (throw EmptyFold)<$>finEnv))
 
 collect :: E T -> MM (Env, LineCtx -> Env -> Env, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
@@ -120,13 +121,15 @@ ts = foldl' (\f g l -> f l.g l) (const id)
     let iEnv=IM.singleton tgt (Just$!seed)
     t <- nI
     (env, f) <- ctx xs t
-    let g=wF op t tgt
+    u <- nI
+    let g=wF op u t tgt
     pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
     let iEnv=IM.singleton tgt Nothing
     t <- nI
     (env, f) <- ctx xs t
-    let g=wF op t tgt
+    u <- nI
+    let g=wF op u t tgt
     pure (env<>iEnv, (g.).f)
 
 κ :: E T -> LineCtx -> E T
@@ -153,12 +156,12 @@ ctx (FParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM
 ctx (IParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (ParseCol (_:$TyB TyFloat) i) res        = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
 ctx (ParseCol (_:$TyB TyInteger) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wM f t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wMM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wM f u t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wMM f u t o.sb l)}
 ctx (EApp _ (UB _ CatMaybes) xs) o           = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wP p t o.sb l)}
-ctx (Guarded _ p e) o                        = pure (ni o, wG (p, e) o)
-ctx (Implicit _ e) o                         = pure (ni o, wI e o)
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wP p u t o.sb l)}
+ctx (Guarded _ p e) o                        = do {u <- nI; pure (ni o, wG (p, e) u o)}
+ctx (Implicit _ e) o                         = do {u <- nI; pure (ni o, wI e u o)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -206,10 +209,10 @@ binRel Lt  = Just (<); binRel Gt  = Just (>); binRel Eq  = Just (==)
 binRel Neq = Just (/=); binRel Geq = Just (>=); binRel Leq = Just (<=)
 binRel _   = Nothing
 
-(@!) :: E T -> Β -> E T
+(@!) :: E T -> (Int, Β) -> E T
 e@Lit{} @! _   = e
 e@RC{} @! _    = e
-(Var _ n) @! b = b!>n
+(Var _ n) @! (_, b) = b!>n
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @! b =
     let x0'=asI (x0@!b); x1'=asI (x1@!b)
     in mkI (max x0' x1')
@@ -325,58 +328,58 @@ wCM src tgt env =
         Just y  -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
         Nothing -> IM.insert tgt Nothing env
 
-wMM :: E T -> Tmp -> Tmp -> Env -> Env
-wMM (Lam _ n e) src tgt env =
+wMM :: E T -> Int -> Tmp -> Tmp -> Env -> Env
+wMM (Lam _ n e) j src tgt env =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; y=e@!be
+            let be=ms n x; y=e@!(j,be)
             in case asM y of
                 Just yϵ -> IM.insert tgt (Just$!yϵ) env
                 Nothing -> IM.insert tgt Nothing env
         Nothing -> IM.insert tgt Nothing env
-wMM e _ _ _ = throw$InternalArityOrEta 1 e
+wMM e _ _ _ _ = throw$InternalArityOrEta 1 e
 
-wM :: E T -> Tmp -> Tmp -> Env -> Env
-wM (Lam _ n e) src tgt env =
+wM :: E T -> Int -> Tmp -> Tmp -> Env -> Env
+wM (Lam _ n e) j src tgt env =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; y=e@!be
+            let be=ms n x; y=e@!(j,be)
             in IM.insert tgt (Just$!y) env
         Nothing -> IM.insert tgt Nothing env
-wM e _ _ _ = throw$InternalArityOrEta 1 e
+wM e _ _ _ _ = throw$InternalArityOrEta 1 e
 
-wI :: E T -> Tmp -> LineCtx -> Env -> Env
-wI e tgt line env =
-    let e'=e `κ` line in IM.insert tgt (Just$!(e'@!mempty)) env
+wI :: E T -> Int -> Tmp -> LineCtx -> Env -> Env
+wI e j tgt line env =
+    let e'=e `κ` line in IM.insert tgt (Just$!(e'@!(j,mempty))) env
 
-wG :: (E T, E T) -> Tmp -> LineCtx -> Env -> Env
-wG (p, e) tgt line env =
-    let p'=p `κ` line; p''=p'@!mempty
+wG :: (E T, E T) -> Int -> Tmp -> LineCtx -> Env -> Env
+wG (p, e) j tgt line env =
+    let p'=p `κ` line; p''=p'@!(j,mempty)
     in if asB p''
-        then let e'=e `κ` line; e''=e'@!mempty in IM.insert tgt (Just$!e'') env
+        then let e'=e `κ` line; e''=e'@!(j,mempty) in IM.insert tgt (Just$!e'') env
         else IM.insert tgt Nothing env
 
-wP :: E T -> Tmp -> Tmp -> Env -> Env
-wP (Lam _ n e) src tgt env =
+wP :: E T -> Int -> Tmp -> Tmp -> Env -> Env
+wP (Lam _ n e) j src tgt env =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; p=e@!be
+            let be=ms n x; p=e@!(j,be)
             in IM.insert tgt (if asB p then Just$!x else Nothing) env
         Nothing -> IM.insert tgt Nothing env
-wP e _ _ _ = throw $ InternalArityOrEta 1 e
+wP e _ _ _ _ = throw $ InternalArityOrEta 1 e
 
-wF :: E T -> Tmp -> Tmp -> Env -> Env
-wF (Lam _ nacc (Lam _ nn e)) src tgt env =
+wF :: E T -> Int -> Tmp -> Tmp -> Env -> Env
+wF (Lam _ nacc (Lam _ nn e)) j src tgt env =
     let accϵ = env ! tgt; xϵ = env ! src
     in case (accϵ, xϵ) of
         (Just acc, Just x) ->
             let be=me [(nacc, acc), (nn, x)]
-                res=e@!be
+                res=e@!(j,be)
             in IM.insert tgt (Just$!res) env
         (Just acc, Nothing) -> IM.insert tgt (Just$!acc) env
         (Nothing, Nothing) -> IM.insert tgt Nothing env
         (Nothing, Just x) -> IM.insert tgt (Just$!x) env
-wF e _ _ _ = throw $ InternalArityOrEta 2 e
+wF e _ _ _ _ = throw $ InternalArityOrEta 2 e
