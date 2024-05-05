@@ -7,7 +7,7 @@ module A.I ( RM, UM, ISt (..)
            ) where
 
 import           A
-import           Control.Monad.State.Strict (State, gets, modify, runState, state)
+import           Control.Monad.State.Strict (State, gets, modify, runState, state,evalState)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
@@ -28,7 +28,7 @@ type RM a = State (ISt a); type UM = State Int
 bind :: Nm a -> E a -> ISt a -> ISt a
 bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
 
-runI i = second (max_.renames) . flip runState (ISt (Renames i mempty) mempty)
+runI i = second (max_.renames) . flip runState (ISt (Rs i mempty) mempty)
 
 ib :: Int -> Program T -> (E T, Int)
 ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> iE e
@@ -46,6 +46,9 @@ iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
+
+βa :: (Int, IM.IntMap (E a)) -> E a -> E a
+βa (i,a) e = evalState (bM e) (ISt (Rs i IM.empty) a)
 
 bM :: E a -> RM a (E a)
 bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do

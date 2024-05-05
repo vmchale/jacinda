@@ -18,7 +18,7 @@ import           Lens.Micro.Mtl             (use, (%=), (.=))
 import           Nm
 import           U
 
-data Renames = Renames { max_ :: Int, bound :: IM.IntMap Int }
+data Renames = Rs { max_ :: Int, bound :: IM.IntMap Int }
 
 class HasRenames a where
     rename :: Lens' a Renames
@@ -38,7 +38,7 @@ rP :: Int -> Program a -> (Program a, Int)
 rP i = runRM i . renameProgram
 
 runRM :: Int -> RenameM x -> (x, Int)
-runRM i act = second max_ (runState act (Renames i IM.empty))
+runRM i act = second max_ (runState act (Rs i IM.empty))
 
 replaceUnique :: (MonadState s m, HasRenames s) => U -> m U
 replaceUnique u@(U i) = do
@@ -80,7 +80,7 @@ withRenames modSt act = do
     pure res
 
 setMax :: Int -> Renames -> Renames
-setMax i (Renames _ b) = Renames i b
+setMax i (Rs _ b) = Rs i b
 
 -- | Desguar top-level functions as lambdas
 mkLam :: [Nm a] -> E a -> E a
