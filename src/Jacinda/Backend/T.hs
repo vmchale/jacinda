@@ -3,6 +3,7 @@
 module Jacinda.Backend.T ( run ) where
 
 import           A
+import           A.I
 import           Control.Exception                 (Exception, throw)
 import           Control.Monad.State.Strict        (State, evalState, state)
 import qualified Data.ByteString                   as BS
@@ -204,6 +205,12 @@ the bs = case BS.uncons bs of
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
+a2e :: (Int, Β) -> E T -> E T -> E T -> RM T (E T)
+a2e b op e0 e1 = (@!b)<$>a2 op e0 e1
+
+a2 :: E T -> E T -> E T -> RM T (E T)
+a2 op x0 x1 | TyArr _ t@(TyArr _ t') <- eLoc op = bM (EApp t' (EApp t op x0) x1)
+
 num :: Num a => BBin -> Maybe (a -> a -> a)
 num Plus = Just (+); num Minus = Just (-); num Times = Just (*); num _ = Nothing
 
@@ -317,6 +324,15 @@ e@RC{} @! _    = e
 (EApp _ (EApp _ (EApp _ (TB _ Subs) r) s0) s1) @! b =
     let r'=r@!b; s0'=s0@!b; s1'=s1@!b
     in mkStr (subs (asR r') (asS s1') (asS s0'))
+(EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) @! b@(k,_) | TyB TyVec:$_ <- eLoc xs =
+    let seed'=seed@!b; xs'=xs@!b
+    in βa k $ V.foldM (a2e b op) seed' (asV xs')
+(EApp _ (EApp _ (BB _ Fold1) op) xs) @! b@(k,_) | TyB TyVec:$_ <- eLoc xs =
+    let xs'=xs@!b; xsV=asV xs'
+        (seed, xs'') = case V.uncons xsV of
+            Just v  -> v
+            Nothing -> throw EmptyFold
+    in βa k $ V.foldM (a2e b op) seed xs''
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]

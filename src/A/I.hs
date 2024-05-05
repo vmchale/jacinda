@@ -4,6 +4,7 @@ module A.I ( RM, UM, ISt (..)
            , ib
            , β, lβ
            , runI
+           , βa, bM
            ) where
 
 import           A
@@ -47,8 +48,8 @@ iD FunDecl{} = desugar
 
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
-βa :: (Int, IM.IntMap (E a)) -> E a -> E a
-βa (i,a) = flip evalState (ISt (Rs i IM.empty) a).bM
+βa :: Int -> RM a x -> x
+βa i = flip evalState (ISt (Rs i IM.empty) IM.empty) -- FIXME: drop env?
 
 bM :: E a -> RM a (E a)
 bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do
