@@ -48,7 +48,7 @@ iD FunDecl{} = desugar
 desugar = error "Internal error. Should have been de-sugared in an earlier stage!"
 
 βa :: (Int, IM.IntMap (E a)) -> E a -> E a
-βa (i,a) e = evalState (bM e) (ISt (Rs i IM.empty) a)
+βa (i,a) = flip evalState (ISt (Rs i IM.empty) a).bM
 
 bM :: E a -> RM a (E a)
 bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do
