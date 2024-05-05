@@ -7,7 +7,7 @@ module A.I ( RM, UM, ISt (..)
            ) where
 
 import           A
-import           Control.Monad.State.Strict (State, gets, modify, runState, state,evalState)
+import           Control.Monad.State.Strict (State, evalState, gets, modify, runState, state)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
 import qualified Data.IntMap                as IM
