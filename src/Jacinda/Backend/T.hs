@@ -150,12 +150,14 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ FieldList{} ~(_, bs, _) = vS bs
 κ (EApp ty e0 e1) line    = EApp ty (e0 `κ` line) (e1 `κ` line)
 κ (NB _ Ix) ~(_, _, fp)   = mkI fp
+κ (NB _ Nf) ~(_, bs, _)   = mkI$fromIntegral (length bs)
 κ e@BB{} _                = e
 κ e@UB{} _                = e
 κ e@TB{} _                = e
 κ e@NB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
+κ e@Var{} _               = e
 
 ni t=IM.singleton t Nothing
 na=IM.alter (\k -> case k of {Nothing -> Just Nothing; Just x -> Just x})
