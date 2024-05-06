@@ -304,6 +304,7 @@ instance PS (E a) where
     ps _ (BB _ op)         = parens (pretty op)
     ps _ (Lit _ l)         = pretty l
     ps _ (Var _ n)         = pretty n
+    ps _ (F n)             = pretty n
     ps _ (RegexLit _ rr)   = "/" <> pretty (decodeUtf8 rr) <> "/"
     ps _ (UB _ u)          = pretty u
     ps _ (ResVar _ x)      = pretty x

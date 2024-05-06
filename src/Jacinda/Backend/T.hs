@@ -106,11 +106,11 @@ collect :: E T -> MM (Env, LineCtx -> ΒEnv -> ΒEnv, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
     v <- nN ty
     (iEnv, g) <- φ e (unU$unique v)
-    pure (iEnv, g, Var ty v)
+    pure (iEnv, g, F v)
 collect e@(EApp ty (EApp _ (BB _ Fold1) _) _) = do
     v <- nN ty
     (iEnv, g) <- φ e (unU$unique v)
-    pure (iEnv, g, Var ty v)
+    pure (iEnv, g, F v)
 collect (Tup ty es) = do
     (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
     pure (fold seedEnvs, ts updates, Tup ty es')
@@ -224,7 +224,7 @@ asTup Nothing                = OptionVal undefined Nothing
 asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . fromIntegral <$> [s, e])))
 
 (!>) :: Β -> Nm T -> E T
-(!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
+(!>) m n = IM.findWithDefault (throw$InternalNm n) (unU$unique n) m
 
 a2e :: Β -> E T -> E T -> E T -> UM (E T)
 a2e b op e0 e1 = (@>b) =<< a2 op e0 e1
@@ -255,6 +255,7 @@ e $@ j = e@!(j,mempty)
 (@>) :: E T -> Β -> UM (E T)
 e@Lit{} @> _   = pure e
 e@RC{} @> _    = pure e
+(F n) @> b     = pure $ b!>n
 (Var _ n) @> b = pure $ b!>n
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b = do
     x0' <- asI<$>(x0@>b); x1' <- asI<$>(x1@>b)
