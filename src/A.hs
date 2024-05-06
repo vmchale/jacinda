@@ -188,6 +188,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: !(Nm a) }
+         | F { hole :: !(Nm a) }
          | Lit { eLoc :: a, lit :: !L }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
@@ -204,6 +205,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
+         -- TODO: "Report" aka $> print stream + display summary expression
          deriving (Functor, Generic)
 
 instance Recursive (E a) where
@@ -217,6 +219,7 @@ data EF a x = ColumnF a Int
             | GuardedF a x x | ImplicitF a x
             | LetF a (Nm a, x) x
             | VarF a (Nm a)
+            | FF (Nm a)
             | LitF a !L
             | RegexLitF a BS.ByteString
             | LamF a (Nm a) x
