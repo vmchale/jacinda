@@ -64,6 +64,8 @@ parseAsF = mkF.readFloat
 (!) :: Env -> Tmp -> Maybe (E T)
 (!) m r = IM.findWithDefault (throw$InternalTmp r) r m
 
+foldSeq x = foldr seq () x `seq` x
+
 type MM = State Int
 
 nI :: MM Int
@@ -301,7 +303,7 @@ e@RC{} @! _    = e
 (EApp _ (EApp _ (BB _ NotMatches) s) r) @! b =
     let se=s@!b; re=r@!b
     in mkB (not$isMatch' (asR re) (asS se))
-(Tup ty es) @! b = Tup ty ((@!b)<$>es)
+(Tup ty es) @! b = Tup ty (foldSeq ((@!b)<$>es))
 (EApp _ (UB _ Tally) e) @! b =
     let e'=e@!b
         r=fromIntegral (BS.length$asS e')
