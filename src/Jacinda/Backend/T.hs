@@ -253,10 +253,10 @@ e $@ j = e@!(j,mempty)
 (@!) e (j,ϵ) = runState (e@>ϵ) j
 
 (@>) :: E T -> Β -> UM (E T)
-e@Lit{} @> _   = pure e
-e@RC{} @> _    = pure e
-(F n) @> b     = pure $ b!>n
-(Var _ n) @> b = pure $ b!>n
+e@Lit{} @> _     = pure e
+e@RC{} @> _      = pure e
+(F n) @> b       = pure $ b!>n
+e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothing -> e}
 (EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b = do
     x0' <- asI<$>(x0@>b); x1' <- asI<$>(x1@>b)
     pure $ mkI (max x0' x1')
@@ -392,6 +392,9 @@ e@RC{} @> _    = pure e
         Nothing -> pure x'
         Just yϵ -> (@>b) =<< lβ (EApp t g yϵ)
 (Arr t es) @> b = Arr t <$> traverse (@>b) es
+e@BB{} @> _ = pure e
+e@TB{} @> _ = pure e
+e@UB{} @> _ = pure e
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
