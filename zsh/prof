@@ -1,0 +1,6 @@
+#!/usr/bin/env zsh
+
+set -e pipefail
+
+fd '\.a$' /usr -x nm --defined-only | cabal run ja -- run examples/nmCtx.jac +RTS -hT
+hp2pretty ja.hp
