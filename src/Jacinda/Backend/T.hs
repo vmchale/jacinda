@@ -125,15 +125,15 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
-    let iEnv=IM.singleton tgt (Just$!seed)
     t <- nI
+    let iEnv=IM.singleton tgt (Just$!seed$@t)
     (env, f) <- ctx xs t
     u <- nI
     let g=wF op u t tgt
     pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) tgt = do
-    let iEnv=IM.singleton tgt (Just$!seed)
     t <- nI
+    let iEnv=IM.singleton tgt (Just$!seed$@t)
     (env, f) <- ctx xs t
     u <- nI
     let g=wF op u t tgt
@@ -180,7 +180,7 @@ ctx (EApp _ (UB _ CatMaybes) xs) o                      = do {t <- nI; (env, sb)
 ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wP p u t o.sb l)}
 ctx (Guarded _ p e) o                                   = do {u <- nI; pure (ni o, wG (p, e) u o)}
 ctx (Implicit _ e) o                                    = do {u <- nI; pure (ni o, wI e u o)}
-ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (IM.insert o (Just$!seed) env, \l->wF op u t o.sb l)}
+ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (IM.insert o (Just$!seed$@u) env, \l->wF op u t o.sb l)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -243,6 +243,9 @@ binRel :: Ord a => BBin -> Maybe (a -> a -> Bool)
 binRel Lt = Just (<); binRel Gt = Just (>); binRel Eq = Just (==)
 binRel Neq = Just (/=); binRel Geq = Just (>=); binRel Leq = Just (<=)
 binRel _   = Nothing
+
+($@) :: E T -> Int -> E T
+e $@ k = e@!(k,mempty)
 
 {-# SCC (@!) #-}
 (@!) :: E T -> (Int, Β) -> E T
@@ -421,13 +424,13 @@ wM e _ _ _ _ = throw$InternalArityOrEta 1 e
 
 wI :: E T -> Int -> Tmp -> LineCtx -> Env -> Env
 wI e j tgt line env =
-    let e'=e `κ` line in IM.insert tgt (Just$!(e'@!(j,mempty))) env
+    let e'=e `κ` line in IM.insert tgt (Just$!(e'$@j)) env
 
 wG :: (E T, E T) -> Int -> Tmp -> LineCtx -> Env -> Env
 wG (p, e) j tgt line env =
-    let p'=p `κ` line; p''=p'@!(j,mempty)
+    let p'=p `κ` line; p''=p'$@j
     in if asB p''
-        then let e'=e `κ` line; e''=e'@!(j,mempty) in IM.insert tgt (Just$!e'') env
+        then let e'=e `κ` line; e''=e'$@j in IM.insert tgt (Just$!e'') env
         else IM.insert tgt Nothing env
 
 wP :: E T -> Int -> Tmp -> Tmp -> Env -> Env
