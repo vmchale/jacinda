@@ -11,7 +11,7 @@ import qualified Paths_jacinda       as P
 import           System.IO           (stdin)
 
 data Command = TypeCheck !FilePath ![FilePath]
-             | Run !FilePath !(Maybe FilePath) ![FilePath]
+             | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath]
              | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
 
@@ -66,7 +66,7 @@ commandP = hsubparser
     <|> exprP
     where
         tcP = TypeCheck <$> jacFile <*> includes
-        runP = Run <$> jacFile <*> inpFile <*> includes
+        runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes
         exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
@@ -105,8 +105,8 @@ ap _ _ fs rs              = (fs,rs)
 
 run :: Command -> IO ()
 run (TypeCheck fp is)                = tcIO is =<< TIO.readFile fp
-run (Run fp Nothing is)              = do { contents <- TIO.readFile fp ; runOnHandle is contents Nothing Nothing stdin }
-run (Run fp (Just dat) is)           = do { contents <- TIO.readFile fp ; runOnFile is contents Nothing Nothing dat }
+run (Run fp fs rs Nothing is)        = do { contents <- TIO.readFile fp ; runOnHandle is contents fs rs stdin }
+run (Run fp fs rs (Just dat) is)     = do { contents <- TIO.readFile fp ; runOnFile is contents fs rs dat }
 run (Expr eb Nothing fs a u rs is)   = let (fs',rs') = ap a u fs rs in runOnHandle is eb fs' rs' stdin
 run (Expr eb (Just fp) fs a u rs is) = let (fs',rs') = ap a u fs rs in runOnFile is eb fs' rs' fp
 run (Eval e)                         = print (exprEval e)
