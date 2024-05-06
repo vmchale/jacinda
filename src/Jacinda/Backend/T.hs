@@ -345,6 +345,17 @@ e@RC{} @! _    = e
 (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @! b@(k,_) =
     let xs'=xs@!b
     in Arr yT (βa k $ traverse (a1e b f) (asV xs'))
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @! b@(k,_) =
+    let x'=x@!b
+    in Arr yT (βa k $ V.mapMaybeM (fmap asM.a1e b g) (asV x'))
+(EApp yT@(TyB TyVec:$_) (UB _ CatMaybes) x) @! b =
+    let x'=x@!b
+    in Arr yT (V.catMaybes (asM<$>asV x'))
+(EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) @! b@(k,_) =
+    let x'=x@!b; y'=y@!b
+    in case asM y' of
+        Nothing -> x'
+        Just yϵ -> (@!b) $ βa k (bM (EApp t g yϵ))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
