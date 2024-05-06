@@ -23,7 +23,7 @@ import           Jacinda.Regex
 import           Nm
 import           Prettyprinter                     (hardline, pretty)
 import           Prettyprinter.Render.Text         (putDoc)
-import           Regex.Rure                        (RurePtr)
+import           Regex.Rure                        (RureMatch (RureMatch), RurePtr)
 import           System.IO                         (hFlush, stdout)
 import           Ty.Const
 import           U
@@ -210,6 +210,10 @@ the bs = case BS.uncons bs of
     Just (c,b) | BS.null b -> c
     Just _                 -> error "Splitc takes only one char!"
 
+asTup :: Maybe RureMatch -> E T
+asTup Nothing                = OptionVal undefined Nothing
+asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . fromIntegral <$> [s, e])))
+
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
@@ -283,6 +287,9 @@ e@RC{} @! _    = e
     let x0e=x0@!b; x1e=x1@!b
     in mkB (asB x0e||asB x1e)
 (EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
+(EApp _ (EApp _ (BB _ Match) s) r) @! b =
+    let s'=s@!b; r'=r@!b
+    in asTup (find' (asR r') (asS s'))
 (EApp _ (EApp _ (BB _ Matches) s) r) @! b =
     let se=s@!b; re=r@!b
     in mkB (isMatch' (asR re) (asS se))
