@@ -128,6 +128,13 @@ ts = foldl' (\f g l -> f l.g l) (const id)
     u <- nI
     let g=wF op u t tgt
     pure (env<>iEnv, (g.).f)
+φ (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) tgt = do
+    let iEnv=IM.singleton tgt (Just$!seed)
+    t <- nI
+    (env, f) <- ctx xs t
+    u <- nI
+    let g=wF op u t tgt
+    pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
     let iEnv=IM.singleton tgt Nothing
     t <- nI
@@ -153,19 +160,20 @@ ni t=IM.singleton t Nothing
 na=IM.alter (\k -> case k of {Nothing -> Just Nothing; Just x -> Just x})
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
-ctx AllColumn{} res                          = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
-ctx FParseAllCol{} res                       = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
-ctx IParseAllCol{} res                       = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
-ctx (FParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (IParseCol _ i) res                      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyFloat) i) res        = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyInteger) i) res      = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o      = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wM f u t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wMM f u t o.sb l)}
-ctx (EApp _ (UB _ CatMaybes) xs) o           = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o   = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wP p u t o.sb l)}
-ctx (Guarded _ p e) o                        = do {u <- nI; pure (ni o, wG (p, e) u o)}
-ctx (Implicit _ e) o                         = do {u <- nI; pure (ni o, wI e u o)}
+ctx AllColumn{} res                                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
+ctx FParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
+ctx IParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
+ctx (FParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (IParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyFloat) i) res                   = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyInteger) i) res                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o                 = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wM f u t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o            = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wMM f u t o.sb l)}
+ctx (EApp _ (UB _ CatMaybes) xs) o                      = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wP p u t o.sb l)}
+ctx (Guarded _ p e) o                                   = do {u <- nI; pure (ni o, wG (p, e) u o)}
+ctx (Implicit _ e) o                                    = do {u <- nI; pure (ni o, wI e u o)}
+ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (IM.insert o (Just$!seed) env, \l->wF op u t o.sb l)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
