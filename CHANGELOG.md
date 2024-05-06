@@ -1,3 +1,6 @@
+# 3.0.0.0
+
+  * Rewrite backend to always stream/not blow up memory
   * Better error messages when a field is out of bounds
   * Better error message on empty `|>` (`fold1`)
   * Fix parsing bug in curried binary operators
