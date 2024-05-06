@@ -4,9 +4,9 @@ module Jacinda.Backend.T ( run ) where
 
 import           A
 import           A.I
-import Data.Bifunctor (second)
 import           Control.Exception                 (Exception, throw)
-import           Control.Monad.State.Strict        (State, evalState, state, runState)
+import           Control.Monad.State.Strict        (State, evalState, runState, state)
+import           Data.Bifunctor                    (second)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
