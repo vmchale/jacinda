@@ -208,6 +208,12 @@ the bs = case BS.uncons bs of
 a2e :: (Int, Β) -> E T -> E T -> E T -> RM T (E T)
 a2e b op e0 e1 = (@!b)<$>a2 op e0 e1
 
+a1e :: (Int, Β) -> E T -> E T -> RM T (E T)
+a1e b f x = (@!b)<$>a1 f x
+
+a1 :: E T -> E T -> RM T (E T)
+a1 f x | TyArr _ cod <- eLoc f = bM (EApp cod f x)
+
 a2 :: E T -> E T -> E T -> RM T (E T)
 a2 op x0 x1 | TyArr _ t@(TyArr _ t') <- eLoc op = bM (EApp t' (EApp t op x0) x1)
 
@@ -333,6 +339,12 @@ e@RC{} @! _    = e
             Just v  -> v
             Nothing -> throw EmptyFold
     in βa k $ V.foldM (a2e b op) seed xs''
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Filter) p) xs) @! b@(k,_) =
+    let xs'=xs@!b
+    in Arr yT (βa k $ V.filterM (fmap asB.a1e b p) (asV xs'))
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @! b@(k,_) =
+    let xs'=xs@!b
+    in Arr yT (βa k $ traverse (a1e b f) (asV xs'))
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
