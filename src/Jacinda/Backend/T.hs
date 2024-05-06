@@ -82,9 +82,10 @@ run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
 run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
     (iEnv, μ) <- ctx e t
+    u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        outs=μ<$>ctxs; es=scanl' (&) iEnv outs
-    pure ((! t)<$>es)
+        outs=μ<$>ctxs; es=scanl' (&) (u, iEnv) outs
+    pure ((! t).snd<$>es)
 run r _ j e bs = pDocLn $ evalState (summar r e bs) j
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
@@ -100,7 +101,7 @@ summar r e bs = do
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) (u,iEnv) updates
-    e0@!(fromMaybe (throw EmptyFold)<$>snd finEnv)
+    e0@>(fromMaybe (throw EmptyFold)<$>snd finEnv)
 
 collect :: E T -> MM (Env, LineCtx -> ΒEnv -> ΒEnv, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
@@ -259,73 +260,74 @@ e $@ j = e@!(j,mempty)
 e@Lit{} @> _   = pure e
 e@RC{} @> _    = pure e
 (Var _ n) @> b = pure $ b!>n
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b =
-    let x0'=asI (x0@>b); x1'=asI (x1@>b)
-    in mkI (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @> b =
-    let x0'=asI (x0@>b); x1'=asI (x1@>b)
-    in mkI (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @> b =
-    let x0'=asF (x0@>b); x1'=asF (x1@>b)
-    in mkF (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @> b =
-    let x0'=asF (x0@>b); x1'=asF (x1@>b)
-    in mkF (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @> b =
-    let x0'=asS (x0@>b); x1'=asS (x1@>b)
-    in mkStr (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @> b =
-    let x0'=asS (x0@>b); x1'=asS (x1@>b)
-    in mkStr (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just op' <- num op =
-    let x0e=asI (x0@>b); x1e=asI (x1@>b)
-    in mkI (op' x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just op' <- num op =
-    let x0e=asF (x0@>b); x1e=asF (x1@>b)
-    in mkF (op' x0e x1e)
-(EApp _ (EApp _ (BB _ Div) x0) x1) @> b =
-    let x0e=x0@>b; x1e=x1@>b
-    in mkF (asF x0e/asF x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just rel <- binRel op =
-    let x0e=asI (x0@>b); x1e=asI (x1@>b)
-    in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just rel <- binRel op =
-    let x0e=asF (x0@>b); x1e=asF (x1@>b)
-    in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @> b | Just rel <- binRel op =
-    let x0e=asS (x0@>b); x1e=asS (x1@>b)
-    in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @> b =
-    let x0e=x0@>b; x1e=x1@>b
-    in mkStr (asS x0e<>asS x1e)
-(EApp _ (EApp _ (BB _ And) x0) x1) @> b =
-    let x0e=x0@>b; x1e=x1@>b
-    in mkB (asB x0e&&asB x1e)
-(EApp _ (EApp _ (BB _ Or) x0) x1) @> b =
-    let x0e=x0@>b; x1e=x1@>b
-    in mkB (asB x0e||asB x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b = do
+    x0' <- asI<$>(x0@>b); x1' <- asI<$>(x1@>b)
+    pure $ mkI (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @> b = do
+    x0' <- asI <$> (x0@>b); x1' <- asI <$> (x1@>b)
+    pure $ mkI (min x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @> b = do
+    x0' <- asF<$>(x0@>b); x1' <- asF<$>(x1@>b)
+    pure $ mkF (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @> b = do
+    x0' <- asF<$>(x0@>b); x1' <- asF<$>(x1@>b)
+    pure $ mkF (min x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @> b = do
+    x0' <- asS<$>(x0@>b); x1' <- asS<$>(x1@>b)
+    pure $ mkStr (max x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @> b = do
+    x0' <- asS<$>(x0@>b); x1'<-asS<$>(x1@>b)
+    pure $ mkStr (min x0' x1')
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just op' <- num op = do
+    x0e <- asI<$>(x0@>b); x1e <- asI<$>(x1@>b)
+    pure $ mkI (op' x0e x1e)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just op' <- num op = do
+    x0e <- asF<$>(x0@>b); x1e <- asF<$>(x1@>b)
+    pure $ mkF (op' x0e x1e)
+(EApp _ (EApp _ (BB _ Div) x0) x1) @> b = do
+    x0e <- x0@>b; x1e <- x1@>b
+    pure (mkF (asF x0e/asF x1e))
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just rel <- binRel op = do
+    x0e<-asI<$>(x0@>b); x1e<-asI<$>(x1@>b)
+    pure (mkB (rel x0e x1e))
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just rel <- binRel op = do
+    x0e <- asF<$>(x0@>b); x1e <- asF<$>(x1@>b)
+    pure (mkB (rel x0e x1e))
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @> b | Just rel <- binRel op = do
+    x0e <- asS<$>(x0@>b); x1e <- asS<$>(x1@>b)
+    pure (mkB (rel x0e x1e))
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @> b = do
+    x0e <- x0@>b; x1e <- x1@>b
+    pure (mkStr (asS x0e<>asS x1e))
+(EApp _ (EApp _ (BB _ And) x0) x1) @> b = do
+    x0e <- x0@>b; x1e <- x1@>b
+    pure (mkB (asB x0e&&asB x1e))
+(EApp _ (EApp _ (BB _ Or) x0) x1) @> b = do
+    x0e <- x0@>b; x1e <- x1@>b
+    pure (mkB (asB x0e||asB x1e))
 (EApp _ (EApp _ (UB _ Const) x) _) @> b = x@>b
-(EApp _ (EApp _ (BB _ Match) s) r) @> b =
-    let s'=s@>b; r'=r@>b
-    in asTup (find' (asR r') (asS s'))
-(EApp _ (EApp _ (BB _ Matches) s) r) @> b =
-    let se=s@>b; re=r@>b
-    in mkB (isMatch' (asR re) (asS se))
-(EApp _ (EApp _ (BB _ NotMatches) s) r) @> b =
-    let se=s@>b; re=r@>b
-    in mkB (not$isMatch' (asR re) (asS se))
-(Tup ty es) @> b = Tup ty (foldSeq ((@>b)<$>es))
-(EApp _ (UB _ Tally) e) @> b =
-    let e'=e@>b
-        r=fromIntegral (BS.length$asS e')
-    in mkI r
-(EApp _ (UB _ TallyList) e) @> b =
-    let e'=e@>b
-        r=fromIntegral (V.length$asV e')
-    in mkI r
-(EApp _ (EApp _ (BB _ Sprintf) fs) s) @> b =
-    let fs'=fs@>b; s'=s@>b
-    in mkStr (sprintf (asS fs') s')
+(EApp _ (EApp _ (BB _ Match) s) r) @> b = do
+    s' <- s@>b; r' <- r@>b
+    pure (asTup (find' (asR r') (asS s')))
+(EApp _ (EApp _ (BB _ Matches) s) r) @> b = do
+    se <- s@>b; re <- r@>b
+    pure (mkB (isMatch' (asR re) (asS se)))
+(EApp _ (EApp _ (BB _ NotMatches) s) r) @> b = do
+    se <- s@>b; re <- r@>b
+    pure (mkB (not$isMatch' (asR re) (asS se)))
+(Tup ty es) @> b = Tup ty <$> (foldSeq <$> traverse (@>b) es)
+(EApp _ (UB _ Tally) e) @> b = do
+    e' <- e@>b
+    let r=fromIntegral (BS.length$asS e')
+    pure (mkI r)
+(EApp _ (UB _ TallyList) e) @> b = do
+    e' <- e@>b
+    let r=fromIntegral (V.length$asV e')
+    pure (mkI r)
+(EApp _ (EApp _ (BB _ Sprintf) fs) s) @> b = do
+    fs' <- fs@>b; s' <- s@>b
+    pure (mkStr (sprintf (asS fs') s'))
+{-
 (Cond _ p e e') @> b = let p'=p@>b in if asB p' then e@>b else e'@>b
 (EApp ty (EApp _ (EApp _ (TB _ Captures) s) i) r) @> b =
     let s'=s@>b; i'=i@>b; r'=r@>b
@@ -381,18 +383,19 @@ e@RC{} @> _    = pure e
 (EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) f) x) @> b@(k,_) =
     let x'=x@>b
     in OptionVal yT (βa k $ traverse (a1e b f) (asM x'))
-(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @> b@(k,_) =
-    let x'=x@>b
-    in Arr yT (βa k $ V.mapMaybeM (fmap asM.a1e b g) (asV x'))
-(EApp yT@(TyB TyVec:$_) (UB _ CatMaybes) x) @> b =
-    let x'=x@>b
-    in Arr yT (V.catMaybes (asM<$>asV x'))
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @> b = do
+    x' <- x@>b
+    Arr yT <$> V.mapMaybeM (fmap asM.a1e b g) (asV x')
+(EApp yT@(TyB TyVec:$_) (UB _ CatMaybes) x) @> b = do
+    x' <- x@>b
+    pure $ Arr yT (V.catMaybes (asM<$>asV x'))
 (EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) @> b@(k,_) =
     let x'=x@>b; y'=y@>b
     in case asM y' of
         Nothing -> x'
         Just yϵ -> (@>b) $ βa k (bM (EApp t g yϵ))
 (Arr t es) @> b = Arr t ((@>b)<$>es)
+-}
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
