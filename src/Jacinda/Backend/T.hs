@@ -4,14 +4,16 @@ module Jacinda.Backend.T ( run ) where
 
 import           A
 import           A.I
+import Data.Bifunctor (second)
 import           Control.Exception                 (Exception, throw)
-import           Control.Monad.State.Strict        (State, evalState, state)
+import           Control.Monad.State.Strict        (State, evalState, state, runState)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
 import           Data.Foldable                     (fold, traverse_)
 import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
+import R 
 import           Data.List                         (foldl', scanl')
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Vector                       as V
@@ -45,7 +47,8 @@ data StreamError = NakedField deriving (Show)
 instance Exception StreamError where
 
 -- TODO: dedup... tracking env!
-type Env = IM.IntMap (Maybe (E T))
+type Env = IM.IntMap (Maybe (E T)); type I=Int
+type ΒEnv = (I, Env)
 type Tmp = Int
 type Β = IM.IntMap (E T)
 
@@ -93,13 +96,13 @@ pDocLn e                = putDoc (pretty e <> hardline)
 summar :: RurePtr -> E T -> [BS.ByteString] -> MM (E T)
 summar r e bs = do
     (iEnv, g, e0) <- collect e
+    u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
-        finEnv=foldl' (&) iEnv updates
-    u <- nI
-    pure (e0@!(u,fromMaybe (throw EmptyFold)<$>finEnv))
+        finEnv=foldl' (&) (u,iEnv) updates
+    e0@!(fromMaybe (throw EmptyFold)<$>snd finEnv)
 
-collect :: E T -> MM (Env, LineCtx -> Env -> Env, E T)
+collect :: E T -> MM (Env, LineCtx -> ΒEnv -> ΒEnv, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
     v <- nN ty
     (iEnv, g) <- φ e (unU$unique v)
@@ -120,30 +123,29 @@ collect (EApp ty f@UB{} e) = do
     pure (env, fϵ, EApp ty f eϵ)
 collect e@Lit{} = pure (IM.empty, const id, e)
 
-ts :: [LineCtx -> Env -> Env] -> LineCtx -> Env -> Env
+ts :: [LineCtx -> ΒEnv -> ΒEnv] -> LineCtx -> ΒEnv -> ΒEnv
 ts = foldl' (\f g l -> f l.g l) (const id)
 
-φ :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
+φ :: E T -> Tmp -> MM (Env, LineCtx -> ΒEnv -> ΒEnv)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
     t <- nI
-    let iEnv=IM.singleton tgt (Just$!seed$@t)
+    seed' <- seed @> mempty
+    let iEnv=IM.singleton tgt (Just$!seed')
     (env, f) <- ctx xs t
-    u <- nI
-    let g=wF op u t tgt
+    let g=wF op t tgt
     pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) tgt = do
     t <- nI
-    let iEnv=IM.singleton tgt (Just$!seed$@t)
+    seed' <- seed @> mempty
+    let iEnv=IM.singleton tgt (Just$!seed')
     (env, f) <- ctx xs t
-    u <- nI
-    let g=wF op u t tgt
+    let g=wF op t tgt
     pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
     let iEnv=IM.singleton tgt Nothing
     t <- nI
     (env, f) <- ctx xs t
-    u <- nI
-    let g=wF op u t tgt
+    let g=wF op t tgt
     pure (env<>iEnv, (g.).f)
 
 κ :: E T -> LineCtx -> E T
@@ -166,21 +168,21 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 ni t=IM.singleton t Nothing
 na=IM.alter (\k -> case k of {Nothing -> Just Nothing; Just x -> Just x})
 
-ctx :: E T -> Tmp -> MM (Env, LineCtx -> Env -> Env)
-ctx AllColumn{} res                                     = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!mkStr b))
-ctx FParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsF b))
-ctx IParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> IM.insert res (Just$!parseAsEInt b))
-ctx (FParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (IParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyFloat) i) res                   = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyInteger) i) res                 = pure (ni res, \ ~(b, bs, _) -> IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
-ctx (EApp _ (EApp _ (BB _ Map) f) xs) o                 = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wM f u t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o            = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wMM f u t o.sb l)}
+ctx :: E T -> Tmp -> MM (Env, LineCtx -> ΒEnv -> ΒEnv)
+ctx AllColumn{} res                                     = pure (ni res, \ ~(b, _, _) -> second$IM.insert res (Just$!mkStr b))
+ctx FParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> second$IM.insert res (Just$!parseAsF b))
+ctx IParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> second$IM.insert res (Just$!parseAsEInt b))
+ctx (FParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> second$IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (IParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> second$IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyFloat) i) res                   = pure (ni res, \ ~(b, bs, _) -> second$IM.insert res (Just$!parseAsF (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyInteger) i) res                 = pure (ni res, \ ~(b, bs, _) -> second$IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (EApp _ (EApp _ (BB _ Map) f) xs) o                 = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wM f t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o            = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wMM f t o.sb l)}
 ctx (EApp _ (UB _ CatMaybes) xs) o                      = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
-ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (na o env, \l->wP p u t o.sb l)}
-ctx (Guarded _ p e) o                                   = do {u <- nI; pure (ni o, wG (p, e) u o)}
-ctx (Implicit _ e) o                                    = do {u <- nI; pure (ni o, wI e u o)}
-ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; u <- nI; pure (IM.insert o (Just$!seed$@u) env, \l->wF op u t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wP p t o.sb l)}
+ctx (Guarded _ p e) o                                   = pure (ni o, wG (p, e) o)
+ctx (Implicit _ e) o                                    = pure (ni o, wI e o)
+ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; seed' <- seed@>mempty; pure (IM.insert o (Just$!seed') env, \l->wF op t o.sb l)} -- FIXME: seed'
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -224,11 +226,14 @@ asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . f
 (!>) :: Β -> Nm T -> E T
 (!>) m n = IM.findWithDefault (throw $ InternalNm n) (unU$unique n) m
 
-a2e :: (Int, Β) -> E T -> E T -> E T -> RM T (E T)
-a2e b op e0 e1 = (@!b)<$>a2 op e0 e1
+(@^) :: E T -> Β -> RM T (E T)
+e @^ b = state (\(ISt (Rs m r) bb) -> let (e',u) = e@!(m,b) in (e',ISt (Rs u r) bb))
 
-a1e :: (Int, Β) -> E T -> E T -> RM T (E T)
-a1e b f x = (@!b)<$>a1 f x
+a2e :: Β -> E T -> E T -> E T -> RM T (E T)
+a2e b op e0 e1 = (@^b) =<< a2 op e0 e1
+
+a1e :: Β -> E T -> E T -> RM T (E T)
+a1e b f x = (@^b) =<< a1 f x
 
 a1 :: E T -> E T -> RM T (E T)
 a1 f x | TyArr _ cod <- eLoc f = bM (EApp cod f x)
@@ -244,148 +249,150 @@ binRel Lt = Just (<); binRel Gt = Just (>); binRel Eq = Just (==)
 binRel Neq = Just (/=); binRel Geq = Just (>=); binRel Leq = Just (<=)
 binRel _   = Nothing
 
-($@) :: E T -> Int -> E T
-e $@ k = e@!(k,mempty)
+($@) :: E T -> Int -> (E T, Int)
+e $@ j = e@!(j,mempty)
 
-{-# SCC (@!) #-}
-(@!) :: E T -> (Int, Β) -> E T
-e@Lit{} @! _   = e
-e@RC{} @! _    = e
-(Var _ n) @! (_, b) = b!>n
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @! b =
-    let x0'=asI (x0@!b); x1'=asI (x1@!b)
+(@!) :: E T -> (Int, Β) -> (E T, Int)
+(@!) e (j,ϵ) = runState (e@>ϵ) j
+
+(@>) :: E T -> Β -> UM (E T)
+e@Lit{} @> _   = pure e
+e@RC{} @> _    = pure e
+(Var _ n) @> b = pure $ b!>n
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b =
+    let x0'=asI (x0@>b); x1'=asI (x1@>b)
     in mkI (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @! b =
-    let x0'=asI (x0@!b); x1'=asI (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @> b =
+    let x0'=asI (x0@>b); x1'=asI (x1@>b)
     in mkI (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @! b =
-    let x0'=asF (x0@!b); x1'=asF (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @> b =
+    let x0'=asF (x0@>b); x1'=asF (x1@>b)
     in mkF (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @! b =
-    let x0'=asF (x0@!b); x1'=asF (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @> b =
+    let x0'=asF (x0@>b); x1'=asF (x1@>b)
     in mkF (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @! b =
-    let x0'=asS (x0@!b); x1'=asS (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @> b =
+    let x0'=asS (x0@>b); x1'=asS (x1@>b)
     in mkStr (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @! b =
-    let x0'=asS (x0@!b); x1'=asS (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @> b =
+    let x0'=asS (x0@>b); x1'=asS (x1@>b)
     in mkStr (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @! b | Just op' <- num op =
-    let x0e=asI (x0@!b); x1e=asI (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just op' <- num op =
+    let x0e=asI (x0@>b); x1e=asI (x1@>b)
     in mkI (op' x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @! b | Just op' <- num op =
-    let x0e=asF (x0@!b); x1e=asF (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just op' <- num op =
+    let x0e=asF (x0@>b); x1e=asF (x1@>b)
     in mkF (op' x0e x1e)
-(EApp _ (EApp _ (BB _ Div) x0) x1) @! b =
-    let x0e=x0@!b; x1e=x1@!b
+(EApp _ (EApp _ (BB _ Div) x0) x1) @> b =
+    let x0e=x0@>b; x1e=x1@>b
     in mkF (asF x0e/asF x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @! b | Just rel <- binRel op =
-    let x0e=asI (x0@!b); x1e=asI (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just rel <- binRel op =
+    let x0e=asI (x0@>b); x1e=asI (x1@>b)
     in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @! b | Just rel <- binRel op =
-    let x0e=asF (x0@!b); x1e=asF (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just rel <- binRel op =
+    let x0e=asF (x0@>b); x1e=asF (x1@>b)
     in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @! b | Just rel <- binRel op =
-    let x0e=asS (x0@!b); x1e=asS (x1@!b)
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @> b | Just rel <- binRel op =
+    let x0e=asS (x0@>b); x1e=asS (x1@>b)
     in mkB (rel x0e x1e)
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @! b =
-    let x0e=x0@!b; x1e=x1@!b
+(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @> b =
+    let x0e=x0@>b; x1e=x1@>b
     in mkStr (asS x0e<>asS x1e)
-(EApp _ (EApp _ (BB _ And) x0) x1) @! b =
-    let x0e=x0@!b; x1e=x1@!b
+(EApp _ (EApp _ (BB _ And) x0) x1) @> b =
+    let x0e=x0@>b; x1e=x1@>b
     in mkB (asB x0e&&asB x1e)
-(EApp _ (EApp _ (BB _ Or) x0) x1) @! b =
-    let x0e=x0@!b; x1e=x1@!b
+(EApp _ (EApp _ (BB _ Or) x0) x1) @> b =
+    let x0e=x0@>b; x1e=x1@>b
     in mkB (asB x0e||asB x1e)
-(EApp _ (EApp _ (UB _ Const) x) _) @! b = x@!b
-(EApp _ (EApp _ (BB _ Match) s) r) @! b =
-    let s'=s@!b; r'=r@!b
+(EApp _ (EApp _ (UB _ Const) x) _) @> b = x@>b
+(EApp _ (EApp _ (BB _ Match) s) r) @> b =
+    let s'=s@>b; r'=r@>b
     in asTup (find' (asR r') (asS s'))
-(EApp _ (EApp _ (BB _ Matches) s) r) @! b =
-    let se=s@!b; re=r@!b
+(EApp _ (EApp _ (BB _ Matches) s) r) @> b =
+    let se=s@>b; re=r@>b
     in mkB (isMatch' (asR re) (asS se))
-(EApp _ (EApp _ (BB _ NotMatches) s) r) @! b =
-    let se=s@!b; re=r@!b
+(EApp _ (EApp _ (BB _ NotMatches) s) r) @> b =
+    let se=s@>b; re=r@>b
     in mkB (not$isMatch' (asR re) (asS se))
-(Tup ty es) @! b = Tup ty (foldSeq ((@!b)<$>es))
-(EApp _ (UB _ Tally) e) @! b =
-    let e'=e@!b
+(Tup ty es) @> b = Tup ty (foldSeq ((@>b)<$>es))
+(EApp _ (UB _ Tally) e) @> b =
+    let e'=e@>b
         r=fromIntegral (BS.length$asS e')
     in mkI r
-(EApp _ (UB _ TallyList) e) @! b =
-    let e'=e@!b
+(EApp _ (UB _ TallyList) e) @> b =
+    let e'=e@>b
         r=fromIntegral (V.length$asV e')
     in mkI r
-(EApp _ (EApp _ (BB _ Sprintf) fs) s) @! b =
-    let fs'=fs@!b; s'=s@!b
+(EApp _ (EApp _ (BB _ Sprintf) fs) s) @> b =
+    let fs'=fs@>b; s'=s@>b
     in mkStr (sprintf (asS fs') s')
-(Cond _ p e e') @! b = let p'=p@!b in if asB p' then e@!b else e'@!b
-(EApp ty (EApp _ (EApp _ (TB _ Captures) s) i) r) @! b =
-    let s'=s@!b; i'=i@!b; r'=r@!b
+(Cond _ p e e') @> b = let p'=p@>b in if asB p' then e@>b else e'@>b
+(EApp ty (EApp _ (EApp _ (TB _ Captures) s) i) r) @> b =
+    let s'=s@>b; i'=i@>b; r'=r@>b
     in OptionVal ty (mkStr <$> findCapture (asR r') (asS s') (fromIntegral$asI i'))
-(EApp ty (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) @! b =
-    let s'=s@!b; i'=i@!b; r'=r@!b
+(EApp ty (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) @> b =
+    let s'=s@>b; i'=i@>b; r'=r@>b
     in Arr ty (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
-(NB (TyB TyStr) MZ) @! _ = mkStr BS.empty
-(NB ty@(TyB TyVec:$_) MZ) @! _ = Arr ty V.empty
-(EApp _ (UB _ Not) e) @! b = let e'=asB (e@!b) in mkB (not e')
-(EApp _ (EApp _ (BB _ Split) s) r) @! b =
-    let s'=asS (s@!b); r'=asR (r@!b)
+(NB (TyB TyStr) MZ) @> _ = mkStr BS.empty
+(NB ty@(TyB TyVec:$_) MZ) @> _ = Arr ty V.empty
+(EApp _ (UB _ Not) e) @> b = let e'=asB (e@>b) in mkB (not e')
+(EApp _ (EApp _ (BB _ Split) s) r) @> b =
+    let s'=asS (s@>b); r'=asR (r@>b)
     in vS (splitBy r' s')
-(EApp _ (EApp _ (BB _ Splitc) s) c) @! b =
-    let s'=asS (s@!b); c'=the$asS (c@!b)
+(EApp _ (EApp _ (BB _ Splitc) s) c) @> b =
+    let s'=asS (s@>b); c'=the$asS (c@>b)
     in vS (V.fromList (BS.split c' s'))
-(EApp _ (UB _ FParse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
-(EApp _ (UB _ IParse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
-(EApp (TyB TyInteger) (UB _ Parse) x) @! b = let x'=x@!b in parseAsEInt (asS (x'@!b))
-(EApp (TyB TyFloat) (UB _ Parse) x) @! b = let x'=x@!b in parseAsF (asS (x'@!b))
-(EApp _ (UB _ (At i)) v) @! b = let v'=v@!b in asV v' `at` (i-1)
-(EApp _ (UB _ (Select i)) x) @! b = let x'=x@!b in asT x' !! (i-1)
-(EApp _ (UB _ Floor) x) @! b = mkI (floor (asF (x@!b)))
-(EApp _ (UB _ Ceiling) x) @! b = mkI (ceiling (asF (x@!b)))
-(EApp (TyB TyInteger) (UB _ Negate) i) @! b = mkI (negate (asI (i@!b)))
-(EApp (TyB TyFloat) (UB _ Negate) x) @! b = mkF (negate (asF (x@!b)))
-(EApp ty (UB _ Some) e) @! b = OptionVal ty (Just (e@!b))
-(NB ty None) @! _ = OptionVal ty Nothing
-(EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) @! b =
-    let i0'=i0@!b; i1'=i1@!b; s'=s@!b
+(EApp _ (UB _ FParse) x) @> b = let x'=x@>b in parseAsF (asS (x'@>b))
+(EApp _ (UB _ IParse) x) @> b = let x'=x@>b in parseAsEInt (asS (x'@>b))
+(EApp (TyB TyInteger) (UB _ Parse) x) @> b = let x'=x@>b in parseAsEInt (asS (x'@>b))
+(EApp (TyB TyFloat) (UB _ Parse) x) @> b = let x'=x@>b in parseAsF (asS (x'@>b))
+(EApp _ (UB _ (At i)) v) @> b = let v'=v@>b in asV v' `at` (i-1)
+(EApp _ (UB _ (Select i)) x) @> b = let x'=x@>b in asT x' !! (i-1)
+(EApp _ (UB _ Floor) x) @> b = mkI (floor (asF (x@>b)))
+(EApp _ (UB _ Ceiling) x) @> b = mkI (ceiling (asF (x@>b)))
+(EApp (TyB TyInteger) (UB _ Negate) i) @> b = mkI (negate (asI (i@>b)))
+(EApp (TyB TyFloat) (UB _ Negate) x) @> b = mkF (negate (asF (x@>b)))
+(EApp ty (UB _ Some) e) @> b = OptionVal ty (Just (e@>b))
+(NB ty None) @> _ = OptionVal ty Nothing
+(EApp _ (EApp _ (EApp _ (TB _ Substr) s) i0) i1) @> b =
+    let i0'=i0@>b; i1'=i1@>b; s'=s@>b
     in mkStr (substr (asS s') (fromIntegral$asI i0') (fromIntegral$asI i1'))
-(EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) @! b =
-    let r'=r@!b; s0'=s0@!b; s1'=s1@!b
+(EApp _ (EApp _ (EApp _ (TB _ Sub1) r) s0) s1) @> b =
+    let r'=r@>b; s0'=s0@>b; s1'=s1@>b
     in mkStr (sub1 (asR r') (asS s1') (asS s0'))
-(EApp _ (EApp _ (EApp _ (TB _ Subs) r) s0) s1) @! b =
-    let r'=r@!b; s0'=s0@!b; s1'=s1@!b
+(EApp _ (EApp _ (EApp _ (TB _ Subs) r) s0) s1) @> b =
+    let r'=r@>b; s0'=s0@>b; s1'=s1@>b
     in mkStr (subs (asR r') (asS s1') (asS s0'))
-(EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) @! b@(k,_) | TyB TyVec:$_ <- eLoc xs =
-    let seed'=seed@!b; xs'=xs@!b
+(EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) @> b@(k,_) | TyB TyVec:$_ <- eLoc xs =
+    let seed'=seed@>b; xs'=xs@>b
     in βa k $ V.foldM (a2e b op) seed' (asV xs')
-(EApp _ (EApp _ (BB _ Fold1) op) xs) @! b@(k,_) | TyB TyVec:$_ <- eLoc xs =
-    let xs'=xs@!b; xsV=asV xs'
+(EApp _ (EApp _ (BB _ Fold1) op) xs) @> b@(k,_) | TyB TyVec:$_ <- eLoc xs =
+    let xs'=xs@>b; xsV=asV xs'
         (seed, xs'') = case V.uncons xsV of
             Just v  -> v
             Nothing -> throw EmptyFold
     in βa k $ V.foldM (a2e b op) seed xs''
-(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Filter) p) xs) @! b@(k,_) =
-    let xs'=xs@!b
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Filter) p) xs) @> b@(k,_) =
+    let xs'=xs@>b
     in Arr yT (βa k $ V.filterM (fmap asB.a1e b p) (asV xs'))
-(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @! b@(k,_) =
-    let xs'=xs@!b
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @> b@(k,_) =
+    let xs'=xs@>b
     in Arr yT (βa k $ traverse (a1e b f) (asV xs'))
-(EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) f) x) @! b@(k,_) =
-    let x'=x@!b
+(EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) f) x) @> b@(k,_) =
+    let x'=x@>b
     in OptionVal yT (βa k $ traverse (a1e b f) (asM x'))
-(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @! b@(k,_) =
-    let x'=x@!b
+(EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @> b@(k,_) =
+    let x'=x@>b
     in Arr yT (βa k $ V.mapMaybeM (fmap asM.a1e b g) (asV x'))
-(EApp yT@(TyB TyVec:$_) (UB _ CatMaybes) x) @! b =
-    let x'=x@!b
+(EApp yT@(TyB TyVec:$_) (UB _ CatMaybes) x) @> b =
+    let x'=x@>b
     in Arr yT (V.catMaybes (asM<$>asV x'))
-(EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) @! b@(k,_) =
-    let x'=x@!b; y'=y@!b
+(EApp t (EApp _ (EApp _ (TB _ Option) x) g) y) @> b@(k,_) =
+    let x'=x@>b; y'=y@>b
     in case asM y' of
         Nothing -> x'
-        Just yϵ -> (@!b) $ βa k (bM (EApp t g yϵ))
-(Arr t es) @! b = Arr t ((@!b)<$>es)
+        Just yϵ -> (@>b) $ βa k (bM (EApp t g yϵ))
+(Arr t es) @> b = Arr t ((@>b)<$>es)
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
@@ -393,65 +400,65 @@ me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
 ms :: Nm T -> E T -> Β
 ms (Nm _ (U i) _) = IM.singleton i
 
-wCM :: Tmp -> Tmp -> Env -> Env
-wCM src tgt env =
+wCM :: Tmp -> Tmp -> ΒEnv -> ΒEnv
+wCM src tgt (u, env) =
     let xϵ=env!src
-    in case xϵ of
+    in (u, case xϵ of
         Just y  -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
-        Nothing -> IM.insert tgt Nothing env
+        Nothing -> IM.insert tgt Nothing env)
 
-wMM :: E T -> Int -> Tmp -> Tmp -> Env -> Env
-wMM (Lam _ n e) j src tgt env =
+wMM :: E T -> Tmp -> Tmp -> ΒEnv -> ΒEnv
+wMM (Lam _ n e) src tgt (j, env) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; y=e@!(j,be)
-            in case asM y of
+            let be=ms n x; (y,k)=e@!(j,be)
+            in (k, case asM y of
                 Just yϵ -> IM.insert tgt (Just$!yϵ) env
-                Nothing -> IM.insert tgt Nothing env
-        Nothing -> IM.insert tgt Nothing env
-wMM e _ _ _ _ = throw$InternalArityOrEta 1 e
+                Nothing -> IM.insert tgt Nothing env)
+        Nothing -> (j, IM.insert tgt Nothing env)
+wMM e _ _ _ = throw$InternalArityOrEta 1 e
 
-wM :: E T -> Int -> Tmp -> Tmp -> Env -> Env
-wM (Lam _ n e) j src tgt env =
+wM :: E T -> Tmp -> Tmp -> ΒEnv -> ΒEnv
+wM (Lam _ n e) src tgt (j,env) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; y=e@!(j,be)
-            in IM.insert tgt (Just$!y) env
-        Nothing -> IM.insert tgt Nothing env
-wM e _ _ _ _ = throw$InternalArityOrEta 1 e
+            let be=ms n x; (y,k)=e@!(j,be)
+            in (k, IM.insert tgt (Just$!y) env)
+        Nothing -> (j, IM.insert tgt Nothing env)
+wM e _ _ _ = throw$InternalArityOrEta 1 e
 
-wI :: E T -> Int -> Tmp -> LineCtx -> Env -> Env
-wI e j tgt line env =
-    let e'=e `κ` line in IM.insert tgt (Just$!(e'$@j)) env
+wI :: E T -> Tmp -> LineCtx -> ΒEnv -> ΒEnv
+wI e tgt line (j, env) =
+    let e'=e `κ` line; (e'',k)=e'$@j in (k, IM.insert tgt (Just$!e'') env)
 
-wG :: (E T, E T) -> Int -> Tmp -> LineCtx -> Env -> Env
-wG (p, e) j tgt line env =
-    let p'=p `κ` line; p''=p'$@j
+wG :: (E T, E T) -> Tmp -> LineCtx -> ΒEnv -> ΒEnv
+wG (p, e) tgt line (j, env) =
+    let p'=p `κ` line; (p'',k)=p'$@j
     in if asB p''
-        then let e'=e `κ` line; e''=e'$@j in IM.insert tgt (Just$!e'') env
-        else IM.insert tgt Nothing env
+        then let e'=e `κ` line; (e'',u) =e'$@k in (u, IM.insert tgt (Just$!e'') env)
+        else (k, IM.insert tgt Nothing env)
 
-wP :: E T -> Int -> Tmp -> Tmp -> Env -> Env
-wP (Lam _ n e) j src tgt env =
+wP :: E T -> Tmp -> Tmp -> ΒEnv -> ΒEnv
+wP (Lam _ n e) src tgt (j,env) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
-            let be=ms n x; p=e@!(j,be)
-            in IM.insert tgt (if asB p then Just$!x else Nothing) env
-        Nothing -> IM.insert tgt Nothing env
-wP e _ _ _ _ = throw $ InternalArityOrEta 1 e
+            let be=ms n x; (p,k)=e@!(j,be)
+            in (k, IM.insert tgt (if asB p then Just$!x else Nothing) env)
+        Nothing -> (j, IM.insert tgt Nothing env)
+wP e _ _ _ = throw $ InternalArityOrEta 1 e
 
-wF :: E T -> Int -> Tmp -> Tmp -> Env -> Env
-wF (Lam _ nacc (Lam _ nn e)) j src tgt env =
-    let accϵ = env ! tgt; xϵ = env ! src
+wF :: E T -> Tmp -> Tmp -> ΒEnv -> ΒEnv
+wF (Lam _ nacc (Lam _ nn e)) src tgt (j, env) =
+    let accϵ = env!tgt; xϵ = env!src
     in case (accϵ, xϵ) of
         (Just acc, Just x) ->
             let be=me [(nacc, acc), (nn, x)]
-                res=e@!(j,be)
-            in IM.insert tgt (Just$!res) env
-        (Just acc, Nothing) -> IM.insert tgt (Just$!acc) env
-        (Nothing, Nothing) -> IM.insert tgt Nothing env
-        (Nothing, Just x) -> IM.insert tgt (Just$!x) env
-wF e _ _ _ _ = throw $ InternalArityOrEta 2 e
+                (res, u)=e@!(j, be)
+            in (u, IM.insert tgt (Just$!res) env)
+        (Just acc, Nothing) -> (j, IM.insert tgt (Just$!acc) env)
+        (Nothing, Nothing) -> (j, IM.insert tgt Nothing env)
+        (Nothing, Just x) -> (j, IM.insert tgt (Just$!x) env)
+wF e _ _ _ = throw $ InternalArityOrEta 2 e
