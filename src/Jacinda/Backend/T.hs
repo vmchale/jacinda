@@ -345,6 +345,9 @@ e@RC{} @! _    = e
 (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @! b@(k,_) =
     let xs'=xs@!b
     in Arr yT (βa k $ traverse (a1e b f) (asV xs'))
+(EApp yT@(TyB TyOption:$_) (EApp _ (BB _ Map) f) x) @! b@(k,_) =
+    let x'=x@!b
+    in OptionVal yT (βa k $ traverse (a1e b f) (asM x'))
 (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ MapMaybe) g) x) @! b@(k,_) =
     let x'=x@!b
     in Arr yT (βa k $ V.mapMaybeM (fmap asM.a1e b g) (asV x'))
