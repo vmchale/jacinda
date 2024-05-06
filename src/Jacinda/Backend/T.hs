@@ -153,6 +153,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@BB{} _                = e
 κ e@UB{} _                = e
 κ e@TB{} _                = e
+κ e@NB{} _                = e
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 
@@ -374,6 +375,7 @@ e@RC{} @! _    = e
     in case asM y' of
         Nothing -> x'
         Just yϵ -> (@!b) $ βa k (bM (EApp t g yϵ))
+(Arr t es) @! b = Arr t ((@!b)<$>es)
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
