@@ -244,6 +244,7 @@ binRel Lt = Just (<); binRel Gt = Just (>); binRel Eq = Just (==)
 binRel Neq = Just (/=); binRel Geq = Just (>=); binRel Leq = Just (<=)
 binRel _   = Nothing
 
+{-# SCC (@!) #-}
 (@!) :: E T -> (Int, Β) -> E T
 e@Lit{} @! _   = e
 e@RC{} @! _    = e
