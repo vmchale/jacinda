@@ -80,6 +80,8 @@ The manpages document the builtins and provide a syntax reference.
   * No nested dfns
   * No list literal syntax
   * Postfix `:f` and `:i` are handled poorly
+  * Streams of functions don't work
+  * Higher-order functions are subtly broken
 
 Intentionally missing features:
 
