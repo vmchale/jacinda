@@ -189,6 +189,7 @@ ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb)
 ctx (Guarded _ p e) o                                   = pure (ni o, wG (p, e) o)
 ctx (Implicit _ e) o                                    = pure (ni o, wI e o)
 ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; seed' <- seed@>mempty; pure (IM.insert o (Just$!seed') env, \l->wF op t o.sb l)}
+ctx (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) xs) ys) o   = do {t0 <- nI; t1 <- nI; (env0, sb0) <- ctx xs t0; (env1, sb1) <- ctx ys t1; pure (na o (env0<>env1), \l->wZ op t0 t1 o.sb0 l.sb1 l)}
 ctx (EApp _ (EApp _ (BB _ Prior) op) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; pt <- nI; pure (na o (IM.insert pt Nothing env), \l -> wΠ op pt t o.sb l)}
 ctx (EApp (_:$TyB ty) (UB _ Dedup) xs) o                = do {t <- nI; (env, sb) <- ctx xs t; k <- nI; pure (na o env, \l->wD ty k t o.sb l)}
 
@@ -434,6 +435,16 @@ wMM (Lam _ n e) src tgt (Σ j env d di) =
                 Nothing -> IM.insert tgt Nothing env) d di
         Nothing -> Σ j (IM.insert tgt Nothing env) d di
 wMM e _ _ _ = throw$InternalArityOrEta 1 e
+
+wZ :: E T -> Tmp -> Tmp -> Tmp -> Σ -> Σ
+wZ (Lam _ n0 (Lam _ n1 e)) src0 src1 tgt (Σ j env d di) =
+    let x0ϵ=env!src0; x1ϵ=env!src1
+    in (case (x0ϵ, x1ϵ) of
+        (Just x, Just y) ->
+            let be=me [(n0, x), (n1, y)]; (z,k)=e@!(j,be)
+            in Σ k (IM.insert tgt (Just$!z) env)
+        (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env)) d di
+wZ e _ _ _ _ = throw$InternalArityOrEta 2 e
 
 wM :: E T -> Tmp -> Tmp -> Σ -> Σ
 wM (Lam _ n e) src tgt (Σ j env d di) =
