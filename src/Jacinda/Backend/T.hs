@@ -181,7 +181,7 @@ ctx IParseAllCol{} res                                  = pure (ni res, \ ~(b, _
 ctx (FParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$!parseAsF (fieldOf bs b i)))
 ctx (IParseCol _ i) res                                 = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (ParseCol (_:$TyB TyFloat) i) res                   = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$!parseAsF (fieldOf bs b i)))
-ctx (ParseCol (_:$TyB TyInteger) i) res                 = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
+ctx (ParseCol (_:$TyB TyI) i) res                       = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$!parseAsEInt (fieldOf bs b i)))
 ctx (EApp _ (EApp _ (BB _ Map) f) xs) o                 = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wM f t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ MapMaybe) f) xs) o            = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wMM f t o.sb l)}
 ctx (EApp _ (UB _ CatMaybes) xs) o                      = do {t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wCM t o.sb l)}
@@ -197,7 +197,7 @@ asS :: E T -> BS.ByteString
 asS (Lit _ (StrLit s)) = s; asS e = throw (InternalCoercionError e TyStr)
 
 asI :: E T -> Integer
-asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyInteger)
+asI (Lit _ (ILit i)) = i; asI e = throw (InternalCoercionError e TyI)
 
 asF :: E T -> Double
 asF (Lit _ (FLit x)) = x; asF e = throw (InternalCoercionError e TyFloat)
@@ -269,10 +269,10 @@ e@Lit{} @> _     = pure e
 e@RC{} @> _      = pure e
 (F n) @> b       = pure $ b!>n
 e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothing -> e}
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Max) x0) x1) @> b = do
+(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) Max) x0) x1) @> b = do
     x0' <- asI<$>(x0@>b); x1' <- asI<$>(x1@>b)
     pure $ mkI (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) Min) x0) x1) @> b = do
+(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) Min) x0) x1) @> b = do
     x0' <- asI <$> (x0@>b); x1' <- asI <$> (x1@>b)
     pure $ mkI (min x0' x1')
 (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @> b = do
@@ -287,7 +287,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @> b = do
     x0' <- asS<$>(x0@>b); x1'<-asS<$>(x1@>b)
     pure $ mkStr (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just op' <- num op = do
+(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) op) x0) x1) @> b | Just op' <- num op = do
     x0e <- asI<$>(x0@>b); x1e <- asI<$>(x1@>b)
     pure $ mkI (op' x0e x1e)
 (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just op' <- num op = do
@@ -296,7 +296,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ Div) x0) x1) @> b = do
     x0e <- x0@>b; x1e <- x1@>b
     pure (mkF (asF x0e/asF x1e))
-(EApp _ (EApp _ (BB (TyArr (TyB TyInteger) _) op) x0) x1) @> b | Just rel <- binRel op = do
+(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) op) x0) x1) @> b | Just rel <- binRel op = do
     x0e<-asI<$>(x0@>b); x1e<-asI<$>(x1@>b)
     pure (mkB (rel x0e x1e))
 (EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just rel <- binRel op = do
@@ -354,13 +354,13 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
     pure $ vS (V.fromList (BS.split (the$asS c') (asS s')))
 (EApp _ (UB _ FParse) x) @> b = do {x' <- x@>b; pure (parseAsF (asS x'))}
 (EApp _ (UB _ IParse) x) @> b = do {x' <- x@>b; pure (parseAsEInt (asS x'))}
-(EApp (TyB TyInteger) (UB _ Parse) x) @> b = do {x' <- x@>b; pure (parseAsEInt (asS x'))}
+(EApp (TyB TyI) (UB _ Parse) x) @> b = do {x' <- x@>b; pure (parseAsEInt (asS x'))}
 (EApp (TyB TyFloat) (UB _ Parse) x) @> b = do {x' <- x@>b; pure (parseAsF (asS x'))}
 (EApp _ (UB _ (At i)) v) @> b = do {v' <- v@>b; pure (asV v' `at` (i-1))}
 (EApp _ (UB _ (Select i)) x) @> b = do {x' <- x@>b; pure (asT x' !! (i-1))}
 (EApp _ (UB _ Floor) x) @> b = mkI.floor.asF<$>(x@>b)
 (EApp _ (UB _ Ceiling) x) @> b = mkI.ceiling.asF<$>(x@>b)
-(EApp (TyB TyInteger) (UB _ Negate) i) @> b = mkI.negate.asI<$>(i@>b)
+(EApp (TyB TyI) (UB _ Negate) i) @> b = mkI.negate.asI<$>(i@>b)
 (EApp (TyB TyFloat) (UB _ Negate) x) @> b = mkF.negate.asF<$>(x@>b)
 (EApp ty (UB _ Some) e) @> b = OptionVal ty.Just<$>(e@>b)
 (NB ty None) @> _ = pure $ OptionVal ty Nothing
@@ -469,7 +469,7 @@ wD TyStr key src tgt (Σ i env d di) =
                 go (Just s) = Just$!S.insert e' s
 
                 e'=asS e
-wD TyInteger key src tgt (Σ i env d di) =
+wD TyI key src tgt (Σ i env d di) =
     let x=env!src
     in case x of
         Nothing -> Σ i (IM.insert tgt Nothing env) d di

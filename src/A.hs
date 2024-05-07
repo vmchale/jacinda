@@ -37,7 +37,7 @@ infixr 6 <##>
 (<##>) :: Doc a -> Doc a -> Doc a
 (<##>) x y = x <> hardline <> hardline <> y
 
-data TB = TyInteger | TyFloat | TyStr
+data TB = TyI | TyFloat | TyStr
         | TyStream | TyVec | TyOption
         | TyR | TyBool | TyUnit
         deriving (Eq, Ord)
@@ -67,7 +67,7 @@ data T = TyB { tyBuiltin :: TB }
        deriving (Eq, Ord)
 
 instance Pretty TB where
-    pretty TyInteger = "Integer"; pretty TyStr = "Str"; pretty TyFloat = "Float"
+    pretty TyI = "Integer"; pretty TyStr = "Str"; pretty TyFloat = "Float"
     pretty TyStream = "Stream"; pretty TyVec = "List"; pretty TyOption = "Optional"
     pretty TyBool = "Bool"; pretty TyUnit = "𝟙"; pretty TyR = "Regex"
 

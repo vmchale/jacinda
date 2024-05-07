@@ -33,7 +33,7 @@ main = defaultMain $
             in actual @?= "vectorzm0.13.1.0zmc80ea02f780be2984f831df2de071f6e6040c0f670b3dd2428e80f5d111d7f72_Data.Vector.Generic_partition_closure"
         , splitWhitespaceT "" []
         , splitWhitespaceT "5" ["5"]
-        , testCase "type of" (tyOfT sumBytes (TyB TyInteger))
+        , testCase "type of" (tyOfT sumBytes (TyB TyI))
         , testCase "type of" (tyOfT krakRegex (TyB TyStream :$ TyB TyStr)) -- stream of str
         , testCase "type of" (tyOfT krakCol (TyB TyStream :$ TyB TyStr)) -- stream of str
         , testCase "type of (zip)" (tyOfT ",(-) $3:i $6:i" (tyStream tyI))
