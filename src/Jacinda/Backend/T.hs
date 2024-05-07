@@ -171,7 +171,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ (Lam t n e) line        = Lam t n (κ e line)
 
 ni t=IM.singleton t Nothing
-na=IM.alter (\k -> case k of {Nothing -> Just Nothing; Just x -> Just x})
+na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Σ -> Σ)
 ctx AllColumn{} res                                     = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!mkStr b))
