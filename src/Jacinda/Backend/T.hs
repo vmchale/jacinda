@@ -322,7 +322,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ NotMatches) s) r) @> b = do
     se <- s@>b; re <- r@>b
     pure (mkB (not$isMatch' (asR re) (asS se)))
-(Tup ty es) @> b = Tup ty <$> (foldSeq <$> traverse (@>b) es)
+(Tup ty es) @> b = Tup ty.foldSeq <$> traverse (@>b) es
 (EApp _ (UB _ Tally) e) @> b = do
     e' <- e@>b
     let r=fromIntegral (BS.length$asS e')
@@ -383,7 +383,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
     V.foldM (a2e b op) seed xs''
 (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Filter) p) xs) @> b = do
     xs' <- xs@>b
-    Arr yT <$> (V.filterM (fmap asB.a1e b p) (asV xs'))
+    Arr yT <$> V.filterM (fmap asB.a1e b p) (asV xs')
 (EApp yT@(TyB TyVec:$_) (EApp _ (BB _ Map) f) xs) @> b = do
     xs' <- xs@>b
     Arr yT <$> traverse (a1e b f) (asV xs')
