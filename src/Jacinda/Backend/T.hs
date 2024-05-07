@@ -13,9 +13,9 @@ import           Data.ByteString.Builder.RealFloat (doubleDec)
 import           Data.Foldable                     (fold, traverse_)
 import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
-import qualified Data.IntSet as IS
 import           Data.List                         (foldl', scanl')
 import           Data.Maybe                        (fromMaybe)
+import qualified Data.Set                          as S
 import qualified Data.Vector                       as V
 import           Data.Word                         (Word8)
 import           Jacinda.Backend.Const
@@ -48,7 +48,7 @@ instance Exception StreamError where
 
 -- TODO: dedup... tracking env!
 type Env = IM.IntMap (Maybe (E T)); type I=Int
-data Σ = Σ !I Env (IM.IntMap IS.IntSet)
+data Σ = Σ !I Env (IM.IntMap (S.Set BS.ByteString))
 type Tmp = Int
 type Β = IM.IntMap (E T)
 
@@ -188,6 +188,7 @@ ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb)
 ctx (Guarded _ p e) o                                   = pure (ni o, wG (p, e) o)
 ctx (Implicit _ e) o                                    = pure (ni o, wI e o)
 ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; seed' <- seed@>mempty; pure (IM.insert o (Just$!seed') env, \l->wF op t o.sb l)}
+ctx (EApp (_:$TyB TyStr) (UB _ Dedup) xs) o             = do {t <- nI; (env, sb) <- ctx xs t; k <- nI; pure (na o env, \l->wD k t o.sb l)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -452,6 +453,21 @@ wG (p, e) tgt line (Σ j env d) =
     in if asB p''
         then let e'=e `κ` line; (e'',u) =e'$@k in Σ u (IM.insert tgt (Just$!e'') env) d
         else Σ k (IM.insert tgt Nothing env) d
+
+wD :: Int -> Tmp -> Tmp -> Σ -> Σ
+wD key src tgt (Σ i env d) =
+    let x=env!src
+    in case x of
+        Nothing -> Σ i (IM.insert tgt Nothing env) d
+        Just e ->
+            case IM.lookup key d of
+                Nothing -> Σ i (IM.insert tgt (Just$!e) env ) (IM.insert key (S.singleton e') d)
+                Just ds -> if e' `S.member` ds then Σ i (IM.insert tgt Nothing env) d else Σ i (IM.insert tgt (Just$!e) env) (IM.alter go key d)
+              where
+                go Nothing  = Just$!S.singleton e'
+                go (Just s) = Just$!S.insert e' s
+
+                e'=asS e
 
 wP :: E T -> Tmp -> Tmp -> Σ -> Σ
 wP (Lam _ n e) src tgt (Σ j env d) =
