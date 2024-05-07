@@ -13,6 +13,7 @@ import           Data.ByteString.Builder.RealFloat (doubleDec)
 import           Data.Foldable                     (fold, traverse_)
 import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
+import qualified Data.IntSet as IS
 import           Data.List                         (foldl', scanl')
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Vector                       as V
@@ -47,13 +48,13 @@ instance Exception StreamError where
 
 -- TODO: dedup... tracking env!
 type Env = IM.IntMap (Maybe (E T)); type I=Int
-data Σ = Σ !I Env
+data Σ = Σ !I Env (IM.IntMap IS.IntSet)
 type Tmp = Int
 type Β = IM.IntMap (E T)
 
 mE :: (Env -> Env) -> Σ -> Σ
-mE f (Σ i e) = Σ i (f e)
-gE (Σ _ e) = e
+mE f (Σ i e d) = Σ i (f e) d
+gE (Σ _ e _) = e
 
 at :: V.Vector a -> Int -> a
 v `at` ix = case v V.!? (ix-1) of {Just x -> x; Nothing -> throw $ IndexOutOfBounds ix}
@@ -87,8 +88,8 @@ run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)
     (iEnv, μ) <- ctx e t
     u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv) outs
-    pure (((! t).gE)<$>es)
+        outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv IM.empty) outs
+    pure ((! t).gE<$>es)
 run r _ j e bs = pDocLn $ evalState (summar r e bs) j
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
@@ -103,7 +104,7 @@ summar r e bs = do
     u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
-        finEnv=foldl' (&) (Σ u iEnv) updates
+        finEnv=foldl' (&) (Σ u iEnv IM.empty) updates
     e0@>(fromMaybe (throw EmptyFold)<$>gE finEnv)
 
 collect :: E T -> MM (Env, LineCtx -> Σ -> Σ, E T)
@@ -413,64 +414,64 @@ ms :: Nm T -> E T -> Β
 ms (Nm _ (U i) _) = IM.singleton i
 
 wCM :: Tmp -> Tmp -> Σ -> Σ
-wCM src tgt (Σ u env) =
+wCM src tgt (Σ u env d) =
     let xϵ=env!src
     in Σ u (case xϵ of
         Just y  -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
-        Nothing -> IM.insert tgt Nothing env)
+        Nothing -> IM.insert tgt Nothing env) d
 
 wMM :: E T -> Tmp -> Tmp -> Σ -> Σ
-wMM (Lam _ n e) src tgt (Σ j env) =
+wMM (Lam _ n e) src tgt (Σ j env d) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
             let be=ms n x; (y,k)=e@!(j,be)
             in Σ k (case asM y of
                 Just yϵ -> IM.insert tgt (Just$!yϵ) env
-                Nothing -> IM.insert tgt Nothing env)
-        Nothing -> Σ j (IM.insert tgt Nothing env)
+                Nothing -> IM.insert tgt Nothing env) d
+        Nothing -> Σ j (IM.insert tgt Nothing env) d
 wMM e _ _ _ = throw$InternalArityOrEta 1 e
 
 wM :: E T -> Tmp -> Tmp -> Σ -> Σ
-wM (Lam _ n e) src tgt (Σ j env) =
+wM (Lam _ n e) src tgt (Σ j env d) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
             let be=ms n x; (y,k)=e@!(j,be)
-            in Σ k (IM.insert tgt (Just$!y) env)
-        Nothing -> Σ j (IM.insert tgt Nothing env)
+            in Σ k (IM.insert tgt (Just$!y) env) d
+        Nothing -> Σ j (IM.insert tgt Nothing env) d
 wM e _ _ _ = throw$InternalArityOrEta 1 e
 
 wI :: E T -> Tmp -> LineCtx -> Σ -> Σ
-wI e tgt line (Σ j env) =
-    let e'=e `κ` line; (e'',k)=e'$@j in Σ k (IM.insert tgt (Just$!e'') env)
+wI e tgt line (Σ j env d) =
+    let e'=e `κ` line; (e'',k)=e'$@j in Σ k (IM.insert tgt (Just$!e'') env) d
 
 wG :: (E T, E T) -> Tmp -> LineCtx -> Σ -> Σ
-wG (p, e) tgt line (Σ j env) =
+wG (p, e) tgt line (Σ j env d) =
     let p'=p `κ` line; (p'',k)=p'$@j
     in if asB p''
-        then let e'=e `κ` line; (e'',u) =e'$@k in Σ u (IM.insert tgt (Just$!e'') env)
-        else Σ k (IM.insert tgt Nothing env)
+        then let e'=e `κ` line; (e'',u) =e'$@k in Σ u (IM.insert tgt (Just$!e'') env) d
+        else Σ k (IM.insert tgt Nothing env) d
 
 wP :: E T -> Tmp -> Tmp -> Σ -> Σ
-wP (Lam _ n e) src tgt (Σ j env) =
+wP (Lam _ n e) src tgt (Σ j env d) =
     let xϵ=env!src
     in case xϵ of
         Just x ->
             let be=ms n x; (p,k)=e@!(j,be)
-            in Σ k (IM.insert tgt (if asB p then Just$!x else Nothing) env)
-        Nothing -> Σ j (IM.insert tgt Nothing env)
+            in Σ k (IM.insert tgt (if asB p then Just$!x else Nothing) env) d
+        Nothing -> Σ j (IM.insert tgt Nothing env) d
 wP e _ _ _ = throw $ InternalArityOrEta 1 e
 
 wF :: E T -> Tmp -> Tmp -> Σ -> Σ
-wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env) =
+wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d) =
     let accϵ = env!tgt; xϵ = env!src
     in case (accϵ, xϵ) of
         (Just acc, Just x) ->
             let be=me [(nacc, acc), (nn, x)]
                 (res, u)=e@!(j, be)
-            in Σ u (IM.insert tgt (Just$!res) env)
-        (Just acc, Nothing) -> Σ j (IM.insert tgt (Just$!acc) env)
-        (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env)
-        (Nothing, Just x) -> Σ j (IM.insert tgt (Just$!x) env)
+            in Σ u (IM.insert tgt (Just$!res) env) d
+        (Just acc, Nothing) -> Σ j (IM.insert tgt (Just$!acc) env) d
+        (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env) d
+        (Nothing, Just x) -> Σ j (IM.insert tgt (Just$!x) env) d
 wF e _ _ _ = throw $ InternalArityOrEta 2 e
