@@ -189,6 +189,7 @@ ctx (EApp _ (EApp _ (BB _ Filter) p) xs) o              = do {t <- nI; (env, sb)
 ctx (Guarded _ p e) o                                   = pure (ni o, wG (p, e) o)
 ctx (Implicit _ e) o                                    = pure (ni o, wI e o)
 ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; seed' <- seed@>mempty; pure (IM.insert o (Just$!seed') env, \l->wF op t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ Prior) op) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; pt <- nI; pure (na o (IM.insert pt Nothing env), \l -> wΠ op pt t o.sb l)}
 ctx (EApp (_:$TyB ty) (UB _ Dedup) xs) o                = do {t <- nI; (env, sb) <- ctx xs t; k <- nI; pure (na o env, \l->wD ty k t o.sb l)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
@@ -492,6 +493,18 @@ wP (Lam _ n e) src tgt (Σ j env d di) =
             in Σ k (IM.insert tgt (if asB p then Just$!x else Nothing) env) d di
         Nothing -> Σ j (IM.insert tgt Nothing env) d di
 wP e _ _ _ = throw $ InternalArityOrEta 1 e
+
+wΠ :: E T -> Tmp -> Tmp -> Tmp -> Σ -> Σ
+wΠ (Lam _ nn (Lam _ nprev e)) pt src tgt (Σ j env d di) =
+    let prevϵ=env!pt; xϵ=env!src
+    in (case (prevϵ, xϵ) of
+        (Just prev, Just x) ->
+            let be=me [(nprev, prev), (nn, x)]
+                (res,u)=e@!(j,be)
+            in Σ u (IM.insert pt (Just$!x) (IM.insert tgt (Just$!res) env))
+        (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env)
+        (Nothing, Just x) -> Σ j (IM.insert pt (Just$!x) (IM.insert tgt Nothing env))
+        (Just{}, Nothing) -> Σ j (IM.insert tgt Nothing env)) d di
 
 wF :: E T -> Tmp -> Tmp -> Σ -> Σ
 wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d di) =
