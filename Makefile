@@ -98,6 +98,8 @@ bin/powerpc64le-linux-ja: $(HS_SRC)
 tags: $(JAC_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i > $@
 
+bench: bench/data/lines.txt bench/data/span.txt bench/data/ulysses.txt
+
 bench/data/lines.txt: test/examples/data/1.txt
 	perl -0777pe '$$_=$$_ x 10' $^ > $@
 
