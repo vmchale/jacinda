@@ -1,4 +1,3 @@
-{. FIXME: figure out @include'lib/string.jac'??
 @include'lib/string.jac'
 
 fn step(acc, line) :=
