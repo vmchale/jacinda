@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Backend.T ( run ) where
+module Jacinda.Backend.T ( run, eB ) where
 
 import           A
 import           A.I
 import           Control.Exception                 (Exception, throw)
+import           Control.Monad                     ((<=<))
 import           Control.Monad.State.Strict        (State, evalState, runState, state)
-import           Data.Bifunctor                    (second)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
@@ -231,6 +231,9 @@ a2e b op e0 e1 = (@>b) =<< a2 op e0 e1
 
 a1e :: Β -> E T -> E T -> UM (E T)
 a1e b f x = (@>b) =<< a1 f x
+
+eB :: Int ->E T -> E T
+eB j = flip evalState j.((@>mempty) <=< lβ)
 
 a1 :: E T -> E T -> UM (E T)
 a1 f x | TyArr _ cod <- eLoc f = lβ (EApp cod f x)

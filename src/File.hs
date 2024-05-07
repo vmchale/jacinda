@@ -26,7 +26,6 @@ import qualified Data.Text.IO               as TIO
 import           Data.Tuple                 (swap)
 import           Include
 import           Jacinda.Backend.Const
-import           Jacinda.Backend.P          (eB)
 import           Jacinda.Backend.T
 import           Jacinda.Check.Field
 import           Jacinda.Regex
@@ -84,7 +83,7 @@ exprEval src =
         Right (ast, m) ->
             let (typed, i) = yeet $ runTyM m (tyP ast)
                 (inlined, j) = ib i typed
-            in eB j pure (compileR (error "nf not defined.") inlined)
+            in eB j (compileR (error "nf not defined.") inlined)
 
 compileFS :: Maybe T.Text -> RurePtr
 compileFS = maybe defaultRurePtr tcompile
