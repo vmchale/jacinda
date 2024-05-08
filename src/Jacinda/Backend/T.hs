@@ -5,7 +5,7 @@ module Jacinda.Backend.T ( run, eB ) where
 import           A
 import           A.I
 import           Control.Exception                 (Exception, throw)
-import           Control.Monad                     ((<=<))
+import           Control.Monad                     (zipWithM, (<=<))
 import           Control.Monad.State.Strict        (State, evalState, runState, state)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
@@ -83,7 +83,13 @@ nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
-run _ _ _ e _ | TyB TyUnit <- eLoc e = undefined
+run r flush j (Anchor _ es) bs = traverse_ (traverse_ (traverse_ (pS flush))).flip evalState j $ do
+    tt <- traverse (\_ -> nI) es
+    (iEnvs, μs) <- unzip <$> zipWithM ctx es tt
+    u <- nI
+    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
+        μ=ts μs; outs=μ<$>ctxs; es'=scanl' (&) (Σ u (fold iEnvs) IM.empty IM.empty IM.empty IS.empty) outs
+    pure ((\env -> [gE env!t|t <- tt])<$>es')
 run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
     (iEnv, μ) <- ctx e t
