@@ -194,7 +194,8 @@ ctx (Implicit _ e) o                                    = pure (ni o, wI e o)
 ctx (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) o = do {t <- nI; (env, sb) <- ctx xs t; seed' <- seed@>mempty; pure (IM.insert o (Just$!seed') env, \l->wF op t o.sb l)}
 ctx (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) xs) ys) o   = do {t0 <- nI; t1 <- nI; (env0, sb0) <- ctx xs t0; (env1, sb1) <- ctx ys t1; pure (na o (env0<>env1), \l->wZ op t0 t1 o.sb0 l.sb1 l)}
 ctx (EApp _ (EApp _ (BB _ Prior) op) xs) o              = do {t <- nI; (env, sb) <- ctx xs t; pt <- nI; pure (na o (IM.insert pt Nothing env), \l -> wΠ op pt t o.sb l)}
-ctx (EApp (_:$TyB ty) (UB _ Dedup) xs) o                = do {t <- nI; (env, sb) <- ctx xs t; k <- nI; pure (na o env, \l->wD ty k t o.sb l)}
+ctx (EApp (_:$TyB ty) (UB _ Dedup) xs) o                = do {k <- nI; t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wD ty k t o.sb l)}
+ctx (EApp _ (EApp _ (BB _ DedupOn) f) xs) o             = do {k <- nI; t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wDOp f k t o.sb l)}
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
@@ -479,6 +480,22 @@ wG (p, e) tgt line (Σ j env d di) =
         then let e'=e `κ` line; (e'',u) =e'$@k in Σ u (IM.insert tgt (Just$!e'') env) d di
         else Σ k (IM.insert tgt Nothing env) d di
 
+wDOp :: E T -> Int -> Tmp -> Tmp -> Σ -> Σ
+wDOp (Lam (TyArr _ (TyB TyStr)) n e) key src tgt (Σ i env d di) =
+    let x=env!src
+    in case x of
+        Nothing -> Σ i (IM.insert tgt Nothing env) d di
+        Just xϵ ->
+            case IM.lookup key d of
+                Nothing -> Σ k (IM.insert tgt (Just$!y) env) (IM.insert key (S.singleton e') d) di
+                Just ss -> (if e' `S.member` ss then Σ k (IM.insert tgt Nothing env) d else Σ k (IM.insert tgt (Just$!y) env) (IM.alter go key d)) di
+              where
+                (y,k)=e@!(i,be); be=ms n xϵ
+                e'=asS y
+
+                go Nothing  = Just$!S.singleton e'
+                go (Just s) = Just$!S.insert e' s
+
 wD :: TB -> Int -> Tmp -> Tmp -> Σ -> Σ
 wD TyStr key src tgt (Σ i env d di) =
     let x=env!src
@@ -528,6 +545,7 @@ wΠ (Lam _ nn (Lam _ nprev e)) pt src tgt (Σ j env d di) =
         (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env)
         (Nothing, Just x) -> Σ j (IM.insert pt (Just$!x) (IM.insert tgt Nothing env))
         (Just{}, Nothing) -> Σ j (IM.insert tgt Nothing env)) d di
+wΠ e _ _ _ _ = throw $ InternalArityOrEta 2 e
 
 wF :: E T -> Tmp -> Tmp -> Σ -> Σ
 wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d di) =
