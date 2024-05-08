@@ -1,6 +1,6 @@
 cabal-version:      2.2
 name:               jacinda
-version:            2.0.3.0
+version:            3.0.0.0
 license:            AGPL-3.0-only
 license-file:       COPYING
 maintainer:         vamchale@gmail.com
