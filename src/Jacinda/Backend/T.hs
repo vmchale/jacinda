@@ -495,6 +495,21 @@ wDOp (Lam (TyArr _ (TyB TyStr)) n e) key src tgt (Σ i env d di) =
 
                 go Nothing  = Just$!S.singleton e'
                 go (Just s) = Just$!S.insert e' s
+wDOp (Lam (TyArr _ (TyB TyI)) n e) key src tgt (Σ i env d di) =
+    let x=env!src
+    in case x of
+        Nothing -> Σ i (IM.insert tgt Nothing env) d di
+        Just xϵ ->
+            case IM.lookup key di of
+                Nothing -> Σ k (IM.insert tgt (Just$!y) env) d (IM.insert key (IS.singleton e') di)
+                Just ds -> if e' `IS.member` ds then Σ k (IM.insert tgt Nothing env) d di else Σ k (IM.insert tgt (Just$!y) env) d (IM.alter go key di)
+
+              where
+                (y,k)=e@!(i,be); be=ms n xϵ
+                e'=fromIntegral$asI y
+
+                go Nothing  = Just$!IS.singleton e'
+                go (Just s) = Just$!IS.insert e' s
 
 wD :: TB -> Int -> Tmp -> Tmp -> Σ -> Σ
 wD TyStr key src tgt (Σ i env d di) =
