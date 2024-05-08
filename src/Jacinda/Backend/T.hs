@@ -83,8 +83,8 @@ nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 pSF :: Bool -> (Maybe Tmp, [Tmp]) -> [Env] -> IO ()
-pSF flush c@(Just t, tt) [e] = do
-    traverse_ (traverse_ (pS flush)) ((e !)<$>tt)
+pSF flush (Just t, tt) [e] = do
+    traverse_ (traverse_ (pS flush).(e !)) tt
     traverse_ (pS flush) (e!t)
 pSF flush c@(Nothing, tt) (e:es) = do
     traverse_ (traverse_ (pS flush)) [e!t|t <- tt]
