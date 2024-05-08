@@ -59,7 +59,7 @@ infixr 0 ~>
 infixr 0 :$
 
 data T = TyB { tyBuiltin :: TB }
-       | (:$) { tyApp0 :: T, tyApp1 :: T } -- TODO: :$
+       | (:$) { tyApp0 :: T, tyApp1 :: T }
        | TyArr { tyArr0 :: T, tyArr1 :: T }
        | TyVar { tyVar :: Nm () }
        | TyTup { tyTups :: [T] }
