@@ -395,6 +395,7 @@ tyES s (UB _ IParse) = pure (UB (tyStr ~> tyI) IParse, s)
 tyES s (UB _ FParse) = pure (UB (tyArr tyStr tyF) FParse, s)
 tyES s (UB _ Floor) = pure (UB (tyArr tyF tyI) Floor, s)
 tyES s (UB _ Ceiling) = pure (UB (tyF ~> tyI) Ceiling, s)
+tyES s (BB _ Report) = do {a <- var <$> freshN "a"; b <- var <$> freshN "b"; pure (BB (tyStream a ~> b ~> TyB TyUnit) Report, s)}
 tyES s (UB _ TallyList) = do {a <- var <$> freshN "a"; pure (UB (a ~> tyI) TallyList, s)}
 tyES s (UB l Negate) = do {a <- freshN "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
 tyES s (UB _ Some) = do {a <- var <$> freshN "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
