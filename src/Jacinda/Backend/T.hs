@@ -82,13 +82,22 @@ nI = state (\i -> (i, i+1))
 nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
+pSF :: Bool -> (Maybe Tmp, [Tmp]) -> [Env] -> IO ()
+pSF flush c@(Just t, tt) [e] = do
+    traverse_ (traverse_ (pS flush)) ((e !)<$>tt)
+    traverse_ (pS flush) (e!t)
+pSF flush c@(Nothing, tt) (e:es) = do
+    traverse_ (traverse_ (pS flush)) [e!t|t <- tt]
+    pSF flush c es
+pSF _ _ [] = pure ()
+
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
-run r flush j e bs | TyB TyUnit <- eLoc e = traverse_ (traverse_ (traverse_ (pS flush))).flip evalState j $ do
+run r flush j e bs | TyB TyUnit <- eLoc e =  (\(s, f, env) -> pSF flush (s,f) env) $ flip evalState j $ do
     (res, tt, iEnv, μ) <- unit e
     u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         outs=μ<$>ctxs; es'=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
-    pure ((\env -> [gE env!t|t <- tt])<$>es')
+    pure (res, tt, gE<$>es')
 run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
     (iEnv, μ) <- ctx e t
