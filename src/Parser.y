@@ -65,6 +65,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     ceilSym { TokSym $$ CeilSym }
     dedup { TokSym $$ DedupTok }
     dedupon { TokSym $$ DedupOnTok }
+    report { TokSym $$ IceCreamCone }
 
     plus { TokSym $$ PlusTok }
     minus { TokSym $$ MinusTok }
@@ -306,6 +307,7 @@ E :: { E AlexPosn }
   | max { BB $1 Max }
   | mapMaybeL { RwB $1 MapMaybe }
   | dedupOnL { RwB $1 DedupOn }
+  | report { RwB $1 Report }
   | filterL { RwB $1 Filter }
   | foldL { RwT $1 Fold }
   | fold1L { RwB $1 Fold1 }

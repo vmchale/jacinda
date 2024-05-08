@@ -41,6 +41,7 @@ mFi Sprintf    = Nothing
 mFi Match      = Nothing
 mFi Prior      = Just 5
 mFi DedupOn    = Just 5
+mFi Report     = Just 4
 
 isPre :: BUn -> Bool
 isPre At{}     = False

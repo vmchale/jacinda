@@ -150,6 +150,7 @@ data BBin = Plus | Times | Div
           | Prior | DedupOn | MapMaybe
           | Filter | Fold1
           | Match | Sprintf
+          | Report
           deriving (Eq)
 
 instance Pretty BBin where
@@ -205,7 +206,6 @@ data E a = Column { eLoc :: a, col :: Int }
          | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
-         -- TODO: "Report" aka $> print stream + display summary expression
          deriving (Functor, Generic)
 
 instance Recursive (E a) where
@@ -269,6 +269,7 @@ mPrec Lt         = Just 4
 mPrec Leq        = Just 4
 mPrec Matches    = Just 4
 mPrec NotMatches = Just 4
+mPrec Report     = Just 4
 mPrec And        = Just 3
 mPrec Or         = Just 2
 mPrec _          = Nothing
