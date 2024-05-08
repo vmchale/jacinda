@@ -71,6 +71,8 @@
 - [ ] https://www.thegeekstuff.com/2010/01/8-powerful-awk-built-in-variables-fs-ofs-rs-ors-nr-nf-filename-fnr/
   - [ ] OFS
   - [ ] ORS
+## Instances
+- [ ] `Ord` instance for option?
 ## Syntax
 - [ ] `$$` synonym for newline?
 - [ ] `.[ ... ]` dfn where you specify that it's binary?
