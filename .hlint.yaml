@@ -2,3 +2,4 @@
 - fixity: infixr 0 :$
 
 - ignore: {name: Use const}
+- ignore: {name: Replace case with fromMaybe}
