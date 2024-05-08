@@ -207,6 +207,7 @@ BBin :: { BBin }
      | fold1 { Fold1 }
      | exp { Exp }
      | dedupon { DedupOn }
+     | report { Report }
 
 Bind :: { (Nm AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
@@ -307,7 +308,6 @@ E :: { E AlexPosn }
   | max { BB $1 Max }
   | mapMaybeL { RwB $1 MapMaybe }
   | dedupOnL { RwB $1 DedupOn }
-  | report { BB $1 Report }
   | filterL { RwB $1 Filter }
   | foldL { RwT $1 Fold }
   | fold1L { RwB $1 Fold1 }
