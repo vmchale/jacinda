@@ -369,14 +369,11 @@ data Keyword = KwLet
              | KwAsv | KwUsv
 
 -- | Reserved/special variables
-data Var = VarX
-         | VarY
+data Var = VarX | VarY
          | VarFs | VarRs
          | VarOfs | VarOrs
-         | VarIx
-         | VarMin
-         | VarMax
-         | VarNf
+         | VarIx | VarNf
+         | VarMin | VarMax
 
 instance Pretty Var where
     pretty VarX     = "x"
