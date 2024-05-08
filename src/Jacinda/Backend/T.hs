@@ -86,7 +86,7 @@ pSF :: Bool -> (Maybe Tmp, [Tmp]) -> [Env] -> IO ()
 pSF flush (Just t, tt) [e] = do
     traverse_ (traverse_ (pS flush).(e !)) tt
     traverse_ (pS flush) (e!t)
-pSF flush c@(Nothing, tt) (e:es) = do
+pSF flush c@(_, tt) (e:es) = do
     traverse_ (traverse_ (pS flush)) [e!t|t <- tt]
     pSF flush c es
 pSF _ _ [] = pure ()
@@ -118,6 +118,12 @@ unit (Anchor _ es) = do
     tt <- traverse (\_ -> nI) es
     (iEnvs, μs) <- unzip <$> zipWithM ctx es tt
     pure (Nothing, tt, fold iEnvs, ts μs)
+unit (EApp _ (EApp _ (BB _ Report) es) e) = do
+    r <- nI
+    t <- nI
+    (iEnv, μ) <- ctx es t
+    (rEnv, g) <- φ e r
+    pure (Just r, [t], iEnv<>rEnv, \l -> μ l.g l)
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
 
