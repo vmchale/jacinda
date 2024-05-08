@@ -307,7 +307,7 @@ E :: { E AlexPosn }
   | max { BB $1 Max }
   | mapMaybeL { RwB $1 MapMaybe }
   | dedupOnL { RwB $1 DedupOn }
-  | report { RwB $1 Report }
+  | report { BB $1 Report }
   | filterL { RwB $1 Filter }
   | foldL { RwT $1 Fold }
   | fold1L { RwB $1 Fold1 }

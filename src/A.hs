@@ -161,7 +161,7 @@ instance Pretty BBin where
     pretty Max = "max"; pretty Min = "min"; pretty Prior = "\\."; pretty Filter = "#."
     pretty Split = "split"; pretty Splitc = "splitc"; pretty Sprintf = "sprintf"
     pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"
-    pretty Exp = "**"; pretty DedupOn = "~.*"
+    pretty Exp = "**"; pretty DedupOn = "~.*"; pretty Report = "$>"
 
 data DfnVar = X | Y deriving (Eq)
 
