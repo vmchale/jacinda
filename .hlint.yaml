@@ -1,2 +1,4 @@
 - fixity: infixr 0 ~>
 - fixity: infixr 0 :$
+
+- ignore: {name: Use const}
