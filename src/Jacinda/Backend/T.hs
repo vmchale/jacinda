@@ -176,6 +176,8 @@ na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
 
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Σ -> Σ)
 ctx AllColumn{} res                                     = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!mkStr b))
+ctx (ParseAllColl (_:$TyB TyI)) res                     = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsEInt b))
+ctx (ParseAllColl (_:$TyB TyFloat)) res                 = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsF b))
 ctx FParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsF b))
 ctx IParseAllCol{} res                                  = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsEInt b))
 ctx (Column _ i) res                                    = pure (ni res, \ ~(b, bs, _) -> mE$IM.insert res (Just$mkStr (fieldOf bs b i)))
@@ -411,6 +413,15 @@ e@BB{} @> _ = pure e
 e@TB{} @> _ = pure e
 e@UB{} @> _ = pure e
 (Lam t n e) @> b = Lam t n <$> (e@>b)
+-- basically an option can evaluate to a function... so ((option ...) x)
+-- needs to be reduced! but nothing will detect that...
+-- (when can a builtin etc. return a FUNCTION? if...then...else could!)
+--
+-- Question: would (f x) ever need for x to be inspected in order for things
+-- to proceed?? I think no...
+--
+-- thabove returns g'=(and another +) e=line (should be further reduced!)
+-- but g'=(+) and e=... will trip up
 
 me :: [(Nm T, E T)] -> Β
 me xs = IM.fromList [(unU$unique nm, e) | (nm, e) <- xs]
