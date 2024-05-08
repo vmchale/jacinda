@@ -83,12 +83,11 @@ nN :: T -> MM (Nm T)
 nN t = do {u <- nI; pure (Nm "fold_hole" (U u) t)}
 
 run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
-run r flush j (Anchor _ es) bs = traverse_ (traverse_ (traverse_ (pS flush))).flip evalState j $ do
-    tt <- traverse (\_ -> nI) es
-    (iEnvs, μs) <- unzip <$> zipWithM ctx es tt
+run r flush j e bs | TyB TyUnit <- eLoc e = traverse_ (traverse_ (traverse_ (pS flush))).flip evalState j $ do
+    (res, tt, iEnv, μ) <- unit e
     u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        μ=ts μs; outs=μ<$>ctxs; es'=scanl' (&) (Σ u (fold iEnvs) IM.empty IM.empty IM.empty IS.empty) outs
+        outs=μ<$>ctxs; es'=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
     pure ((\env -> [gE env!t|t <- tt])<$>es')
 run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
@@ -97,22 +96,25 @@ run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
     pure ((! t).gE<$>es)
-run r _ j e bs = pDocLn $ evalState (summar r e bs) j
-
-pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
-
-pDocLn :: E T -> IO ()
-pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
-pDocLn e                = putDoc (pretty e <> hardline)
-
-summar :: RurePtr -> E T -> [BS.ByteString] -> MM (E T)
-summar r e bs = do
+run r _ j e bs = pDocLn $ flip evalState j $ do
     (iEnv, g, e0) <- collect e
     u <- nI
     let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
         updates=g<$>ctxs
         finEnv=foldl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) updates
     e0@>(fromMaybe (throw EmptyFold)<$>gE finEnv)
+
+unit :: E T -> MM (Maybe Tmp, [Tmp], Env, LineCtx -> Σ -> Σ)
+unit (Anchor _ es) = do
+    tt <- traverse (\_ -> nI) es
+    (iEnvs, μs) <- unzip <$> zipWithM ctx es tt
+    pure (Nothing, tt, fold iEnvs, ts μs)
+
+pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
+
+pDocLn :: E T -> IO ()
+pDocLn (Lit _ (FLit f)) = hPutBuilder stdout (doubleDec f <> "\n")
+pDocLn e                = putDoc (pretty e <> hardline)
 
 collect :: E T -> MM (Env, LineCtx -> Σ -> Σ, E T)
 collect e@(EApp ty (EApp _ (EApp _ (TB _ Fold) _) _) _) = do
