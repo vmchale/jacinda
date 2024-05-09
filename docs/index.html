@@ -195,6 +195,7 @@ id="toc-custom-field-separators">Custom Field Separators</a></li>
 <li><a href="#filter" id="toc-filter">Filter</a></li>
 <li><a href="#formatting-output" id="toc-formatting-output">Formatting
 Output</a></li>
+<li><a href="#reporting" id="toc-reporting">Reporting</a></li>
 <li><a href="#libraries" id="toc-libraries">Libraries</a></li>
 </ul></li>
 <li><a href="#system-interaction" id="toc-system-interaction">System
@@ -362,6 +363,12 @@ a boolean.</p>
 <p>would display a file annotated with line numbers. Note the atypical
 syntax for tuples, we use <code>.</code> as a separator rather than
 <code>,</code>.</p>
+<h3 id="reporting">Reporting</h3>
+<p>One can print a stream and a summary value (usually the result of a
+fold):</p>
+<pre><code>$1 $&gt; (+)|0 $1:</code></pre>
+<p>Try:</p>
+<pre><code>seq 10000 | ja &#39;$1 $&gt; (+)|0 $1:&#39;</code></pre>
 <h3 id="libraries">Libraries</h3>
 <p>There is a syntax for functions:</p>
 <pre><code>fn sum(x) :=
