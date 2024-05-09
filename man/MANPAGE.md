@@ -202,6 +202,8 @@ a boolean expression.
 
 **\<pattern>,,\<pattern> \<expr>** Bookend a stream
 
+**<expr> $> <expr>** Print stream and summary result
+
 ## DECLARATIONS
 
 **:set fs=/REGEX/;** Set field separator
