@@ -34,6 +34,12 @@ readelf -d $(which vim) | ja '.?{%/Shared library/}{`5 ~* 1 /\[(.*)\]/}'
 otool -l $(locate libpng.dylib | tail -n1) | ja -R'Load command' '{%/LC_LOAD_DYLIB/}{`7}'
 ```
 
+## Show rpaths (Mac)
+
+```
+otool -l $(locate libapple.dylib | tail -n1) | ja -R 'Load command' '{%/LC_RPATH/}{`7}'
+```
+
 # Present RUNPATH (ELF)
 
 ```
