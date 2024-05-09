@@ -144,13 +144,21 @@ collect (Tup ty es) = do
     (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
     pure (fold seedEnvs, ts updates, Tup ty es')
 collect (EApp ty0 (EApp ty1 op@BB{} e0) e1) = do
-    (env0, f0, e0') <- collect e0
     (env1, f1, e1') <- collect e1
+    (env0, f0, e0') <- collect e0
     pure (env0<>env1, \l -> f1 l.f0 l, EApp ty0 (EApp ty1 op e0') e1')
+collect (EApp ty0 (EApp ty1 (EApp ty2 op@TB{} e0) e1) e2) = do
+    (env2, f2, e2') <- collect e2
+    (env1, f1, e1') <- collect e1
+    (env0, f0, e0') <- collect e0
+    pure (env0<>env1<>env2, f2@.f1@.f0, EApp ty0 (EApp ty1 (EApp ty2 op e0') e1') e2')
 collect (EApp ty f@UB{} e) = do
     (env, fϵ, eϵ) <- collect e
     pure (env, fϵ, EApp ty f eϵ)
 collect e@Lit{} = pure (IM.empty, const id, e)
+-- TODO: cond
+
+f @. g = \l -> f l.g l
 
 ts :: [LineCtx -> Σ -> Σ] -> LineCtx -> Σ -> Σ
 ts = foldl' (\f g l -> f l.g l) (const id)
