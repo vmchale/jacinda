@@ -235,6 +235,20 @@ As an example,
 would display a file annotated with line numbers. Note the atypical syntax for
 tuples, we use `.` as a separator rather than `,`.
 
+### Reporting
+
+One can print a stream and a summary value (usually the result of a fold):
+
+```
+$1 $> (+)|0 $1:
+```
+
+Try:
+
+```
+seq 10000 | ja '$1 $> (+)|0 $1:'
+```
+
 ### Libraries
 
 There is a syntax for functions:
