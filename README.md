@@ -95,4 +95,6 @@ Intentionally missing features:
 
 # Contributing
 
+I have rewritten the code several times so forking and applying patches is fraught!
+
 Bug reports are welcome contributions.
