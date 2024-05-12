@@ -114,7 +114,7 @@ runOnHandle :: [FilePath]
             -> Maybe T.Text -- ^ Record separator
             -> Handle
             -> IO ()
-runOnHandle is src cliFS cliRS = runOnBytes is "(runOnBytes)" src cliFS cliRS <=< BSL.hGetContents
+runOnHandle is src cliFS cliRS = runOnBytes is "(stdin)" src cliFS cliRS <=< BSL.hGetContents
 
 runOnFile :: [FilePath]
           -> T.Text
