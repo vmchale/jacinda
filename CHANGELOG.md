@@ -1,3 +1,7 @@
+# 3.0.1.1
+
+  * `fp` is defined (as `(stdin)`) when reading from stdin
+
 # 3.0.1.0
 
   * Add `,,` (bookend)
