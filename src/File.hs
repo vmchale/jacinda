@@ -1,6 +1,6 @@
 module File ( tcIO
             , tySrc
-            , runOnHandle
+            , runStdin
             , runOnFile
             , exprEval
             ) where
@@ -10,7 +10,6 @@ import           A.E
 import           A.I
 import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
-import           Control.Monad              ((<=<))
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.State.Strict (StateT, get, put, runState, runStateT)
 import           Control.Recursion          (cata, embed)
@@ -34,7 +33,7 @@ import           Parser
 import           Parser.Rw
 import           R
 import           Regex.Rure                 (RurePtr)
-import           System.IO                  (Handle)
+import           System.IO                  (stdin)
 import           Ty
 
 parseLib :: [FilePath] -> FilePath -> StateT AlexUserState IO [D AlexPosn]
@@ -108,13 +107,12 @@ runOnBytes incls fp src cliFS cliRS contents = do
         Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
         Just rs -> cont $ lazySplit (tcompile rs) contents
 
-runOnHandle :: [FilePath]
-            -> T.Text -- ^ Program
-            -> Maybe T.Text -- ^ Field separator
-            -> Maybe T.Text -- ^ Record separator
-            -> Handle
-            -> IO ()
-runOnHandle is src cliFS cliRS = runOnBytes is "(stdin)" src cliFS cliRS <=< BSL.hGetContents
+runStdin :: [FilePath]
+         -> T.Text -- ^ Program
+         -> Maybe T.Text -- ^ Field separator
+         -> Maybe T.Text -- ^ Record separator
+         -> IO ()
+runStdin is src cliFS cliRS = runOnBytes is "(stdin)" src cliFS cliRS =<< BSL.hGetContents stdin
 
 runOnFile :: [FilePath]
           -> T.Text
