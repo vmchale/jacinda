@@ -128,7 +128,7 @@ mgu l s t@(TyVar (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.inser
 mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
-mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
+mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0 = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
