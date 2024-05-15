@@ -22,6 +22,9 @@
 - [x] unicode/apl for floor+ceiling
 - [x] ⍬
 # Features
+- [ ] set variables on the command-line?
+  - [ ] `fd` has `{}`, `{/}`, etc. so one could use it to pass in filenames
+    while invoking...
 - [ ] named columns (e.g. ``Ndx` for output of `readelf -Ws`)
 - [ ] scan1
 - [ ] "mod"
