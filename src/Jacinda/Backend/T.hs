@@ -201,6 +201,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@RC{} _                = e
 κ e@Var{} _               = e
 κ (Lam t n e) line        = Lam t n (κ e line)
+κ (Tup ty es) line        = Tup ty ((`κ` line)<$>es)
 
 ni t=IM.singleton t Nothing
 na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
