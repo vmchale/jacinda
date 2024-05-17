@@ -64,7 +64,7 @@ bin/aarch64-darwin-ja: $(HS_SRC)
 
 bin/x86_64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	cabal build exe:ja -w ghc-9.8 --builddir=dist-newstyle/x86-linux --enable-executable-static
+	cabal build exe:ja -w $(HC) --builddir=dist-newstyle/x86-linux --enable-executable-static
 	export BIN=$$(fd 'x86_64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    strip $@
