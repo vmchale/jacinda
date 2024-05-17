@@ -225,9 +225,11 @@ checkType (TyB TyStr) (IsPrintf, _)      = pure ()
 checkType (TyB TyFloat) (IsPrintf, _)    = pure ()
 checkType (TyB TyI) (IsPrintf, _)        = pure ()
 checkType (TyB TyBool) (IsPrintf, _)     = pure ()
-checkType (TyTup tys) (c@IsPrintf, l)    = traverse_ (`checkType` (c, l)) tys
-checkType (Rho _ rs) (c@IsPrintf, l)     = traverse_ (`checkType` (c, l)) (IM.elems rs)
+checkType (TyTup tys) (c@IsPrintf, l)    | not$any nest tys = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ rs) (c@IsPrintf, l)     | tys <- IM.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
 checkType ty (c, l)                      = throwError $ Doesn'tSatisfy l ty c
+
+nest TyTup{}=True; nest Rho{}=True; nest _=False
 
 checkClass :: Ord a
            => IM.IntMap T -- ^ Unification result
