@@ -1,3 +1,5 @@
+  * Fix list indexing
+
 # 3.0.1.1
 
   * Fix bug with tuples in implicit contexts.
