@@ -1,5 +1,6 @@
 # 3.0.1.1
 
+  * Fix bug with tuples in implicit contexts.
   * `fp` is defined (as `(stdin)`) when reading from stdin
   * Bug in row typing for fields where `->0` is treated as legitimate and fails
     with unclear error at runtime
