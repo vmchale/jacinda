@@ -135,7 +135,7 @@ instance Pretty BTer where
     pretty AllCaptures = "captures"
     pretty Sub1        = "sub1"
     pretty Subs        = "subs"
-    pretty Bookend     = "bookend"
+    pretty Bookend     = ",,"
 
 -- builtin
 data BBin = Plus | Times | Div
