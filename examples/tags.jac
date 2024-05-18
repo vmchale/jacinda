@@ -1,6 +1,3 @@
-fn mkEx(s) :=
-  '/^' + s + '$/;';
-
 fn processStr(l) :=
   let
     val s := l->1
