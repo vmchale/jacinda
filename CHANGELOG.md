@@ -1,5 +1,6 @@
   * Fix list indexing
   * Remove `foldTwo` from the Jacinda prelude
+  * Add `head#, `tail#`, `init#`, `last#`, `drop#`, `take#` for lists
 
 # 3.0.1.1
 
