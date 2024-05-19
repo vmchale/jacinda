@@ -204,6 +204,15 @@ a boolean expression.
 
 **<expr> $> <expr>** Print stream and summary result
 
+**head#, last#**
+:   List a -> a
+
+**tail#, init#**
+:   List a -> List a
+
+**drop#, take#**
+:   Int -> List a -> List a
+
 ## DECLARATIONS
 
 **:set fs=/REGEX/;** Set field separator
