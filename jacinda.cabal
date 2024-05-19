@@ -74,7 +74,7 @@ library jacinda-lib
     ghc-options:      -Wall -O2 -Wno-missing-signatures -Wno-x-partial
     build-depends:
         base >=4.11.0.0 && <5,
-        bytestring >=0.11.0.0,
+        bytestring >=0.11.2.0,
         text,
         prettyprinter >=1.7.0,
         containers >=0.6.0.1,
