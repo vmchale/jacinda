@@ -176,6 +176,12 @@ tokens :-
         scan                     { mkBuiltin BuiltinScan }
         "sub1"                   { mkBuiltin BuiltinSub1 }
         subs                     { mkBuiltin BuiltinSubs }
+        "head#"                  { mkBuiltin BuiltinHead }
+        "tail#"                  { mkBuiltin BuiltinTail }
+        "last#"                  { mkBuiltin BuiltinLast }
+        "init#"                  { mkBuiltin BuiltinInit }
+        "take#"                  { mkBuiltin BuiltinTake }
+        "drop#"                  { mkBuiltin BuiltinDrop }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -418,6 +424,9 @@ data Builtin = BuiltinIParse | BuiltinFParse
              | BuiltinFold | BuiltinFold1
              | BuiltinScan
              | BuiltinSub1 | BuiltinSubs
+             | BuiltinHead | BuiltinTail
+             | BuiltinInit | BuiltinLast
+             | BuiltinDrop | BuiltinTake
 
 instance Pretty Builtin where
     pretty BuiltinIParse   = ":i"
@@ -442,6 +451,12 @@ instance Pretty Builtin where
     pretty BuiltinScan     = "scan"
     pretty BuiltinSub1     = "sub1"
     pretty BuiltinSubs     = "subs"
+    pretty BuiltinHead     = "head#"
+    pretty BuiltinTail     = "tail#"
+    pretty BuiltinInit     = "init#"
+    pretty BuiltinLast     = "last#"
+    pretty BuiltinTake     = "take#"
+    pretty BuiltinDrop     = "drop#"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

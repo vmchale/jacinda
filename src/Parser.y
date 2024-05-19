@@ -156,6 +156,13 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fold1L { TokBuiltin $$ BuiltinFold1 }
     scanL { TokBuiltin $$ BuiltinScan }
 
+    head { TokBuiltin $$ BuiltinHead }
+    tail { TokBuiltin $$ BuiltinTail }
+    init { TokBuiltin $$ BuiltinInit }
+    last { TokBuiltin $$ BuiltinLast }
+    take { TokBuiltin $$ BuiltinTake }
+    drop { TokBuiltin $$ BuiltinDrop }
+
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
 
@@ -304,8 +311,8 @@ E :: { E AlexPosn }
   | x { ResVar $1 X }
   | y { ResVar $1 Y }
   | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
-  | min { BB $1 Min }
-  | max { BB $1 Max }
+  | min { BB $1 Min } | max { BB $1 Max }
+  | drop { BB $1 Drop } | take { BB $1 Take }
   | mapMaybeL { RwB $1 MapMaybe }
   | dedupOnL { RwB $1 DedupOn }
   | filterL { RwB $1 Filter }
@@ -323,11 +330,12 @@ E :: { E AlexPosn }
   | captures { TB $1 AllCaptures }
   | floor { UB $1 Floor }
   | ceil { UB $1 Ceiling }
-  | floorSym { UB $1 Floor }
-  | ceilSym { UB $1 Ceiling }
+  | floorSym { UB $1 Floor } | ceilSym { UB $1 Ceiling }
   | dedup { UB $1 Dedup }
   | some { UB $1 Some }
   | catMaybes { UB $1 CatMaybes }
+  | head {UB $1 Head} | tail {UB $1 Tail}
+  | last {UB $1 Last} | init {UB $1 Init}
   | neg { UB $1 Negate }
   | ix { NB $1 Ix }
   | z { NB $1 MZ }

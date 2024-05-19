@@ -98,6 +98,7 @@ data BUn = Tally -- length of string field
          | Dedup | CatMaybes
          | Negate
          | TallyList -- length of vector
+         | Head | Tail | Init | Last
          deriving (Eq)
 
 instance Pretty BUn where
@@ -116,6 +117,10 @@ instance Pretty BUn where
     pretty CatMaybes  = ".?"
     pretty Negate     = "-."
     pretty TallyList  = "#*"
+    pretty Head       = "head#"
+    pretty Tail       = "tail#"
+    pretty Init       = "init#"
+    pretty Last       = "last#"
 
 data BTer = ZipW
           | Fold | Scan
@@ -151,6 +156,7 @@ data BBin = Plus | Times | Div
           | Filter | Fold1
           | Match | Sprintf
           | Report
+          | Take | Drop
           deriving (Eq)
 
 instance Pretty BBin where
@@ -162,6 +168,7 @@ instance Pretty BBin where
     pretty Split = "split"; pretty Splitc = "splitc"; pretty Sprintf = "sprintf"
     pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"
     pretty Exp = "**"; pretty DedupOn = "~.*"; pretty Report = "$>"
+    pretty Take = "take#"; pretty Drop = "drop#"
 
 data DfnVar = X | Y deriving (Eq)
 
