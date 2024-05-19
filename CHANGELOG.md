@@ -1,4 +1,5 @@
   * Fix list indexing
+  * Remove `foldTwo` from the Jacinda prelude
 
 # 3.0.1.1
 
