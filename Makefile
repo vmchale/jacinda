@@ -112,7 +112,7 @@ bench/data/ulysses.txt:
 	curl https://www.gutenberg.org/files/4300/4300-0.txt -o $@
 
 check:
-	cabal build
-	fd .jac examples/ -x cabal run ja -- tc
+	cabal build -w $(HC)
+	fd .jac examples/ -x cabal run ja -w $(HC) -- tc
 fmt:
 	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x stylish-haskell -i
