@@ -363,7 +363,25 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ NotMatches) s) r) @> b = do
     se <- s@>b; re <- r@>b
     pure (mkB (not$isMatch' (asR re) (asS se)))
+(EApp ty (EApp _ (BB _ Take) n) x) @> b = do
+    n' <- asI<$>(n@>b); x' <- asV<$>(x@>b)
+    pure $ Arr ty (V.take (fromIntegral n') x')
+(EApp ty (EApp _ (BB _ Drop) n) x) @> b = do
+    n' <- asI<$>(n@>b); x' <- asV<$>(x@>b)
+    pure $ Arr ty (V.drop (fromIntegral n') x')
 (Tup ty es) @> b = Tup ty.foldSeq <$> traverse (@>b) es
+(EApp _ (UB _ Head) x) @> b = do
+    x' <- x@>b
+    pure $ V.head (asV x')
+(EApp ty (UB _ Tail) x) @> b = do
+    x' <- x@>b
+    pure $ Arr ty (V.tail (asV x'))
+(EApp _ (UB _ Last) x) @> b = do
+    x' <- x@>b
+    pure $ V.last (asV x')
+(EApp ty (UB _ Init) x) @> b = do
+    x' <- x@>b
+    pure $ Arr ty (V.init (asV x'))
 (EApp _ (UB _ Tally) e) @> b = do
     e' <- e@>b
     let r=fromIntegral (BS.length$asS e')
