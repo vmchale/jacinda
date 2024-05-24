@@ -99,7 +99,6 @@ vanessa@Vanessas-Air jacinda % seq 100001 | cabal run ja -- run test/examples/ev
 vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/evenOdd.jac
 (500002 . 500000)
 ```
-- [x] `echo $PATH | ja run examples/path.jac` (proper rename...)
 - [ ]
 ```
 echo $PATH | ja -F: "[x ~ /usr/] #. {|[x+'\n'+y]|>\`$}"
