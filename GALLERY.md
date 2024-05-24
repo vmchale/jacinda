@@ -162,3 +162,10 @@ maximum := [max|_1 x]
 ```
 {|⍳}
 ```
+
+# Generate Vim Tag Files for Futhark
+
+```
+futhark defs lib/github.com/vmchale/img-fut/img.fut | \
+    ja -F'[\s+:]' "{|sprintf '%s\t%s\tcall cursor(%s,%s)' (\`2.\`3.\`4.(splitc \`5 '-').1)}"
+```
