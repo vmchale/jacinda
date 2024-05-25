@@ -384,6 +384,7 @@ tyES s (BB _ Split) = pure (BB (tyStr ~> tyR ~> tyV tyStr) Split, s)
 tyES s (BB _ Splitc) = pure (BB (tyStr ~> tyStr ~> tyV tyStr) Splitc, s)
 tyES s (BB _ Matches) = pure (BB (tyStr ~> tyR ~> tyB) Matches, s)
 tyES s (BB _ NotMatches) = pure (BB (tyStr ~> tyR ~> tyB) NotMatches, s)
+tyES s (BB _ MMatch) = pure (BB (tyStr ~> tyR ~> tyOpt tyStr) MMatch, s)
 tyES s (UB _ Tally) = pure (UB (tyStr ~> tyI) Tally, s)
 tyES s (BB _ Take) = do {a <- var<$>freshN "a"; pure (BB (tyI ~> tyV a ~> tyV a) Take, s)}
 tyES s (BB _ Drop) = do {a <- var<$>freshN "a"; pure (BB (tyI ~> tyV a ~> tyV a) Drop, s)}

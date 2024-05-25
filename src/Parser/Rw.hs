@@ -32,6 +32,7 @@ mFi MapMaybe   = Just 5
 mFi Filter     = Just 5
 mFi Fold1      = Just 5
 mFi Matches    = Just 5
+mFi MMatch     = Just 5
 mFi NotMatches = Just 5
 mFi Min        = Nothing
 mFi Max        = Nothing

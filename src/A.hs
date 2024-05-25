@@ -148,7 +148,7 @@ data BBin = Plus | Times | Div
           | Eq | Neq | Geq | Gt | Lt | Leq
           | Map
           | Matches -- ^ @'string' ~ /pat/@
-          | NotMatches
+          | NotMatches | MMatch
           | And | Or
           | Min | Max
           | Split | Splitc
@@ -163,7 +163,7 @@ instance Pretty BBin where
     pretty Plus = "+"; pretty Times = "*"; pretty Div = "%"; pretty Minus = "-"
     pretty Eq = "="; pretty Gt = ">"; pretty Lt = "<"; pretty Geq = ">="
     pretty Leq = "<="; pretty Neq = "!="; pretty Map = "¨"; pretty Matches = "~"
-    pretty NotMatches = "!~"; pretty And = "&"; pretty Or = "||"
+    pretty MMatch = "~?"; pretty NotMatches = "!~"; pretty And = "&"; pretty Or = "||"
     pretty Max = "max"; pretty Min = "min"; pretty Prior = "\\."; pretty Filter = "#."
     pretty Split = "split"; pretty Splitc = "splitc"; pretty Sprintf = "sprintf"
     pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"

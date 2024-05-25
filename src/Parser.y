@@ -83,6 +83,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     mapMaybe { TokSym $$ MapMaybeTok }
     catMaybes { TokSym $$ CatMaybesTok }
     capture { TokSym $$ CapTok }
+    mmatch { TokSym $$ L.MMatch }
     neg { TokSym $$ NegTok }
 
     eq { TokSym $$ EqTok }
@@ -197,16 +198,13 @@ BBin :: { BBin }
      | times { Times }
      | minus { Minus }
      | percent { Div }
-     | gt { Gt }
-     | lt { Lt }
-     | geq { Geq }
-     | leq { Leq }
-     | eq { Eq }
-     | neq { Neq }
+     | gt { Gt } | lt { Lt }
+     | geq { Geq } | leq { Leq }
+     | eq { Eq } | neq { Neq }
      | quot { Map }
      | mapMaybe { MapMaybe }
-     | tilde { Matches }
-     | notMatch { NotMatches }
+     | tilde { Matches } | notMatch { NotMatches }
+     | mmatch { A.MMatch }
      | and { And }
      | or { Or }
      | backslashdot { Prior }

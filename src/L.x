@@ -105,6 +105,7 @@ tokens :-
         "]"                      { mkSym RSqBracket `andBegin` 0 }
         "~"                      { mkSym Tilde }
         "!~"                     { mkSym NotMatchTok }
+        "~?"                     { mkSym MMatch }
         ","                      { mkSym Comma }
         ",,"                     { mkSym DoubleComma }
         "."                      { mkSym Dot }
@@ -257,9 +258,7 @@ get_pos = gets_alex alex_pos
 
 alexEOF = EOF <$> get_pos
 
-data Sym = PlusTok
-         | MinusTok
-         | PercentTok
+data Sym = PlusTok | MinusTok | PercentTok
          | ExpTok
          | FoldTok
          | IceCreamCone
@@ -279,12 +278,10 @@ data Sym = PlusTok
          | GtTok | GeqTok
          | LtTok | LeqTok
          | AndTok | OrTok
-         | Tilde | NotMatchTok
-         | Comma
+         | Tilde | NotMatchTok | MMatch
+         | Comma | Dot
          | DoubleComma
-         | Dot
-         | TallyTok
-         | LengthTok
+         | TallyTok | LengthTok
          | ConstTok
          | LBracePercent
          | LBraceBar
@@ -295,12 +292,9 @@ data Sym = PlusTok
          | BackslashDot
          | QuestionMark
          | FilterTok
-         | FloorSym
-         | CeilSym
-         | DedupTok
-         | DedupOnTok
-         | CatMaybesTok
-         | MapMaybeTok
+         | FloorSym | CeilSym
+         | DedupTok | DedupOnTok
+         | CatMaybesTok | MapMaybeTok
          | CapTok
          | NegTok
          | LastFieldTok
@@ -335,6 +329,7 @@ instance Pretty Sym where
     pretty RSqBracket    = "]"
     pretty Tilde         = "~"
     pretty NotMatchTok   = "!~"
+    pretty MMatch        = "~?"
     pretty Comma         = ","
     pretty DoubleComma   = ",,"
     pretty Dot           = "."
