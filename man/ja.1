@@ -134,6 +134,9 @@ b \-> (a \-> b) \-> Option a \-> b
 Str \-> Regex \-> Option (Int .
 Int)
 .TP
+\f[B]\[ti]?\f[R] Maybe match: return string if it is a match, otherwise None
+Str \-> Regex \-> Option Str
+.TP
 \f[B]\[ti]*\f[R] Match, returning nth capture group
 Str \-> Int \-> Regex \-> Option Str
 .TP

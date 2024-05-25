@@ -145,6 +145,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **match**
 :   Str -> Regex -> Option (Int . Int)
 
+**~?** Maybe match: return string if it is a match, otherwise None
+:   Str -> Regex -> Option Str
+
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
