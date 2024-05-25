@@ -50,7 +50,6 @@
       can be a variable!
   - [ ] that introduced a bug w/ nested dfns (euh)
 - [x] `.1` etc. to extract tuples (arrays?)
-  - [ ] tuples fr
 - [ ] alex-style regex combinations, `$digit+` and `@string_in` or w/e
 - [ ] ~~parse dates~~
 - [½] map, filter, scan, prior for vectors &c.?
@@ -59,8 +58,9 @@
 - [x] `\`$` as "all fields, as list" or something
 - [x] `dedupBy` builtin
 - [ ] Infix operators
-  - [ ] `$>` (ice cream cone?)
-  - [ ] `~?` (maybe match)
+  - [x] `$>` (ice cream cone?)
+  - [x] `~?` (maybe match)
+  - [ ] (<|>) (alternative)
 - [x] fold without seed
   - [x] `seq 10 | ja "[x+','+y]|'' \$0"`
   - [ ] foldMaybe
