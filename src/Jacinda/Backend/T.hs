@@ -363,6 +363,9 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ NotMatches) s) r) @> b = do
     se <- s@>b; re <- r@>b
     pure (mkB (not$isMatch' (asR re) (asS se)))
+(EApp ty (EApp _ (BB _ MMatch) s) r) @> b = do
+    se <- s@>b; re <- r@>b
+    pure (if isMatch' (asR re) (asS se) then OptionVal ty (Just$!se) else OptionVal ty Nothing)
 (EApp ty (EApp _ (BB _ Take) n) x) @> b = do
     n' <- asI<$>(n@>b); x' <- asV<$>(x@>b)
     pure $ Arr ty (V.take (fromIntegral n') x')
