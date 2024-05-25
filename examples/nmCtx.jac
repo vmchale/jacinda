@@ -3,9 +3,6 @@
 @include'prelude/fn.jac'
 @include'lib/maybe.jac'
 
-fn mMatch(str, re) :=
-  ?str ~ re; Some str; None;
-
 fn step(ctx, line) :=
   let
     val fpCtx := line ~* 1 /(.*\.o):$/
