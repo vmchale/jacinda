@@ -18,8 +18,10 @@ data-files:
     lib/fs/*.jac
     prelude/*.jac
 
-extra-source-files:
+extra-doc-files:
     CHANGELOG.md
+
+extra-source-files:
     README.md
     man/ja.1
     doc/guide.pdf
