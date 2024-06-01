@@ -1,10 +1,10 @@
 - inspiration: AWK, Haskell, J/APL/k, C (include)... (some architectural decisions mime GHC)
 # Release
-- [ ] Anchored streams
-- [ ] Bug: fold1
+- [x] Anchored streams
+- [x] Bug: fold1
+  - [x] fold-of-scan-of-mapMaybe...
   - [x] two expressions with fold1 (and also gather-folds)
   - [x] fold: catmaybes, mapMaybes
-  - [x] fold-of-scan-of-mapMaybe...
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
@@ -83,7 +83,8 @@
 - [ ] lineLength := (#")
 - [ ] `{\<pat>}. $0` ... filter on stream expressions
   - [x] or #: maybe?
-- [ ] `0$` or something... line, split by field separator,
+- [ ] `0$` or something... stream of lines line, split by field separator into
+  a list
 # Examples
 - [ ] https://github.com/wernsey/d.awk
 - [ ] https://www.well.ox.ac.uk/~johnb/comp/awk/awk.html
@@ -103,11 +104,10 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
 - [ ] `ix` (line number) on filtered streams?
 # Performance
 - [ ] print redexes idk
-- [ ] don't bother with `imap` if `ix` isn't used?
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
 - [ ] http://awka.sourceforge.net/compare.html
-- [ ] bind let-stuff ... allow until later?
+- [ ] don't inline e.g. fold-of-stream
 - [x] Rewrite rules: `eNorm` twice, rename twice, &c.
 - [x] 32m to normalize expression (eClosed) on chess example
   - [x] space leak ay (foldWithCtx ... scanl' works) (manual space leak)
@@ -122,6 +122,7 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
   ```
   nm --defined-only /usr/local/lib/libgmp.a
   ```
+  (scan ith seed)
 - [ ] https://github.com/tenox7/ttyplot#examples
 - [ ] https://github.com/arnoldrobbins/dformat/blob/master/dformat.awk
 - [ ] https://awk.dev/
@@ -129,6 +130,7 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
   - [x] min/max
 - [ ] https://www.stats.govt.nz/large-datasets/csv-files-for-download/
 - [ ] https://catalog.data.gov/dataset/?res_format=CSV
+- [ ] https://datatracker.ietf.org/doc/html/rfc4180
 - [ ] checksum?
 - [½] `basename`, `pathchk` (lol)
 - [ ] https://github.com/curl/trurl
