@@ -20,6 +20,16 @@ awk '{ total = total + NF }; END {print total}'
 ja '(+)|0 {|#*`$}
 ```
 
+# Get Version
+
+```
+git ls-remote https://github.com/musikinformatik/SuperDirt.git | grep tags | tail -n1 | awk -F/ '{print $NF}'
+```
+
+```
+git ls-remote https://github.com/musikinformatik/SuperDirt.git | ja -F/ '[y]|>{%/tags/}{`*}'
+```
+
 # Last Field of First Line
 
 ```awk
