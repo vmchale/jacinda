@@ -2,9 +2,9 @@
 # Release
 - [ ] Anchored streams
 - [ ] Bug: fold1
-  - [ ] two expressions with fold1 (and also gather-folds)
+  - [x] two expressions with fold1 (and also gather-folds)
   - [x] fold: catmaybes, mapMaybes
-  - [ ] fold-of-scan-of-mapMaybe...
+  - [x] fold-of-scan-of-mapMaybe...
 # Documentation
 - [ ] Document escaped characters
 - [ ] tuples
@@ -75,7 +75,7 @@
   - [ ] OFS
   - [ ] ORS
 ## Instances
-- [ ] `Ord` instance for option?
+- [ ] `Ord` instance for option? (and lists)
 ## Syntax
 - [ ] `$$` synonym for newline?
 - [ ] `.[ ... ]` dfn where you specify that it's binary?
@@ -99,11 +99,6 @@ vanessa@Vanessas-Air jacinda % seq 100001 | cabal run ja -- run test/examples/ev
 vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/evenOdd.jac
 (500002 . 500000)
 ```
-- [ ]
-```
-echo $PATH | ja -F: "[x ~ /usr/] #. {|[x+'\n'+y]|>\`$}"
-```
-wrong result??
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 - [ ] `ix` (line number) on filtered streams?
 # Performance
