@@ -1,15 +1,10 @@
 @include'prelude/fn.jac'
 @include'lib/maybe.jac'
 
-fn mMatch(p, str) :=
-  if p str
-    then Some str
-    else None;
-
 fn step(p, ctx, line) :=
   let
     val fpCtx ≔ line ~* 1 /diff --git\s+([^\s]+)/
-    val mLine ≔ mMatch p line
+    val mLine ≔ p ~? line
   in (alternative (ctx->1) fpCtx.mLine) end;
 
 fn process(x) :=
