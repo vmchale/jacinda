@@ -329,12 +329,8 @@ This is perhaps not worth the loss in portability but it shows functional progra
 # Categorize
 
 ```
-curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
-xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv '~.{ix>1}{`8}'
-```
-
-```
-xsv select Series_title_1 food-price-index-september-2023-weighted-average-prices.csv | xsv frequency -l0
+curl https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv -o food-prices.csv
+ja --csv '~.{ix>1}{`8} -i food-prices.csv
 ```
 
 # StackOverflow

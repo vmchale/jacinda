@@ -123,8 +123,8 @@ ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(⍳.`1)}' -i /development/dhall/dhall
 # Inflation
 
 ```
-curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
-xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
+curl https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv -o food-prices.csv
+ja --csv '(%)\. {%/Apple/}{`3:}' -i food-prices.csv
 ```
 
 # Get Environment Variable
