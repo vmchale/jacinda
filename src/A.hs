@@ -8,6 +8,7 @@ module A ( E (..), T (..), (~>), TB (..), C (..)
          , L (..), N (..), BBin (..), BTer (..)
          , BUn (..), DfnVar (..)
          , D (..), Program (..)
+         , Mode (..)
          , mapExpr
          , getS, flushD
          -- * Base functors
@@ -417,8 +418,10 @@ instance Show (Program a) where show=show.pretty
 flushD :: Program a -> Bool
 flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
-getS :: Program a -> (Maybe T.Text, Maybe T.Text)
-getS (Program ds _) = foldl' go (Nothing, Nothing) ds where
+data Mode = CSV | AWK (Maybe T.Text) (Maybe T.Text) -- field, record
+
+getS :: Program a -> Mode
+getS (Program ds _) = uncurry AWK (foldl' go (Nothing, Nothing) ds) where
     go (_, rs) (SetFS bs) = (Just bs, rs)
     go _ SetAsv           = (Just "\\x1f", Just "\\x1e")
     go _ SetUsv           = (Just "␞",Just "␟")

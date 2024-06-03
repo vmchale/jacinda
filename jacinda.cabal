@@ -91,7 +91,8 @@ library jacinda-lib
         vector >=0.12.2.0,
         recursion >=1.0.0.0,
         split,
-        deepseq
+        deepseq,
+        cassava
 
     other-extensions:
         OverloadedStrings

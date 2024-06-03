@@ -2,6 +2,7 @@
 
 module Main (main) where
 
+import           A                   (Mode (..))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
@@ -11,7 +12,7 @@ import qualified Paths_jacinda       as P
 
 data Command = TypeCheck !FilePath ![FilePath]
              | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath]
-             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !(Maybe T.Text) ![FilePath]
+             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
              | Eval !T.Text
 
 jacFile :: Parser FilePath
@@ -19,6 +20,11 @@ jacFile = argument str
     (metavar "JACFILE"
     <> help "Source code"
     <> jacCompletions)
+
+csv :: Parser Bool
+csv = switch
+    (long "csv"
+    <> help "Process as CSV")
 
 asv :: Parser Bool
 asv = switch
@@ -66,7 +72,7 @@ commandP = hsubparser
     where
         tcP = TypeCheck <$> jacFile <*> includes
         runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> jacRs <*> includes
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
 includes :: Parser [FilePath]
@@ -92,20 +98,25 @@ versionMod = infoOption (V.showVersion P.version) (short 'V' <> long "version" <
 main :: IO ()
 main = run =<< execParser wrapper
 
-ap :: Bool -> Bool -> Maybe T.Text -> Maybe T.Text -> (Maybe T.Text, Maybe T.Text)
-ap True True _ _          = errorWithoutStackTrace "--asv and --usv both specified."
-ap _ True Just{} _        = errorWithoutStackTrace "--usv and field separator both speficied."
-ap _ True _ Just{}        = errorWithoutStackTrace "--usv and record separator both speficied."
-ap True _ Just{} _        = errorWithoutStackTrace "--asv and field separator both speficied."
-ap True _ _ Just{}        = errorWithoutStackTrace "--asv and record separator both speficied."
-ap True _ Nothing Nothing = (Just "\\x1f", Just "\\x1e")
-ap _ True Nothing Nothing = (Just "␟", Just "␞")
-ap _ _ fs rs              = (fs,rs)
+ap :: Bool -> Bool -> Bool -> Maybe T.Text -> Maybe T.Text -> Mode
+ap True True _ _ _          = errorWithoutStackTrace "--asv and --usv both specified."
+ap True _ True _ _          = errorWithoutStackTrace "--asv and --csv both specified."
+ap _ True True _ _          = errorWithoutStackTrace "--usv and --csv both specified."
+ap _ True _ Just{} _        = errorWithoutStackTrace "--usv and field separator both speficied."
+ap _ True _ _ Just{}        = errorWithoutStackTrace "--usv and record separator both speficied."
+ap True _ _ Just{} _        = errorWithoutStackTrace "--asv and field separator both speficied."
+ap True _ _ _ Just{}        = errorWithoutStackTrace "--asv and record separator both speficied."
+ap _ _ True Just{} _        = errorWithoutStackTrace "--csv and field separator both speficied."
+ap _ _ True _ Just{}        = errorWithoutStackTrace "--csv and record separator both speficied."
+ap _ _ True Nothing Nothing = CSV
+ap True _ _ Nothing Nothing = AWK (Just "\\x1f") (Just "\\x1e")
+ap _ True _ Nothing Nothing = AWK (Just "␟") (Just "␞")
+ap _ _ _ fs rs              = AWK fs rs
 
 run :: Command -> IO ()
-run (TypeCheck fp is)                = tcIO is =<< TIO.readFile fp
-run (Run fp fs rs Nothing is)        = do { contents <- TIO.readFile fp ; runStdin is contents fs rs }
-run (Run fp fs rs (Just dat) is)     = do { contents <- TIO.readFile fp ; runOnFile is contents fs rs dat }
-run (Expr eb Nothing fs a u rs is)   = let (fs',rs') = ap a u fs rs in runStdin is eb fs' rs'
-run (Expr eb (Just fp) fs a u rs is) = let (fs',rs') = ap a u fs rs in runOnFile is eb fs' rs' fp
-run (Eval e)                         = print (exprEval e)
+run (TypeCheck fp is)                  = tcIO is =<< TIO.readFile fp
+run (Run fp fs rs Nothing is)          = do { contents <- TIO.readFile fp ; runStdin is contents (AWK fs rs) }
+run (Run fp fs rs (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents (AWK fs rs) dat }
+run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is eb m
+run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is eb m fp
+run (Eval e)                           = print (exprEval e)

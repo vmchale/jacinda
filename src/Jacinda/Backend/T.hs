@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Jacinda.Backend.T ( run, eB ) where
+module Jacinda.Backend.T ( LineCtx, run, eB ) where
 
 import           A
 import           A.I
