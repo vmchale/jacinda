@@ -39,10 +39,13 @@ import           Text.CSV.Lazy.ByteString   (CSVField (..), parseCSV)
 import           Ty
 
 csvCtx :: BSL.ByteString -> [LineCtx]
-csvCtx = go.parseCSV where
-    go []           = []
-    go (Left err:_) = error (show err)
-    go (Right r:rs) = let fs=mB<$>r in (fold fs, V.fromList fs, fromIntegral (line r)):go rs
+csvCtx = go Nothing . parseCSV where
+    go _ []           = []
+    go _ (Left err:_) = error (show err)
+    -- TODO: re-csv it?
+    -- FIXME: check n as fs are written (right now it's just a guess)
+    go (Just n) (Right r:rs) = let fs=mB<$>r in (fold fs, V.fromListN n fs, fromIntegral (line r)):go (Just n) rs
+    go Nothing (Right r:rs)  = let fs=mB<$>r; n=length fs in (fold fs, V.fromListN n fs, fromIntegral (line r)):go (Just n) rs
     mB f@CSVField{} = BSL.toStrict (csvFieldContent f)
     mB f            = error (show f)
     line (f@CSVField{}:_) = csvRowNum f
