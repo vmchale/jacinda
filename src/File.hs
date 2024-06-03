@@ -17,7 +17,6 @@ import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as BSL
 import qualified Data.ByteString.Lazy.Char8 as ASCIIL
-import           Data.Csv.Streaming         (HasHeader (..), Records (..), decode)
 import           Data.Foldable              (fold, traverse_)
 import           Data.Functor               (($>))
 import qualified Data.Text                  as T
@@ -36,13 +35,14 @@ import           Parser.Rw
 import           R
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (stdin)
+import           Text.CSV.Lazy.ByteString   (CSVField (..), parseCSV)
 import           Ty
 
-csvCtx :: BSL.ByteString -> [(BS.ByteString, V.Vector BS.ByteString)]
-csvCtx bs = let rs=decode NoHeader bs in go rs where
-    go (Nil Nothing _)      = []
-    go (Nil (Just s) _)     = error s
-    go (Cons (Right ds) rs) = (fold ds, ds):go rs
+csvCtx :: BSL.ByteString -> [LineCtx]
+csvCtx bs = let rs=parseCSV bs in go rs where
+    go []                   = []
+    go (Left err:_)         = error (show err)
+    go (Right ds@(d:_):rs') = let fs=BSL.toStrict.csvFieldContent<$>ds in (fold fs, V.fromList fs, fromIntegral$csvRowNum d):go rs'
 
 parseLib :: [FilePath] -> FilePath -> StateT AlexUserState IO [D AlexPosn]
 parseLib incls fp = do
@@ -118,7 +118,7 @@ runOnBytes incls fp src mode contents = do
                     Just rs -> lazySplit (tcompile rs) contents
                 ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
             in cont ctxs
-        CSV -> let ctxs = zipWith (\ ~(x,y) z -> (x,y,z)) (csvCtx contents) [1..] in cont ctxs
+        CSV -> let ctxs = csvCtx contents in cont ctxs
 
 runStdin :: [FilePath]
          -> T.Text -- ^ Program

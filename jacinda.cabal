@@ -92,7 +92,7 @@ library jacinda-lib
         recursion >=1.0.0.0,
         split,
         deepseq,
-        cassava
+        lazy-csv
 
     other-extensions:
         OverloadedStrings
