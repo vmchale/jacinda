@@ -102,10 +102,13 @@ runOnBytes incls fp src cliFS cliRS contents = do
     m'Throw $ cF eI
     let ~(afs, ars) = getS ast
         (e', k) = runState (eta eI) j
-        cont=run (compileFS (cliFS <|> afs)) (flushD typed) k (compileR (encodeUtf8 $ T.pack fp) e')
-    case cliRS <|> ars of
-        Nothing -> cont $ fmap BSL.toStrict (ASCIIL.lines contents)
-        Just rs -> cont $ lazySplit (tcompile rs) contents
+        cont=run (flushD typed) k (compileR (encodeUtf8 $ T.pack fp) e')
+    let r=compileFS (cliFS <|> afs)
+        bs=case cliRS <|> ars of
+            Nothing -> fmap BSL.toStrict (ASCIIL.lines contents)
+            Just rs -> lazySplit (tcompile rs) contents
+        ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
+    cont ctxs
 
 runStdin :: [FilePath]
          -> T.Text -- ^ Program

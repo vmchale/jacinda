@@ -91,25 +91,22 @@ pSF flush c@(_, tt) (e:es) = do
     pSF flush c es
 pSF _ _ [] = pure ()
 
-run :: RurePtr -> Bool -> Int -> E T -> [BS.ByteString] -> IO ()
-run r flush j e bs | TyB TyUnit <- eLoc e =  (\(s, f, env) -> pSF flush (s,f) env) $ flip evalState j $ do
+run :: Bool -> Int -> E T -> [LineCtx] -> IO ()
+run flush j e ctxs | TyB TyUnit <- eLoc e =  (\(s, f, env) -> pSF flush (s,f) env) $ flip evalState j $ do
     (res, tt, iEnv, μ) <- unit e
     u <- nI
-    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        outs=μ<$>ctxs; es'=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
+    let outs=μ<$>ctxs; es'=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
     pure (res, tt, gE<$>es')
-run r flush j e bs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
+run flush j e ctxs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)).flip evalState j $ do
     t <- nI
     (iEnv, μ) <- ctx e t
     u <- nI
-    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
+    let outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
     pure ((! t).gE<$>es)
-run r _ j e bs = pDocLn $ flip evalState j $ do
+run _ j e ctxs = pDocLn $ flip evalState j $ do
     (iEnv, g, e0) <- collect e
     u <- nI
-    let ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
-        updates=g<$>ctxs
+    let updates=g<$>ctxs
         finEnv=foldl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) updates
     e0@>(fromMaybe (throw EmptyFold)<$>gE finEnv)
 
