@@ -21,7 +21,7 @@ main =
                       , bench "runOnFile" $ nfIO (silence $ do { contents <- TIO.readFile "examples/span2.jac" ; runOnFile [] contents Nothing Nothing "bench/data/span.txt" })
                       , bench "sedstream.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/sedstream.jac" ; runOnFile [] contents Nothing Nothing "bench/data/lines.txt" })
                       , bench "gnused.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/gnused.jac" ; runOnFile [] contents Nothing Nothing "bench/data/lines.txt" })
-                      , bench "fungnused.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/fungnused.jac" ; runOnFile [] contents Nothing Nothing "bench/data/lines.txt" })
+                      -- , bench "fungnused.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/fungnused.jac" ; runOnFile [] contents Nothing Nothing "bench/data/lines.txt" })
                       , bench "hsLibversionMac.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/hsLibversionMac.jac"; runOnFile [] contents Nothing Nothing "bench/data/pandoc-mac" })
                       , bench "sedsmtp.jac" $ nfIO (silence $ do { contents <- TIO.readFile "examples/sedsmtp.jac" ; runOnFile [] contents Nothing Nothing "test/examples/data/2.txt" })
                       ]
