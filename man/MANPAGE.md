@@ -44,6 +44,9 @@ ja - Jacinda: data filtering, processing, reporting
 **-R**
 :   Record separator regex
 
+**-\-csv**
+:   Process as CSV
+
 # LANGUAGE
 
 ## REGEX
@@ -222,6 +225,8 @@ a boolean expression.
 
 **:set rs=/REGEX/;** Set record separator
 
+**:set csv;** Process as CSV
+
 **:flush;** Flush stdout for every line
 
 # INFLUENTIAL ENVIRONMENT VARIABLES
@@ -245,7 +250,7 @@ a boolean expression.
 :set fs:=/,[ \\t]*|[ \\t]+/; {|sprintf \'%i %i\' (\`2 . \`1)}
 :   Same, with input fields separated by comma and/or blanks and tabs.
 
-:set fs:=/,/; {ix=1}{[x+'\\n'+y]|>`$}
+:set csv; {ix=1}{[x+'\\n'+y]|>`$}
 :   Present column names of a .csv file, one per line
 
 (+)|0 $1:i

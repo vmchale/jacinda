@@ -35,6 +35,9 @@ Field separator regex
 .TP
 \f[B]\-R\f[R]
 Record separator regex
+.TP
+\f[B]\-\-csv\f[R]
+Process as CSV
 .SH LANGUAGE
 .SS REGEX
 Regular expressions follow Rust\[cq]s regex library:
@@ -210,6 +213,8 @@ Int \-> List a \-> List a
 .PP
 \f[B]:set rs=/REGEX/;\f[R] Set record separator
 .PP
+\f[B]:set csv;\f[R] Process as CSV
+.PP
 \f[B]:flush;\f[R] Flush stdout for every line
 .SH INFLUENTIAL ENVIRONMENT VARIABLES
 \f[CR]JAC_PATH\f[R] \- colon\-separated list of directories to search
@@ -230,7 +235,7 @@ Print the first two fields in opposite order
 :set fs:=/,[ \[rs]t]*|[ \[rs]t]+/; {|sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
 Same, with input fields separated by comma and/or blanks and tabs.
 .TP
-:set fs:=/,/; {ix=1}{[x+`\[rs]n'+y]|>\[ga]$}
+:set csv; {ix=1}{[x+`\[rs]n'+y]|>\[ga]$}
 Present column names of a .csv file, one per line
 .TP
 (+)|0 $1:i
