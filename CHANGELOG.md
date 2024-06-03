@@ -1,3 +1,4 @@
+  * Add support for CSV via the `--csv` flag and `:set csv`
   * Add `~?` (maybe match)
   
 # 3.0.2.0
