@@ -556,19 +556,6 @@ using the laconic syntax for conditionals, `?<bool>;<expr>;<expr>`
 
 ### CSV Processing
 
-We can convert `.csv` data to use ASCII separators with the aid of [xsv](https://github.com/BurntSushi/xsv), viz.
-
-
-```
-xsv fmt file.csv --ascii | ja --asv '$1'
-```
-
-For "well-behaved" csv data, we can simply split on `,`:
-
-```
-ja -F, '$1'
-```
-
 #### Vaccine Effectiveness
 
 As an example, NYC publishes weighted data on [vaccine breakthroughs](https://github.com/nychealth/coronavirus-data/blob/master/latest/now-weekly-breakthrough.csv).
@@ -579,10 +566,10 @@ We can download it:
 curl -L https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv -o /tmp/now-weekly-breakthrough.csv
 ```
 
-And then process its columns with `ja`
+And then process its columns with `ja` using CSV mode:
 
 ```
-ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -F, -i /tmp/now-weekly-breakthrough.csv
+ja --csv ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`11:}' -i /tmp/now-weekly-breakthrough.csv
 ```
 
 As of writing:
@@ -613,13 +600,11 @@ We start with New Zealand's food price index:
 curl -O https://www.stats.govt.nz/assets/Uploads/Food-price-index/Food-price-index-September-2023/Download-data/food-price-index-september-2023-weighted-average-prices.csv
 ```
 
-This data is not "well-behaved" so we convert to ASV:
+Then:
 
 ```
-xsv fmt --ascii food-price-index-september-2023-weighted-average-prices.csv | ja --asv '(%)\. {%/Apple/}{`3:}'
+ja --csv '(%)\. {%/Apple/}{`3:}'
 ```
-
-This uses `(\.)` (prior) to do something `xsv` cannot.
 
 # Machinery
 
