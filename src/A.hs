@@ -395,7 +395,8 @@ instance Show C where show=show.pretty
 data D a = SetFS T.Text | SetRS T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl
-         | SetAsv | SetUsv | SetOFS T.Text | SetORS T.Text
+         | SetAsv | SetUsv | SetCsv
+         | SetOFS T.Text | SetORS T.Text
          deriving (Functor)
 
 instance Pretty (D a) where
@@ -421,12 +422,13 @@ flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 data Mode = CSV | AWK (Maybe T.Text) (Maybe T.Text) -- field, record
 
 getS :: Program a -> Mode
-getS (Program ds _) = uncurry AWK (foldl' go (Nothing, Nothing) ds) where
-    go (_, rs) (SetFS bs) = (Just bs, rs)
-    go _ SetAsv           = (Just "\\x1f", Just "\\x1e")
-    go _ SetUsv           = (Just "␞",Just "␟")
-    go (fs, _) (SetRS bs) = (fs, Just bs)
-    go next _             = next
+getS (Program ds _) = foldl' go (AWK Nothing Nothing) ds where
+    go (AWK _ rs) (SetFS bs) = AWK (Just bs) rs
+    go _ SetAsv              = AWK (Just "\\x1f") (Just "\\x1e")
+    go _ SetUsv              = AWK (Just "␞") (Just "␟")
+    go _ SetCsv              = CSV
+    go (AWK fs _) (SetRS bs) = AWK fs (Just bs)
+    go next _                = next
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)

@@ -123,6 +123,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     else { TokKeyword $$ KwElse }
     usv { TokKeyword $$ KwUsv }
     asv { TokKeyword $$ KwAsv }
+    csv { TokKeyword $$ KwCsv }
 
     x { TokResVar $$ VarX }
     y { TokResVar $$ VarY }
@@ -229,6 +230,7 @@ D :: { D AlexPosn }
   | set ors defEq strLit semicolon { SetORS (strTok $4) }
   | set asv semicolon { SetAsv }
   | set usv semicolon { SetUsv }
+  | set csv semicolon { SetCsv }
   | flush semicolon { FlushDecl }
   | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
   | fn name defEq E semicolon { FunDecl $2 [] $4 }

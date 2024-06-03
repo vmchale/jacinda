@@ -147,6 +147,7 @@ tokens :-
         else                     { mkKw KwElse }
         asv                      { mkKw KwAsv }
         usv                      { mkKw KwUsv }
+        csv                      { mkKw KwCsv }
 
         fs                       { mkRes VarFs }
         rs                       { mkRes VarRs }
@@ -367,7 +368,7 @@ data Keyword = KwLet
              | KwFn
              | KwInclude
              | KwIf | KwThen | KwElse
-             | KwAsv | KwUsv
+             | KwAsv | KwUsv | KwCsv
 
 -- | Reserved/special variables
 data Var = VarX | VarY
@@ -402,6 +403,7 @@ instance Pretty Keyword where
     pretty KwElse    = "else"
     pretty KwUsv     = "usv"
     pretty KwAsv     = "asv"
+    pretty KwCsv     = "csv"
 
 data Builtin = BuiltinIParse | BuiltinFParse
              | BuiltinSubstr
