@@ -59,7 +59,7 @@ parseLib incls fp = do
     case parseLibWithCtx contents st of
         Left err              -> liftIO (throwIO err)
         Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
-        Right (st', (is, ds)) -> do { put st' ; dss <- traverse (parseLib incls) is ; pure (concat dss ++ fmap rwD ds) }
+        Right (st', (is, ds)) -> do {put st'; dss <- traverse (parseLib incls) is; pure (concat dss ++ fmap rwD ds)}
 
 parseE :: [FilePath] -> T.Text -> StateT AlexUserState IO (Program AlexPosn)
 parseE incls bs = do
