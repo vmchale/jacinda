@@ -37,6 +37,14 @@ import           Regex.Rure                 (RurePtr)
 import           System.IO                  (stdin)
 import           Text.CSV.Lazy.ByteString   (CSVField (..), parseCSV)
 import           Ty
+import Control.Monad.ST.Strict as ST
+import Control.Monad.ST.Strict (runST)
+import qualified Data.Vector.Mutable as MV
+
+m'Vec :: Int -> [a] -> V.Vector a
+m'Vec n xs = runST $ do
+    v <- MV.unsafeNew n
+    V.unsafeFreeze v
 
 csvCtx :: BSL.ByteString -> [LineCtx]
 csvCtx = go Nothing . parseCSV where
