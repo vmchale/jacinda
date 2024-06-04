@@ -1,3 +1,5 @@
 dist-newstyle
 *.hp
 *.prof
+tags
+tags.mtime
