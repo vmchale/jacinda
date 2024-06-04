@@ -8,7 +8,7 @@ author:             Vanessa McHale
 bug-reports:        https://github.com/vmchale/jacinda/issues
 synopsis:           Functional, expression-oriented data processing language
 description:
-    APL meets AWK. A command-line tool for summarizing and reporting, powered by Rust's [regex](https://docs.rs/regex/regex/) library.
+    APL meets AWK. A command-line tool for summarizing and reporting, powered by Rust's [regex](https://docs.rs/regex/) library.
 
 category:           Language, Interpreters, Text, Data
 build-type:         Simple
