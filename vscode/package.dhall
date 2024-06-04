@@ -1,7 +1,7 @@
 { name = "jacinda"
 , displayName = "Jacinda Syntax Highlighting for VSCode"
 , publisher = "vmchale"
-, version = "0.1.5"
+, version = "0.1.6"
 , engines.vscode = "^1.0.0"
 , description = "Syntax Highlighting for Jacinda"
 , categories = [ "Programming Languages" ]
