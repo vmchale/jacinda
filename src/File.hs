@@ -117,7 +117,7 @@ runOnBytes incls fp src mode contents = do
     let (e', k) = runState (eta eI) j
         cont=run (flushD typed) k (compileR (encodeUtf8 $ T.pack fp) e')
     case (mode, getS ast) of
-        ~(AWK cliFS cliRS, AWK afs ars) ->
+        (AWK cliFS cliRS, AWK afs ars) ->
             let r=compileFS (cliFS <|> afs)
                 bs=case cliRS <|> ars of
                     Nothing -> fmap BSL.toStrict (ASCIIL.lines contents)
@@ -125,6 +125,7 @@ runOnBytes incls fp src mode contents = do
                 ctxs=zipWith (\ ~(x,y) z -> (x,y,z)) [(b, splitBy r b) | b <- bs] [1..]
             in cont ctxs
         (CSV, _) -> let ctxs = csvCtx contents in cont ctxs
+        (_, CSV) -> let ctxs = csvCtx contents in cont ctxs
 
 runStdin :: [FilePath]
          -> T.Text -- ^ Program
