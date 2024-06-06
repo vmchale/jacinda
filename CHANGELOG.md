@@ -1,3 +1,5 @@
+  * Add `reintercalate` builtin
+
 # 3.1.0.1
 
   * Fix package description (.cabal)
