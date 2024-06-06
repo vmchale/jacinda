@@ -40,8 +40,8 @@ import           Ty
 
 csvCtx :: BSL.ByteString -> [LineCtx]
 csvCtx = go Nothing . parseCSV where
-    go _ []           = []
-    go _ (Left err:_) = error (show err)
+    go _ []                  = []
+    go _ (Left err:_)        = error (show err)
     -- TODO: re-csv it?
     go (Just n) (Right r:rs) = let fs=mB<$>r in (fold fs, V.fromListN n fs, fromIntegral (line r)):go (Just n) rs
     go Nothing (Right r:rs)  = let fs=mB<$>r; n=length fs in (fold fs, V.fromListN n fs, fromIntegral (line r)):go (Just n) rs
