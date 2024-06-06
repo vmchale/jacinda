@@ -389,8 +389,8 @@ tyES s (BB _ Matches) = pure (BB (tyStr ~> tyR ~> tyB) Matches, s)
 tyES s (BB _ NotMatches) = pure (BB (tyStr ~> tyR ~> tyB) NotMatches, s)
 tyES s (BB _ MMatch) = pure (BB (tyStr ~> tyR ~> tyOpt tyStr) MMatch, s)
 tyES s (UB _ Tally) = pure (UB (tyStr ~> tyI) Tally, s)
-tyES s (BB _ Take) = do {a <- var<$>freshN "a"; pure (BB (tyI ~> tyV a ~> tyV a) Take, s)}
-tyES s (BB _ Drop) = do {a <- var<$>freshN "a"; pure (BB (tyI ~> tyV a ~> tyV a) Drop, s)}
+tyES s (BB _ Take) = do {a <- freshTV "a"; pure (BB (tyI ~> tyV a ~> tyV a) Take, s)}
+tyES s (BB _ Drop) = do {a <- freshTV "a"; pure (BB (tyI ~> tyV a ~> tyV a) Drop, s)}
 tyES s (BB _ Div) = pure (BB (tyF ~> tyF ~> tyF) Div, s)
 tyES s (UB _ Not) = pure (UB (tyB ~> tyB) Not, s)
 tyES s (BB _ And) = pure (BB (tyB ~> tyB ~> tyB) And, s)
@@ -407,44 +407,44 @@ tyES s (UB _ Head) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) Head, s)}
 tyES s (UB _ Tail) = do {a <- freshTV "a"; pure (UB (tyV a ~> tyV a) Tail, s)}
 tyES s (UB _ Last) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) Last, s)}
 tyES s (UB _ Init) = do {a <- freshTV "a"; pure (UB (tyV a ~> tyV a) Init, s)}
-tyES s (BB _ Report) = do {a <- var <$> freshN "a"; b <- var <$> freshN "b"; pure (BB (tyStream a ~> b ~> TyB TyUnit) Report, s)}
+tyES s (BB _ Report) = do {a <- freshTV "a"; b <- freshTV "b"; pure (BB (tyStream a ~> b ~> TyB TyUnit) Report, s)}
 tyES s (UB _ TallyList) = do {a <- freshTV "a"; pure (UB (a ~> tyI) TallyList, s)}
 tyES s (UB l Negate) = do {a <- freshN "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
 tyES s (UB _ Some) = do {a <- freshTV "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
-tyES s (NB _ None) = do {a <- freshN "a"; pure (NB (tyOpt (var a)) None, s)}
+tyES s (NB _ None) = do {a <- freshTV "a"; pure (NB (tyOpt a) None, s)}
 tyES s (ParseCol l i) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
 tyES s (UB l Parse) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyStr ~> var a) Parse, s)}
 tyES s (BB l Sprintf) = do {a <- freshN "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyStr ~> var a ~> tyStr) Sprintf, s)}
 tyES s (BB l Rein) = do {f <- freshN "f"; modify (mapCV (addC f (Foldable, l))); pure (BB (tyStr ~> (var f:$tyStr) ~> tyStr) Rein, s)}
-tyES s (BB l DedupOn) = do {a <- var <$> freshN "a"; b <- freshN "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
-tyES s (UB _ (At i)) = do {a <- var <$> freshN "a"; pure (UB (tyV a ~> a) (At i), s)}
+tyES s (BB l DedupOn) = do {a <- freshTV "a"; b <- freshN "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
+tyES s (UB _ (At i)) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) (At i), s)}
 tyES s (UB l Dedup) = do {a <- freshN "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
-tyES s (UB _ Const) = do {a <- var <$> freshN "a"; b <- var <$> freshN "b"; pure (UB (a ~> b ~> a) Const, s)}
+tyES s (UB _ Const) = do {a <- freshTV "a"; b <- freshTV "b"; pure (UB (a ~> b ~> a) Const, s)}
 tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (f':$tyOpt a') (f':$a')) CatMaybes, s)}
 tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=f':$a' in pure (BB ((a' ~> tyB) ~> w ~> w) Filter, s)}
 tyES s (UB _ (Select i)) = do
-    ρ <- freshN "ρ"; a <- var <$> freshN "a"
+    ρ <- freshN "ρ"; a <- freshTV "a"
     pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
 tyES s (BB l MapMaybe) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
     modify (mapCV (addC f (Witherable, l)))
     let f'=var f
     pure (BB (tyArr (a ~> tyOpt b) ((f':$a) ~> (f':$b))) MapMaybe, s)
 tyES s (BB l Map) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Functor, l)))
     pure (BB (tyArr (a ~> b) ((f':$a) ~> (f':$b))) Map, s)
 tyES s (TB l Fold) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
     pure (TB ((b ~> a ~> b) ~> (b ~> (f':$a) ~> b)) Fold, s)
 tyES s (BB l Fold1) = do
-    a <- var <$> freshN "a"
+    a <- freshTV "a"
     f <- freshN "f"
     let f'=var f
     modify (mapCV (addC f (Foldable, l)))
@@ -452,16 +452,16 @@ tyES s (BB l Fold1) = do
 tyES s (TB _ Bookend) = pure (TB (tyR ~> tyR ~> tyStream tyStr ~> tyStream tyStr) Bookend, s)
 tyES s (TB _ Captures) = pure (TB (tyStr ~> tyI ~> tyR ~> tyOpt tyStr) Captures, s)
 tyES s (BB _ Prior) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     pure (BB (tyArr (a ~> a ~> b) (tyStream a ~> tyStream b)) Prior, s)
 tyES s (TB _ ZipW) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"; c <- var <$> freshN "c"
+    a <- freshTV "a"; b <- freshTV "b"; c <- freshTV "c"
     pure (TB (tyArr (a ~> b ~> c) (tyStream a ~> tyStream b ~> tyStream c)) ZipW, s)
 tyES s (TB _ Scan) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     pure (TB (tyArr (b ~> a ~> b) (b ~> tyStream a ~> tyStream b)) Scan, s)
 tyES s (TB _ Option) = do
-    a <- var <$> freshN "a"; b <- var <$> freshN "b"
+    a <- freshTV "a"; b <- freshTV "b"
     pure (TB (b ~> (a ~> b) ~> tyOpt a ~> b) Option, s)
 tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> tyI ~> tyR ~> tyV tyStr) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
@@ -479,7 +479,7 @@ tyES s (EApp l e0 e1)     = do
     s3 <- liftEither $ mguPrep l s2 (eLoc e1') a'
     pure (EApp b' e0' e1', s3)
 tyES s (Lam _ n@(Nm _ (U i) _) e) = do
-    a <- var <$> freshN "a"
+    a <- freshTV "a"
     modify (addVarEnv i a)
     (e', s') <- tyES s e
     pure (Lam (a ~> eLoc e') (n$>a) e', s')
@@ -492,9 +492,9 @@ tyES s (Let _ (n@(Nm _ (U i) _), eϵ) e) = do
 tyES s (Tup _ es) = do {(es', s') <- tS tyES s es; pure (Tup (TyTup (fmap eLoc es')) es', s')}
 tyES s (Var _ n) = do {t <- lookupVar n; pure (Var t (n$>t), s)}
 tyES s (OptionVal _ (Just e)) = do {(e', s') <- tyES s e; pure (OptionVal (tyOpt (eLoc e')) (Just e'), s')}
-tyES s (OptionVal _ Nothing) = do {a <- var <$> freshN "a"; pure (OptionVal (tyOpt a) Nothing, s)}
+tyES s (OptionVal _ Nothing) = do {a <- freshTV "a"; pure (OptionVal (tyOpt a) Nothing, s)}
 tyES s (Arr l v) | V.null v = do
-    a <- var <$> freshN "a"
+    a <- freshTV "a"
     pure (Arr (tyV a) V.empty, s)
                  | otherwise = do
     (v',s0) <- tS tyES s (V.toList v)
@@ -510,7 +510,7 @@ tyES s (Cond l p e0 e1) = do
     s4 <- liftEither $ mguPrep l s3 t (eLoc e1')
     pure (Cond t p' e0' e1', s4)
 tyES s (Anchor l es) = do
-    (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- var <$> freshN "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
+    (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- freshTV "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
     pure (Anchor (TyB TyUnit) es', s')
 tyES _ RC{} = error "Regex should not be compiled at this stage."
 tyES _ Dfn{} = desugar; tyES _ ResVar{} = desugar; tyES _ Paren{} = desugar
