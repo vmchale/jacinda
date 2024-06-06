@@ -12,7 +12,9 @@ import           System.IO.Silently (silence)
 main :: IO ()
 main =
     defaultMain [ bgroup "eval"
-                      [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/" ]
+                      [ bench "exprEval" $ nf exprEval "[x+' '+y]|'' split '01-23-1987' /-/"
+                      , bench "exprEval" $ nf exprEval "reintercalate ' ' split '01-23-1987' /-/"
+                      ]
                 , bgroup "csv"
                       [ bench "succdiff" $ nfIO (silence $ runOnFile [] "~.{ix>1}{`8}" CSV "bench/data/food-prices.csv") ]
                 , bgroup "stream"
