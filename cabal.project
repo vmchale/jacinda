@@ -9,4 +9,7 @@ program-options
 package jacinda
   ghc-options: -j +RTS -A32m
 
+package lazy-csv
+  ghc-options: -fregs-graph
+
 constraints: bytestring>=0.11.3.0
