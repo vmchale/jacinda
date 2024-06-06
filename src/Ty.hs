@@ -159,6 +159,9 @@ freshN n = do
     Nm n (U $ st+1) ()
         <$ modify (mapMaxU (+1))
 
+freshTV :: T.Text -> TyM a T
+freshTV=fmap var.freshN
+
 addC :: Ord a => Nm b -> (C, a) -> IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))
 addC (Nm _ (U i) _) c = IM.alter (Just . go) i where
     go Nothing   = S.singleton c
@@ -400,14 +403,14 @@ tyES s (UB _ IParse) = pure (UB (tyStr ~> tyI) IParse, s)
 tyES s (UB _ FParse) = pure (UB (tyArr tyStr tyF) FParse, s)
 tyES s (UB _ Floor) = pure (UB (tyArr tyF tyI) Floor, s)
 tyES s (UB _ Ceiling) = pure (UB (tyF ~> tyI) Ceiling, s)
-tyES s (UB _ Head) = do {a <- var<$>freshN "a"; pure (UB (tyV a ~> a) Head, s)}
-tyES s (UB _ Tail) = do {a <- var<$>freshN "a"; pure (UB (tyV a ~> tyV a) Tail, s)}
-tyES s (UB _ Last) = do {a <- var<$>freshN "a"; pure (UB (tyV a ~> a) Last, s)}
-tyES s (UB _ Init) = do {a <- var<$>freshN "a"; pure (UB (tyV a ~> tyV a) Init, s)}
+tyES s (UB _ Head) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) Head, s)}
+tyES s (UB _ Tail) = do {a <- freshTV "a"; pure (UB (tyV a ~> tyV a) Tail, s)}
+tyES s (UB _ Last) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) Last, s)}
+tyES s (UB _ Init) = do {a <- freshTV "a"; pure (UB (tyV a ~> tyV a) Init, s)}
 tyES s (BB _ Report) = do {a <- var <$> freshN "a"; b <- var <$> freshN "b"; pure (BB (tyStream a ~> b ~> TyB TyUnit) Report, s)}
-tyES s (UB _ TallyList) = do {a <- var <$> freshN "a"; pure (UB (a ~> tyI) TallyList, s)}
+tyES s (UB _ TallyList) = do {a <- freshTV "a"; pure (UB (a ~> tyI) TallyList, s)}
 tyES s (UB l Negate) = do {a <- freshN "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
-tyES s (UB _ Some) = do {a <- var <$> freshN "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
+tyES s (UB _ Some) = do {a <- freshTV "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
 tyES s (NB _ None) = do {a <- freshN "a"; pure (NB (tyOpt (var a)) None, s)}
 tyES s (ParseCol l i) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
 tyES s (UB l Parse) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyStr ~> var a) Parse, s)}
