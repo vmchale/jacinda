@@ -184,6 +184,7 @@ tokens :-
         "init#"                  { mkBuiltin BuiltinInit }
         "take#"                  { mkBuiltin BuiltinTake }
         "drop#"                  { mkBuiltin BuiltinDrop }
+        reintercalate            { mkBuiltin BuiltinRein }
 
         ":i"                     { mkBuiltin BuiltinIParse }
         ":f"                     { mkBuiltin BuiltinFParse }
@@ -424,6 +425,7 @@ data Builtin = BuiltinIParse | BuiltinFParse
              | BuiltinHead | BuiltinTail
              | BuiltinInit | BuiltinLast
              | BuiltinDrop | BuiltinTake
+             | BuiltinRein
 
 instance Pretty Builtin where
     pretty BuiltinIParse   = ":i"
@@ -454,6 +456,7 @@ instance Pretty Builtin where
     pretty BuiltinLast     = "last#"
     pretty BuiltinTake     = "take#"
     pretty BuiltinDrop     = "drop#"
+    pretty BuiltinRein     = "reintercalate"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }

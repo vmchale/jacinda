@@ -158,6 +158,7 @@ data BBin = Plus | Times | Div
           | Match | Sprintf
           | Report
           | Take | Drop
+          | Rein
           deriving (Eq)
 
 instance Pretty BBin where
@@ -169,7 +170,7 @@ instance Pretty BBin where
     pretty Split = "split"; pretty Splitc = "splitc"; pretty Sprintf = "sprintf"
     pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"
     pretty Exp = "**"; pretty DedupOn = "~.*"; pretty Report = "$>"
-    pretty Take = "take#"; pretty Drop = "drop#"
+    pretty Take = "take#"; pretty Drop = "drop#"; pretty Rein = "reintercalate"
 
 data DfnVar = X | Y deriving (Eq)
 

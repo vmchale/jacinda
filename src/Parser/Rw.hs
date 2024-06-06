@@ -42,6 +42,7 @@ mFi Sprintf    = Nothing
 mFi Match      = Nothing
 mFi Drop       = Nothing
 mFi Take       = Nothing
+mFi Rein       = Nothing
 mFi Prior      = Just 5
 mFi DedupOn    = Just 5
 mFi Report     = Just 4

@@ -164,6 +164,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     last { TokBuiltin $$ BuiltinLast }
     take { TokBuiltin $$ BuiltinTake }
     drop { TokBuiltin $$ BuiltinDrop }
+    rein { TokBuiltin $$ BuiltinRein }
 
     iParse { TokBuiltin $$ BuiltinIParse }
     fParse { TokBuiltin $$ BuiltinFParse }
@@ -313,6 +314,7 @@ E :: { E AlexPosn }
   | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
   | min { BB $1 Min } | max { BB $1 Max }
   | drop { BB $1 Drop } | take { BB $1 Take }
+  | rein { BB $1 Rein }
   | mapMaybeL { RwB $1 MapMaybe }
   | dedupOnL { RwB $1 DedupOn }
   | filterL { RwB $1 Filter }

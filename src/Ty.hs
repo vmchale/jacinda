@@ -415,6 +415,7 @@ tyES s (NB _ None) = do {a <- freshN "a"; pure (NB (tyOpt (var a)) None, s)}
 tyES s (ParseCol l i) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
 tyES s (UB l Parse) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyStr ~> var a) Parse, s)}
 tyES s (BB l Sprintf) = do {a <- freshN "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyStr ~> var a ~> tyStr) Sprintf, s)}
+tyES s (BB l Rein) = do {f <- freshN "f"; modify (mapCV (addC f (Foldable, l))); pure (BB (tyStr ~> (var f:$tyStr) ~> tyStr) Rein, s)}
 tyES s (BB l DedupOn) = do {a <- var <$> freshN "a"; b <- freshN "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
 tyES s (UB _ (At i)) = do {a <- var <$> freshN "a"; pure (UB (tyV a ~> a) (At i), s)}
 tyES s (UB l Dedup) = do {a <- freshN "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
