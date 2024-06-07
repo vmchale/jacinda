@@ -32,10 +32,8 @@ import           Regex.Rure         (RurePtr)
 infixr 6 <#>
 infixr 6 <##>
 
-(<#>) :: Doc a -> Doc a -> Doc a
+(<#>), (<##>) :: Doc a -> Doc a -> Doc a
 (<#>) x y = x <> hardline <> y
-
-(<##>) :: Doc a -> Doc a -> Doc a
 (<##>) x y = x <> hardline <> hardline <> y
 
 data TB = TyI | TyFloat | TyStr
@@ -49,8 +47,8 @@ tupledByFunky sep = group . encloseSep (flatAlt "⟨ " "⟨") (flatAlt " ⟩" "�
 tupledBy :: Doc ann -> [Doc ann] -> Doc ann
 tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
 
-jacTup :: Pretty a => [a] -> Doc ann
-jacTup = tupledBy " . " . fmap pretty
+j'Tup :: Pretty a => [a] -> Doc ann
+j'Tup = tupledBy " . " . fmap pretty
 
 infixr 0 ~>
 
@@ -60,8 +58,8 @@ infixr 0 ~>
 infixr 0 :$
 
 data T = TyB { tyBuiltin :: TB }
-       | (:$) { tyApp0 :: T, tyApp1 :: T }
-       | TyArr { tyArr0 :: T, tyArr1 :: T }
+       | (:$) { tyApp0, tyApp1 :: T }
+       | TyArr { tyArr0, tyArr1 :: T }
        | TyVar { tyVar :: Nm () }
        | TyTup { tyTups :: [T] }
        | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
@@ -79,7 +77,7 @@ instance Pretty T where
     pretty (ty:$ty')      = pretty ty <+> pretty ty'
     pretty (TyVar n)      = pretty n
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
-    pretty (TyTup tys)    = jacTup tys
+    pretty (TyTup tys)    = j'Tup tys
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
 
 parensp True=parens; parensp False=id
@@ -192,8 +190,8 @@ data E a = Column { eLoc :: a, col :: Int }
          | IParseAllCol { eLoc :: a } -- ^ @$0@, parsed as an integer
          | FParseAllCol { eLoc :: a } -- ^ @$0@, parsed as a float
          | ParseAllCol { eLoc :: a }
-         | EApp { eLoc :: a, eApp0 :: E a, eApp1 :: E a }
-         | Guarded { eLoc :: a, eP :: E a, eGuarded :: E a }
+         | EApp { eLoc :: a, eApp0, eApp1 :: E a }
+         | Guarded { eLoc :: a, eP, eGuarded :: E a }
          | Implicit { eLoc :: a, eImplicit :: E a }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
          -- TODO: literals type (make pattern matching easier down the road)
@@ -212,7 +210,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
-         | Cond { eLoc :: a, eIf :: E a, eThen :: E a, eElse :: E a }
+         | Cond { eLoc :: a, eIf, eThen, eElse :: E a }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
          deriving (Functor, Generic)
@@ -332,7 +330,7 @@ instance PS (E a) where
     ps _ (RwT _ Scan)      = "scan"
     ps _ (RwB _ Fold1)     = "fold1"
     ps _ (Cond _ e0 e1 e2) = "?" <> pretty e0 <> ";" <+> pretty e1 <> ";" <+> pretty e2
-    ps _ (Tup _ es)        = jacTup es
+    ps _ (Tup _ es)        = j'Tup es
     ps _ (Arr _ es)        = tupledByFunky "," (V.toList $ pretty <$> es)
     ps _ (Anchor _ es)     = "&" <> tupledBy "." (pretty <$> es)
     ps _ (Let _ (n, b) e)  = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"

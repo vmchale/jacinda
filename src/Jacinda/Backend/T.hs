@@ -384,12 +384,10 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
     pure $ Arr ty (V.init (asV x'))
 (EApp _ (UB _ Tally) e) @> b = do
     e' <- e@>b
-    let r=fromIntegral (BS.length$asS e')
-    pure (mkI r)
+    pure $ let r=fromIntegral (BS.length$asS e') in mkI r
 (EApp _ (UB _ TallyList) e) @> b = do
     e' <- e@>b
-    let r=fromIntegral (V.length$asV e')
-    pure (mkI r)
+    pure $ let r=fromIntegral (V.length$asV e') in mkI r
 (EApp _ (EApp _ (BB _ Sprintf) fs) s) @> b = do
     fs' <- fs@>b; s' <- s@>b
     pure (mkStr (sprintf (asS fs') s'))
