@@ -431,7 +431,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) @> b | TyB TyVec:$_ <- eLoc xs = do
     seed' <- seed@>b; xs' <- xs@>b
     V.foldM (a2e b op) seed' (asV xs')
-(EApp ty (EApp _ (BB _ Rein) s) ss) @> b | TyB TyVec:$_ <- eLoc ss = do
+(EApp _ (EApp _ (BB _ Rein) s) ss) @> b | TyB TyVec:$_ <- eLoc ss = do
     s' <- fmap asS (s@>b); ss' <- ss@>b
     pure $ mkStr (V.foldl' (\x y -> x <> s' <> y) mempty (asS<$>asV ss'))
 (EApp _ (EApp _ (BB _ Fold1) op) xs) @> b | TyB TyVec:$_ <- eLoc xs = do
