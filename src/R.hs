@@ -9,7 +9,6 @@ module R ( rE
 
 import           A
 import           Control.Monad.State.Strict (MonadState, State, runState)
-import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
@@ -87,21 +86,25 @@ mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
 hasY :: E a -> Bool
-hasY = cata a where
-    a (ResVarF _ Y)           = True
-    a (TupF _ es)             = or es
-    a (EAppF _ e e')          = e || e'
-    a (LamF _ _ e)            = e
-    a DfnF{}                  = error "nested dfns not yet implemented"
-    a (LetF _ b e)            = e || snd b
-    a (GuardedF _ p b)        = b || p
-    a (ImplicitF _ e)         = e
-    a (ParenF _ e)            = e
-    a (ArrF _ es)             = or es
-    a (AnchorF _ es)          = or es
-    a (OptionValF _ (Just e)) = e
-    a (CondF _ p e e')        = p || e || e'
-    a _                       = False
+hasY = g where
+    g (ResVar _ Y)                 = True
+    g (Tup _ es)                   = any g es
+    g (OptionVal _ (Just e))       = g e
+    g (EApp _ e0 e1)               = g e0 || g e1
+    g Dfn{}                        = error "nested dfns not yet implemented"
+    g (Let _ (_, be) e)            = g e || g be
+    g (Lam _ _ e)                  = g e
+    g (Paren _ e)                  = g e
+    g (Guarded _ p e)              = g p || g e
+    g (Implicit _ e)               = g e
+    g (Arr _ es)                   = any g es
+    g (Anchor _ es)                = any g es
+    g (Cond _ p e0 e1)             = g e0 || g e1 || g p
+    g (In _ (Just e0) (Just e1) e) = g e || g e0 || g e1
+    g (In _ _ (Just e1) e)         = g e || g e1
+    g (In _ (Just e0) _ e)         = g e || g e0
+    g (In _ _ _ e)                 = g e
+    g _                            = False
 
 replaceXY :: (a -> Nm a) -- ^ @x@
           -> (a -> Nm a) -- ^ @y@

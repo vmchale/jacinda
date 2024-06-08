@@ -1,4 +1,5 @@
   * Add `reintercalate` builtin
+  * Save a few hundred μs by not using recursion schemes
 
 # 3.1.0.1
 
@@ -8,7 +9,7 @@
 
   * Add support for CSV via the `--csv` flag and `:set csv`
   * Add `~?` (maybe match)
-  
+
 # 3.0.2.0
 
   * Fix list indexing
