@@ -133,6 +133,7 @@ tokens :-
         "`*"                     { mkSym LastFieldTok }
         "`$"                     { mkSym FieldListTok }
         \?                       { mkSym QuestionMark }
+        "@@"                     { mkSym AmpAmp }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -299,8 +300,8 @@ data Sym = PlusTok | MinusTok | PercentTok
          | CatMaybesTok | MapMaybeTok
          | CapTok
          | NegTok
-         | LastFieldTok
-         | FieldListTok
+         | LastFieldTok | FieldListTok
+         | AmpAmp
 
 instance Pretty Sym where
     pretty PlusTok       = "+"
@@ -359,6 +360,7 @@ instance Pretty Sym where
     pretty FieldListTok  = "`$"
     pretty IceCreamCone  = "$>"
     pretty QuestionMark  = "?"
+    pretty AmpAmp        = "@@"
 
 data Keyword = KwLet
              | KwIn

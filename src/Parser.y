@@ -78,6 +78,7 @@ import Prettyprinter (Pretty (pretty), (<+>))
     fold { TokSym $$ FoldTok }
     fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
+    amp { TokSym $$ AmpAmp }
     z { TokSym $$ Zilde }
     quot { TokSym $$ Quot }
     mapMaybe { TokSym $$ MapMaybeTok }
@@ -215,6 +216,7 @@ BBin :: { BBin }
      | exp { Exp }
      | dedupon { DedupOn }
      | report { Report }
+     | amp { Nier }
 
 Bind :: { (Nm AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }

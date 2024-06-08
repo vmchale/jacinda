@@ -156,7 +156,7 @@ data BBin = Plus | Times | Div
           | Match | Sprintf
           | Report
           | Take | Drop
-          | Rein
+          | Rein | Nier
           deriving (Eq)
 
 instance Pretty BBin where
@@ -169,6 +169,7 @@ instance Pretty BBin where
     pretty Match = "match"; pretty MapMaybe = ":?"; pretty Fold1 = "|>"
     pretty Exp = "**"; pretty DedupOn = "~.*"; pretty Report = "$>"
     pretty Take = "take#"; pretty Drop = "drop#"; pretty Rein = "reintercalate"
+    pretty Nier = "@@"
 
 data DfnVar = X | Y deriving (Eq)
 

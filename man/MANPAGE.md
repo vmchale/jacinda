@@ -151,6 +151,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~?** Maybe match: return string if it is a match, otherwise None
 :   Str -> Regex -> Option Str
 
+**\@** Intercalate
+:   List Str -> Str -> Str
+
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
