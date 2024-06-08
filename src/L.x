@@ -379,25 +379,20 @@ data Var = VarX | VarY
          | VarMin | VarMax
 
 instance Pretty Var where
-    pretty VarX     = "x"
-    pretty VarY     = "y"
-    pretty VarFs    = "fs"
-    pretty VarRs    = "rs"
-    pretty VarOrs   = "ors"
-    pretty VarOfs   = "ofs"
-    pretty VarIx    = "⍳"
-    pretty VarNf    = "nf"
-    pretty VarMin   = "min"
-    pretty VarMax   = "max"
+    pretty VarX = "x"; pretty VarY = "y"
+    pretty VarFs = "fs"; pretty VarRs = "rs"
+    pretty VarOrs = "ors"; pretty VarOfs = "ofs"
+    pretty VarMin = "min"; pretty VarMax = "max"
+    pretty VarIx = "⍳"; pretty VarNf = "nf"
 
 instance Pretty Keyword where
     pretty KwLet     = "let"
     pretty KwIn      = "in"
     pretty KwVal     = "val"
     pretty KwEnd     = "end"
+    pretty KwFn      = "fn"
     pretty KwSet     = ":set"
     pretty KwFlush   = ":flush"
-    pretty KwFn      = "fn"
     pretty KwInclude = "@include"
     pretty KwIf      = "if"
     pretty KwThen    = "then"
