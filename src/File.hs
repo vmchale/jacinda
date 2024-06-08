@@ -12,7 +12,6 @@ import           Control.Applicative        ((<|>))
 import           Control.Exception          (Exception, throw, throwIO)
 import           Control.Monad.IO.Class     (liftIO)
 import           Control.Monad.State.Strict (StateT, get, put, runState, runStateT)
-import           Control.Recursion          (cata, embed)
 import           Data.Bifunctor             (second)
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as BSL
@@ -85,10 +84,35 @@ tcompile=compileDefault.encodeUtf8
 compileR :: FileBS
          -> E T
          -> E T
-compileR fp = cata a where
-    a (RegexLitF _ rrϵ) = RC (compileDefault rrϵ)
-    a (NBF _ Fp)        = mkStr fp
-    a x                 = embed x
+compileR fp = r where
+    r (RegexLit _ rrϵ)  = RC (compileDefault rrϵ)
+    r (NB _ Fp)         = mkStr fp
+    r e@Var{}           = e
+    r e@UB{}            = e
+    r e@NB{}            = e
+    r e@Lit{}           = e
+    r e@TB{}            = e
+    r e@BB{}            = e
+    r (Cond l p e0 e1)  = Cond l (r p) (r e0) (r e1)
+    r (OptionVal l e)   = OptionVal l (r<$>e)
+    r (EApp l e0 e1)    = EApp l (r e0) (r e1)
+    r e@Column{}        = e
+    r e@IParseCol{}     = e
+    r e@FParseCol{}     = e
+    r e@ParseCol{}      = e
+    r e@LastField{}     = e
+    r e@Field{}         = e
+    r e@FieldList{}     = e
+    r e@AllField{}      = e
+    r e@AllColumn{}     = e
+    r (Guarded l p e)   = Guarded l (r p) (r e)
+    r (Implicit l e)    = Implicit l (r e)
+    r (Let l (n, eb) e) = Let l (n, r eb) (r e)
+    r (Lam l n e)       = Lam l n (r e)
+    r (Tup l es)        = Tup l (r<$>es)
+    r (Arr l es)        = Arr l (r<$>es)
+    r (Anchor l es)     = Anchor l (r<$>es)
+    r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
 
 exprEval :: T.Text -> E T
 exprEval src =

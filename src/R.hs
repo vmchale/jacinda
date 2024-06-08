@@ -92,7 +92,7 @@ hasY = cata a where
     a (TupF _ es)             = or es
     a (EAppF _ e e')          = e || e'
     a (LamF _ _ e)            = e
-    a DfnF{}                  = error "Not supported yet."
+    a DfnF{}                  = error "nested dfns not yet implemented"
     a (LetF _ b e)            = e || snd b
     a (GuardedF _ p b)        = b || p
     a (ImplicitF _ e)         = e
@@ -107,15 +107,47 @@ replaceXY :: (a -> Nm a) -- ^ @x@
           -> (a -> Nm a) -- ^ @y@
           -> E a
           -> E a
-replaceXY nX nY = cata a where
-    a (ResVarF l X) = Var l (nX l)
-    a (ResVarF l Y) = Var l (nY l)
-    a x             = embed x
+replaceXY nX nY = r where
+    r (ResVar l Y)      = Var l (nY l)
+    r (ResVar l X)      = Var l (nX l)
+    r e@Lit{}           = e
+    r e@RegexLit{}      = e
+    r e@RC{}            = e
+    r e@Var{}           = e
+    r e@NB{}            = e
+    r e@UB{}            = e
+    r e@BB{}            = e
+    r e@RwB{}           = e
+    r e@RwT{}           = e
+    r e@TB{}            = e
+    r (EApp l e0 e1)    = EApp l (r e0) (r e1)
+    r (Implicit l e)    = Implicit l (r e)
+    r (Guarded l p e)   = Guarded l (r p) (r e)
+    r (Let l (n, be) e) = Let l (n, r be) (r e)
+    r (Lam l n e)       = Lam l n (r e)
+    r (Cond l p e0 e1)  = Cond l (r p) (r e0) (r e1)
+    r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
+    r (OptionVal l e)   = OptionVal l (r<$>e)
+    r (Tup l es)        = Tup l (r<$>es)
+    r (Arr l es)        = Arr l (r<$>es)
+    r (Anchor l es)     = Anchor l (r<$>es)
+    r e@Column{}        = e
+    r e@AllColumn{}     = e
+    r e@Field{}         = e
+    r e@AllField{}      = e
+    r e@LastField{}     = e
+    r e@FieldList{}     = e
+    r e@FParseAllCol{}  = e
+    r e@IParseAllCol{}  = e
+    r e@ParseAllCol{}   = e
+    r e@FParseCol{}     = e
+    r e@IParseCol{}     = e
+    r e@ParseCol{}      = e
+    r (Paren l e)       = Paren l (r e)
+    r Dfn{}             = error "nested dfns not yet implemented"
 
 replaceX :: (a -> Nm a) -> E a -> E a
-replaceX n = cata a where
-    a (ResVarF l X) = Var l (n l)
-    a x             = embed x
+replaceX n = replaceXY n (error "Internal error: 'y' not expected.")
 
 renameD :: D a -> RenameM (D a)
 renameD (FunDecl n ns e) = FunDecl n [] <$> rE (mkLam ns e)
