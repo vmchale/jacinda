@@ -252,7 +252,7 @@ lookupVar n@(Nm _ (U i) l) = do
         Nothing -> throwError $ IllScoped l n
 
 tyOf :: Ord a => E a -> TyM a T
-tyOf = fmap eLoc . tyE
+tyOf = fmap eLoc.tyE
 
 tyDS :: Ord a => Subst -> D a -> TyM a (D T, Subst)
 tyDS s (SetFS bs)  = pure (SetFS bs, s)
