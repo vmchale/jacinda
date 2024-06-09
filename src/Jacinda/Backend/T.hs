@@ -47,9 +47,8 @@ data StreamError = NakedField deriving (Show)
 
 instance Exception StreamError where
 
--- TODO: dedup... tracking env!
 type Env = IM.IntMap (Maybe (E T)); type I=Int
-data Σ = Σ !I Env (IM.IntMap (S.Set BS.ByteString)) (IM.IntMap IS.IntSet) (IM.IntMap (S.Set Double)) IS.IntSet
+data Σ = Σ !I !Env (IM.IntMap (S.Set BS.ByteString)) (IM.IntMap IS.IntSet) (IM.IntMap (S.Set Double)) IS.IntSet
 type Tmp = Int
 type Β = IM.IntMap (E T)
 
@@ -203,6 +202,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 ni t=IM.singleton t Nothing
 na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
 
+{-# SCC ctx #-}
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Σ -> Σ)
 ctx AllColumn{} res                                      = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!mkStr b))
 ctx (ParseAllCol (_:$TyB TyI)) res                       = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsEInt b))
@@ -489,6 +489,7 @@ wCM src tgt (Σ u env d di df b) =
         Just y  -> case asM y of {Nothing -> IM.insert tgt Nothing env; Just yϵ -> IM.insert tgt (Just$!yϵ) env}
         Nothing -> IM.insert tgt Nothing env) d di df b
 
+{-# SCC wMM #-}
 wMM :: E T -> Tmp -> Tmp -> Σ -> Σ
 wMM (Lam _ n e) src tgt (Σ j env d di df b) =
     let xϵ=env!src
@@ -589,6 +590,7 @@ wB (e0, e1) key src tgt (Σ i env d di df b) =
   where
     r0=asR e0; r1=asR e1
 
+{-# SCC wD #-}
 wD :: TB -> Int -> Tmp -> Tmp -> Σ -> Σ
 wD TyStr key src tgt (Σ i env d di df b) =
     let x=env!src
