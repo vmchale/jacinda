@@ -207,7 +207,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Tup { eLoc :: a, esTup :: [E a] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RC RurePtr -- compiled regex after normalization
-         | Arr { eLoc :: a, elems :: V.Vector (E a) }
+         | Arr { eLoc :: a, elems :: !(V.Vector (E a)) }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
