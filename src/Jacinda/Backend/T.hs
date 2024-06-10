@@ -100,7 +100,7 @@ run flush j e ctxs | TyB TyStream:$_ <- eLoc e = traverse_ (traverse_ (pS flush)
     t <- nI
     (iEnv, μ) <- ctx e t
     u <- nI
-    let outs=μ<$>ctxs; es=scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
+    let outs=μ<$>ctxs; es={-# SCC "scanMain" #-} scanl' (&) (Σ u iEnv IM.empty IM.empty IM.empty IS.empty) outs
     pure ((! t).gE<$>es)
 run _ j e ctxs = pDocLn $ flip evalState j $ do
     (iEnv, g, e0) <- collect e
@@ -181,6 +181,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
     let g=wF op t tgt
     pure (env<>iEnv, (g.).f)
 
+{-# SCC κ #-}
 κ :: E T -> LineCtx -> E T
 κ AllField{} ~(b, _, _)   = mkStr b
 κ (Field _ i) ~(_, bs, _) = mkStr $ bs `at` i
@@ -202,7 +203,6 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 ni t=IM.singleton t Nothing
 na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
 
-{-# SCC ctx #-}
 ctx :: E T -> Tmp -> MM (Env, LineCtx -> Σ -> Σ)
 ctx AllColumn{} res                                      = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!mkStr b))
 ctx (ParseAllCol (_:$TyB TyI)) res                       = pure (ni res, \ ~(b, _, _) -> mE$IM.insert res (Just$!parseAsEInt b))
