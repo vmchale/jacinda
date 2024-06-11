@@ -10,7 +10,7 @@
 - [ ] tuples
 - [ ] Document `%i`, `%s` in manpages
 # Unicode
-- [ ] `reintercalate` builtin
+- [x] `reintercalate` builtin
 - [x] ∅ for monoidal identity
 - [x] defeq ≔
   - [ ] ≜
