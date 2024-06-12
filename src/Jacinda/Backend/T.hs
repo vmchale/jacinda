@@ -656,6 +656,7 @@ wΠ (Lam _ nn (Lam _ nprev e)) pt src tgt (Σ j env d di df b) =
         (Just{}, Nothing) -> Σ j (IM.insert tgt Nothing env)) d di df b
 wΠ e _ _ _ _ = throw $ InternalArityOrEta 2 e
 
+{-# SCC wF #-}
 wF :: E T -> Tmp -> Tmp -> Σ -> Σ
 wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d di df b) =
     let accϵ = env!tgt; xϵ = env!src
