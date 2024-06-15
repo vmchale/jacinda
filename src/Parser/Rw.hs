@@ -1,7 +1,4 @@
-module Parser.Rw ( rwP
-                 , rwD
-                 , rwE
-                 ) where
+module Parser.Rw ( rwP, rwD, rwE ) where
 
 
 import           A
