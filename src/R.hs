@@ -34,7 +34,7 @@ maxLens f s = fmap (\x -> s { max_ = x }) (f (max_ s))
 type RenameM = State Renames
 
 rP :: Int -> Program a -> (Program a, Int)
-rP i = runRM i . renameProgram
+rP i = runRM i.renameProgram
 
 runRM :: Int -> RenameM x -> (x, Int)
 runRM i act = second max_ (runState act (Rs i IM.empty))
