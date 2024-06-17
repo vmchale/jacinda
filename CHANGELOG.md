@@ -1,3 +1,5 @@
+# 3.1.1.0
+
   * Add `reintercalate` builtin
   * Save a few hundred μs by not using recursion schemes
 
