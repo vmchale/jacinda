@@ -2,7 +2,6 @@ module Parser.Rw ( rwP, rwD, rwE ) where
 
 
 import           A
-import           Control.Recursion (cata, embed)
 
 rwP :: Program a -> Program a
 rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
@@ -44,49 +43,55 @@ mFi Prior      = Just 5
 mFi DedupOn    = Just 5
 mFi Report     = Just 4
 
-isPre :: BUn -> Bool
-isPre At{}     = False
-isPre Select{} = False
-isPre IParse   = False
-isPre FParse   = False
-isPre Parse    = False
-isPre _        = True
+pPre :: BUn -> Bool
+pPre Dedup     = True
+pPre Not       = True
+pPre TallyList = True
+pPre Tally     = True
+pPre _         = False
+
+-- FIXME: prefix-not should extend over vars...
 
 rwE :: E a -> E a
-rwE = cata a where
-    a (EAppF l e0@(UB _ op) (EApp lϵ (EApp lϵϵ e1@(BB _ bop) e2) e3))
-        | Just{} <- mFi bop
-        , isPre op && op /= Dedup
-                                                                                        = EApp l (EApp lϵ e1 (EApp lϵϵ e0 e2)) e3
-    a (EAppF l e0@(EApp _ (BB _ op0) _) (EApp l1 (EApp l2 e1@(BB _ op1) e2) e3))
-        | Just f0 <- mFi op0
-        , Just f1 <- mFi op1
-        , f0 > f1
-                                                                                        = EApp l1 (EApp l2 e1 (EApp l e0 e2)) e3
-    a (EAppF l e0@Var{} (EApp lϵ (EApp lϵϵ e1 e2) e3))                                  = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    -- TODO rewrite dfn
-    a (EAppF l e0@Var{} (EApp l0 e1 (EApp l1 (EApp l2 op@BB{} e2) e3)))                 = EApp l1 (EApp l2 op (EApp l (EApp l0 e0 e1) e2)) e3
-    a (EAppF l e0@Var{} (EApp lϵ e1 e2))                                                = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(BB _ op) (EApp lϵ e1 e2)) | Nothing <- mFi op                        = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ Sub1) (EApp lϵ (EApp lϵϵ e1 e2) e3))                            = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Sub1) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                            = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Sub1) (EApp lϵ e1 e2))                                          = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ Subs) (EApp lϵ (EApp lϵϵ e1 e2) e3))                            = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Subs) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                            = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Subs) (EApp lϵ e1 e2))                                          = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ Substr) (EApp lϵ (EApp lϵϵ e1 e2) e3))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Substr) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Substr) (EApp lϵ e1 e2))                                        = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ Option) (EApp lϵ (EApp lϵϵ e1 e2) e3))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Option) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                          = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Option) (EApp lϵ e1 e2))                                        = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ Captures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                        = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Captures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                        = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ Captures) (EApp lϵ e1 e2))                                      = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ (EApp lϵϵ e1 e2) e3))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                     = EApp l (EApp lϵ (EApp lϵϵ e0 e1) e2) e3
-    a (EAppF l e0@(TB _ AllCaptures) (EApp lϵ e1 e2))                                   = EApp l (EApp lϵ e0 e1) e2
-    a (EAppF l (RwB l0 b) (EApp lϵ e1 e2))                                              = EApp l (EApp lϵ (BB l0 b) e1) e2
-    a (EAppF l (RwT l0 t) (EApp lϵ (EApp lϵϵ e1 e2) e3))                                = EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
-    a (EAppF l (RwT l0 t) (EApp lϵ e1 (EApp lϵϵ e2 e3)))                                = EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
-    a x                                                                                 = embed x
+rwE (EApp l0 (EApp l1 (EApp l2 ho@TB{} e3) e2) e1) =
+    (EApp l0 (EApp l1 (EApp l2 ho (rwE e3)) (rwE e2)) (rwE e1))
+rwE (EApp l0 (EApp l1 e0@(BB _ op0) e1) e2) | Just fi <- mFi op0 =
+    case rwE e2 of
+        (EApp l2 (EApp l3 e3@(BB _ op1) e4) e5) | Just fi' <- mFi op1, fi > fi' -> EApp l0 (EApp l1 e3 (rwE (EApp l2 (EApp l3 e0 e1) e4))) e5
+        e2'                                                                     -> EApp l0 (EApp l1 e0 (rwE e1)) e2'
+rwE (EApp l op@(UB _ Dedup) e) = EApp l op (rwE e)
+rwE (EApp l e0 e') =
+    case (e0, rwE e') of
+        (_, EApp lϵ (EApp lϵϵ e3@(BB _ op) e4) e2) | Just{} <- mFi op -> EApp l (EApp lϵϵ e3 (rwE $ EApp lϵ e0 e4)) e2
+        (UB _ f, e2) | pPre f                                         -> EApp l e0 e2
+        (_, EApp lϵ e1@EApp{} e2)                                     -> EApp l (rwE $ EApp lϵ e0 e1) e2
+        (_, EApp lϵ e1 e2)                                            -> EApp l (EApp lϵ (rwE e0) e1) e2
+        (_, eRw)                                                      -> EApp l (rwE e0) eRw
+rwE e@Column{} = e
+rwE e@IParseCol{} = e
+rwE e@FParseCol{} = e
+rwE e@ParseCol{} = e
+rwE e@Field{} = e
+rwE e@LastField{} = e
+rwE e@FieldList{} = e
+rwE e@AllField{} = e
+rwE e@AllColumn{} = e
+rwE e@IParseAllCol{} = e
+rwE e@FParseAllCol{} = e
+rwE e@ParseAllCol{} = e
+rwE (Guarded l p e) = Guarded l (rwE p) (rwE e)
+rwE (Implicit l e) = Implicit l (rwE e)
+rwE (Let l (n, e') e) = Let l (n, rwE e') (rwE e)
+rwE e@Var{} = e
+rwE e@Lit{} = e
+rwE e@RegexLit{} = e
+rwE (Lam l n e) = Lam l n (rwE e)
+rwE (Dfn l e) = Dfn l (rwE e)
+rwE e@BB{} = e
+rwE e@TB{} = e
+rwE e@UB{} = e
+rwE e@NB{} = e
+rwE (Tup l es) = Tup l (rwE<$>es)
+rwE e@ResVar{} = e
+rwE (Paren l e) = Paren l (rwE e)
+rwE (Cond l p e e') = Cond l (rwE p) (rwE e) (rwE e')
