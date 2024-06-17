@@ -6,7 +6,6 @@ module Ty ( Subst
           , tyP
           , match
           , aT
-          -- * For debugging
           , tyOf
           ) where
 
