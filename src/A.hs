@@ -11,12 +11,9 @@ module A ( E (..), T (..), (~>), TB (..), C (..)
          , Mode (..)
          , mapExpr
          , getS, flushD
-         -- * Base functors
-         , EF (..)
          ) where
 
 import           Control.DeepSeq    (NFData)
-import           Control.Recursion  (Base, Corecursive, Recursive)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.List          (foldl')
@@ -215,37 +212,6 @@ data E a = Column { eLoc :: a, col :: Int }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
          deriving (Functor, Generic)
-
-instance Recursive (E a) where
-instance Corecursive (E a) where
-
-data EF a x = ColumnF a Int
-            | IParseColF a Int | FParseColF a Int | ParseColF a Int
-            | FieldF a Int | LastFieldF a | FieldListF a | AllFieldF a
-            | AllColumnF a | IParseAllColF a | FParseAllColF a | ParseAllColF a
-            | EAppF a x x
-            | GuardedF a x x | ImplicitF a x
-            | LetF a (Nm a, x) x
-            | VarF a (Nm a)
-            | FF (Nm a)
-            | LitF a !L
-            | RegexLitF a BS.ByteString
-            | LamF a (Nm a) x
-            | DfnF a x
-            | BBF a BBin | TBF a BTer | UBF a BUn | NBF a N
-            | TupF a [x]
-            | ResVarF a DfnVar
-            | RCF RurePtr
-            | ArrF a (V.Vector x)
-            | AnchorF a [x]
-            | ParenF a x
-            | OptionValF a (Maybe x)
-            | CondF a x x x
-            | InF x (Maybe x) (Maybe x) x
-            | RwBF a BBin | RwTF a BTer
-            deriving (Generic, Functor)
-
-type instance Base (E a) = (EF a)
 
 instance Pretty N where
     pretty Ix="⍳"; pretty Nf="nf"; pretty None="None"; pretty Fp="fp"; pretty MZ="⍬"

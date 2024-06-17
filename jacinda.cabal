@@ -89,7 +89,6 @@ library jacinda-lib
         filepath,
         microlens-mtl >=0.1.8.0,
         vector >=0.12.2.0,
-        recursion >=1.0.0.0,
         split,
         deepseq,
         lazy-csv
