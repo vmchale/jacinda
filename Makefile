@@ -78,7 +78,7 @@ bin/arm-linux-gnueabihf-ja: $(HS_SRC)
 
 bin/aarch64-linux-ja: $(HS_SRC)
 	@mkdir -p $(dir $@)
-	@cabal build --with-ghc aarch64-linux-gnu-ghc-9.10 --with-ghc-pkg aarch64-linux-gnu-ghc-pkg-9.10 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/aarch64-linux
+	@cabal build --with-ghc aarch64-linux-gnu-ghc-9.2 --with-ghc-pkg aarch64-linux-gnu-ghc-pkg-9.2 --project-file cabal.project.cross exe:ja --enable-executable-static --builddir=dist-newstyle/aarch64-linux
 	export BIN=$$(fd 'aarch64-linux.*ja$$' dist-newstyle -t x -p -I); \
 	    cp $$BIN $@ ; \
 	    aarch64-linux-gnu-strip $@
