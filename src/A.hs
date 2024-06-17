@@ -90,7 +90,7 @@ instance Show T where show=show.pretty
 data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
-         | At Int | Select Int
+         | At !Int | Select !Int
          | IParse | FParse | Parse
          | Floor | Ceiling
          | Some
