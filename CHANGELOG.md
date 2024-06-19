@@ -1,3 +1,9 @@
+# 3.1.1.1
+
+  * Pretty-print `:set csv`
+  * `:set csv` inline case
+  * Fix bug in `mapMaybe` &c. synonym parsing
+
 # 3.1.1.0
 
   * Add `reintercalate` builtin
