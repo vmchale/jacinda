@@ -372,6 +372,7 @@ instance Pretty (D a) where
     pretty FlushDecl        = ":flush;"
     pretty SetAsv           = ":set asv;"
     pretty SetUsv           = ":set usv;"
+    pretty SetCsv           = ":set csv;"
     pretty (SetOFS sep)     = ":set ofs :=" <+> "'" <> pretty sep <> "';"
     pretty (SetORS sep)     = ":set ors :=" <+> "'" <> pretty sep <> "';"
 
