@@ -103,11 +103,13 @@ maM (TyB b) (TyB b') | b == b' = Right mempty
 maM (TyVar n) (TyVar n') | n == n' = Right mempty
 maM (TyVar (Nm _ (U i) _)) t = Right (IM.singleton i t)
 maM (TyArr t0 t1) (TyArr t0' t1') = (<>) <$> maM t0 t0' <*> maM t1' t1 -- TODO: I think <> is right
-maM (TyTup ts) (TyTup ts')        = fmap mconcat (zipWithM maM ts ts')
+maM (TyTup ts) (TyTup ts') = fmap mconcat (zipWithM maM ts ts')
 maM (Rho n _) (Rho n' _) | n == n' = Right mempty
-maM (Rho n rs) t@(Rho _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
-maM (Rho n rs) t@(TyTup ts) | length ts >= fst (IM.findMax rs) = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
-maM t t'                              = Left $ MF t t'
+maM (Rho n rs) t@(Rho _ rs') | IM.keysSet rs' `IS.isSubsetOf` IM.keysSet rs
+    = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) (IM.elems (IM.intersectionWith (,) rs rs'))
+maM (Rho n rs) t@(TyTup ts) | length ts >= fst (IM.findMax rs)
+    = IM.insert (unU$unique n) t . mconcat <$> traverse (uncurry maM) [ (ts!!(i-1),tϵ) | (i,tϵ) <- IM.toList rs ]
+maM t t' = Left $ MF t t'
 
 occ :: T -> IS.IntSet
 occ (TyVar (Nm _ (U i) _))  = IS.singleton i
@@ -127,7 +129,8 @@ mgu l s t@(TyVar (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.inser
 mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
-mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0 = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
+mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0
+    = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
@@ -258,6 +261,7 @@ tyDS s (SetFS bs)  = pure (SetFS bs, s)
 tyDS s (SetRS bs)  = pure (SetRS bs, s)
 tyDS s (SetOFS bs) = pure (SetOFS bs, s)
 tyDS s (SetORS bs) = pure (SetORS bs, s)
+tyDS s SetCsv      = pure (SetCsv, s)
 tyDS s SetAsv      = pure (SetAsv, s)
 tyDS s SetUsv      = pure (SetUsv, s)
 tyDS s FlushDecl   = pure (FlushDecl, s)
@@ -286,7 +290,7 @@ checkAmb (Tup _ es) = traverse_ checkAmb es
 checkAmb e@(Arr ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb e@(Var ty _) | isAmbiguous ty = throwError $ Ambiguous ty (void e)
 checkAmb (Let _ bs e) = traverse_ checkAmb [e, snd bs]
-checkAmb (Lam _ _ e) = checkAmb e -- I think
+checkAmb (Lam _ _ e) = checkAmb e
 checkAmb e@(ParseAllCol t) | isAmbiguous t = throwError (Ambiguous t (void e))
 checkAmb e@(ParseCol t _) | isAmbiguous t = throwError (Ambiguous t (void e))
 checkAmb _ = pure ()
@@ -340,7 +344,7 @@ tyM l = do
     pure $ a' ~> a' ~> a'
 
 desugar :: a
-desugar = error "Should have been de-sugared in an earlier stage!"
+desugar = error "Internal error: should have been de-sugared in an earlier stage!"
 
 tyE :: Ord a => E a -> TyM a (E T)
 tyE e = do
@@ -512,5 +516,5 @@ tyES s (Cond l p e0 e1) = do
 tyES s (Anchor l es) = do
     (es', s') <- tS (\sϵ e -> do {(e',s0) <- tyES sϵ e; a <- freshTV "a"; s1 <- liftEither $ mguPrep l s0 (tyStream a) (eLoc e'); pure (e', s1)}) s es
     pure (Anchor (TyB TyUnit) es', s')
-tyES _ RC{} = error "Regex should not be compiled at this stage."
-tyES _ Dfn{} = desugar; tyES _ ResVar{} = desugar; tyES _ Paren{} = desugar
+tyES _ RC{} = error "Internal error: regex should not be compiled at this stage."
+tyES _ Dfn{} = desugar; tyES _ ResVar{} = desugar; tyES _ Paren{} = desugar; tyES _ RwB{} = desugar; tyES _ RwT{} = desugar
