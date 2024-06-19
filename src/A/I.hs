@@ -16,9 +16,7 @@ import           R
 import           Ty
 import           U
 
-data ISt a = ISt { renames :: !Renames
-                 , binds   :: IM.IntMap (E a)
-                 }
+data ISt a = ISt { renames :: !Renames, binds :: IM.IntMap (E a) }
 
 instance HasRenames (ISt a) where
     rename f s = fmap (\x -> s { renames = x }) (f (renames s))
@@ -41,7 +39,7 @@ lβ e = state (`β` e)
 
 iD :: D T -> RM T ()
 iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
-iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD SetUsv = pure ()
+iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD SetUsv = pure (); iD SetCsv = pure ()
 iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
 
