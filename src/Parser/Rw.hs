@@ -54,12 +54,18 @@ pPre _         = False
 
 rwE :: E a -> E a
 rwE (EApp l0 (EApp l1 (EApp l2 ho@TB{} e3) e2) e1) =
-    (EApp l0 (EApp l1 (EApp l2 ho (rwE e3)) (rwE e2)) (rwE e1))
+    EApp l0 (EApp l1 (EApp l2 ho (rwE e3)) (rwE e2)) (rwE e1)
 rwE (EApp l0 (EApp l1 e0@(BB _ op0) e1) e2) | Just fi <- mFi op0 =
     case rwE e2 of
         (EApp l2 (EApp l3 e3@(BB _ op1) e4) e5) | Just fi' <- mFi op1, fi > fi' -> EApp l0 (EApp l1 e3 (rwE (EApp l2 (EApp l3 e0 e1) e4))) e5
         e2'                                                                     -> EApp l0 (EApp l1 e0 (rwE e1)) e2'
 rwE (EApp l op@(UB _ Dedup) e) = EApp l op (rwE e)
+rwE (EApp l (RwB l0 b) e') =
+    case e' of
+        (EApp lϵ e1 e2) -> EApp l (EApp lϵ (BB l0 b) e1) e2
+rwE (EApp l (RwT l0 t) e') =
+    case e' of
+        (EApp lϵ e1 (EApp lϵϵ e2 e3)) -> EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
 rwE (EApp l e0 e') =
     case (e0, rwE e') of
         (_, EApp lϵ (EApp lϵϵ e3@(BB _ op) e4) e2) | Just{} <- mFi op -> EApp l (EApp lϵϵ e3 (rwE $ EApp lϵ e0 e4)) e2
