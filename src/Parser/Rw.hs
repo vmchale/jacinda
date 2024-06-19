@@ -61,11 +61,14 @@ rwE (EApp l0 (EApp l1 e0@(BB _ op0) e1) e2) | Just fi <- mFi op0 =
         e2'                                                                     -> EApp l0 (EApp l1 e0 (rwE e1)) e2'
 rwE (EApp l op@(UB _ Dedup) e) = EApp l op (rwE e)
 rwE (EApp l (RwB l0 b) e') =
-    case e' of
+    case rwE e' of
         (EApp lϵ e1 e2) -> EApp l (EApp lϵ (BB l0 b) e1) e2
+        eϵ -> EApp l (BB l0 b) eϵ
 rwE (EApp l (RwT l0 t) e') =
-    case e' of
-        (EApp lϵ e1 (EApp lϵϵ e2 e3)) -> EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
+    case rwE e' of
+        (EApp lϵ (EApp lϵϵ e1 e2) e3) -> EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
+        (EApp lϵ e1 e2) -> EApp l (EApp lϵ (TB l0 t) e1) e2
+        eϵ -> EApp l (TB l0 t) eϵ
 rwE (EApp l e0 e') =
     case (e0, rwE e') of
         (_, EApp lϵ (EApp lϵϵ e3@(BB _ op) e4) e2) | Just{} <- mFi op -> EApp l (EApp lϵϵ e3 (rwE $ EApp lϵ e0 e4)) e2
@@ -101,3 +104,5 @@ rwE (Tup l es) = Tup l (rwE<$>es)
 rwE e@ResVar{} = e
 rwE (Paren l e) = Paren l (rwE e)
 rwE (Cond l p e e') = Cond l (rwE p) (rwE e) (rwE e')
+rwE (RwB l b) = BB l b
+rwE (RwT l b) = TB l b
