@@ -10,6 +10,26 @@ ja '[y]|>$0'
 awk 'END{print}'
 ```
 
+## Delete First 6 Lines of File
+
+```
+ja '{ix>6}{`0}'
+```
+
+```
+sed '1,6d'
+```
+
+In-place:
+
+```
+ja '{ix>6}{`0}' -i FILE | sponge FILE
+```
+
+```
+sed -i '1,6d' FILE
+```
+
 ## Word Count
 
 ```awk
