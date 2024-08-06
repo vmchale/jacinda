@@ -103,6 +103,7 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 - [ ] `ix` (line number) on filtered streams?
 # Performance
+- [ ] strpbrk in lazy-csv
 - [ ] print redexes idk
 - [ ] https://github.com/ezrosent/frawk/blob/master/info/performance.md#test-data
 - [ ] https://github.com/petewarden/dstkdata
