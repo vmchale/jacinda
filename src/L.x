@@ -502,7 +502,7 @@ newIdentAlex :: AlexPosn -> T.Text -> Alex (Nm AlexPosn)
 newIdentAlex pos t = do
     st <- alexGetUserState
     let (st', n) = newIdent pos t st
-    alexSetUserState st' $> (n $> pos)
+    alexSetUserState st' $> n
 
 freshIdent :: AlexPosn -> T.Text -> Int -> (Int, Nm AlexPosn)
 freshIdent pos t max' =
