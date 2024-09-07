@@ -2,7 +2,6 @@
     {-# LANGUAGE OverloadedStrings #-}
     module Parser ( parse
                   , parseWithMax
-                  , parseWithInitCtx
                   , parseWithCtx
                   , parseLibWithCtx
                   , ParseError (..)
@@ -388,9 +387,6 @@ parse = fmap snd . runParse parseF
 parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
-
-parseWithInitCtx :: T.Text -> Either (ParseError AlexPosn) (AlexUserState, File)
-parseWithInitCtx bsl = parseWithCtx bsl alexInitUserState
 
 parseWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithCtx = parseWithInitSt parseF
