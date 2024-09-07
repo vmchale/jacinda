@@ -403,9 +403,6 @@ runParse parser str = liftErr $ runAlexSt str (runExceptT parser)
 
 parseWithInitSt :: Parse a -> T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, a)
 parseWithInitSt parser str st = liftErr $ withAlexSt str st (runExceptT parser)
-    where liftErr (Left err)            = Left (LexErr err)
-          liftErr (Right (_, Left err)) = Left err
-          liftErr (Right (i, Right x))  = Right (i, x)
 
 liftErr :: Either String (b, Either (ParseError a) c) -> Either (ParseError a) (b, c)
 liftErr (Left err)            = Left (LexErr err)
