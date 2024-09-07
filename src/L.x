@@ -2,7 +2,6 @@
     {-# LANGUAGE OverloadedStrings #-}
     module L ( alexMonadScan
              , alexInitUserState
-             , runAlex
              , runAlexSt
              , withAlexSt
              , freshName
