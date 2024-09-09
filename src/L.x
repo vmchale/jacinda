@@ -495,7 +495,7 @@ freshName t = do
     pos <- get_pos
     (i, ns, us) <- alexGetUserState
     let (j, n) = freshIdent pos t i
-    alexSetUserState (j, ns, us) $> (n$>pos)
+    alexSetUserState (j, ns, us) $> n
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Nm AlexPosn)
 newIdentAlex pos t = do
