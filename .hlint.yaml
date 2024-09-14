@@ -1,3 +1,4 @@
+- fixity: infixr 6 <#>
 - fixity: infixr 0 ~>
 - fixity: infixr 0 :$
 
