@@ -26,6 +26,9 @@ type RM a = State (ISt a); type UM = State Int
 bind :: Nm a -> E a -> ISt a -> ISt a
 bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
 
+bindM :: Nm a -> E a -> RM a ()
+bindM n e = modify (bind n e)
+
 runI i = second (max_.renames) . flip runState (ISt (Rs i mempty) mempty)
 
 ib :: Int -> Program T -> (E T, Int)
@@ -38,7 +41,7 @@ lβ :: E a -> UM (E a)
 lβ e = state (`β` e)
 
 iD :: D T -> RM T ()
-iD (FunDecl n [] e) = do {eI <- iE e; modify (bind n eI)}
+iD (FunDecl n [] e) = do {eI <- iE e; bindM n eI}
 iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD SetUsv = pure (); iD SetCsv = pure ()
 iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
@@ -47,14 +50,12 @@ desugar = error "Internal error. Should have been de-sugared in an earlier stage
 
 bM :: E a -> RM a (E a)
 bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do
-    eI <- bM e
-    modify (bind n' eI)
-    eI'' <- bM e''
-    modify (bind n eI'')
+    eI <- bM e; bindM n' eI
+    eI'' <- bM e''; bindM n eI''
     bM e'
 bM (EApp _ (Lam _ n e') e) = do
     eI <- bM e
-    modify (bind n eI) *> bM e'
+    bindM n eI *> bM e'
 bM (EApp l e0 e1) = do
     e0' <- bM e0
     e1' <- bM e1
@@ -101,7 +102,7 @@ iE (OptionVal t es) = OptionVal t <$> traverse iE es
 iE (Cond t p e e') = Cond t <$> iE p <*> iE e <*> iE e'
 iE (Let _ (n, e') e) = do
     eI <- iE e'
-    modify (bind n eI) *> iE e
+    bindM n eI *> iE e
 iE e@(Var t (Nm _ (U i) _)) = do
     st <- gets binds
     case IM.lookup i st of
