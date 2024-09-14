@@ -24,6 +24,18 @@ This is simpler than:
 cabal list --simple | cut -d' ' -f1 | sort -u
 ```
 
+# Extract [Fixity Declarations for HLint](https://github.com/ndmitchell/hlint?tab=readme-ov-file#why-doesnt-hlint-know-the-fixity-for-my-custom--operator)
+
+```
+{%/infix(r|l)? \d+/}{sprintf '- fixity: %s' `0}
+```
+
+Equivalently:
+
+```
+[sprintf '- fixity: %s' x]¨(~/infix(r|l)? \d+/)#.$0
+```
+
 # Trim URL
 
 ```
