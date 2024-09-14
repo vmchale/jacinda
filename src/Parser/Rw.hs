@@ -63,12 +63,12 @@ rwE (EApp l op@(UB _ Dedup) e) = EApp l op (rwE e)
 rwE (EApp l (RwB l0 b) e') =
     case rwE e' of
         (EApp lϵ e1 e2) -> EApp l (EApp lϵ (BB l0 b) e1) e2
-        eϵ -> EApp l (BB l0 b) eϵ
+        eϵ              -> EApp l (BB l0 b) eϵ
 rwE (EApp l (RwT l0 t) e') =
     case rwE e' of
         (EApp lϵ (EApp lϵϵ e1 e2) e3) -> EApp l (EApp lϵ (EApp lϵϵ (TB l0 t) e1) e2) e3
-        (EApp lϵ e1 e2) -> EApp l (EApp lϵ (TB l0 t) e1) e2
-        eϵ -> EApp l (TB l0 t) eϵ
+        (EApp lϵ e1 e2)               -> EApp l (EApp lϵ (TB l0 t) e1) e2
+        eϵ                            -> EApp l (TB l0 t) eϵ
 rwE (EApp l e0 e') =
     case (e0, rwE e') of
         (_, EApp lϵ (EApp lϵϵ e3@(BB _ op) e4) e2) | Just{} <- mFi op -> EApp l (EApp lϵϵ e3 (rwE $ EApp lϵ e0 e4)) e2
