@@ -112,8 +112,9 @@ bench/data/ulysses.txt:
 check:
 	cabal build -w $(HC)
 	fd .jac examples/ -x cabal run ja -w $(HC) -- tc
+
 fmt:
 	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x stylish-haskell -i
 
 fix:
-	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x ja "{%/infix(r|l)? \d+/}{sprintf '- fixity: %s' \`0}}" -i | ja '~.$$0'
+	fd '^[A-Z][[:alpha:]]*\.hs$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal) -x ja "{%/infix(r|l)?\s+\d+/}{sprintf '- fixity: %s' \`0}}" -i | ja '~.$$0'
