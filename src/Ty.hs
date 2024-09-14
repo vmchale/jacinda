@@ -57,11 +57,17 @@ data TyState a = TyState { maxU      :: !Int
 setMaxU :: Int -> TyState a -> TyState a
 setMaxU i (TyState _ c v) = TyState i c v
 
+addCM :: Ord a => Nm b -> (C, a) -> TyM a ()
+addCM tv c = modify (mapCV (addC tv c))
+
 mapCV :: (IM.IntMap (S.Set (C, a)) -> IM.IntMap (S.Set (C, a))) -> TyState a -> TyState a
 mapCV f (TyState u cvs v) = TyState u (f cvs) v
 
 addVarEnv :: Int -> T -> TyState a -> TyState a
 addVarEnv i ty (TyState u cvs v) = TyState u cvs (IM.insert i ty v)
+
+addVarM :: Int -> T -> TyM a ()
+addVarM i ty = modify (addVarEnv i ty)
 
 type TyM a = StateT (TyState a) (Either (Err a))
 
@@ -262,7 +268,7 @@ tyDS s FlushDecl   = pure (FlushDecl, s)
 tyDS s (FunDecl n@(Nm _ (U i) _) [] e) = do
     (e', s') <- tyES s e
     let t=eLoc e'
-    modify (addVarEnv i t) $> (FunDecl (n$>t) [] e', s')
+    addVarM i t $> (FunDecl (n$>t) [] e', s')
 tyDS _ FunDecl{}   = error "Internal error. Should have been desugared by now."
 
 isAmbiguous :: T -> Bool
@@ -304,28 +310,28 @@ tyP (Program ds e) = do
 tyNumOp :: Ord a => a -> TyM a T
 tyNumOp l = do
     m <- freshN "m"
-    modify (mapCV (addC m (IsNum, l)))
+    addCM m (IsNum, l)
     let m' = var m
     pure $ m' ~> m' ~> m'
 
 tySemiOp :: Ord a => a -> TyM a T
 tySemiOp l = do
     m <- freshN "m"
-    modify (mapCV (addC m (IsSemigroup, l)))
+    addCM m (IsSemigroup, l)
     let m' = var m
     pure $ m' ~> m' ~> m'
 
 tyOrd :: Ord a => a -> TyM a T
 tyOrd l = do
     a <- freshN "a"
-    modify (mapCV (addC a (IsOrd, l)))
+    addCM a (IsOrd, l)
     let a' = var a
     pure $ a' ~> a' ~> tyB
 
 tyEq :: Ord a => a -> TyM a T
 tyEq l = do
     a <- freshN "a"
-    modify (mapCV (addC a (IsEq, l)))
+    addCM a (IsEq, l)
     let a' = var a
     pure $ a' ~> a' ~> tyB
 
@@ -333,7 +339,7 @@ tyEq l = do
 tyM :: Ord a => a -> TyM a T
 tyM l = do
     a <- freshN "a"
-    modify (mapCV (addC a (IsOrd, l)))
+    addCM a (IsOrd, l)
     let a' = var a
     pure $ a' ~> a' ~> a'
 
@@ -363,8 +369,8 @@ tyES s FieldList{}        = pure (FieldList (tyV tyStr), s)
 tyES s AllColumn{}        = pure (AllColumn (tyStream tyStr), s)
 tyES s FParseAllCol{}     = pure (FParseAllCol (tyStream tyF), s)
 tyES s IParseAllCol{}     = pure (IParseAllCol (tyStream tyI), s)
-tyES s (ParseAllCol l)    = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseAllCol (tyStream (var a)), s)}
-tyES s (NB l MZ)    = do {m <- freshN "m"; modify (mapCV (addC m (IsMonoid, l))); pure (NB (var m) MZ, s)}
+tyES s (ParseAllCol l)    = do {a <- freshN "a"; addCM a (IsParse, l); pure (ParseAllCol (tyStream (var a)), s)}
+tyES s (NB l MZ)    = do {m <- freshN "m"; addCM m (IsMonoid, l); pure (NB (var m) MZ, s)}
 tyES s (NB _ Ix)    = pure (NB tyI Ix, s)
 tyES s (NB _ Fp)    = pure (NB tyStr Fp, s)
 tyES s (NB _ Nf)    = pure (NB tyI Nf, s)
@@ -406,46 +412,46 @@ tyES s (UB _ Last) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) Last, s)}
 tyES s (UB _ Init) = do {a <- freshTV "a"; pure (UB (tyV a ~> tyV a) Init, s)}
 tyES s (BB _ Report) = do {a <- freshTV "a"; b <- freshTV "b"; pure (BB (tyStream a ~> b ~> TyB TyUnit) Report, s)}
 tyES s (UB _ TallyList) = do {a <- freshTV "a"; pure (UB (a ~> tyI) TallyList, s)}
-tyES s (UB l Negate) = do {a <- freshN "a"; modify (mapCV (addC a (IsNum, l))); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
+tyES s (UB l Negate) = do {a <- freshN "a"; addCM a (IsNum, l); let a'=var a in pure (UB (tyArr a' a') Negate, s)}
 tyES s (UB _ Some) = do {a <- freshTV "a"; pure (UB (tyArr a (tyOpt a)) Some, s)}
 tyES s (NB _ None) = do {a <- freshTV "a"; pure (NB (tyOpt a) None, s)}
-tyES s (ParseCol l i) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (ParseCol (tyStream (var a)) i, s)}
-tyES s (UB l Parse) = do {a <- freshN "a"; modify (mapCV (addC a (IsParse, l))); pure (UB (tyStr ~> var a) Parse, s)}
-tyES s (BB l Sprintf) = do {a <- freshN "a"; modify (mapCV (addC a (IsPrintf, l))); pure (BB (tyStr ~> var a ~> tyStr) Sprintf, s)}
-tyES s (BB l Rein) = do {f <- freshN "f"; modify (mapCV (addC f (Foldable, l))); pure (BB (tyStr ~> (var f:$tyStr) ~> tyStr) Rein, s)}
-tyES s (BB l Nier) = do {f <- freshN "f"; modify (mapCV (addC f (Foldable, l))); pure (BB ((var f:$tyStr) ~> tyStr ~> tyStr) Nier, s)}
-tyES s (BB l DedupOn) = do {a <- freshTV "a"; b <- freshN "b"; modify (mapCV (addC b (IsEq, l))); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
+tyES s (ParseCol l i) = do {a <- freshN "a"; addCM a (IsParse, l); pure (ParseCol (tyStream (var a)) i, s)}
+tyES s (UB l Parse) = do {a <- freshN "a"; addCM a (IsParse, l); pure (UB (tyStr ~> var a) Parse, s)}
+tyES s (BB l Sprintf) = do {a <- freshN "a"; addCM a (IsPrintf, l); pure (BB (tyStr ~> var a ~> tyStr) Sprintf, s)}
+tyES s (BB l Rein) = do {f <- freshN "f"; addCM f (Foldable, l); pure (BB (tyStr ~> (var f:$tyStr) ~> tyStr) Rein, s)}
+tyES s (BB l Nier) = do {f <- freshN "f"; addCM f (Foldable, l); pure (BB ((var f:$tyStr) ~> tyStr ~> tyStr) Nier, s)}
+tyES s (BB l DedupOn) = do {a <- freshTV "a"; b <- freshN "b"; addCM b (IsEq, l); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
 tyES s (UB _ (At i)) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) (At i), s)}
-tyES s (UB l Dedup) = do {a <- freshN "a"; modify (mapCV (addC a (IsEq, l))); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
+tyES s (UB l Dedup) = do {a <- freshN "a"; addCM a (IsEq, l); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
 tyES s (UB _ Const) = do {a <- freshTV "a"; b <- freshTV "b"; pure (UB (a ~> b ~> a) Const, s)}
-tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f in pure (UB (tyArr (f':$tyOpt a') (f':$a')) CatMaybes, s)}
-tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; modify (mapCV (addC f (Witherable, l))); let a'=var a; f'=var f; w=f':$a' in pure (BB ((a' ~> tyB) ~> w ~> w) Filter, s)}
+tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; addCM f (Witherable, l); let a'=var a; f'=var f in pure (UB (tyArr (f':$tyOpt a') (f':$a')) CatMaybes, s)}
+tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; addCM f (Witherable, l); let a'=var a; f'=var f; w=f':$a' in pure (BB ((a' ~> tyB) ~> w ~> w) Filter, s)}
 tyES s (UB _ (Select i)) = do
     ρ <- freshN "ρ"; a <- freshTV "a"
     pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
 tyES s (BB l MapMaybe) = do
     a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
-    modify (mapCV (addC f (Witherable, l)))
+    addCM f (Witherable, l)
     let f'=var f
     pure (BB (tyArr (a ~> tyOpt b) ((f':$a) ~> (f':$b))) MapMaybe, s)
 tyES s (BB l Map) = do
     a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
     let f'=var f
-    modify (mapCV (addC f (Functor, l)))
+    addCM f (Functor, l)
     pure (BB (tyArr (a ~> b) ((f':$a) ~> (f':$b))) Map, s)
 tyES s (TB l Fold) = do
     a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
     let f'=var f
-    modify (mapCV (addC f (Foldable, l)))
+    addCM f (Foldable, l)
     pure (TB ((b ~> a ~> b) ~> (b ~> (f':$a) ~> b)) Fold, s)
 tyES s (BB l Fold1) = do
     a <- freshTV "a"
     f <- freshN "f"
     let f'=var f
-    modify (mapCV (addC f (Foldable, l)))
+    addCM f (Foldable, l)
     pure (BB ((a ~> a ~> a) ~> ((f':$a) ~> a)) Fold1, s)
 tyES s (TB _ Bookend) = pure (TB (tyR ~> tyR ~> tyStream tyStr ~> tyStream tyStr) Bookend, s)
 tyES s (TB _ Captures) = pure (TB (tyStr ~> tyI ~> tyR ~> tyOpt tyStr) Captures, s)
@@ -478,13 +484,13 @@ tyES s (EApp l e0 e1)     = do
     pure (EApp b' e0' e1', s3)
 tyES s (Lam _ n@(Nm _ (U i) _) e) = do
     a <- freshTV "a"
-    modify (addVarEnv i a)
+    addVarM i a
     (e', s') <- tyES s e
     pure (Lam (a ~> eLoc e') (n$>a) e', s')
 tyES s (Let _ (n@(Nm _ (U i) _), eϵ) e) = do
     (eϵ', s0) <- tyES s eϵ
     let bTy=eLoc eϵ'
-    modify (addVarEnv i bTy)
+    addVarM i bTy
     (e', s1) <- tyES s0 e
     pure (Let (eLoc e') (n$>bTy, eϵ') e', s1)
 tyES s (Tup _ es) = do {(es', s') <- tS tyES s es; pure (Tup (TyTup (fmap eLoc es')) es', s')}
