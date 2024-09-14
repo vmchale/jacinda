@@ -552,6 +552,48 @@ fn process(x) :=
 
 using the laconic syntax for conditionals, `?<bool>;<expr>;<expr>`
 
+## Extract Source from Cabal
+
+We can use
+
+```
+ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal
+```
+
+to extract all source directories from a `.cabal` file: executables, test
+suites, &c.
+
+This can be combined with `fd` to search for all Haskell source files defined by
+a `.cabal` file, viz.
+
+```bash
+fd '\.(cpphs|hs)$' $(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i jacinda.cabal)
+```
+
+### Make Recipe: Format
+
+We can define a make recipe `fmt` to format all Haskell files:
+
+```mk
+fmt:
+        fd '\.(cpphs|hs)$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i apple.cabal) -x stylish-haskell -i
+```
+
+### Fixity Declarations for HLint
+
+To extract fixity declarations and present them in a format suitable for HLint:
+
+```bash
+ja "{%/infix(r|l)? \d+/}{sprintf '- fixity: %s' \`0}" -i src/FILE.hs
+```
+
+We can define a recipe `fix` to extract all fixity definitions:
+
+```mk
+fix:
+        fd '\.(cpphs|hs)$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i apple.cabal) -x ja "~.{%/infix(r|l)?\s+\d+/}{\`0}" -i | ja '~.$$0'
+```
+
 ## Data Processing
 
 ### CSV Processing
