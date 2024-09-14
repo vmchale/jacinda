@@ -13,7 +13,7 @@ import           A
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (zipWithM)
 import           Control.Monad.Except       (liftEither, throwError)
-import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT)
+import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT, state)
 import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
 import           Data.Functor               (void, ($>))
@@ -53,9 +53,6 @@ data TyState a = TyState { maxU      :: !Int
                          , classVars :: IM.IntMap (S.Set (C, a))
                          , varEnv    :: IM.IntMap T
                          }
-
-mapMaxU :: (Int -> Int) -> TyState a -> TyState a
-mapMaxU f (TyState u c v) = TyState (f u) c v
 
 setMaxU :: Int -> TyState a -> TyState a
 setMaxU i (TyState _ c v) = TyState i c v
@@ -156,10 +153,7 @@ substInt tys k =
         Nothing              -> Nothing
 
 freshN :: T.Text -> TyM a (Nm ())
-freshN n = do
-    st <- gets maxU
-    Nm n (U $ st+1) ()
-        <$ modify (mapMaxU (+1))
+freshN n = state (\st -> let j=maxU st+1 in (Nm n (U j) (), st { maxU = j }))
 
 freshTV :: T.Text -> TyM a T
 freshTV=fmap var.freshN
