@@ -151,9 +151,6 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **~?** Maybe match: return string if it is a match, otherwise None
 :   Str -> Regex -> Option Str
 
-**\@** Intercalate
-:   List Str -> Str -> Str
-
 **~\*** Match, returning nth capture group
 :   Str -> Int -> Regex -> Option Str
 
@@ -279,6 +276,9 @@ a boolean expression.
 
 [y]|> {|`0~/^$/}
 :   Is the last line blank?
+
+(+)|>.?{|`0 ~* 1 /^\\s\*(.*)/}
+:   Concatenate into one line, discarding indentation
 
 # BUGS
 
