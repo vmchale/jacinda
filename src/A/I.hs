@@ -109,3 +109,4 @@ iE e@(Var t (Nm _ (U i) _)) = do
         Just e' -> do {er <- rE e'; pure $ fmap (aT (match (eLoc er) t)) er}
         Nothing -> pure e
 iE Dfn{} = desugar; iE Paren{} = desugar; iE ResVar{} = desugar
+iE RwB{} = desugar; iE RwT{} = desugar; iE F{} = error "impossible."

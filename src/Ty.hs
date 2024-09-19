@@ -354,6 +354,7 @@ tyE e = do
     pure (fmap (aT s) e')
 
 tyES :: Ord a => Subst -> E a -> TyM a (E T, Subst)
+tyES s F{}                = error "impossible."
 tyES s (Lit _ (BLit b))   = pure (Lit tyB (BLit b), s)
 tyES s (Lit _ (ILit i))   = pure (Lit tyI (ILit i), s)
 tyES s (Lit _ (FLit f))   = pure (Lit tyF (FLit f), s)

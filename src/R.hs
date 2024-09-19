@@ -148,6 +148,7 @@ replaceXY nX nY = r where
     r e@ParseCol{}      = e
     r (Paren l e)       = Paren l (r e)
     r Dfn{}             = error "nested dfns not yet implemented"
+    r F{}               = error "Internal error."
 
 replaceX :: (a -> Nm a) -> E a -> E a
 replaceX n = replaceXY n (error "Internal error: 'y' not expected.")

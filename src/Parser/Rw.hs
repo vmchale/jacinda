@@ -88,6 +88,7 @@ rwE e@AllColumn{} = e
 rwE e@IParseAllCol{} = e
 rwE e@FParseAllCol{} = e
 rwE e@ParseAllCol{} = e
+rwE F{} = error "impossible."; rwE RC{} = error "impossible."
 rwE (Guarded l p e) = Guarded l (rwE p) (rwE e)
 rwE (Implicit l e) = Implicit l (rwE e)
 rwE (Let l (n, e') e) = Let l (n, rwE e') (rwE e)

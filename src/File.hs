@@ -116,6 +116,13 @@ compileR fp = r where
     r (Arr l es)        = Arr l (r<$>es)
     r (Anchor l es)     = Anchor l (r<$>es)
     r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
+    r F{}               = error "impossible"
+    r Dfn{}             = desugar
+    r Paren{}           = desugar
+    r ResVar{}          = desugar
+    r RwB{}             = desugar
+    r RwT{}             = desugar
+
 
 exprEval :: T.Text -> E T
 exprEval src =
@@ -189,3 +196,6 @@ yIO = either throwIO pure
 
 yeet :: Exception e => Either e a -> a
 yeet = either throw id
+
+desugar :: a
+desugar = error "Interal error: should have been desugared."
