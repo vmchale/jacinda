@@ -3,6 +3,7 @@
   * Pretty-print `:set csv`
   * `:set csv` inline case
   * Fix bug in `mapMaybe` &c. synonym parsing
+  * More informative error messages from happy via `explist`.
 
 # 3.1.1.0
 
