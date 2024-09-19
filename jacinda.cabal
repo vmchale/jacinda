@@ -103,7 +103,7 @@ library jacinda-lib
         TypeFamilies
 
     if !flag(cross)
-        build-tool-depends: alex:alex >=3.5.0.0, happy:happy
+        build-tool-depends: alex:alex >=3.5.0.0, happy:happy >=1.17.1
 
 executable ja
     import:           warnings
