@@ -650,7 +650,8 @@ class="sourceCode bash"><code class="sourceCode bash"><span id="cb58-1"><a href=
 definitions:</p>
 <div class="sourceCode" id="cb59"><pre
 class="sourceCode mk"><code class="sourceCode makefile"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fix:</span></span>
-<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x ja <span class="st">&quot;~.{%/infix(r|l)?\s+\d+/}{\`0}&quot;</span> -i | ja <span class="st">&#39;~.</span><span class="ch">$$</span><span class="st">0&#39;</span></span></code></pre></div>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs|x|y|hsc)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x ja <span class="st">&quot;~.{%/^\s*infix(r|l)?\s+\d+/}{\`0}&quot;</span> -i | ja <span class="st">&#39;~.</span><span class="ch">$$</span><span class="st">0&#39;</span></span></code></pre></div>
+<p>Note that this works on Happy, Alex, etc. source files.</p>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>
 <h4 id="vaccine-effectiveness">Vaccine Effectiveness</h4>

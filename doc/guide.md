@@ -591,8 +591,10 @@ We can define a recipe `fix` to extract all fixity definitions:
 
 ```mk
 fix:
-        fd '\.(cpphs|hs)$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i apple.cabal) -x ja "~.{%/infix(r|l)?\s+\d+/}{\`0}" -i | ja '~.$$0'
+        fd '\.(cpphs|hs|x|y|hsc)$$' $$(ja -F'\s*:\s*' '{%/hs-source-dirs/}{`2}' -i apple.cabal) -x ja "~.{%/^\s*infix(r|l)?\s+\d+/}{\`0}" -i | ja '~.$$0'
 ```
+
+Note that this works on Happy, Alex, etc. source files.
 
 ## Data Processing
 
