@@ -36,6 +36,9 @@ Equivalently:
 [sprintf '- fixity: %s' x]¨(~/infix(r|l)?\s+\d+/)#.$0
 ```
 
+This is equivalent to `hlint --find src/FILE.hs | rg '^- fixity:'`, except it
+works on Happy, Alex, etc. preprocessor files.
+
 # Trim URL
 
 ```
