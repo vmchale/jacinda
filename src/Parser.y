@@ -22,13 +22,14 @@ import A
 import L
 import Nm hiding (loc)
 import qualified Nm
-import Prettyprinter (Pretty (pretty), (<+>))
+import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
 }
 
 %name parseF File
 %name parseLib Library
 %tokentype { Token AlexPosn }
+%errorhandlertype explist
 %error { parseError }
 %monad { Parse } { (>>=) } { pure }
 %lexer { lift alexMonadScan >>= } { EOF _ }
@@ -360,19 +361,19 @@ type File = ([FilePath], Program AlexPosn)
 
 type Library = ([FilePath], [D AlexPosn])
 
-parseError :: Token AlexPosn -> Parse a
-parseError = throwError . Unexpected
+parseError :: (Token AlexPosn, [String]) -> Parse a
+parseError = throwError . uncurry Unexpected
 
 mkLet :: a -> [(Nm a, E a)] -> E a -> E a
 mkLet _ [] e     = e
 mkLet l (b:bs) e = Let l b (mkLet l bs e)
 
-data ParseError a = Unexpected (Token a)
+data ParseError a = Unexpected !(Token a) [String]
                   | LexErr String
 
 instance Pretty a => Pretty (ParseError a) where
-    pretty (Unexpected tok)  = pretty (loc tok) <+> "Unexpected" <+> pretty tok
-    pretty (LexErr str)      = pretty (T.pack str)
+    pretty (Unexpected tok valid) = pretty (loc tok) <+> "Unexpected" <+> pretty tok <> "." <+> "Expected one of" <+> concatWith (\x y -> x <> "," <+> y) (squotes.pretty<$>valid)
+    pretty (LexErr str)           = pretty (T.pack str)
 
 instance Pretty a => Show (ParseError a) where
     show = show . pretty
