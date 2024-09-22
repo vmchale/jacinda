@@ -16,6 +16,7 @@ import           Control.Monad.Except       (liftEither, throwError)
 import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT, state)
 import           Data.Bifunctor             (first, second)
 import           Data.Foldable              (traverse_)
+import           Data.Function              (on)
 import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
@@ -95,8 +96,7 @@ aT um (TyArr ty ty') = TyArr (aT um ty) (aT um ty')
 aT um (TyTup tys)    = TyTup (aT um <$> tys)
 
 mguPrep :: l -> Subst -> T -> T -> Either (Err l) Subst
-mguPrep l s t0 t1 =
-    let t0' = aT s t0; t1' = aT s t1 in mgu l s t0' t1'
+mguPrep l s = mgu l s `on` aT s
 
 match :: T -> T -> Subst
 match t t' = either (throw :: Err () -> Subst) id (maM t t')
@@ -354,7 +354,7 @@ tyE e = do
     pure (fmap (aT s) e')
 
 tyES :: Ord a => Subst -> E a -> TyM a (E T, Subst)
-tyES s F{}                = error "impossible."
+tyES _ F{}                = error "impossible."
 tyES s (Lit _ (BLit b))   = pure (Lit tyB (BLit b), s)
 tyES s (Lit _ (ILit i))   = pure (Lit tyI (ILit i), s)
 tyES s (Lit _ (FLit f))   = pure (Lit tyF (FLit f), s)
