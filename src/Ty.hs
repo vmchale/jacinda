@@ -188,10 +188,9 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
                 st <- gets snd
                 case IM.lookup j st of
                     Just k -> pure (TyVar (Nm n k l'))
-                    Nothing -> do
-                        k <- gets fst
-                        let j' = U$k+1
-                        TyVar (Nm n j' l') <$ modify (\(u, s) -> (u+1, IM.insert j j' s))
+                    Nothing -> state $ \(k, b) ->
+                        let j'=k+1; u=U j'
+                        in (TyVar (Nm n u l'), (j', IM.insert j u b))
           cloneTyM (TyArr tyϵ ty')               = TyArr <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (tyϵ:$ty')                    = (:$) <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup tys)                   = TyTup <$> traverse cloneTyM tys
