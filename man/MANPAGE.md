@@ -210,6 +210,10 @@ a boolean expression.
 
 **<expr> $> <expr>** Print stream and summary result
 
+**fn f(x, y) := x + y;** Function definition
+
+**let val x := y + 1 in x end** Let binding
+
 **head#, last#**
 :   List a -> a
 
