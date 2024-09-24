@@ -21,29 +21,26 @@ jacFile = argument str
     <> help "Source code"
     <> jacCompletions)
 
-csv :: Parser Bool
+csv, asv, usv :: Parser Bool
 csv = switch
     (long "csv"
     <> help "Process as CSV")
 
-asv :: Parser Bool
 asv = switch
     (long "asv"
     <> help "Process as ASV")
 
-usv :: Parser Bool
 usv = switch
     (long "usv"
     <> short 'u'
     <> help "Process as USV")
 
-jacRs :: Parser (Maybe T.Text)
+jacRs, jacFs :: Parser (Maybe T.Text)
 jacRs = optional $ option str
     (short 'R'
     <> metavar "REGEXP"
     <> help "Record separator")
 
-jacFs :: Parser (Maybe T.Text)
 jacFs = optional $ option str
     (short 'F'
     <> metavar "REGEXP"
@@ -84,7 +81,6 @@ includes = many $ strOption
 
 dirCompletions :: HasCompleter f => Mod f a
 dirCompletions = completer . bashCompleter $ "directory"
-
 
 wrapper :: ParserInfo Command
 wrapper = info (helper <*> versionMod <*> commandP)
