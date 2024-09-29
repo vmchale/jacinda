@@ -102,7 +102,6 @@ aT um (Ρ n@(Nm _ (U i) _) rs) =
         Just ty         -> aT um ty
         Nothing         -> Ρ n (fmap (aT um) rs)
 aT _ ty'@TyB{} = ty'
-aT _ ty'@TyB{} = ty'
 aT um (ty:$ty') = aT um ty :$ aT um ty'
 aT um (TyArr ty ty') = TyArr (aT um ty) (aT um ty')
 aT um (TyTup tys)    = TyTup (aT um <$> tys)
