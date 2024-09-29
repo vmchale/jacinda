@@ -4,9 +4,11 @@ module Jacinda.Backend.T ( LineCtx, run, eB ) where
 
 import           A
 import           A.I
+import           C
 import           Control.Exception                 (Exception, throw)
 import           Control.Monad                     (zipWithM, (<=<))
 import           Control.Monad.State.Strict        (State, evalState, runState, state)
+import           Data.Bifunctor                    (second)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
@@ -139,6 +141,11 @@ collect e@(EApp ty (EApp _ (BB _ Fold1) _) _) = do
 collect (Tup ty es) = do
     (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
     pure (fold seedEnvs, ts updates, Tup ty es')
+collect (Rec ty rs) = do
+    (seedEnvs, updates, es') <- unzip3 <$> traverse collect es
+    pure (fold seedEnvs, ts updates, Rec ty (zip ns es'))
+  where
+    (ns,es)=unzip rs
 collect (EApp ty0 (EApp ty1 op@BB{} e0) e1) = do
     (env1, f1, e1') <- collect e1
     (env0, f0, e0') <- collect e0
@@ -199,6 +206,22 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@Var{} _               = e
 κ (Lam t n e) line        = Lam t n (κ e line)
 κ (Tup ty es) line        = Tup ty ((`κ` line)<$>es)
+κ (Rec ty es) line        = Rec ty (second (`κ` line)<$>es)
+-- Arr, OptionVal...
+κ e@ParseCol{} _          = error ("Internal error: κ called on" ++ show e)
+κ e@IParseCol{} _         = error ("Internal error: κ called on" ++ show e)
+κ e@FParseCol{} _         = error ("Internal error: κ called on" ++ show e)
+κ e@Column{} _            = error ("Internal error: κ called on" ++ show e)
+κ e@AllColumn{} _         = error ("Internal error: κ called on" ++ show e)
+κ e@Guarded{} _           = error ("Internal error: κ called on" ++ show e)
+κ e@Implicit{} _          = error ("Internal error: κ called on" ++ show e)
+κ e@IParseAllCol{} _      = error ("Internal error: κ called on" ++ show e)
+κ e@FParseAllCol{} _      = error ("Internal error: κ called on" ++ show e)
+κ e@Anchor{} _            = error ("Internal error: κ called on" ++ show e)
+κ e@ParseAllCol{} _       = error ("Internal error: κ called on" ++ show e)
+κ Dfn{} _                 = desugar
+κ ResVar{} _              = desugar
+κ Paren{} _               = desugar
 
 ni t=IM.singleton t Nothing
 na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x
@@ -370,6 +393,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
     n' <- asI<$>(n@>b); x' <- asV<$>(x@>b)
     pure $ Arr ty (V.drop (fromIntegral n') x')
 (Tup ty es) @> b = Tup ty.foldSeq <$> traverse (@>b) es
+(Rec ty es) @> b = Rec ty.foldSeq <$> traverse (secondM (@>b)) es
 (EApp _ (UB _ Head) x) @> b = do
     x' <- x@>b
     pure $ V.head (asV x')
@@ -669,3 +693,5 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d di df b) =
         (Nothing, Nothing) -> Σ j (IM.insert tgt Nothing env)
         (Nothing, Just x) -> Σ j (IM.insert tgt (Just$!x) env)) d di df b
 wF e _ _ _ = throw $ InternalArityOrEta 2 e
+
+desugar = error "Internal error. Should have been desugared by now."

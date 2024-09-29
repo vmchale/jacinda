@@ -17,6 +17,7 @@ import           Control.DeepSeq    (NFData)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.List          (foldl')
+import qualified Data.Map           as M
 import           Data.Maybe         (isJust)
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
@@ -59,7 +60,9 @@ data T = TyB { tyBuiltin :: TB }
        | TyArr { tyArr0, tyArr1 :: T }
        | TyVar { tyVar :: Nm () }
        | TyTup { tyTups :: [T] }
+       | TyRec { tyres :: [(Nm (), T)] }
        | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
+       | Ρ { tyΡ :: Nm (), tyρs :: M.Map T.Text T }
        deriving (Eq, Ord)
 
 instance Pretty TB where
@@ -76,10 +79,11 @@ instance Pretty T where
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup tys)    = j'Tup tys
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
+    pretty (Ρ n fs)       = braces (pretty n <+> pipe <+> prettyFields (M.toList fs))
 
 parensp True=parens; parensp False=id
 
-prettyFields :: [(Int, T)] -> Doc ann
+prettyFields :: Pretty a => [(a, T)] -> Doc ann
 prettyFields = mconcat . punctuate "," . fmap g where g (i, t) = pretty i <> ":" <+> pretty t
 
 instance Show T where show=show.pretty
@@ -202,6 +206,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | BB { eLoc :: a, eBin :: BBin } | TB { eLoc :: a, eTer :: BTer } | UB { eLoc :: a, eUn :: BUn }
          | NB { eLoc :: a, eNil :: N }
          | Tup { eLoc :: a, esTup :: [E a] }
+         | Rec { eLoc :: a, esR :: [(Nm a, E a)] }
          | ResVar { eLoc :: a, dfnVar :: DfnVar }
          | RC RurePtr -- compiled regex after normalization
          | Arr { eLoc :: a, elems :: !(V.Vector (E a)) }
@@ -298,6 +303,7 @@ instance PS (E a) where
     ps _ (RwB _ Fold1)     = "fold1"
     ps _ (Cond _ e0 e1 e2) = "?" <> pretty e0 <> ";" <+> pretty e1 <> ";" <+> pretty e2
     ps _ (Tup _ es)        = j'Tup es
+    ps _ (Rec _ es)        = encloseSep (flatAlt "#{ " "#{") (flatAlt (hardline <+> "}") "}") (flatAlt " ; " "; ") ((\(n,e) -> pretty n <+> ".=" <+> pretty e)<$>es)
     ps _ (Arr _ es)        = tupledByFunky "," (V.toList $ pretty <$> es)
     ps _ (Anchor _ es)     = "&" <> tupledBy "." (pretty <$> es)
     ps _ (Let _ (n, b) e)  = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"
@@ -331,6 +337,7 @@ instance Eq (E a) where
     (==) (UB _ unOp) (UB _ unOp')               = unOp == unOp'
     (==) (NB _ x) (NB _ y)                      = x == y
     (==) (Tup _ es) (Tup _ es')                 = es == es'
+    (==) (Rec _ es) (Rec _ es')                 = es == es'
     (==) (ResVar _ x) (ResVar _ y)              = x == y
     (==) (Dfn _ f) (Dfn _ g)                    = f == g -- we're testing for lexical equivalence
     (==) RC{} _                                 = error "Cannot compare compiled regex!"

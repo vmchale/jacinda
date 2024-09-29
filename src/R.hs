@@ -8,6 +8,7 @@ module R ( rE
          ) where
 
 import           A
+import           C
 import           Control.Monad.State.Strict (MonadState, State, runState)
 import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
@@ -89,6 +90,7 @@ hasY :: E a -> Bool
 hasY = g where
     g (ResVar _ Y)                 = True
     g (Tup _ es)                   = any g es
+    g (Rec _ es)                   = any (g.snd) es
     g (OptionVal _ (Just e))       = g e
     g (EApp _ e0 e1)               = g e0 || g e1
     g Dfn{}                        = error "nested dfns not yet implemented"
@@ -132,6 +134,7 @@ replaceXY nX nY = r where
     r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
     r (OptionVal l e)   = OptionVal l (r<$>e)
     r (Tup l es)        = Tup l (r<$>es)
+    r (Rec l es)        = Rec l (second r<$>es)
     r (Arr l es)        = Arr l (r<$>es)
     r (Anchor l es)     = Anchor l (r<$>es)
     r e@Column{}        = e
@@ -164,6 +167,7 @@ renameProgram (Program ds e) = Program <$> traverse renameD ds <*> rE e
 rE :: (HasRenames s, MonadState s m) => E a -> m (E a)
 rE (EApp l e e')   = EApp l <$> rE e <*> rE e'
 rE (Tup l es)      = Tup l <$> traverse rE es
+rE (Rec l es)      = Rec l <$> traverse (secondM rE) es
 rE (Var l n)       = Var l <$> replaceVar n
 rE (Lam l n e)     = doLocal $ do
     n' <- freshen n

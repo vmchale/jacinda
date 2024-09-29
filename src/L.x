@@ -100,8 +100,10 @@ tokens :-
         "&("                     { mkSym LAnchor }
         "$>"                     { mkSym IceCreamCone }
         "{%"                     { mkSym LBracePercent }
+        "#{"                     { mkSym LBraceOctothorpe }
         "{|"                     { mkSym LBraceBar }
         "]"                      { mkSym RSqBracket `andBegin` 0 }
+        ".="                     { mkSym DotEq }
         "~"                      { mkSym Tilde }
         "!~"                     { mkSym NotMatchTok }
         "~?"                     { mkSym MMatch }
@@ -272,6 +274,7 @@ data Sym = PlusTok | MinusTok | PercentTok
          | LBrace | RBrace
          | LParen
          | LAnchor
+         | DotEq
          | RParen
          | LSqBracket | RSqBracket
          | Semicolon
@@ -286,6 +289,7 @@ data Sym = PlusTok | MinusTok | PercentTok
          | TallyTok | LengthTok
          | ConstTok
          | LBracePercent
+         | LBraceOctothorpe
          | LBraceBar
          | Exclamation
          | Caret
@@ -303,63 +307,65 @@ data Sym = PlusTok | MinusTok | PercentTok
          | AmpAmp
 
 instance Pretty Sym where
-    pretty PlusTok       = "+"
-    pretty MinusTok      = "-"
-    pretty PercentTok    = "%"
-    pretty ExpTok        = "**"
-    pretty FoldTok       = "|"
-    pretty Fold1Tok      = "|>"
-    pretty TimesTok      = "*"
-    pretty DefEq         = ":="
-    pretty Colon         = ":"
-    pretty LBrace        = "{"
-    pretty RBrace        = "}"
-    pretty Semicolon     = ";"
-    pretty Underscore    = "_"
-    pretty EqTok         = "="
-    pretty LeqTok        = "<="
-    pretty LtTok         = "<"
-    pretty NeqTok        = "!="
-    pretty GeqTok        = ">="
-    pretty GtTok         = ">"
-    pretty AndTok        = "&"
-    pretty OrTok         = "||"
-    pretty LParen        = "("
-    pretty RParen        = ")"
-    pretty LAnchor       = "&("
-    pretty LSqBracket    = "["
-    pretty RSqBracket    = "]"
-    pretty Tilde         = "~"
-    pretty NotMatchTok   = "!~"
-    pretty MMatch        = "~?"
-    pretty Comma         = ","
-    pretty DoubleComma   = ",,"
-    pretty Dot           = "."
-    pretty TallyTok      = "#"
-    pretty Zilde         = "⍬"
-    pretty LengthTok     = "#*"
-    pretty Quot          = "¨"
-    pretty Caret         = "^"
-    pretty ConstTok      = "[:"
-    pretty LBracePercent = "{%"
-    pretty LBraceBar     = "{|"
-    pretty Exclamation   = "!"
-    pretty Backslash     = "\\"
-    pretty BackslashDot  = "\\."
-    pretty FilterTok     = "#."
-    pretty FloorSym      = "⌊"
-    pretty CeilSym       = "⌈"
-    pretty DedupTok      = "~."
-    pretty DedupOnTok    = "~.*"
-    pretty CatMaybesTok  = ".?"
-    pretty MapMaybeTok   = ":?"
-    pretty CapTok        = "~*"
-    pretty NegTok        = "-."
-    pretty LastFieldTok  = "`*"
-    pretty FieldListTok  = "`$"
-    pretty IceCreamCone  = "$>"
-    pretty QuestionMark  = "?"
-    pretty AmpAmp        = "@@"
+    pretty PlusTok          = "+"
+    pretty MinusTok         = "-"
+    pretty PercentTok       = "%"
+    pretty ExpTok           = "**"
+    pretty FoldTok          = "|"
+    pretty Fold1Tok         = "|>"
+    pretty TimesTok         = "*"
+    pretty DefEq            = ":="
+    pretty DotEq            = ".="
+    pretty Colon            = ":"
+    pretty LBrace           = "{"
+    pretty RBrace           = "}"
+    pretty Semicolon        = ";"
+    pretty Underscore       = "_"
+    pretty EqTok            = "="
+    pretty LeqTok           = "<="
+    pretty LtTok            = "<"
+    pretty NeqTok           = "!="
+    pretty GeqTok           = ">="
+    pretty GtTok            = ">"
+    pretty AndTok           = "&"
+    pretty OrTok            = "||"
+    pretty LParen           = "("
+    pretty RParen           = ")"
+    pretty LAnchor          = "&("
+    pretty LSqBracket       = "["
+    pretty RSqBracket       = "]"
+    pretty Tilde            = "~"
+    pretty NotMatchTok      = "!~"
+    pretty MMatch           = "~?"
+    pretty Comma            = ","
+    pretty DoubleComma      = ",,"
+    pretty Dot              = "."
+    pretty TallyTok         = "#"
+    pretty Zilde            = "⍬"
+    pretty LengthTok        = "#*"
+    pretty Quot             = "¨"
+    pretty Caret            = "^"
+    pretty ConstTok         = "[:"
+    pretty LBracePercent    = "{%"
+    pretty LBraceOctothorpe = "#{"
+    pretty LBraceBar        = "{|"
+    pretty Exclamation      = "!"
+    pretty Backslash        = "\\"
+    pretty BackslashDot     = "\\."
+    pretty FilterTok        = "#."
+    pretty FloorSym         = "⌊"
+    pretty CeilSym          = "⌈"
+    pretty DedupTok         = "~."
+    pretty DedupOnTok       = "~.*"
+    pretty CatMaybesTok     = ".?"
+    pretty MapMaybeTok      = ":?"
+    pretty CapTok           = "~*"
+    pretty NegTok           = "-."
+    pretty LastFieldTok     = "`*"
+    pretty FieldListTok     = "`$"
+    pretty IceCreamCone     = "$>"
+    pretty QuestionMark     = "?"
+    pretty AmpAmp           = "@@"
 
 data Keyword = KwLet
              | KwIn

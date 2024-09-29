@@ -7,6 +7,7 @@ module A.I ( RM, UM, ISt (..)
            ) where
 
 import           A
+import           C
 import           Control.Monad.State.Strict (State, gets, modify, runState, state)
 import           Data.Bifunctor             (second)
 import           Data.Foldable              (traverse_)
@@ -72,6 +73,7 @@ bM (Let l (n, e') e) = do
     eB <- bM e
     pure $ Let l (n, e'B) eB
 bM (Tup l es) = Tup l <$> traverse bM es; bM (Arr l es) = Arr l <$> traverse bM es
+bM (Rec l es) = Rec l <$> traverse (secondM bM) es
 bM (Anchor l es) = Anchor l <$> traverse bM es; bM (OptionVal l es) = OptionVal l <$> traverse bM es
 bM (Lam l n e) = Lam l n <$> bM e
 bM (Implicit l e) = Implicit l <$> bM e
@@ -96,6 +98,7 @@ iE (Guarded t p e) = Guarded t <$> iE p <*> iE e
 iE (Implicit t e) = Implicit t <$> iE e
 iE (Lam t n e) = Lam t n <$> iE e
 iE (Tup t es) = Tup t <$> traverse iE es
+iE (Rec t es) = Rec t <$> traverse (secondM iE) es
 iE (Arr t es) = Arr t <$> traverse iE es
 iE (Anchor t es) = Anchor t <$> traverse iE es
 iE (OptionVal t es) = OptionVal t <$> traverse iE es

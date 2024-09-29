@@ -43,8 +43,9 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     lsqbracket { TokSym $$ LSqBracket }
     rsqbracket { TokSym $$ RSqBracket }
     lparen { TokSym $$ LParen }
-    lanchor { TokSym $$ LAnchor }
     rparen { TokSym $$ RParen }
+    loctothorpe { TokSym $$ LBraceOctothorpe }
+    lanchor { TokSym $$ LAnchor }
     semicolon { TokSym $$ Semicolon }
     backslash { TokSym $$ Backslash }
     questionMark { TokSym $$ QuestionMark }
@@ -75,6 +76,7 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
     comma { TokSym $$ Comma }
     doubleComma { TokSym $$ DoubleComma }
+    dotEq { TokSym $$ DotEq }
     fold { TokSym $$ FoldTok }
     fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
@@ -221,6 +223,9 @@ BBin :: { BBin }
 Bind :: { (Nm AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
+Rec :: { (Nm AlexPosn, E AlexPosn) }
+    : name dotEq E { ($1, $3) }
+
 Args :: { [(Nm AlexPosn)] }
      : lparen rparen { [] }
      | parens(name) { [$1] }
@@ -302,8 +307,9 @@ E :: { E AlexPosn }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BB tl Matches) (AllField tl)) $2) $4 }
   | lbraceBar E rbrace { Implicit $1 $2 }
   | let many(Bind) in E end { mkLet $1 (reverse $2) $4 }
-  | lparen sepBy(E, dot) rparen { Tup $1 (reverse $2) }
+  | lparen sepBy(E,dot) rparen { Tup $1 (reverse $2) }
   | lanchor sepBy(E, dot) rparen { Anchor $1 (reverse $2) }
+  | loctothorpe sepBy(Rec,semicolon) rbrace { Rec $1 (reverse $2) }
   | E E { EApp (eLoc $1) $1 $2 }
   | E doubleComma E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Bookend) $1) $3) $4 }
   | tally { UB $1 Tally }

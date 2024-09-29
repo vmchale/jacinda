@@ -113,6 +113,7 @@ compileR fp = r where
     r (Let l (n, eb) e) = Let l (n, r eb) (r e)
     r (Lam l n e)       = Lam l n (r e)
     r (Tup l es)        = Tup l (r<$>es)
+    r (Rec l es)        = Rec l (second r<$>es)
     r (Arr l es)        = Arr l (r<$>es)
     r (Anchor l es)     = Anchor l (r<$>es)
     r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)

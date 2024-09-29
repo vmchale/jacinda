@@ -3,6 +3,7 @@
 module A.E ( M, nN, eta ) where
 
 import           A
+import           C
 import           Control.Monad              ((<=<))
 import           Control.Monad.State.Strict (State, state)
 import qualified Data.Text                  as T
@@ -53,6 +54,7 @@ eM (Implicit t e)                = Implicit t <$> eM e
 eM (Lam t n e)                   = Lam t n <$> eM e
 eM (Guarded t p e)               = Guarded t <$> eM p <*> eM e
 eM (Tup t es)                    = Tup t <$> traverse eM es
+eM (Rec t es)                    = Rec t <$> traverse (secondM eM) es
 eM (Anchor t es)                 = Anchor t <$> traverse eM es
 eM (Arr t es)                    = Arr t <$> traverse eM es
 eM (Let t (n, e') e)             = do {e'𝜂 <- eM e'; e𝜂 <- eM e; pure (Let t (n, e'𝜂) e𝜂)}

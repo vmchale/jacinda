@@ -2,6 +2,7 @@ module Parser.Rw ( rwP, rwD, rwE ) where
 
 
 import           A
+import           Data.Bifunctor (second)
 
 rwP :: Program a -> Program a
 rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
@@ -102,6 +103,7 @@ rwE e@TB{} = e
 rwE e@UB{} = e
 rwE e@NB{} = e
 rwE (Tup l es) = Tup l (rwE<$>es)
+rwE (Rec l es) = Rec l (second rwE<$>es)
 rwE e@ResVar{} = e
 rwE (Paren l e) = Paren l (rwE e)
 rwE (Cond l p e e') = Cond l (rwE p) (rwE e) (rwE e')

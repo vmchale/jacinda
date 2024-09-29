@@ -8,18 +8,19 @@ import           Control.Exception   (Exception)
 import           Data.Foldable       (asum)
 import           Prettyprinter       (Pretty (..), squotes, (<+>))
 
-data LErr = NF (E T) | TS (E T)
+data LErr = NF (E T) | TS (E T) | RS (E T)
 
 instance Pretty LErr where
     pretty (NF e) = "Naked field in expression" <+> squotes (pretty e)
     pretty (TS e) = squotes (pretty e) <+> "Tuples cannot have streams."
+    pretty (RS e) = squotes (pretty e) <+> "Records cannot have streams."
 
 instance Show LErr where show=show.pretty
 
 instance Exception LErr where
 
 cF :: E T -> Maybe LErr
-cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e)
+cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e); cF e@(Rec (TyRec rs) _) | any (isS.snd) rs = Just (RS e)
 cF e@Field{} = Just (NF e); cF e@AllField{} = Just (NF e); cF e@LastField{} = Just (NF e); cF e@FieldList{} = Just (NF e)
 cF e@(NB _ Ix) = Just (NF e); cF e@(NB _ Nf) = Just (NF e)
 cF IParseCol{} = Nothing; cF FParseCol{} = Nothing; cF ParseCol{} = Nothing; cF Column{} = Nothing
@@ -28,7 +29,7 @@ cF Guarded{} = Nothing; cF Implicit{} = Nothing
 cF Lit{} = Nothing; cF RegexLit{} = Nothing;
 cF NB{} = Nothing; cF UB{} = Nothing; cF BB{} = Nothing; cF TB{} = Nothing
 cF Var{} = Nothing; cF (Tup _ es) = foldMapAlternative cF es; cF (Anchor _ es) = foldMapAlternative cF es
-cF (Arr _ es) = foldMapAlternative cF es; cF (EApp _ e e') = cF e <|> cF e'
+cF (Arr _ es) = foldMapAlternative cF es; cF (Rec _ es) = foldMapAlternative (cF.snd) es; cF (EApp _ e e') = cF e <|> cF e'
 cF (Cond _ p e e') = cF p <|> cF e <|> cF e'; cF (OptionVal _ e) = foldMapAlternative cF e
 cF (Lam _ _ e) = cF e; cF Let{} = error "Inlining unexpectedly failed?"
 cF RC{} = error "Sanity check failed. Regex should not be compiled at this time."
