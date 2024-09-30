@@ -35,6 +35,8 @@ import           System.IO                         (hFlush, stdout)
 import           Ty.Const
 import           U
 
+infixl 4 <$!>
+
 data EvalErr = EmptyFold
              | IndexOutOfBounds Int
              | NoSuchField Int BS.ByteString
@@ -161,7 +163,11 @@ collect (EApp ty f@UB{} e) = do
     (env, fϵ, eϵ) <- collect e
     pure (env, fϵ, EApp ty f eϵ)
 collect e@Lit{} = pure (IM.empty, const id, e)
--- TODO: cond
+collect (Cond t p e0 e1) = do
+    (envp, pg, p') <- collect p
+    (env0, f0, e0') <- collect e0
+    (env1, f1, e1') <- collect e1
+    pure (envp<>env0<>env1, pg@.f0@.f1, Cond t p' e0' e1')
 
 f @. g = \l -> f l.g l
 
@@ -208,8 +214,9 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@Var{} _               = e
 κ (Lam t n e) line        = Lam t n (κ e line)
 κ (Tup ty es) line        = Tup ty ((`κ` line)<$>es)
+κ (Arr ty es) line        = Arr ty ((`κ` line)<$>es)
 κ (Rec ty es) line        = Rec ty (second (`κ` line)<$>es)
--- Arr, OptionVal...
+κ (OptionVal t e) line    = OptionVal t ((`κ` line)<$!>e)
 κ e@ParseCol{} _          = badctx e
 κ e@IParseCol{} _         = badctx e
 κ e@FParseCol{} _         = badctx e
@@ -442,7 +449,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp (TyB TyFloat) (UB _ Parse) x) @> b = do {x' <- x@>b; pure (parseAsF (asS x'))}
 (EApp _ (UB _ (At i)) v) @> b = do {v' <- v@>b; pure (asV v' `at` i)}
 (EApp _ (UB _ (Select i)) x) @> b = do {x' <- x@>b; pure (asT x' !! (i-1))}
-(EApp _ (UB _ (SelR n)) x) @> b = do {x' <- x@>b; pure (asRec x' M.! (name n))}
+(EApp _ (UB _ (SelR n)) x) @> b = do {x' <- x@>b; pure (asRec x' M.! name n)}
 (EApp _ (UB _ Floor) x) @> b = mkI.floor.asF<$>(x@>b)
 (EApp _ (UB _ Ceiling) x) @> b = mkI.ceiling.asF<$>(x@>b)
 (EApp (TyB TyI) (UB _ Negate) i) @> b = mkI.negate.asI<$>(i@>b)
@@ -702,3 +709,5 @@ wF e _ _ _ = throw $ InternalArityOrEta 2 e
 
 badctx e = error ("Internal error: κ called on" ++ show e)
 desugar = error "Internal error. Should have been desugared by now."
+
+(<$!>) f x = fmap (f$!) x
