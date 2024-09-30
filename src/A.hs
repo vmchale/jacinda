@@ -78,6 +78,7 @@ instance Pretty T where
     pretty (TyVar n)      = pretty n
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup tys)    = j'Tup tys
+    pretty (TyRec rs)     = braces (prettyFields rs)
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
     pretty (Ρ n fs)       = braces (pretty n <+> pipe <+> prettyFields (M.toList fs))
 

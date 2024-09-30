@@ -8,7 +8,7 @@ import           C
 import           Control.Exception                 (Exception, throw)
 import           Control.Monad                     (zipWithM, (<=<))
 import           Control.Monad.State.Strict        (State, evalState, runState, state)
-import           Data.Bifunctor                    (second)
+import           Data.Bifunctor                    (first, second)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)
 import           Data.ByteString.Builder.RealFloat (doubleDec)
@@ -17,8 +17,10 @@ import           Data.Function                     ((&))
 import qualified Data.IntMap.Strict                as IM
 import qualified Data.IntSet                       as IS
 import           Data.List                         (foldl', scanl')
+import qualified Data.Map                          as M
 import           Data.Maybe                        (fromMaybe)
 import qualified Data.Set                          as S
+import qualified Data.Text                         as T
 import qualified Data.Vector                       as V
 import           Data.Word                         (Word8)
 import           Jacinda.Backend.Const
@@ -37,7 +39,7 @@ data EvalErr = EmptyFold
              | IndexOutOfBounds Int
              | NoSuchField Int BS.ByteString
              | InternalCoercionError (E T) TB
-             | ExpectedTup (E T)
+             | ExpectedTup (E T) | ExpectedRec (E T)
              | InternalTmp Tmp
              | InternalNm (Nm T)
              | InternalArityOrEta Int (E T)
@@ -276,6 +278,9 @@ asV (Arr _ v) = v; asV e = throw (InternalCoercionError e TyVec)
 asT :: E T -> [E T]
 asT (Tup _ es) = es; asT e = throw (ExpectedTup e)
 
+asRec :: E T -> M.Map T.Text (E T)
+asRec (Rec _ rs) = M.fromList (first name<$>rs); asRec e = throw (ExpectedRec e)
+
 vS :: V.Vector BS.ByteString -> E T
 vS = Arr (tyV tyStr).fmap mkStr
 
@@ -437,6 +442,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp (TyB TyFloat) (UB _ Parse) x) @> b = do {x' <- x@>b; pure (parseAsF (asS x'))}
 (EApp _ (UB _ (At i)) v) @> b = do {v' <- v@>b; pure (asV v' `at` i)}
 (EApp _ (UB _ (Select i)) x) @> b = do {x' <- x@>b; pure (asT x' !! (i-1))}
+(EApp _ (UB _ (SelR n)) x) @> b = do {x' <- x@>b; pure (asRec x' M.! (name n))}
 (EApp _ (UB _ Floor) x) @> b = mkI.floor.asF<$>(x@>b)
 (EApp _ (UB _ Ceiling) x) @> b = mkI.ceiling.asF<$>(x@>b)
 (EApp (TyB TyI) (UB _ Negate) i) @> b = mkI.negate.asI<$>(i@>b)
