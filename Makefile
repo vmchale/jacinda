@@ -37,6 +37,7 @@ install: $(HS_SRC) man/ja.1
 
 clean:
 	make -C vscode clean
+	make -C tex clean
 	rm -rf tags tags.mtime dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data/*.txt bin
 
 moddeps.svg: $(HS_SRC)
