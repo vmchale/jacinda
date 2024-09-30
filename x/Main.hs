@@ -10,10 +10,10 @@ import           File
 import           Options.Applicative
 import qualified Paths_jacinda       as P
 
-data Command = TypeCheck !FilePath ![FilePath]
-             | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath]
-             | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
-             | Eval !T.Text
+data Cmd = TC !FilePath ![FilePath]
+         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath]
+         | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
+         | Eval !T.Text
 
 jacFile :: Parser FilePath
 jacFile = argument str
@@ -60,14 +60,14 @@ inpFile = optional $ option str
 jacCompletions :: HasCompleter f => Mod f a
 jacCompletions = completer . bashCompleter $ "file -X '!*.jac' -o plusdirs"
 
-commandP :: Parser Command
+commandP :: Parser Cmd
 commandP = hsubparser
     (command "tc" (info tcP (progDesc "Type-check file"))
     <> command "e" (info eP (progDesc "Evaluate an expression (no file context)"))
     <> command "run" (info runP (progDesc "Run from file")))
     <|> exprP
     where
-        tcP = TypeCheck <$> jacFile <*> includes
+        tcP = TC <$> jacFile <*> includes
         runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes
         exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
@@ -82,7 +82,6 @@ includes = many $ strOption
 dirCompletions :: HasCompleter f => Mod f a
 dirCompletions = completer . bashCompleter $ "directory"
 
-wrapper :: ParserInfo Command
 wrapper = info (helper <*> versionMod <*> commandP)
     (fullDesc
     <> progDesc "Jacinda language for functional stream processing, filtering, and reports"
@@ -109,8 +108,8 @@ ap True _ _ Nothing Nothing = AWK (Just "\\x1f") (Just "\\x1e")
 ap _ True _ Nothing Nothing = AWK (Just "␟") (Just "␞")
 ap _ _ _ fs rs              = AWK fs rs
 
-run :: Command -> IO ()
-run (TypeCheck fp is)                  = tcIO is =<< TIO.readFile fp
+run :: Cmd -> IO ()
+run (TC fp is)                         = tcIO is =<< TIO.readFile fp
 run (Run fp fs rs Nothing is)          = do { contents <- TIO.readFile fp ; runStdin is contents (AWK fs rs) }
 run (Run fp fs rs (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents (AWK fs rs) dat }
 run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is eb m
