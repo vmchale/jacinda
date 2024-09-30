@@ -1,0 +1,72 @@
+%! TeX program = lualatex
+
+\documentclass{beamer}
+
+% \beamerdefaultoverlayspecification{<+->}
+
+\usepackage{fontspec}
+\usepackage{fancyvrb}
+
+\begin{document}
+
+\setmonofont{Jet Brains Mono}[Scale=MatchAveragecase]
+
+\title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
+\author{Vanessa McHale}
+\date{11 Oct 2024}
+
+\begin{frame}
+\titlepage
+\end{frame}
+
+\begin{frame}
+  \frametitle{Outline}
+  \begin{enumerate}
+    \item Examples
+    \item Patterns
+      % regular expressions
+      % functional unix is already a good idea!
+    \item Implementation
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Motivating Patterns}
+  % turns out to be useful: Unix has text records/separators with various characters
+  % though regular expressions were blue collar or engineer vibes
+\end{frame}
+
+\begin{frame}[fragile]
+\begin{Verbatim}[fontsize=\tiny]
+git ls-remote https://github.com/musikinformatik/SuperDirt.git
+⋮
+e068008dc99f54688fd2a10b41a2dd10cf5b2a6b	refs/pull/8/head
+7b5d7000a85cc56b69059449105da51973e0c910	refs/pull/80/head
+990885c3abd04ee1560096e38f858827840da262	refs/pull/82/head
+95da7a724f7b99c8fed9c8f2a9772df610d57df2	refs/pull/84/head
+92c9a96fd6817e540f755435d56f97d51f93cd33	refs/pull/85/head
+60e0a5e222ae90aba72db586522f426d18825d11	refs/pull/9/head
+2afd37ac745c380dd607a5bc68d0d46fb36491bd	refs/tags/0.9.1
+753f4a174761d24f5bdd665bd8805e80f3575e06	refs/tags/1.0-alpha
+b60e9b9fdf9c752e07d7581313f9ad99f6e3e98b	refs/tags/1.1.1
+59d5f80fbc926110bbd1b93e08b12c17a051a9c5	refs/tags/v.1.7.3
+85e10518539cc559542d3051eb87323e7b968fe9	refs/tags/v1.0
+69514a476e4372bfab6bf432180c3bc4dc5da837	refs/tags/v1.1
+b60e9b9fdf9c752e07d7581313f9ad99f6e3e98b	refs/tags/v1.1.1
+9f139ae162595334b437fb73ca33f90ccf784fb2	refs/tags/v1.1.2
+439960c38a47c73aa0a83f5c5077f8ec1ae52cb2	refs/tags/v1.1.3
+4f4adc9b07c255108d146695038c5e83dce9292d	refs/tags/v1.7
+c2ad95e1c77ca5e4b2fb5d913c8e0acfc9c78261	refs/tags/v1.7.1
+7abb62e89649daa1232b9cbd6427241868abd30e	refs/tags/v1.7.2
+7e245e87f8f08a3d55e33a360bc97912f32fe69b	refs/tags/v1.7.3
+c7f32998572984705d340e7c1b9ed9ad998a39b6	refs/tags/v1.7.4
+\end{Verbatim}
+\end{frame}
+
+% git ls-remote https://github.com/musikinformatik/SuperDirt.git | ja -F/ '[y]|>{%/tags/}{`*}'
+% objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
+% pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}'
+
+% Chess problem
+
+\end{document}
