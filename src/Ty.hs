@@ -459,6 +459,9 @@ tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; addCM f (Witherable
 tyES s (UB _ (Select i)) = do
     ρ <- freshN "ρ"; a <- freshTV "a"
     pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
+tyES s (UB _ (SelR n)) = do
+    ρ <- freshN "ρ"; a <- freshTV "a"
+    pure (UB (Ρ ρ (M.singleton (name n) a) ~> a) (SelR n), s)
 tyES s (BB l MapMaybe) = do
     a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"

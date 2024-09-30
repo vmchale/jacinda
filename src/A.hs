@@ -91,7 +91,7 @@ instance Show T where show=show.pretty
 data BUn = Tally -- length of string field
          | Const
          | Not -- ^ Boolean
-         | At !Int | Select !Int
+         | At !Int | Select !Int | SelR !(Nm ())
          | IParse | FParse | Parse
          | Floor | Ceiling
          | Some
@@ -107,6 +107,7 @@ instance Pretty BUn where
     pretty Not        = "!"
     pretty (At i)     = "." <> pretty i
     pretty (Select i) = "->" <> pretty i
+    pretty (SelR r)   = "->" <> pretty r
     pretty IParse     = ":i"
     pretty FParse     = ":f"
     pretty Floor      = "floor"
@@ -271,6 +272,7 @@ instance PS (E a) where
     ps _ (EApp _ (BB _ op) e) | isJust (mPrec op) = parens (pretty e <+> pretty op)
     ps d (EApp _ (UB _ (At i)) e)     = parensp (d>0) (ps 1 e) <> "." <> pretty i
     ps d (EApp _ (UB _ (Select i)) e) = parensp (d>0) (ps 1 e) <> "->" <> pretty i
+    ps d (EApp _ (UB _ (SelR n)) e)   = parensp (d>0) (ps 1 e) <> "->" <> pretty n
     ps _ (EApp _ (UB _ IParse) e')    = pretty e' <> ":i"
     ps _ (EApp _ (UB _ FParse) e')    = pretty e' <> ":f"
     ps _ (EApp _ (UB _ Parse) e')     = pretty e' <> ":"

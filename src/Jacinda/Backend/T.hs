@@ -208,17 +208,17 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ (Tup ty es) line        = Tup ty ((`κ` line)<$>es)
 κ (Rec ty es) line        = Rec ty (second (`κ` line)<$>es)
 -- Arr, OptionVal...
-κ e@ParseCol{} _          = error ("Internal error: κ called on" ++ show e)
-κ e@IParseCol{} _         = error ("Internal error: κ called on" ++ show e)
-κ e@FParseCol{} _         = error ("Internal error: κ called on" ++ show e)
-κ e@Column{} _            = error ("Internal error: κ called on" ++ show e)
-κ e@AllColumn{} _         = error ("Internal error: κ called on" ++ show e)
-κ e@Guarded{} _           = error ("Internal error: κ called on" ++ show e)
-κ e@Implicit{} _          = error ("Internal error: κ called on" ++ show e)
-κ e@IParseAllCol{} _      = error ("Internal error: κ called on" ++ show e)
-κ e@FParseAllCol{} _      = error ("Internal error: κ called on" ++ show e)
-κ e@Anchor{} _            = error ("Internal error: κ called on" ++ show e)
-κ e@ParseAllCol{} _       = error ("Internal error: κ called on" ++ show e)
+κ e@ParseCol{} _          = badctx e
+κ e@IParseCol{} _         = badctx e
+κ e@FParseCol{} _         = badctx e
+κ e@Column{} _            = badctx e
+κ e@AllColumn{} _         = badctx e
+κ e@Guarded{} _           = badctx e
+κ e@Implicit{} _          = badctx e
+κ e@IParseAllCol{} _      = badctx e
+κ e@FParseAllCol{} _      = badctx e
+κ e@Anchor{} _            = badctx e
+κ e@ParseAllCol{} _       = badctx e
 κ Dfn{} _                 = desugar
 κ ResVar{} _              = desugar
 κ Paren{} _               = desugar
@@ -694,4 +694,5 @@ wF (Lam _ nacc (Lam _ nn e)) src tgt (Σ j env d di df b) =
         (Nothing, Just x) -> Σ j (IM.insert tgt (Just$!x) env)) d di df b
 wF e _ _ _ = throw $ InternalArityOrEta 2 e
 
+badctx e = error ("Internal error: κ called on" ++ show e)
 desugar = error "Internal error. Should have been desugared by now."

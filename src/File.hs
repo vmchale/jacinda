@@ -123,6 +123,7 @@ compileR fp = r where
     r ResVar{}          = desugar
     r RwB{}             = desugar
     r RwT{}             = desugar
+    r RC{}              = error "???"
 
 
 exprEval :: T.Text -> E T

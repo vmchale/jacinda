@@ -15,6 +15,7 @@ import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as BSL
+import Data.Functor (void)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
 import Data.Typeable (Typeable)
@@ -62,6 +63,7 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     backslashdot { TokSym $$ BackslashDot }
     at { $$@(TokAccess _ _) }
     select { $$@(TokSelect _ _) }
+    get { $$@(TokR _ _) }
     floorSym { TokSym $$ FloorSym }
     ceilSym { TokSym $$ CeilSym }
     dedup { TokSym $$ DedupTok }
@@ -354,8 +356,10 @@ E :: { E AlexPosn }
   | fp { NB $1 Fp }
   | parens(at) { UB (loc $1) (At $ ix $1) }
   | parens(select) { UB (loc $1) (Select $ field $1) }
+  | parens(get) { UB (loc $1) (SelR (void $ nfield $1)) }
   | E at { EApp (eLoc $1) (UB (loc $2) (At $ ix $2)) $1 }
   | E select { EApp (eLoc $1) (UB (loc $2) (Select $ field $2)) $1 }
+  | E get { EApp (eLoc $1) (UB (loc $2) (SelR (void $ nfield $2))) $1 }
   | backslash name dot E { Lam $1 $2 $4 }
   | parens(E) { Paren (eLoc $1) $1 }
   | if E then E else E { Cond $1 $2 $4 $6 }

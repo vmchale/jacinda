@@ -21,6 +21,7 @@ pf = decodeUtf8 . BSL.toStrict . toLazyByteString . doubleDec
 
 -- TODO: interpret precision, like %0.6f %.6
 
+-- FIXME: if next is, say %i and encounter an int in the tuple, that should be an error
 sprintf' :: T.Text -> E a -> T.Text
 sprintf' fmt (Lit _ (FLit f)) =
     let (prefix, fmt') = T.breakOn "%f" fmt

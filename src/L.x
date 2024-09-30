@@ -199,6 +199,7 @@ tokens :-
 
         "."$digit+               { tok (\p s -> alex $ TokAccess p (read $ T.unpack $ T.tail s)) }
         "->"$digit+              { tok (\p s -> alex $ TokSelect p (read $ T.unpack $ T.drop 2 s)) }
+        "->"$latin+              { tok (\p s -> TokR p <$> newIdentAlex p (T.drop 2 s)) }
         $digit+                  { tok (\p s -> alex $ TokInt p (read $ T.unpack s)) }
         _$digit+                 { tok (\p s -> alex $ TokInt p (negate $ read $ T.unpack $ T.tail s)) }
 
@@ -476,6 +477,7 @@ data Token a = EOF { loc :: a }
              | TokRR { loc :: a, rr :: T.Text }
              | TokAccess { loc :: a, ix :: Int }
              | TokSelect { loc :: a, field :: Int }
+             | TokR { loc :: a, nfield :: Nm a }
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
@@ -495,6 +497,7 @@ instance Pretty (Token a) where
     pretty (TokAccess _ i)    = "." <> pretty i
     pretty (TokFloat _ f)     = pretty f
     pretty (TokSelect _ i)    = "->" <> pretty i
+    pretty (TokR _ r)         = "->" <> pretty r
 
 freshName :: T.Text -> Alex (Nm AlexPosn)
 freshName t = do
