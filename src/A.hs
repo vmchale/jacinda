@@ -218,7 +218,7 @@ data E a = Column { eLoc :: a, col :: Int }
          | Cond { eLoc :: a, eIf, eThen, eElse :: E a }
          | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
-         deriving (Functor, Generic)
+         deriving (Functor)
 
 instance Pretty N where
     pretty Ix="⍳"; pretty Nf="nf"; pretty None="None"; pretty Fp="fp"; pretty MZ="⍬"
