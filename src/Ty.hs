@@ -21,6 +21,7 @@ import           Data.Function              (on)
 import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
+import           Data.List                  (find)
 import qualified Data.Map                   as M
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
@@ -148,7 +149,10 @@ mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
 mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0
     = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
+mgu l s (Ρ n rs) t'@(TyRec ts) | all (`elem` (name.fst<$>ts)) (M.keys rs)
+    = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s (M.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
+mgu l s t@TyRec{} t'@Ρ{} = mgu l s t' t
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Rho n' (rs <> rs')) rss)
@@ -156,6 +160,10 @@ mgu l s (Ρ n rs) (Ρ n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ M.elems $ M.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Ρ n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l t t'
+
+find' :: [(Nm a, b)] -> T.Text -> b
+find' rs rn = case find (\(n,_) -> name n==rn) rs of
+    Just (_, x) -> x
 
 tS_ :: Monad m => (Subst -> b -> m Subst) -> Subst -> [b] -> m Subst
 tS_ _ s []     = pure s
