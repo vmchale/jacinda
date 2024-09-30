@@ -69,6 +69,7 @@ library jacinda-lib
         Jacinda.Backend.T
         Jacinda.Backend.Printf
         Include
+        C
         Paths_jacinda
 
     autogen-modules:  Paths_jacinda
