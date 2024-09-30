@@ -284,7 +284,7 @@ a boolean expression.
 (+)|>.?{|`0 ~* 1 /^\\s\*(.*)/}
 :   Concatenate into one line, discarding indentation
 
-{|option ⍬ [x] (`0 ~* 1 /^((\s+\S|\S)*)\s*$/)}
+{|option ⍬ [x] (`0 ~* 1 /^((\\s+\\S|\\S)*)\s*$/)}
 :   Trim trailing whitespace
 
 # BUGS
