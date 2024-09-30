@@ -1,7 +1,6 @@
 {-# LANGUAGE DeriveFunctor #-}
 
-module Nm ( Nm (..)
-          , TyName
+module Nm ( Nm (..), TyName
           , eqName
           ) where
 
@@ -14,7 +13,7 @@ data Nm a = Nm { name   :: T.Text
                , loc    :: a
                } deriving (Functor)
 
--- for testing
+-- test
 eqName :: Nm a -> Nm a -> Bool
 eqName (Nm n _ _) (Nm n' _ _) = n == n'
 
@@ -25,8 +24,5 @@ instance Pretty (Nm a) where
     pretty (Nm t _ _) = pretty t
 
 instance Show (Nm a) where show=show.pretty
-
-instance Ord (Nm a) where
-    compare (Nm _ u _) (Nm _ u' _) = compare u u'
 
 type TyName = Nm

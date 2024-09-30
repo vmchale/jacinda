@@ -63,7 +63,7 @@ data T = TyB { tyBuiltin :: TB }
        | TyRec { tyres :: [(Nm (), T)] }
        | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
        | Ρ { tyΡ :: Nm (), tyρs :: M.Map T.Text T }
-       deriving (Eq, Ord)
+       deriving Eq
 
 instance Pretty TB where
     pretty TyI = "Integer"; pretty TyStr = "Str"; pretty TyFloat = "Float"
