@@ -42,7 +42,8 @@ common warnings
         -Wall
         -Wincomplete-uni-patterns -Wincomplete-record-updates
         -Wredundant-constraints -Widentities -Wcpp-undef
-        -Wmissing-export-lists -Wunused-packages
+        -Wmissing-export-lists -Wunused-packages -Wno-x-partial
+        -Wno-missing-signatures
 
 library jacinda-lib
     import:           warnings
@@ -74,7 +75,7 @@ library jacinda-lib
 
     autogen-modules:  Paths_jacinda
     default-language: Haskell2010
-    ghc-options:      -O2 -Wno-missing-signatures -Wno-x-partial
+    ghc-options:      -O2
     build-depends:
         base >=4.11.0.0 && <5,
         bytestring >=0.11.2.0,
@@ -119,11 +120,6 @@ executable ja
         jacinda-lib,
         optparse-applicative >=0.14.1.0,
         text
-
-    ghc-options:
-        -Wincomplete-uni-patterns -Wincomplete-record-updates
-        -Wredundant-constraints -Widentities -Wcpp-undef
-        -Wmissing-export-lists -Wunused-packages
 
 test-suite jacinda-test
     import:           warnings
