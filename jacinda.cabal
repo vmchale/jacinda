@@ -70,6 +70,7 @@ library jacinda-lib
         Jacinda.Backend.T
         Jacinda.Backend.Printf
         Include
+        Nm.Map
         C
         Paths_jacinda
 

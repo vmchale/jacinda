@@ -2,7 +2,6 @@
 {-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE DeriveGeneric     #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
 
 module A ( E (..), T (..), (~>), TB (..), C (..)
          , L (..), N (..), BBin (..), BTer (..)
@@ -17,13 +16,14 @@ import           Control.DeepSeq    (NFData)
 import qualified Data.ByteString    as BS
 import qualified Data.IntMap        as IM
 import           Data.List          (foldl')
-import qualified Data.Map           as M
 import           Data.Maybe         (isJust)
 import qualified Data.Text          as T
 import           Data.Text.Encoding (decodeUtf8)
 import qualified Data.Vector        as V
 import           GHC.Generics       (Generic)
 import           Nm
+import           Nm.Map             (NmMap)
+import qualified Nm.Map             as Nm
 import           Prettyprinter      (Doc, Pretty (..), braces, brackets, concatWith, encloseSep, flatAlt, group, hardline, indent, parens, pipe, punctuate, tupled, (<+>))
 import           Regex.Rure         (RurePtr)
 
@@ -48,6 +48,8 @@ tupledBy sep = group . encloseSep (flatAlt "( " "(") (flatAlt " )" ")") sep
 j'Tup :: Pretty a => [a] -> Doc ann
 j'Tup = tupledBy " . " . fmap pretty
 
+jrec = encloseSep (flatAlt "#{ " "#{") (flatAlt (hardline <+> "}") "}") (flatAlt " ; " "; ")
+
 infixr 0 ~>
 
 (~>) :: T -> T -> T
@@ -62,7 +64,7 @@ data T = TyB { tyBuiltin :: TB }
        | TyTup { tyTups :: [T] }
        | TyRec { tyres :: [(Nm (), T)] }
        | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
-       | Ρ { tyΡ :: Nm (), tyρs :: M.Map T.Text T }
+       | Ρ { tyΡ :: Nm (), tyρs :: NmMap T }
        deriving Eq
 
 instance Pretty TB where
@@ -78,9 +80,9 @@ instance Pretty T where
     pretty (TyVar n)      = pretty n
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup tys)    = j'Tup tys
-    pretty (TyRec rs)     = braces (prettyFields rs)
+    pretty (TyRec rs)     = jrec ((\(n,t) -> pretty n <> ":" <+> pretty t)<$>rs)
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
-    pretty (Ρ n fs)       = braces (pretty n <+> pipe <+> prettyFields (M.toList fs))
+    pretty (Ρ n fs)       = braces (pretty n <+> pipe <+> prettyFields (Nm.toList fs))
 
 parensp True=parens; parensp False=id
 
@@ -176,7 +178,7 @@ instance Pretty BBin where
 
 data DfnVar = X | Y deriving (Eq)
 
-instance Pretty DfnVar where pretty X = "x"; pretty Y = "y"
+instance Pretty DfnVar where pretty X="x"; pretty Y="y"
 
 -- 0-ary
 data N = Ix | Nf | None | Fp | MZ deriving (Eq)
@@ -306,7 +308,7 @@ instance PS (E a) where
     ps _ (RwB _ Fold1)     = "fold1"
     ps _ (Cond _ e0 e1 e2) = "?" <> pretty e0 <> ";" <+> pretty e1 <> ";" <+> pretty e2
     ps _ (Tup _ es)        = j'Tup es
-    ps _ (Rec _ es)        = encloseSep (flatAlt "#{ " "#{") (flatAlt (hardline <+> "}") "}") (flatAlt " ; " "; ") ((\(n,e) -> pretty n <+> ".=" <+> pretty e)<$>es)
+    ps _ (Rec _ es)        = jrec ((\(n,e) -> pretty n <+> ".=" <+> pretty e)<$>es)
     ps _ (Arr _ es)        = tupledByFunky "," (V.toList $ pretty <$> es)
     ps _ (Anchor _ es)     = "&" <> tupledBy "." (pretty <$> es)
     ps _ (Let _ (n, b) e)  = "let" <+> "val" <+> pretty n <+> ":=" <+> pretty b <+> "in" <+> pretty e <+> "end"

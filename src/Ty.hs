@@ -22,12 +22,12 @@ import           Data.Functor               (void, ($>))
 import qualified Data.IntMap                as IM
 import qualified Data.IntSet                as IS
 import           Data.List                  (find)
-import qualified Data.Map                   as M
 import qualified Data.Set                   as S
 import qualified Data.Text                  as T
 import           Data.Typeable              (Typeable)
 import qualified Data.Vector                as V
 import           Nm
+import qualified Nm.Map                     as Nm
 import           Prettyprinter              (Pretty (..), squotes, (<+>))
 import           Ty.Const
 import           U
@@ -135,7 +135,7 @@ occ (TyRec ts)              = foldMap (occ.snd) ts
 occ (t:$t')                 = occ t <> occ t'
 occ (TyArr t t')            = occ t <> occ t'
 occ (Rho (Nm _ (U i) _) rs) = IS.insert i (foldMap occ (IM.elems rs))
-occ (Ρ (Nm _ (U i) _) rs)   = IS.insert i (foldMap occ (M.elems rs))
+occ (Ρ (Nm _ (U i) _) rs)   = IS.insert i (foldMap occ (Nm.elems rs))
 
 mgu :: l -> Subst -> T -> T -> Either (Err l) Subst
 mgu _ s (TyB b) (TyB b') | b == b' = Right s
@@ -149,15 +149,15 @@ mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
 mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0
     = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
-mgu l s (Ρ n rs) t'@(TyRec ts) | all (`elem` (name.fst<$>ts)) (M.keys rs)
-    = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s (M.toList rs)
+mgu l s (Ρ n rs) t'@(TyRec ts) | all (`elem` (unU.unique.fst<$>ts)) (Nm.keys rs)
+    = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s (Nm.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s t@TyRec{} t'@Ρ{} = mgu l s t' t
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Rho n' (rs <> rs')) rss)
 mgu l s (Ρ n rs) (Ρ n' rs') = do
-    rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ M.elems $ M.intersectionWith (,) rs rs'
+    rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ Nm.elems $ Nm.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Ρ n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l t t'
 
@@ -241,7 +241,7 @@ checkType (TyB TyStr) (IsEq, _)          = pure ()
 checkType (TyTup tys) (c@IsEq, l)        = traverse_ (`checkType` (c, l)) tys
 checkType (TyRec tys) (c@IsEq, l)        = traverse_ ((`checkType` (c, l)).snd) tys
 checkType (Rho _ rs) (c@IsEq, l)         = traverse_ (`checkType` (c, l)) (IM.elems rs)
-checkType (Ρ _ rs) (c@IsEq, l)           = traverse_ (`checkType` (c, l)) (M.elems rs)
+checkType (Ρ _ rs) (c@IsEq, l)           = traverse_ (`checkType` (c, l)) (Nm.elems rs)
 checkType (TyB TyVec:$ty) (c@IsEq, l)    = checkType ty (c, l)
 checkType (TyB TyOption:$ty) (c@IsEq, l) = checkType ty (c, l)
 checkType (TyB TyI) (IsParse, _)         = pure ()
@@ -265,7 +265,7 @@ checkType (TyB TyBool) (IsPrintf, _)     = pure ()
 checkType (TyTup tys) (c@IsPrintf, l)    | not$any nest tys = traverse_ (`checkType` (c, l)) tys
 checkType (TyRec tys) (c@IsPrintf, l)    | tys' <- snd<$>tys, not$any nest tys' = traverse_ (`checkType` (c, l)) tys'
 checkType (Rho _ rs) (c@IsPrintf, l)     | tys <- IM.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
-checkType (Ρ _ rs) (c@IsPrintf, l)       | tys <- M.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
+checkType (Ρ _ rs) (c@IsPrintf, l)       | tys <- Nm.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
 checkType ty (c, l)                      = throwError $ Doesn'tSatisfy l ty c
 
 nest TyTup{}=True; nest TyRec{}=True; nest Rho{}=True; nest Ρ{}=True; nest _=False
@@ -469,7 +469,7 @@ tyES s (UB _ (Select i)) = do
     pure (UB (Rho ρ (IM.singleton i a) ~> a) (Select i), s)
 tyES s (UB _ (SelR n)) = do
     ρ <- freshN "ρ"; a <- freshTV "a"
-    pure (UB (Ρ ρ (M.singleton (name n) a) ~> a) (SelR n), s)
+    pure (UB (Ρ ρ (Nm.singleton n a) ~> a) (SelR n), s)
 tyES s (BB l MapMaybe) = do
     a <- freshTV "a"; b <- freshTV "b"
     f <- freshN "f"
