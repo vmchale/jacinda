@@ -1,3 +1,5 @@
+  * Add records and accessors (with row types)
+
 # 3.1.1.1
 
   * Pretty-print `:set csv`
