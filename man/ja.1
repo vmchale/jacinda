@@ -157,6 +157,15 @@ Witherable f :=> f (Option a) \-> f a
 \f[B]nf\f[R] Number of fields
 .PP
 \f[B]⍬\f[R] Empty string/empty list
+.TP
+\f[B]head#, last#\f[R]
+List a \-> a
+.TP
+\f[B]tail#, init#\f[R]
+List a \-> List a
+.TP
+\f[B]drop#, take#\f[R]
+Int \-> List a \-> List a
 .SS SYNTAX
 \f[B]\[ga]n\f[R] nth field
 .PP
@@ -198,20 +207,20 @@ else
 .PP
 \f[B]<pattern>,,<pattern> <expr>\f[R] Bookend a stream
 .PP
-\f[B] $> \f[R] Print stream and summary result
+\f[B]<expr> $> <expr>\f[R] Print stream and summary result
 .PP
 \f[B]fn f(x, y) := x + y;\f[R] Function definition
 .PP
 \f[B]let val x := y + 1 in x end\f[R] Let binding
-.TP
-\f[B]head#, last#\f[R]
-List a \-> a
-.TP
-\f[B]tail#, init#\f[R]
-List a \-> List a
-.TP
-\f[B]drop#, take#\f[R]
-Int \-> List a \-> List a
+.PP
+\f[B](<expr> .
+<expr> .
+\&...
+\&.
+<expr>)\f[R] Tuple
+.PP
+\f[B]#{ <fieldname> .= <expr>; \&...
+<fieldname> .= <expr> }\f[R] Record literal
 .SS DECLARATIONS
 \f[B]:set fs=/REGEX/;\f[R] Set field separator
 .PP

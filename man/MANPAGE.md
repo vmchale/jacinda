@@ -169,6 +169,15 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 
 **⍬** Empty string/empty list
 
+**head#, last#**
+:   List a -> a
+
+**tail#, init#**
+:   List a -> List a
+
+**drop#, take#**
+:   Int -> List a -> List a
+
 ## SYNTAX
 
 **`n** nth field
@@ -208,20 +217,15 @@ a boolean expression.
 
 **\<pattern>,,\<pattern> \<expr>** Bookend a stream
 
-**<expr> $> <expr>** Print stream and summary result
+**\<expr> $> \<expr>** Print stream and summary result
 
 **fn f(x, y) := x + y;** Function definition
 
 **let val x := y + 1 in x end** Let binding
 
-**head#, last#**
-:   List a -> a
+**(\<expr> . \<expr> . ... . \<expr>)** Tuple
 
-**tail#, init#**
-:   List a -> List a
-
-**drop#, take#**
-:   Int -> List a -> List a
+**#{ \<fieldname> .= \<expr>; ... \<fieldname> .= \<expr> }** Record literal
 
 ## DECLARATIONS
 
