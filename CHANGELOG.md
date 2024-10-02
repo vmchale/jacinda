@@ -1,4 +1,6 @@
   * Add records and accessors (with row types)
+  * Fix bug: backslashes string literals
+  * Admit `\ESC` as escaped character
 
 # 3.1.1.1
 
