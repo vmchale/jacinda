@@ -38,7 +38,7 @@ $latin = [a-zA-Z]
 
 $str_special = [\\\']
 
-@escape_str = \\ [$str_special nt]
+@escape_str = \\ ([$str_special nt] | "ESC")
 
 @string = \' ([^ $str_special] | @escape_str)* \'
 
@@ -240,6 +240,8 @@ mkBuiltin = constructor TokBuiltin
 escReplace :: T.Text -> T.Text
 escReplace =
       T.replace "\\\"" "\""
+    . T.replace "\\\\" "\\"
+    . T.replace "\\ESC" "\ESC"
     . T.replace "\\n" "\n"
     . T.replace "\\t" "\t"
 
