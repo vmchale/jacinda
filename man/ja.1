@@ -6,11 +6,11 @@ ja \- Jacinda: data filtering, processing, reporting
 .SH SYNOPSIS
 ja run src.jac \-i data.txt
 .PP
-cat FILE1 FILE2 | ja \[aq]#\[dq]$0\[cq]
+cat FILE1 FILE2 | ja \[aq]#\[dq]$0\[aq]
 .PP
 ja tc script.jac
 .PP
-ja e \[aq]11.67*1.2\[cq]
+ja e \[aq]11.67*1.2\[aq]
 .SH DESCRIPTION
 \f[B]Jacinda\f[R] is a data stream processing language à la AWK.
 .SH SUBCOMMANDS
@@ -248,7 +248,7 @@ Print the first two fields in opposite order
 :set fs:=/,[ \[rs]t]*|[ \[rs]t]+/; {|sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
 Same, with input fields separated by comma and/or blanks and tabs.
 .TP
-:set csv; {ix=1}{[x+`\[rs]n'+y]|>\[ga]$}
+:set csv; {ix=1}{[x+\[aq]\[rs]n\[aq]+y]|>\[ga]$}
 Present column names of a .csv file, one per line
 .TP
 (+)|0 $1:i

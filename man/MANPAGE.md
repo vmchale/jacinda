@@ -9,11 +9,11 @@ ja - Jacinda: data filtering, processing, reporting
 
   ja run src.jac -i data.txt
 
-  cat FILE1 FILE2 | ja \'#\"$0'
+  cat FILE1 FILE2 | ja \'#\"$0\'
 
   ja tc script.jac
 
-  ja e \'11.67\*1.2'
+  ja e \'11.67\*1.2\'
 
 # DESCRIPTION
 
@@ -258,7 +258,7 @@ a boolean expression.
 :set fs:=/,[ \\t]*|[ \\t]+/; {|sprintf \'%i %i\' (\`2 . \`1)}
 :   Same, with input fields separated by comma and/or blanks and tabs.
 
-:set csv; {ix=1}{[x+'\\n'+y]|>`$}
+:set csv; {ix=1}{[x+\'\\n\'+y]|>`$}
 :   Present column names of a .csv file, one per line
 
 (+)|0 $1:i
