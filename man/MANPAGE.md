@@ -285,11 +285,12 @@ a boolean expression.
 [y]|> {|`0~/^$/}
 :   Is the last line blank?
 
-(+)|>.?{|`0 ~* 1 /^\\s\*(.*)/}
-:   Concatenate into one line, discarding indentation
-
 {|option ⍬ [x] (`0 ~* 1 /^((\\s+\\S|\\S)*)\s*$/)}
 :   Trim trailing whitespace
+
+ja -R\'\\n\\s*\' \"[x+\' \'+y]|>\\$0\"
+:   Concatenate into one line, discarding extra leading whitespace
+between
 
 # BUGS
 

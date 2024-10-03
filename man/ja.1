@@ -275,11 +275,11 @@ Is the first column strictly increasing?
 [y]|> {|\[ga]0\[ti]/\[ha]$/}
 Is the last line blank?
 .TP
-(+)|>.?{|\[ga]0 \[ti]* 1 /\[ha]\[rs]s*(.*)/}
-Concatenate into one line, discarding indentation
-.TP
 {|option ⍬ [x] (\[ga]0 \[ti]* 1 /\[ha]((\[rs]s+\[rs]S|\[rs]S)*)$/)}
 Trim trailing whitespace
+.TP
+ja \-R\[aq]\[rs]n\[rs]s*\[aq] \[dq][x+\[aq] \[aq]+y]|>\[rs]$0\[dq]
+Concatenate into one line, discarding extra leading whitespace between
 .SH BUGS
 Please report any bugs you may come across to
 https://github.com/vmchale/jacinda/issues
