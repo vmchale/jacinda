@@ -16,7 +16,7 @@ import qualified Data.Text      as T
 import           Nm
 import           U
 
-data NmMap a = NmMap { xx :: IM.IntMap a, context :: IM.IntMap T.Text } 
+data NmMap a = NmMap { xx :: !(IM.IntMap a), context :: IM.IntMap T.Text }
              deriving (Eq, Functor, Foldable, Traversable)
 
 instance Semigroup (NmMap a) where
