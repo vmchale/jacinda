@@ -110,7 +110,7 @@ library jacinda-lib
 
 executable ja
     import:           warnings
-    main-is:          Main.hs
+    main-is:          Opt.hs
     hs-source-dirs:   x
     other-modules:    Paths_jacinda
     autogen-modules:  Paths_jacinda

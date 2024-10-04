@@ -1,6 +1,7 @@
 {
     {-# LANGUAGE OverloadedStrings #-}
-    module Parser ( parse
+    module Parser ( pLit
+                  , parse
                   , parseWithMax
                   , parseWithCtx
                   , parseLibWithCtx
@@ -10,7 +11,7 @@
                   , Library
                   ) where
 
-import Control.Exception (Exception)
+import Control.Exception (Exception, throw)
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first)
@@ -29,6 +30,7 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
 %name parseF File
 %name parseLib Library
+%name parseL L
 %tokentype { Token AlexPosn }
 %errorhandlertype explist
 %error { parseError }
@@ -257,19 +259,21 @@ Library :: { Library }
 Program :: { Program AlexPosn }
         : many(D) E { Program (reverse $1) $2 }
 
+L :: { (AlexPosn, L) }
+  : intLit { (loc $1, ILit (int $1)) }
+  | floatLit { (loc $1, FLit (float $1)) }
+  | boolLit { (loc $1, BLit (boolTok $1)) }
+  | strLit { (loc $1, StrLit (encodeUtf8 $ strTok $1)) }
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }
-  | intLit { Lit (loc $1) (ILit (int $1)) }
-  | floatLit { Lit (loc $1) (FLit (float $1)) }
-  | boolLit { Lit (loc $1) (BLit (boolTok $1)) }
-  | strLit { Lit (loc $1) (StrLit (encodeUtf8 $ strTok $1)) }
   | column { Column (loc $1) (ix $1) }
   | field { Field (loc $1) (ix $1) }
   | allColumn { AllColumn $1 }
   | allField { AllField $1 }
   | lastField { LastField $1 }
   | listField { FieldList $1 }
+  | L { Lit (fst $1) (snd $1) }
   | field iParse { EApp (loc $1) (UB $2 IParse) (Field (loc $1) (ix $1)) }
   | field fParse { EApp (loc $1) (UB $2 FParse) (Field (loc $1) (ix $1)) }
   | name iParse { EApp (Nm.loc $1) (UB $2 IParse) (Var (Nm.loc $1) $1) }
@@ -391,6 +395,12 @@ instance Pretty a => Show (ParseError a) where
 instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
+
+parseThrow :: Parse a -> T.Text -> a
+parseThrow p = snd.either throw id.runParse p
+
+pLit :: T.Text -> L
+pLit = snd.parseThrow parseL
 
 parse :: T.Text -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
