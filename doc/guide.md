@@ -335,6 +335,60 @@ fn path(x) :=
 path"$0
 ```
 
+### Define Values on the Command-Line
+
+GHC error messages have the form:
+
+```
+src/A.hs:262:5: warning: [GHC-62161] [-Wincomplete-patterns]
+    Pattern match(es) are non-exhaustive
+    In an equation for ‘ps’:
+        Patterns of type ‘Int’, ‘E a’ not matched:
+            _ (In _ _ _ _)
+            _ (RwT _ ZipW)
+            _ (RwT _ Substr)
+            _ (RwT _ Sub1)
+            ...
+    |
+262 |     ps _ (Column _ i)    = "$" <> pretty i
+    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...
+
+src/Ty.hs:60:1: warning: [GHC-40910] [-Wunused-top-binds]
+    Defined but not used: ‘setMaxU’
+   |
+60 | setMaxU i (TyState _ c v) = TyState i c v
+   | ^^^^^^^
+...
+```
+
+We could define a filter on GHC error messages by splitting each error message
+into its own record (separated by two newlines). Then we can focus only on some
+file like so:
+
+```
+:set rs := /\n\n/;
+:set fs := /:/;
+
+{`1 = file}{`0}
+```
+
+We can invoke it with
+
+```
+cabal -v0 build |& ja run filt.jac "-Dfile='src/Ty.hs'"
+```
+
+to see error messages from `src/Ty.hs`, and later
+
+```
+cabal -v0 build |& ja run filt.jac "-Dfile='src/A.hs'"
+```
+
+to see only error messages from `src/A.hs`.
+
+Note that the double quotes around the `-D` flag are necessary so that the shell
+doesn't discard the single quotes used to define a string literal.
+
 # Examples
 
 ## Vim Tags
