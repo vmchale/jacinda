@@ -59,23 +59,23 @@ parseLib incls fp = do
         Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
         Right (st', (is, ds)) -> do {put st'; dss <- traverse (parseLib incls) is; pure (concat dss ++ fmap rwD ds)}
 
-parseE :: [FilePath] -> T.Text -> StateT AlexUserState IO (Program AlexPosn)
-parseE incls bs = do
+parseP :: [FilePath] -> T.Text -> [(T.Text, L)] -> StateT AlexUserState IO (Program AlexPosn)
+parseP incls src var = do
     st <- get
-    case parseWithCtx bs st of
+    case parseWithCtx src var st of
         Left err -> liftIO $ throwIO err
         Right (st', (is, Program ds e)) -> do
             put st'
             dss <- traverse (parseLib incls) is
             pure $ Program (concat dss ++ fmap rwD ds) (rwE e)
 
--- | Parse + rename (decls)
-parseEWithMax :: [FilePath] -> T.Text -> IO (Program AlexPosn, Int)
-parseEWithMax incls bsl = uncurry rP . swap . second fst3 <$> runStateT (parseE incls bsl) alexInitUserState
-    where fst3 (x, _, _) = x
+-- | Parse + rename
+parsePWithMax :: [FilePath] -> T.Text -> [(T.Text, L)] -> IO (Program AlexPosn, Int)
+parsePWithMax incls src vars = uncurry rP.swap.second fst3 <$> runStateT (parseP incls src vars) alexInitUserState
+    where fst3 (x,_,_) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry rP . second (rwP . snd)) . parseWithMax
+parseWithMax' = fmap (uncurry rP . second (rwP.snd)) . parseWithMax
 
 type FileBS = BS.ByteString
 
@@ -125,7 +125,6 @@ compileR fp = r where
     r RwT{}             = desugar
     r RC{}              = error "???"
 
-
 exprEval :: T.Text -> E T
 exprEval src =
     case parseWithMax' src of
@@ -141,12 +140,13 @@ compileFS = maybe defaultRurePtr tcompile
 runOnBytes :: [FilePath]
            -> FilePath -- ^ Data file name, for @nf@
            -> T.Text -- ^ Program
+           -> [(T.Text, L)]
            -> Mode
            -> BSL.ByteString
            -> IO ()
-runOnBytes incls fp src mode contents = do
+runOnBytes incls fp src vars mode contents = do
     incls' <- defaultIncludes <*> pure incls
-    (ast, m) <- parseEWithMax incls' src
+    (ast, m) <- parsePWithMax incls' src vars
     (typed, i) <- yIO $ runTyM m (tyP ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
@@ -165,21 +165,23 @@ runOnBytes incls fp src mode contents = do
 
 runStdin :: [FilePath]
          -> T.Text -- ^ Program
+         -> [(T.Text, L)]
          -> Mode
          -> IO ()
-runStdin is src m = runOnBytes is "(stdin)" src m =<< BSL.hGetContents stdin
+runStdin is src vars m = runOnBytes is "(stdin)" src vars m =<< BSL.hGetContents stdin
 
 runOnFile :: [FilePath]
           -> T.Text
+          -> [(T.Text, L)]
           -> Mode
           -> FilePath
           -> IO ()
-runOnFile is e m fp = runOnBytes is fp e m =<< BSL.readFile fp
+runOnFile is e vs m fp = runOnBytes is fp e vs m =<< BSL.readFile fp
 
 tcIO :: [FilePath] -> T.Text -> IO ()
 tcIO incls src = do
     incls' <- defaultIncludes <*> pure incls
-    (ast, m) <- parseEWithMax incls' src
+    (ast, m) <- parsePWithMax incls' src []
     (pT, i) <- yIO $ runTyM m (tyP ast)
     let (eI, _) = ib i pT
     m'Throw $ cF eI

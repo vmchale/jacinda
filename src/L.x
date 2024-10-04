@@ -5,6 +5,7 @@
              , runAlexSt
              , withAlexSt
              , freshName
+             , newVarAlex
              , AlexPosn (..)
              , Alex (..)
              , Token (..)
@@ -507,6 +508,9 @@ freshName t = do
     (i, ns, us) <- alexGetUserState
     let (j, n) = freshIdent pos t i
     alexSetUserState (j, ns, us) $> n
+
+newVarAlex :: T.Text -> Alex (Nm AlexPosn)
+newVarAlex t = do {pos <- get_pos; newIdentAlex pos t}
 
 newIdentAlex :: AlexPosn -> T.Text -> Alex (Nm AlexPosn)
 newIdentAlex pos t = do

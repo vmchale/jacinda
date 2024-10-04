@@ -14,7 +14,7 @@
 import Control.Exception (Exception, throw)
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
-import Data.Bifunctor (first)
+import Data.Bifunctor (first, second)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (void)
 import qualified Data.Text as T
@@ -402,6 +402,9 @@ parseThrow p = snd.either throw id.runParse p
 pLit :: T.Text -> L
 pLit = snd.parseThrow parseL
 
+df :: T.Text -> L -> Alex (E AlexPosn -> E AlexPosn)
+df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, Lit l x))}
+
 parse :: T.Text -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
 
@@ -409,8 +412,14 @@ parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
 
-parseWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
-parseWithCtx = parseWithInitSt parseF
+binds :: [(T.Text, L)] -> Alex (E AlexPosn -> E AlexPosn)
+binds = fmap thread.traverse (uncurry df) where thread = foldr (.) id
+
+parseCli :: [(T.Text, L)] -> Parse File
+parseCli vs = lift (fmap (second.mapExpr) (binds vs)) <*> parseF
+
+parseWithCtx :: T.Text -> [(T.Text, L)] -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithCtx src vars = parseWithInitSt (parseCli vars) src
 
 parseLibWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)
 parseLibWithCtx = parseWithInitSt parseLib

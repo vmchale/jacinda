@@ -2,18 +2,30 @@
 
 module Main (main) where
 
-import           A                   (Mode (..))
+import           A                   (L, Mode (..))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
 import           File
 import           Options.Applicative
+import           Parser              (pLit)
 import qualified Paths_jacinda       as P
 
 data Cmd = TC !FilePath ![FilePath]
-         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath]
+         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, L)]
          | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
          | Eval !T.Text
+
+kv :: T.Text -> (T.Text, L)
+kv inp = case T.splitOn "=" inp of
+    [k,v] -> (k, pLit v)
+    _     -> error "Values specified on the command-line must be of the form -Dcutoff=1"
+
+defVar :: Parser [(T.Text, L)]
+defVar = many $ fmap kv (option str
+    (short 'D'
+    <> metavar "VALUE"
+    <> help "Pass a value on the command-line"))
 
 jacFile :: Parser FilePath
 jacFile = argument str
@@ -68,7 +80,7 @@ commandP = hsubparser
     <|> exprP
     where
         tcP = TC <$> jacFile <*> includes
-        runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes
+        runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes <*> defVar
         exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> includes
         eP = Eval <$> jacExpr
 
@@ -110,8 +122,8 @@ ap _ _ _ fs rs              = AWK fs rs
 
 run :: Cmd -> IO ()
 run (TC fp is)                         = tcIO is =<< TIO.readFile fp
-run (Run fp fs rs Nothing is)          = do { contents <- TIO.readFile fp ; runStdin is contents (AWK fs rs) }
-run (Run fp fs rs (Just dat) is)       = do { contents <- TIO.readFile fp ; runOnFile is contents (AWK fs rs) dat }
-run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is eb m
-run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is eb m fp
+run (Run fp fs rs Nothing is vs)       = do { contents <- TIO.readFile fp ; runStdin is contents vs (AWK fs rs) }
+run (Run fp fs rs (Just dat) is vs)    = do { contents <- TIO.readFile fp ; runOnFile is contents vs (AWK fs rs) dat }
+run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is eb [] m
+run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is eb [] m fp
 run (Eval e)                           = print (exprEval e)
