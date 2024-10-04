@@ -47,6 +47,9 @@ ja - Jacinda: data filtering, processing, reporting
 **-\-csv**
 :   Process as CSV
 
+**-Dcount=1**
+:   Define variable
+
 # LANGUAGE
 
 ## REGEX
