@@ -363,7 +363,7 @@ src/Ty.hs:60:1: warning: [GHC-40910] [-Wunused-top-binds]
 
 We could define a filter on GHC error messages by splitting each error message
 into its own record (separated by two newlines). Then we can focus only on some
-file like so:
+file like so (we split on `:` and so the first field (```1``) will be the filename):
 
 ```
 :set rs := /\n\n/;
