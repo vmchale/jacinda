@@ -54,8 +54,11 @@ https://soundcloud.com/shitzulover07/ayesha-erotica-vacation-bible-school
 
 ## Mac
 
+Download a video using [yt-dlp](https://pypi.org/project/yt-dlp/), trimming
+tracking information from the URL:
+
 ```
-pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}' | pbcopy
+yt-dlp "$(pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}')"
 ```
 
 # Display Name of Terminal
