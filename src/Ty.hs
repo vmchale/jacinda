@@ -2,10 +2,8 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ty ( Subst
-          , runTyM
-          , tyP
-          , match
-          , aT
+          , runTyM, tyP
+          , match, aT
           , tyOf
           ) where
 
