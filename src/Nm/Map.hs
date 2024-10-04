@@ -34,5 +34,5 @@ keys (NmMap x _) = IM.keys x
 elems :: NmMap a -> [a]
 elems (NmMap x _) = IM.elems x
 
-toList :: NmMap a -> [(T.Text, a)]
-toList (NmMap x ns) = map (first (ns IM.!)) (IM.toList x)
+toList :: NmMap a -> [(Nm (), a)]
+toList (NmMap x ns) = map (first (\i -> Nm (ns IM.! i) (U i) ())) (IM.toList x)

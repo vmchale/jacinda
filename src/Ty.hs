@@ -159,8 +159,8 @@ mgu l s (Ρ n rs) (Ρ n' rs') = do
     pure (IM.insert (unU$unique n) (Ρ n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l t t'
 
-find' :: [(Nm a, b)] -> T.Text -> b
-find' rs rn = case find (\(n,_) -> name n==rn) rs of
+find' :: [(Nm a, b)] -> Nm a -> b
+find' rs rn = case find (\(n,_) -> n==rn) rs of
     Just (_, x) -> x
 
 tS_ :: Monad m => (Subst -> b -> m Subst) -> Subst -> [b] -> m Subst
