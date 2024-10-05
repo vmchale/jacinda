@@ -1,6 +1,7 @@
   * Add records and accessors (with row types)
   * Fix bug: backslashes string literals
   * Admit `\ESC` as escaped character
+  * Allow values to be passed on the command-line
 
 # 3.1.1.1
 
