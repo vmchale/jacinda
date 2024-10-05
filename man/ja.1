@@ -245,12 +245,6 @@ Print lines longer than 72 bytes
 {ix=3}{\[ga]0}
 Select only the third line
 .TP
-{|sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
-Print the first two fields in opposite order
-.TP
-:set fs:=/,[ \[rs]t]*|[ \[rs]t]+/; {|sprintf \[aq]%i %i\[aq] (\[ga]2 . \[ga]1)}
-Same, with input fields separated by comma and/or blanks and tabs.
-.TP
 :set csv; {ix=1}{[x+\[aq]\[rs]n\[aq]+y]|>\[ga]$}
 Present column names of a .csv file, one per line
 .TP

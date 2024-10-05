@@ -255,12 +255,6 @@ a boolean expression.
 {ix=3}{`0}
 :   Select only the third line
 
-{|sprintf \'%i %i\' (\`2 . \`1)}
-:   Print the first two fields in opposite order
-
-:set fs:=/,[ \\t]*|[ \\t]+/; {|sprintf \'%i %i\' (\`2 . \`1)}
-:   Same, with input fields separated by comma and/or blanks and tabs.
-
 :set csv; {ix=1}{[x+\'\\n\'+y]|>`$}
 :   Present column names of a .csv file, one per line
 
