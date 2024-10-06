@@ -144,37 +144,38 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     ofs { TokResVar $$ VarOfs }
     ors { TokResVar $$ VarOrs }
 
-    split { TokBuiltin $$ BuiltinSplit }
-    splitc { TokBuiltin $$ BuiltinSplitc }
-    substr { TokBuiltin $$ BuiltinSubstr }
-    sub1 { TokBuiltin $$ BuiltinSub1 }
-    subs { TokBuiltin $$ BuiltinSubs }
-    sprintf { TokBuiltin $$ BuiltinSprintf }
-    floor { TokBuiltin $$ BuiltinFloor }
-    ceil { TokBuiltin $$ BuiltinCeil }
-    option { TokBuiltin $$ BuiltinOption }
-    match { TokBuiltin $$ BuiltinMatch }
-    some { TokBuiltin $$ BuiltinSome }
-    none { TokBuiltin $$ BuiltinNone }
-    fp { TokBuiltin $$ BuiltinFp }
-    captures { TokBuiltin $$ BuiltinCaptures }
-    mapMaybeL { TokBuiltin $$ BuiltinMapMaybe }
-    dedupOnL { TokBuiltin $$ BuiltinDedupOn }
-    filterL { TokBuiltin $$ BuiltinFilt }
-    foldL { TokBuiltin $$ BuiltinFold }
-    fold1L { TokBuiltin $$ BuiltinFold1 }
-    scanL { TokBuiltin $$ BuiltinScan }
+    split { TokBuiltin $$ BSplit }
+    splitc { TokBuiltin $$ BSplitc }
+    substr { TokBuiltin $$ BSubstr }
+    sub1 { TokBuiltin $$ BSub1 }
+    subs { TokBuiltin $$ BSubs }
+    sprintf { TokBuiltin $$ BSprintf }
+    floor { TokBuiltin $$ BFloor }
+    ceil { TokBuiltin $$ BCeil }
+    option { TokBuiltin $$ BOption }
+    match { TokBuiltin $$ BMatch }
+    ices { TokBuiltin $$ BIxes }
+    some { TokBuiltin $$ BSome }
+    none { TokBuiltin $$ BNone }
+    fp { TokBuiltin $$ BFp }
+    captures { TokBuiltin $$ BCaptures }
+    mapMaybeL { TokBuiltin $$ BMapMaybe }
+    dedupOnL { TokBuiltin $$ BDedupOn }
+    filterL { TokBuiltin $$ BFilt }
+    foldL { TokBuiltin $$ BFold }
+    fold1L { TokBuiltin $$ BFold1 }
+    scanL { TokBuiltin $$ BScan }
 
-    head { TokBuiltin $$ BuiltinHead }
-    tail { TokBuiltin $$ BuiltinTail }
-    init { TokBuiltin $$ BuiltinInit }
-    last { TokBuiltin $$ BuiltinLast }
-    take { TokBuiltin $$ BuiltinTake }
-    drop { TokBuiltin $$ BuiltinDrop }
-    rein { TokBuiltin $$ BuiltinRein }
+    head { TokBuiltin $$ BHead }
+    tail { TokBuiltin $$ BTail }
+    init { TokBuiltin $$ BInit }
+    last { TokBuiltin $$ BLast }
+    take { TokBuiltin $$ BTake }
+    drop { TokBuiltin $$ BDrop }
+    rein { TokBuiltin $$ BRein }
 
-    iParse { TokBuiltin $$ BuiltinIParse }
-    fParse { TokBuiltin $$ BuiltinFParse }
+    iParse { TokBuiltin $$ BIParse }
+    fParse { TokBuiltin $$ BFParse }
 
     rr { $$@(TokRR _ _) }
 
@@ -344,6 +345,7 @@ E :: { E AlexPosn }
   | sprintf { BB $1 Sprintf }
   | option { TB $1 Option }
   | captures { TB $1 AllCaptures }
+  | ices { TB $1 Ixes }
   | floor { UB $1 Floor }
   | ceil { UB $1 Ceiling }
   | floorSym { UB $1 Floor } | ceilSym { UB $1 Ceiling }

@@ -506,6 +506,7 @@ tyES s (TB _ Scan) = do
 tyES s (TB _ Option) = do
     a <- freshTV "a"; b <- freshTV "b"
     pure (TB (b ~> (a ~> b) ~> tyOpt a ~> b) Option, s)
+tyES s (TB _ Ixes) = pure (TB (tyStr ~> tyI ~> tyR ~> tyV (TyTup [tyI, tyI])) Ixes, s)
 tyES s (TB _ AllCaptures) = pure (TB (tyStr ~> tyI ~> tyR ~> tyV tyStr) AllCaptures, s)
 tyES s (Implicit _ e) = do {(e',s') <- tyES s e; pure (Implicit (tyStream (eLoc e')) e', s')}
 tyES s (Guarded l e se) = do

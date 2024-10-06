@@ -11,6 +11,7 @@ module Jacinda.Regex ( lazySplit
                      , substr
                      , findCapture
                      , captures'
+                     , capturesIx
                      ) where
 
 import           Control.Exception        (Exception, throwIO)
@@ -45,6 +46,10 @@ captures' re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> cap
             let e' = fromIntegral e
                 s' = fromIntegral s
                 in BS.BS (fp `plusForeignPtr` s') (e'-s')
+
+{-# NOINLINE capturesIx #-}
+capturesIx :: RurePtr -> BS.ByteString -> CSize -> [RureMatch]
+capturesIx re str n = unsafeDupablePerformIO $ captures re str n
 
 {-# NOINLINE findCapture #-}
 findCapture :: RurePtr -> BS.ByteString -> CSize -> Maybe BS.ByteString

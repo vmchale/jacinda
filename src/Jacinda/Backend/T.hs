@@ -436,6 +436,9 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp ty (EApp _ (EApp _ (TB _ AllCaptures) s) i) r) @> b = do
     s' <- s@>b; i' <- i@>b; r' <- r@>b
     pure $ Arr ty (V.fromList (mkStr <$> captures' (asR r') (asS s') (fromIntegral$asI i')))
+(EApp _ (EApp _ (EApp _ (TB _ Ixes) s) i) r) @> b = do
+    s' <- s@>b; i' <- i@>b; r' <- r@>b
+    pure (Arr (tyV (TyTup [tyI,tyI])) (V.fromList (rureMatchTup<$>capturesIx (asR r') (asS s') (fromIntegral (asI i')))))
 (NB (TyB TyStr) MZ) @> _ = pure $ mkStr BS.empty
 (NB ty@(TyB TyVec:$_) MZ) @> _ = pure $ Arr ty V.empty
 (EApp _ (UB _ Not) e) @> b = do {e' <- e@> b; pure$mkB (not (asB e'))}

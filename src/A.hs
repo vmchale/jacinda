@@ -130,7 +130,7 @@ data BTer = ZipW
           | Fold | Scan
           | Substr | Sub1 | Subs
           | Option
-          | Captures | AllCaptures
+          | Captures | AllCaptures | Ixes
           | Bookend
           deriving (Eq)
 
@@ -145,6 +145,7 @@ instance Pretty BTer where
     pretty Sub1        = "sub1"
     pretty Subs        = "subs"
     pretty Bookend     = ",,"
+    pretty Ixes        = "ices"
 
 -- builtin
 data BBin = Plus | Times | Div

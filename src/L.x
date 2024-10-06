@@ -161,36 +161,37 @@ tokens :-
         min                      { mkRes VarMin }
         max                      { mkRes VarMax }
 
-        substr                   { mkBuiltin BuiltinSubstr }
-        split                    { mkBuiltin BuiltinSplit }
-        splitc                   { mkBuiltin BuiltinSplitc }
-        sprintf                  { mkBuiltin BuiltinSprintf }
-        option                   { mkBuiltin BuiltinOption }
-        floor                    { mkBuiltin BuiltinFloor }
-        ceil                     { mkBuiltin BuiltinCeil }
-        match                    { mkBuiltin BuiltinMatch }
-        captures                 { mkBuiltin BuiltinCaptures }
-        Some                     { mkBuiltin BuiltinSome }
-        None                     { mkBuiltin BuiltinNone }
-        fp                       { mkBuiltin BuiltinFp }
-        mapMaybe                 { mkBuiltin BuiltinMapMaybe }
-        dedupOn                  { mkBuiltin BuiltinDedupOn }
-        filter                   { mkBuiltin BuiltinFilt }
-        fold                     { mkBuiltin BuiltinFold }
-        fold1                    { mkBuiltin BuiltinFold1 }
-        scan                     { mkBuiltin BuiltinScan }
-        "sub1"                   { mkBuiltin BuiltinSub1 }
-        subs                     { mkBuiltin BuiltinSubs }
-        "head#"                  { mkBuiltin BuiltinHead }
-        "tail#"                  { mkBuiltin BuiltinTail }
-        "last#"                  { mkBuiltin BuiltinLast }
-        "init#"                  { mkBuiltin BuiltinInit }
-        "take#"                  { mkBuiltin BuiltinTake }
-        "drop#"                  { mkBuiltin BuiltinDrop }
-        reintercalate            { mkBuiltin BuiltinRein }
+        substr                   { mkBuiltin BSubstr }
+        split                    { mkBuiltin BSplit }
+        splitc                   { mkBuiltin BSplitc }
+        sprintf                  { mkBuiltin BSprintf }
+        option                   { mkBuiltin BOption }
+        floor                    { mkBuiltin BFloor }
+        ceil                     { mkBuiltin BCeil }
+        match                    { mkBuiltin BMatch }
+        ices                     { mkBuiltin BIxes }
+        captures                 { mkBuiltin BCaptures }
+        Some                     { mkBuiltin BSome }
+        None                     { mkBuiltin BNone }
+        fp                       { mkBuiltin BFp }
+        mapMaybe                 { mkBuiltin BMapMaybe }
+        dedupOn                  { mkBuiltin BDedupOn }
+        filter                   { mkBuiltin BFilt }
+        fold                     { mkBuiltin BFold }
+        fold1                    { mkBuiltin BFold1 }
+        scan                     { mkBuiltin BScan }
+        "sub1"                   { mkBuiltin BSub1 }
+        subs                     { mkBuiltin BSubs }
+        "head#"                  { mkBuiltin BHead }
+        "tail#"                  { mkBuiltin BTail }
+        "last#"                  { mkBuiltin BLast }
+        "init#"                  { mkBuiltin BInit }
+        "take#"                  { mkBuiltin BTake }
+        "drop#"                  { mkBuiltin BDrop }
+        reintercalate            { mkBuiltin BRein }
 
-        ":i"                     { mkBuiltin BuiltinIParse }
-        ":f"                     { mkBuiltin BuiltinFParse }
+        ":i"                     { mkBuiltin BIParse }
+        ":f"                     { mkBuiltin BFParse }
 
         "#t"                     { tok (\p _ -> alex $ TokBool p True) }
         "#f"                     { tok (\p _ -> alex $ TokBool p False) }
@@ -412,57 +413,58 @@ instance Pretty Keyword where
     pretty KwAsv     = "asv"
     pretty KwCsv     = "csv"
 
-data Builtin = BuiltinIParse | BuiltinFParse
-             | BuiltinSubstr
-             | BuiltinSplit | BuiltinSplitc
-             | BuiltinOption
-             | BuiltinSprintf
-             | BuiltinFloor | BuiltinCeil
-             | BuiltinMatch
-             | BuiltinCaptures
-             | BuiltinSome | BuiltinNone
-             | BuiltinFp
-             | BuiltinMapMaybe
-             | BuiltinDedupOn
-             | BuiltinFilt
-             | BuiltinFold | BuiltinFold1
-             | BuiltinScan
-             | BuiltinSub1 | BuiltinSubs
-             | BuiltinHead | BuiltinTail
-             | BuiltinInit | BuiltinLast
-             | BuiltinDrop | BuiltinTake
-             | BuiltinRein
+data Builtin = BIParse | BFParse
+             | BSubstr
+             | BSplit | BSplitc
+             | BOption
+             | BSprintf
+             | BFloor | BCeil
+             | BMatch | BIxes
+             | BCaptures
+             | BSome | BNone
+             | BFp
+             | BMapMaybe
+             | BDedupOn
+             | BFilt
+             | BFold | BFold1
+             | BScan
+             | BSub1 | BSubs
+             | BHead | BTail
+             | BInit | BLast
+             | BDrop | BTake
+             | BRein
 
 instance Pretty Builtin where
-    pretty BuiltinIParse   = ":i"
-    pretty BuiltinFParse   = ":f"
-    pretty BuiltinSubstr   = "substr"
-    pretty BuiltinSplit    = "split"
-    pretty BuiltinOption   = "option"
-    pretty BuiltinSplitc   = "splitc"
-    pretty BuiltinSprintf  = "sprintf"
-    pretty BuiltinFloor    = "floor"
-    pretty BuiltinCeil     = "ceil"
-    pretty BuiltinMatch    = "match"
-    pretty BuiltinSome     = "Some"
-    pretty BuiltinNone     = "None"
-    pretty BuiltinFp       = "fp"
-    pretty BuiltinCaptures = "captures"
-    pretty BuiltinMapMaybe = "mapMaybe"
-    pretty BuiltinDedupOn  = "dedupOn"
-    pretty BuiltinFilt     = "filter"
-    pretty BuiltinFold     = "fold"
-    pretty BuiltinFold1    = "fold1"
-    pretty BuiltinScan     = "scan"
-    pretty BuiltinSub1     = "sub1"
-    pretty BuiltinSubs     = "subs"
-    pretty BuiltinHead     = "head#"
-    pretty BuiltinTail     = "tail#"
-    pretty BuiltinInit     = "init#"
-    pretty BuiltinLast     = "last#"
-    pretty BuiltinTake     = "take#"
-    pretty BuiltinDrop     = "drop#"
-    pretty BuiltinRein     = "reintercalate"
+    pretty BIParse   = ":i"
+    pretty BFParse   = ":f"
+    pretty BSubstr   = "substr"
+    pretty BSplit    = "split"
+    pretty BOption   = "option"
+    pretty BSplitc   = "splitc"
+    pretty BSprintf  = "sprintf"
+    pretty BFloor    = "floor"
+    pretty BCeil     = "ceil"
+    pretty BMatch    = "match"
+    pretty BIxes     = "ices"
+    pretty BSome     = "Some"
+    pretty BNone     = "None"
+    pretty BFp       = "fp"
+    pretty BCaptures = "captures"
+    pretty BMapMaybe = "mapMaybe"
+    pretty BDedupOn  = "dedupOn"
+    pretty BFilt     = "filter"
+    pretty BFold     = "fold"
+    pretty BFold1    = "fold1"
+    pretty BScan     = "scan"
+    pretty BSub1     = "sub1"
+    pretty BSubs     = "subs"
+    pretty BHead     = "head#"
+    pretty BTail     = "tail#"
+    pretty BInit     = "init#"
+    pretty BLast     = "last#"
+    pretty BTake     = "take#"
+    pretty BDrop     = "drop#"
+    pretty BRein     = "reintercalate"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
