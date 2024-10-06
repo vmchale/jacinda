@@ -217,6 +217,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ (Arr ty es) line        = Arr ty ((`κ` line)<$>es)
 κ (Rec ty es) line        = Rec ty (second (`κ` line)<$>es)
 κ (OptionVal t e) line    = OptionVal t ((`κ` line)<$!>e)
+κ (Cond ty p e0 e1) line  = Cond ty (p `κ` line) (e0 `κ` line) (e1 `κ` line)
 κ e@ParseCol{} _          = badctx e
 κ e@IParseCol{} _         = badctx e
 κ e@FParseCol{} _         = badctx e
