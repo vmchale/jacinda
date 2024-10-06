@@ -34,6 +34,7 @@ cF (Cond _ p e e') = cF p <|> cF e <|> cF e'; cF (OptionVal _ e) = foldMapAltern
 cF (Lam _ _ e) = cF e; cF Let{} = error "Inlining unexpectedly failed?"
 cF RC{} = error "Sanity check failed. Regex should not be compiled at this time."
 cF Dfn{} = desugar; cF Paren{} = desugar; cF ResVar{} = desugar
+cF RwB{} = desugar; cF RwT{} = desugar
 
 isS :: T -> Bool
 isS (TyB TyStream:$_) = True; isS _ = False

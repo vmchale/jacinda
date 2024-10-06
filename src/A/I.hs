@@ -85,6 +85,7 @@ bM e@AllColumn{} = pure e; bM e@FParseAllCol{} = pure e; bM e@IParseAllCol{} = p
 bM e@RC{} = pure e; bM e@Lit{} = pure e; bM e@RegexLit{} = pure e
 bM e@BB{} = pure e; bM e@NB{} = pure e; bM e@UB{} = pure e; bM e@TB{} = pure e
 bM ResVar{} = desugar; bM Dfn{} = desugar; bM Paren{} = desugar
+bM RwT{} = desugar; bM RwB{} = desugar; bM F{} = error "impossible."
 
 iE :: E T -> RM T (E T)
 iE e@NB{} = pure e; iE e@UB{} = pure e; iE e@BB{} = pure e; iE e@TB{} = pure e
