@@ -214,6 +214,22 @@ vm_stat 1 | ja ':flush; {⍳>3}{`2:f*4096.0%(1024.0**3.0)}' | ttyplot -t "MacOS 
 { while true; do /System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport --getinfo | ja ':flush; {%/agrCtlRSSI/}{-.`2:i}'; sleep 1; done } | ttyplot -t "wifi signal" -u "-dBm" -s 90
 ```
 
+# Glibc
+
+```awk
+NF == 1 && $1 != "}" {
+  haveversion[$1] = 1
+}
+END {
+  for (i in haveversion)
+    printf "have-%s = yes\n", i
+}
+```
+
+```
+(sprintf 'have-%s = yes')" ~.{nf=1 & `1 != '}'}{`1}
+```
+
 # Count Lines
 
 ```awk

@@ -46,32 +46,14 @@ To get the value of a variable (say, `PATH`) from the output of `printenv`:
 printenv | ja -F= '{%/^PATH/}{`2}'
 ```
 
-## Rosetta
-
-Replace
-
-```awk
-NF == 1 && $1 != "}" {
-  haveversion[$1] = 1
-}
-END {
-  for (i in haveversion)
-    printf "have-%s = yes\n", i
-}
-```
-
-with
-
-```
-(sprintf 'have-%s = yes')" ~.{nf=1 & `1 != '}'}{`1}
-```
-
 # Documentation
 
 See the [guide](https://vmchale.github.io/jacinda/), which contains a tutorial
 on some of the features as well as examples.
 
 The manpages document the builtins and provide a syntax reference.
+
+See the [rosetta](./ROSETTA.md) showing AWK alongside.
 
 # Status
 
