@@ -296,9 +296,12 @@ the bs = case BS.uncons bs of
     Just (c,b) | BS.null b -> c
     Just _                 -> error "Splitc takes only one char!"
 
+rureMatchTup :: RureMatch -> E T
+rureMatchTup (RureMatch s e) = Tup (TyTup [tyI,tyI]) (mkI.fromIntegral<$>[s,e])
+
 asTup :: Maybe RureMatch -> E T
-asTup Nothing                = OptionVal undefined Nothing
-asTup (Just (RureMatch s e)) = OptionVal undefined (Just (Tup undefined (mkI . fromIntegral <$> [s, e])))
+asTup Nothing  = OptionVal undefined Nothing
+asTup (Just m) = OptionVal undefined (Just (rureMatchTup m))
 
 {-# SCC (!>) #-}
 (!>) :: Β -> Nm T -> E T
