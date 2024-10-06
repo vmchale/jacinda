@@ -125,7 +125,7 @@ unit (EApp _ (EApp _ (BB _ Report) es) e) = do
     t <- nI
     (iEnv, μ) <- ctx es t
     (rEnv, g) <- φ e r
-    pure (Just r, [t], iEnv<>rEnv, \l -> μ l.g l)
+    pure (Just r, [t], iEnv<>rEnv, μ@.g)
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
 
@@ -153,7 +153,7 @@ collect (Rec ty rs) = do
 collect (EApp ty0 (EApp ty1 op@BB{} e0) e1) = do
     (env1, f1, e1') <- collect e1
     (env0, f0, e0') <- collect e0
-    pure (env0<>env1, \l -> f1 l.f0 l, EApp ty0 (EApp ty1 op e0') e1')
+    pure (env0<>env1, f1@.f0, EApp ty0 (EApp ty1 op e0') e1')
 collect (EApp ty0 (EApp ty1 (EApp ty2 op@TB{} e0) e1) e2) = do
     (env2, f2, e2') <- collect e2
     (env1, f1, e1') <- collect e1
@@ -172,7 +172,7 @@ collect (Cond t p e0 e1) = do
 f @. g = \l -> f l.g l
 
 ts :: [LineCtx -> Σ -> Σ] -> LineCtx -> Σ -> Σ
-ts = foldl' (\f g l -> f l.g l) (const id)
+ts = foldl' (@.) (\_ -> id)
 
 φ :: E T -> Tmp -> MM (Env, LineCtx -> Σ -> Σ)
 φ (EApp _ (EApp _ (EApp _ (TB _ Fold) op) seed) xs) tgt = do
@@ -255,6 +255,8 @@ ctx (EApp _ (EApp _ (BB _ Prior) op) xs) o               = do {t <- nI; (env, sb
 ctx (EApp (_:$TyB ty) (UB _ Dedup) xs) o                 = do {k <- nI; t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wD ty k t o.sb l)}
 ctx (EApp _ (EApp _ (BB _ DedupOn) f) xs) o              = do {k <- nI; t <- nI; (env, sb) <- ctx xs t; pure (na o env, \l->wDOp f k t o.sb l)}
 ctx (EApp _ (EApp _ (EApp _ (TB _ Bookend) e0) e1) xs) o = do {k <- nI; t <- nI; (env, sb) <- ctx xs t; r0 <- e0@>mempty; r1<- e1@>mempty; pure (na o env, \l->wB (r0,r1) k t o.sb l)}
+ctx e _ | TyB TyStream:$_ <- eLoc e = error ("?? uh-oh. " ++ show e)
+        | otherwise = error "Internal error. ctx expects a stream."
 
 type LineCtx = (BS.ByteString, V.Vector BS.ByteString, Integer) -- line number
 
