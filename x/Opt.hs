@@ -3,11 +3,13 @@
 module Main (main) where
 
 import           A                   (L, Mode (..))
+import           Control.Applicative ((<|>))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
 import           File
-import           Options.Applicative
+import           Options.Applicative (HasCompleter, Mod, Parser, argument, bashCompleter, command, completer, execParser, fullDesc, header, help, helper, hsubparser, info,
+                                      infoOption, long, many, metavar, option, optional, progDesc, short, str, strOption, switch)
 import           Parser              (pLit)
 import qualified Paths_jacinda       as P
 
@@ -69,8 +71,9 @@ inpFile = optional $ option str
     <> metavar "DATAFILE"
     <> help "Data file")
 
-jacCompletions :: HasCompleter f => Mod f a
+jacCompletions, dirCompletions :: HasCompleter f => Mod f a
 jacCompletions = completer . bashCompleter $ "file -X '!*.jac' -o plusdirs"
+dirCompletions = completer . bashCompleter $ "directory"
 
 commandP :: Parser Cmd
 commandP = hsubparser
@@ -90,9 +93,6 @@ includes = many $ strOption
     <> long "include"
     <> short 'I'
     <> dirCompletions)
-
-dirCompletions :: HasCompleter f => Mod f a
-dirCompletions = completer . bashCompleter $ "directory"
 
 wrapper = info (helper <*> versionMod <*> commandP)
     (fullDesc
