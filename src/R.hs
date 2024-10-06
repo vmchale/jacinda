@@ -102,10 +102,6 @@ hasY = g where
     g (Arr _ es)                   = any g es
     g (Anchor _ es)                = any g es
     g (Cond _ p e0 e1)             = g e0 || g e1 || g p
-    g (In _ (Just e0) (Just e1) e) = g e || g e0 || g e1
-    g (In _ _ (Just e1) e)         = g e || g e1
-    g (In _ (Just e0) _ e)         = g e || g e0
-    g (In _ _ _ e)                 = g e
     g _                            = False
 
 replaceXY :: (a -> Nm a) -- ^ @x@
@@ -131,7 +127,6 @@ replaceXY nX nY = r where
     r (Let l (n, be) e) = Let l (n, r be) (r e)
     r (Lam l n e)       = Lam l n (r e)
     r (Cond l p e0 e1)  = Cond l (r p) (r e0) (r e1)
-    r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
     r (OptionVal l e)   = OptionVal l (r<$>e)
     r (Tup l es)        = Tup l (r<$>es)
     r (Rec l es)        = Rec l (second r<$>es)

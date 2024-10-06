@@ -182,13 +182,6 @@ ts = foldl' (\f g l -> f l.g l) (const id)
     (env, f) <- ctx xs t
     let g=wF op t tgt
     pure (env<>iEnv, (g.).f)
-φ (EApp _ (EApp _ (EApp _ (TB _ Scan) op) seed) xs) tgt = do
-    t <- nI
-    seed' <- seed @> mempty
-    let iEnv=IM.singleton tgt (Just$!seed')
-    (env, f) <- ctx xs t
-    let g=wF op t tgt
-    pure (env<>iEnv, (g.).f)
 φ (EApp _ (EApp _ (BB _ Fold1) op) xs) tgt = do
     let iEnv=IM.singleton tgt Nothing
     t <- nI
@@ -212,6 +205,7 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ e@Lit{} _               = e
 κ e@RC{} _                = e
 κ e@Var{} _               = e
+κ e@F{} _                 = e
 κ (Lam t n e) line        = Lam t n (κ e line)
 κ (Tup ty es) line        = Tup ty ((`κ` line)<$>es)
 κ (Arr ty es) line        = Arr ty ((`κ` line)<$>es)
@@ -232,6 +226,8 @@ ts = foldl' (\f g l -> f l.g l) (const id)
 κ Dfn{} _                 = desugar
 κ ResVar{} _              = desugar
 κ Paren{} _               = desugar
+κ RwB{} _                 = desugar
+κ RwT{} _                 = desugar
 
 ni t=IM.singleton t Nothing
 na=IM.alter go where go Nothing = Just Nothing; go x@Just{} = x

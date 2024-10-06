@@ -116,7 +116,6 @@ compileR fp = r where
     r (Rec l es)        = Rec l (second r<$>es)
     r (Arr l es)        = Arr l (r<$>es)
     r (Anchor l es)     = Anchor l (r<$>es)
-    r (In l e0 e1 e)    = In l (r<$>e0) (r<$>e1) (r e)
     r F{}               = error "impossible"
     r Dfn{}             = desugar
     r Paren{}           = desugar

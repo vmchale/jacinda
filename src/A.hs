@@ -218,7 +218,6 @@ data E a = Column { eLoc :: a, col :: Int }
          | Paren { eLoc :: a, eExpr :: E a }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf, eThen, eElse :: E a }
-         | In { oop :: E a, ip :: Maybe (E a), mm :: Maybe (E a), istream :: E a }
          | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
          deriving (Functor)
 
