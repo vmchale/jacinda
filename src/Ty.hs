@@ -151,6 +151,9 @@ mgu l s (Ρ n rs) t'@(TyRec ts) | all (`elem` (unU.unique.fst<$>ts)) (Nm.keys rs
     = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s (Nm.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s t@TyRec{} t'@Ρ{} = mgu l s t' t
+-- TODO: NmMap TyRec
+mgu l s t@(TyRec ts) t'@(TyRec ts') | all (`elem` (unU.unique.fst<$>ts')) (unU.unique.fst<$>ts) = do
+    tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique nr) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s ts'
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Rho n' (rs <> rs')) rss)
