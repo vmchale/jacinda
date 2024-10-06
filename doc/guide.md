@@ -337,57 +337,37 @@ path"$0
 
 ### Define Values on the Command-Line
 
-GHC error messages have the form:
+Jacinda is powerful enough that we can jerry-rig a [RIS](https://en.wikipedia.org/wiki/RIS_(file_format)) to [.bib](https://en.wikipedia.org/wiki/BibTeX#Database_files) converter:
 
 ```
-src/A.hs:262:5: warning: [GHC-62161] [-Wincomplete-patterns]
-    Pattern match(es) are non-exhaustive
-    In an equation for ‘ps’:
-        Patterns of type ‘Int’, ‘E a’ not matched:
-            _ (In _ _ _ _)
-            _ (RwT _ ZipW)
-            _ (RwT _ Substr)
-            _ (RwT _ Sub1)
-            ...
-    |
-262 |     ps _ (Column _ i)    = "$" <> pretty i
-    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^...
+:set fs:=/  -\s*/;
 
-src/Ty.hs:60:1: warning: [GHC-40910] [-Wunused-top-binds]
-    Defined but not used: ‘setMaxU’
-   |
-60 | setMaxU i (TyState _ c v) = TyState i c v
-   | ^^^^^^^
-...
+fn bib(ty) :=
+   ?ty='JOUR';'article'
+  ;?ty='BOOK';'book'
+  ;?ty='CONF';'inproceedings'
+  ;'misc';
+
+fn field(r) :=
+   ?r='AU';Some 'author'
+  ;?r='PY';Some 'year'
+  ;?r='TI';Some 'title'
+  ;?r='VL';Some 'volume'
+  ;?r='JO';Some 'journal'
+  ;?r='DO';Some 'doi'
+  ;None;
+
+.?{| ?`1='TY';Some ('@'+bib `2+'{'+name+',')
+    ;?`1='ER';Some '}'
+    ;?`1='UR';Some ('    url={\\url{'+`2+'}},')
+    ;['    '+x+'={'+`2+'},']¨(field `1)}
 ```
 
-We could define a filter on GHC error messages by splitting each error message
-into its own record (separated by two newlines). Then we can focus only on some
-file like so (we split on `:` and so the first field (```1``) will be the filename):
+Running this on its own will fail:
 
 ```
-:set rs := /\n\n/;
-:set fs := /:/;
-
-{`1 = file}{`0}
+ja: 22:36 'name' is not in scope.
 ```
-
-We can invoke it with
-
-```
-cabal -v0 build |& ja run filt.jac "-Dfile='src/Ty.hs'"
-```
-
-to see error messages from `src/Ty.hs`, and later
-
-```
-cabal -v0 build |& ja run filt.jac "-Dfile='src/A.hs'"
-```
-
-to see only error messages from `src/A.hs`.
-
-Note that the double quotes around the `-D` flag are necessary so that the shell
-doesn't discard the single quotes used to define a string literal.
 
 # Examples
 
