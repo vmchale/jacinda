@@ -81,6 +81,9 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **^** Ternary operator: scan
 :   (b -> a -> b) -> b -> Stream a -> Stream b
 
+**^\*** Scan (list)
+:   (b -> a -> b) -> b -> List a -> List b
+
 **\"**,  **¨** Binary operator: map
 :   Functor f :=> a -> b -> f a -> f b
 

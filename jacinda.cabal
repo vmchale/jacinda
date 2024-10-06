@@ -71,6 +71,7 @@ library jacinda-lib
         Jacinda.Backend.Printf
         Include
         Nm.Map
+        Data.Vector.Ext
         C
         Paths_jacinda
 

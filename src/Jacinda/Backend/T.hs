@@ -22,6 +22,7 @@ import           Data.Maybe                        (fromMaybe)
 import qualified Data.Set                          as S
 import qualified Data.Text                         as T
 import qualified Data.Vector                       as V
+import           Data.Vector.Ext                   (scanlM')
 import           Data.Word                         (Word8)
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.Parse
@@ -476,6 +477,9 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ Rein) s) ss) @> b | TyB TyVec:$_ <- eLoc ss = do
     s' <- fmap asS (s@>b); ss' <- ss@>b
     pure $ mkStr (V.foldl' (\x y -> x <> s' <> y) mempty (asS<$>asV ss'))
+(EApp yT@(TyB TyVec:$_) (EApp _ (EApp _ (TB _ ScanList) op) seed) xs) @> b | TyB TyVec:$_ <- eLoc xs = do
+    xs' <- xs@>b; seed' <- seed@>b
+    Arr yT <$> scanlM' (a2e b op) seed' (asV xs')
 (EApp _ (EApp _ (BB _ Fold1) op) xs) @> b | TyB TyVec:$_ <- eLoc xs = do
     xs' <- xs@>b
     let xsV=asV xs'

@@ -84,6 +84,7 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     fold { TokSym $$ FoldTok }
     fold1 { TokSym $$ Fold1Tok }
     caret { TokSym $$ Caret }
+    cs { TokSym $$ CaretStar }
     amp { TokSym $$ AmpAmp }
     z { TokSym $$ Zilde }
     quot { TokSym $$ Quot }
@@ -309,6 +310,7 @@ E :: { E AlexPosn }
   | E fold E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Fold) $1) $3) $4 }
   | E capture E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Captures) $1) $3) $4 }
   | E caret E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 Scan) $1) $3) $4 }
+  | E cs E E { EApp (eLoc $1) (EApp (eLoc $1) (EApp $2 (TB $2 ScanList) $1) $3) $4 }
   | comma E E E { EApp $1 (EApp $1 (EApp $1 (TB $1 ZipW) $2) $3) $4 }
   | lbrace E rbrace braces(E) { Guarded $1 $2 $4 }
   | lbracePercent E rbrace braces(E) { let tl = eLoc $2 in Guarded $1 (EApp tl (EApp tl (BB tl Matches) (AllField tl)) $2) $4 }

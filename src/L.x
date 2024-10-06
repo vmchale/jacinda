@@ -55,11 +55,11 @@ $str_special = [\\\']
 tokens :-
 
     <dfn> {
-        x                        { mkRes VarX }
-        y                        { mkRes VarY }
+        x                        { res VarX }
+        y                        { res VarY }
     }
 
-    <0> "["                      { mkSym LSqBracket `andBegin` dfn } -- FIXME: this doesn't allow nested
+    <0> "["                      { sym LSqBracket `andBegin` dfn } -- FIXME: this doesn't allow nested
 
     <0,dfn> {
 
@@ -68,74 +68,75 @@ tokens :-
         "{.".*                   ;
         "#!".*                   ; -- shebang
 
-        ":="                     { mkSym DefEq }
-        "≔"                      { mkSym DefEq }
-        "{"                      { mkSym LBrace }
-        "}"                      { mkSym RBrace }
+        ":="                     { sym DefEq }
+        "≔"                      { sym DefEq }
+        "{"                      { sym LBrace }
+        "}"                      { sym RBrace }
 
-        "#."                     { mkSym FilterTok }
+        "#."                     { sym FilterTok }
 
         -- symbols/operators
-        "%"                      { mkSym PercentTok }
-        "*"                      { mkSym TimesTok }
-        "**"                     { mkSym ExpTok }
-        "+"                      { mkSym PlusTok }
-        "-"                      { mkSym MinusTok }
+        "%"                      { sym PercentTok }
+        "*"                      { sym TimesTok }
+        "**"                     { sym ExpTok }
+        "+"                      { sym PlusTok }
+        "-"                      { sym MinusTok }
 
-        "|"                      { mkSym FoldTok }
-        \"                       { mkSym Quot }
-        "^"                      { mkSym Caret }
-        "|>"                     { mkSym Fold1Tok }
-        ⍬                        { mkSym Zilde }
+        "|"                      { sym FoldTok }
+        \"                       { sym Quot }
+        "^"                      { sym Caret }
+        "^*"                     { sym CaretStar }
+        "|>"                     { sym Fold1Tok }
+        ⍬                        { sym Zilde }
 
-        "="                      { mkSym EqTok }
-        "!="                     { mkSym NeqTok }
-        "<="                     { mkSym LeqTok }
-        "<"                      { mkSym LtTok }
-        ">="                     { mkSym GeqTok }
-        ">"                      { mkSym GtTok }
-        "&"                      { mkSym AndTok }
-        "||"                     { mkSym OrTok }
-        "("                      { mkSym LParen }
-        ")"                      { mkSym RParen }
-        "&("                     { mkSym LAnchor }
-        "$>"                     { mkSym IceCreamCone }
-        "{%"                     { mkSym LBracePercent }
-        "#{"                     { mkSym LBraceOctothorpe }
-        "{|"                     { mkSym LBraceBar }
-        "]"                      { mkSym RSqBracket `andBegin` 0 }
-        ".="                     { mkSym DotEq }
-        "~"                      { mkSym Tilde }
-        "!~"                     { mkSym NotMatchTok }
-        "~?"                     { mkSym MMatch }
-        ","                      { mkSym Comma }
-        ",,"                     { mkSym DoubleComma }
-        "."                      { mkSym Dot }
-        "#"                      { mkSym TallyTok }
-        "#*"                     { mkSym LengthTok }
-        "[:"                     { mkSym ConstTok }
-        "!"                      { mkSym Exclamation }
-        ":"                      { mkSym Colon }
-        ";"                      { mkSym Semicolon }
-        "\."                     { mkSym BackslashDot }
-        \\                       { mkSym Backslash }
-        λ                        { mkSym Backslash }
-        "|`"                     { mkSym CeilSym }
-        ⌈                        { mkSym CeilSym }
-        "|."                     { mkSym FloorSym }
-        ⌊                        { mkSym FloorSym }
-        "~."                     { mkSym DedupTok }
-        dedup                    { mkSym DedupTok }
-        "~.*"                    { mkSym DedupOnTok }
-        ".?"                     { mkSym CatMaybesTok }
-        catMaybes                { mkSym CatMaybesTok }
-        ":?"                     { mkSym MapMaybeTok }
-        "~*"                     { mkSym CapTok }
-        "-."                     { mkSym NegTok }
-        "`*"                     { mkSym LastFieldTok }
-        "`$"                     { mkSym FieldListTok }
-        \?                       { mkSym QuestionMark }
-        "@@"                     { mkSym AmpAmp }
+        "="                      { sym EqTok }
+        "!="                     { sym NeqTok }
+        "<="                     { sym LeqTok }
+        "<"                      { sym LtTok }
+        ">="                     { sym GeqTok }
+        ">"                      { sym GtTok }
+        "&"                      { sym AndTok }
+        "||"                     { sym OrTok }
+        "("                      { sym LParen }
+        ")"                      { sym RParen }
+        "&("                     { sym LAnchor }
+        "$>"                     { sym IceCreamCone }
+        "{%"                     { sym LBracePercent }
+        "#{"                     { sym LBraceOctothorpe }
+        "{|"                     { sym LBraceBar }
+        "]"                      { sym RSqBracket `andBegin` 0 }
+        ".="                     { sym DotEq }
+        "~"                      { sym Tilde }
+        "!~"                     { sym NotMatchTok }
+        "~?"                     { sym MMatch }
+        ","                      { sym Comma }
+        ",,"                     { sym DoubleComma }
+        "."                      { sym Dot }
+        "#"                      { sym TallyTok }
+        "#*"                     { sym LengthTok }
+        "[:"                     { sym ConstTok }
+        "!"                      { sym Exclamation }
+        ":"                      { sym Colon }
+        ";"                      { sym Semicolon }
+        "\."                     { sym BackslashDot }
+        \\                       { sym Backslash }
+        λ                        { sym Backslash }
+        "|`"                     { sym CeilSym }
+        ⌈                        { sym CeilSym }
+        "|."                     { sym FloorSym }
+        ⌊                        { sym FloorSym }
+        "~."                     { sym DedupTok }
+        dedup                    { sym DedupTok }
+        "~.*"                    { sym DedupOnTok }
+        ".?"                     { sym CatMaybesTok }
+        catMaybes                { sym CatMaybesTok }
+        ":?"                     { sym MapMaybeTok }
+        "~*"                     { sym CapTok }
+        "-."                     { sym NegTok }
+        "`*"                     { sym LastFieldTok }
+        "`$"                     { sym FieldListTok }
+        \?                       { sym QuestionMark }
+        "@@"                     { sym AmpAmp }
 
         in                       { mkKw KwIn }
         let                      { mkKw KwLet }
@@ -152,14 +153,14 @@ tokens :-
         usv                      { mkKw KwUsv }
         csv                      { mkKw KwCsv }
 
-        fs                       { mkRes VarFs }
-        rs                       { mkRes VarRs }
-        ix                       { mkRes VarIx }
-        ⍳                        { mkRes VarIx }
-        nf                       { mkRes VarNf }
-        ¨                        { mkSym Quot }
-        min                      { mkRes VarMin }
-        max                      { mkRes VarMax }
+        fs                       { res VarFs }
+        rs                       { res VarRs }
+        ix                       { res VarIx }
+        ⍳                        { res VarIx }
+        nf                       { res VarNf }
+        ¨                        { sym Quot }
+        min                      { res VarMin }
+        max                      { res VarMax }
 
         substr                   { mkBuiltin BSubstr }
         split                    { mkBuiltin BSplit }
@@ -230,11 +231,11 @@ tok f (p,_,_,s) len = f p (T.take len s)
 
 constructor c t = tok (\p _ -> alex $ c p t)
 
-mkRes = constructor TokResVar
+res = constructor TokResVar
 
 mkKw = constructor TokKeyword
 
-mkSym = constructor TokSym
+sym = constructor TokSym
 
 mkBuiltin = constructor TokBuiltin
 
@@ -297,7 +298,7 @@ data Sym = PlusTok | MinusTok | PercentTok
          | LBraceOctothorpe
          | LBraceBar
          | Exclamation
-         | Caret
+         | Caret | CaretStar
          | Zilde
          | Backslash
          | BackslashDot
@@ -350,6 +351,7 @@ instance Pretty Sym where
     pretty LengthTok        = "#*"
     pretty Quot             = "¨"
     pretty Caret            = "^"
+    pretty CaretStar        = "^*"
     pretty ConstTok         = "[:"
     pretty LBracePercent    = "{%"
     pretty LBraceOctothorpe = "#{"

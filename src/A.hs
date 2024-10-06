@@ -127,7 +127,7 @@ instance Pretty BUn where
     pretty Last       = "last#"
 
 data BTer = ZipW
-          | Fold | Scan | ScanL
+          | Fold | Scan | ScanList
           | Substr | Sub1 | Subs
           | Option
           | Captures | AllCaptures | Ixes
@@ -138,7 +138,7 @@ instance Pretty BTer where
     pretty ZipW        = ","
     pretty Fold        = "|"
     pretty Scan        = "^"
-    pretty ScanL       = "^*"
+    pretty ScanList    = "^*"
     pretty Substr      = "substr"
     pretty Option      = "option"
     pretty Captures    = "~*"
@@ -283,6 +283,7 @@ instance PS (E a) where
     ps d (EApp _ (EApp _ (EApp _ (TB _ Bookend) e) e') e'')  = parensp (d>3) (ps 4 e <> ",," <> ps 4 e' <+> ps 5 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ Fold) e) e') e'')     = parensp (d>5) (ps 6 e <> "|" <> ps 6 e' <+> ps 7 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ Scan) e) e') e'')     = parensp (d>5) (ps 6 e <> "^" <> ps 6 e' <+> ps 7 e'')
+    ps d (EApp _ (EApp _ (EApp _ (TB _ ScanList) e) e') e'') = parensp (d>5) (ps 6 e <> "^" <> ps 6 e' <+> ps 7 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ ZipW) op) e') e'')    = parensp (d>5) ("," <> ps 6 op <+> ps 7 e' <+> ps 8 e'')
     ps d (EApp _ (EApp _ (EApp _ (TB _ Captures) e) e') e'') = parensp (d>6) (ps 7 e <+> "~*" <+> ps 7 e' <+> ps 8 e'')
     ps d (EApp _ e0 e1) = parensp (d>10) (ps 10 e0 <+> ps 11 e1)

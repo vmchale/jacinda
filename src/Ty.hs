@@ -500,6 +500,9 @@ tyES s (TB _ ZipW) = do
 tyES s (TB _ Scan) = do
     a <- freshTV "a"; b <- freshTV "b"
     pure (TB (tyArr (b ~> a ~> b) (b ~> tyStream a ~> tyStream b)) Scan, s)
+tyES s (TB _ ScanList) = do
+    a <- freshTV "a"; b <- freshTV "b"
+    pure (TB (tyArr (b ~> a ~> b) (b ~> tyV a ~> tyV b)) ScanList, s)
 tyES s (TB _ Option) = do
     a <- freshTV "a"; b <- freshTV "b"
     pure (TB (b ~> (a ~> b) ~> tyOpt a ~> b) Option, s)
