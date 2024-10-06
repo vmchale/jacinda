@@ -70,6 +70,12 @@ using Awk.
 ps -aux | rg "$(ps -p $$ -o ppid=)" | ja '{ix=1}{`*}'
 ```
 
+# Filter GHC error messages to only those originating in some file
+
+```
+cabal -v0 build |& ja -R'\n\n' -F':' "{\`1='src/Ty.hs'}{\`0}"
+```
+
 # Find all distinct language extensions used in a project
 
 ```
@@ -135,7 +141,7 @@ curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/lat
 # Ctags
 
 ```
-ja -F= '{%/let *[[:lower:]][[:alnum:]]*/}{(⍳.`1)}' -i /development/dhall/dhall-kitty/conf.dhall
+ja -F= '{%/let\s*[[:lower:]][[:alnum:]]*/}{(⍳.`1)}' -i lib.dhall
 ```
 
 # Inflation
