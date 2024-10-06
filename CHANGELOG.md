@@ -2,6 +2,7 @@
   * Fix bug: backslashes string literals
   * Admit `\ESC` as escaped character
   * Allow values to be passed on the command-line
+  * Fix heinous bug that caused conditional expressions to crash
 
 # 3.1.1.1
 
