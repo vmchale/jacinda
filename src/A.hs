@@ -62,7 +62,7 @@ data T = TyB { tyBuiltin :: TB }
        | TyArr { tyArr0, tyArr1 :: T }
        | TyVar { tyVar :: Nm () }
        | TyTup { tyTups :: [T] }
-       | TyRec { tyres :: [(Nm (), T)] }
+       | TyRec { tyres :: NmMap T }
        | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
        | Ρ { tyΡ :: Nm (), tyρs :: NmMap T }
        deriving Eq
@@ -80,7 +80,7 @@ instance Pretty T where
     pretty (TyVar n)      = pretty n
     pretty (TyArr ty ty') = pretty ty <+> "⟶" <+> pretty ty'
     pretty (TyTup tys)    = j'Tup tys
-    pretty (TyRec rs)     = jrec ((\(n,t) -> pretty n <> ":" <+> pretty t)<$>rs)
+    pretty (TyRec rs)     = jrec ((\(n,t) -> pretty n <> ":" <+> pretty t)<$>Nm.toList rs)
     pretty (Rho n fs)     = braces (pretty n <+> pipe <+> prettyFields (IM.toList fs))
     pretty (Ρ n fs)       = braces (pretty n <+> pipe <+> prettyFields (Nm.toList fs))
 
@@ -127,7 +127,7 @@ instance Pretty BUn where
     pretty Last       = "last#"
 
 data BTer = ZipW
-          | Fold | Scan
+          | Fold | Scan | ScanL
           | Substr | Sub1 | Subs
           | Option
           | Captures | AllCaptures | Ixes
@@ -138,6 +138,7 @@ instance Pretty BTer where
     pretty ZipW        = ","
     pretty Fold        = "|"
     pretty Scan        = "^"
+    pretty ScanL       = "^*"
     pretty Substr      = "substr"
     pretty Option      = "option"
     pretty Captures    = "~*"

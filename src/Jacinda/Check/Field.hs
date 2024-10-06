@@ -20,7 +20,7 @@ instance Show LErr where show=show.pretty
 instance Exception LErr where
 
 cF :: E T -> Maybe LErr
-cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e); cF e@(Rec (TyRec rs) _) | any (isS.snd) rs = Just (RS e)
+cF e@(Tup (TyTup ts) _) | any isS ts = Just (TS e); cF e@(Rec (TyRec rs) _) | any isS rs = Just (RS e)
 cF e@Field{} = Just (NF e); cF e@AllField{} = Just (NF e); cF e@LastField{} = Just (NF e); cF e@FieldList{} = Just (NF e)
 cF e@(NB _ Ix) = Just (NF e); cF e@(NB _ Nf) = Just (NF e)
 cF IParseCol{} = Nothing; cF FParseCol{} = Nothing; cF ParseCol{} = Nothing; cF Column{} = Nothing

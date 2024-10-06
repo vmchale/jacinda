@@ -8,7 +8,6 @@ module Ty ( Subst
           ) where
 
 import           A
-import           C
 import           Control.Exception          (Exception, throw)
 import           Control.Monad              (zipWithM)
 import           Control.Monad.Except       (liftEither, throwError)
@@ -104,7 +103,7 @@ aT _ ty'@TyB{} = ty'
 aT um (ty:$ty') = aT um ty :$ aT um ty'
 aT um (TyArr ty ty') = TyArr (aT um ty) (aT um ty')
 aT um (TyTup tys)    = TyTup (aT um <$> tys)
-aT um (TyRec tys)    = TyRec (second (aT um) <$> tys)
+aT um (TyRec tys)    = TyRec (aT um <$> tys)
 
 mguPrep :: l -> Subst -> T -> T -> Either (Err l) Subst
 mguPrep l s = mgu l s `on` aT s
@@ -129,7 +128,7 @@ occ :: T -> IS.IntSet
 occ (TyVar (Nm _ (U i) _))  = IS.singleton i
 occ TyB{}                   = IS.empty
 occ (TyTup ts)              = foldMap occ ts
-occ (TyRec ts)              = foldMap (occ.snd) ts
+occ (TyRec ts)              = foldMap occ ts
 occ (t:$t')                 = occ t <> occ t'
 occ (TyArr t t')            = occ t <> occ t'
 occ (Rho (Nm _ (U i) _) rs) = IS.insert i (foldMap occ (IM.elems rs))
@@ -147,13 +146,12 @@ mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
 mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0
     = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
-mgu l s (Ρ n rs) t'@(TyRec ts) | all (`elem` (unU.unique.fst<$>ts)) (Nm.keys rs)
-    = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s (Nm.toList rs)
+mgu l s (Ρ n rs) t'@(TyRec ts) | rs `Nm.isSubmapOf` rs
+    = tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts Nm.! nr) tϵ) s (Nm.toList rs)
 mgu l s t@TyTup{} t'@Rho{} = mgu l s t' t
 mgu l s t@TyRec{} t'@Ρ{} = mgu l s t' t
--- TODO: NmMap TyRec
-mgu l s t@(TyRec ts) t'@(TyRec ts') | all (`elem` (unU.unique.fst<$>ts')) (unU.unique.fst<$>ts) = do
-    tS_ (\sϵ (nr, tϵ) -> IM.insert (unU$unique nr) t' <$> mguPrep l sϵ (find' ts nr) tϵ) s ts'
+mgu l s (TyRec ts) (TyRec ts') | ts `Nm.isSubmapOf` ts' && ts' `Nm.isSubmapOf` ts
+    = tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ Nm.elems $ Nm.intersectionWith (,) ts ts'
 mgu l s (Rho n rs) (Rho n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ IM.elems $ IM.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Rho n' (rs <> rs')) rss)
@@ -161,10 +159,6 @@ mgu l s (Ρ n rs) (Ρ n' rs') = do
     rss <- tS_ (\sϵ (t0,t1) -> mguPrep l sϵ t0 t1) s $ Nm.elems $ Nm.intersectionWith (,) rs rs'
     pure (IM.insert (unU$unique n) (Ρ n' (rs <> rs')) rss)
 mgu l _ t t' = Left $ UF l t t'
-
-find' :: [(Nm a, b)] -> Nm a -> b
-find' rs rn = case find (\(n,_) -> n==rn) rs of
-    Just (_, x) -> x
 
 tS_ :: Monad m => (Subst -> b -> m Subst) -> Subst -> [b] -> m Subst
 tS_ _ s []     = pure s
@@ -181,7 +175,7 @@ substInt tys k =
         Just (ty0:$ty1)      -> Just $ let tys'=IM.delete k tys in aT tys' ty0 :$ aT tys' ty1
         Just (TyArr ty0 ty1) -> Just $ let tys'=IM.delete k tys in TyArr (aT tys' ty0) (aT tys' ty1)
         Just (TyTup tysϵ)    -> Just $ let tys'=IM.delete k tys in TyTup (aT tys'<$>tysϵ)
-        Just (TyRec tysϵ)    -> Just $ let tys'=IM.delete k tys in TyRec (second (aT tys')<$>tysϵ)
+        Just (TyRec tysϵ)    -> Just $ let tys'=IM.delete k tys in TyRec (aT tys'<$>tysϵ)
         Just ty'@Rho{}       -> Just $ aT (IM.delete k tys) ty'
         Just ty'@Ρ{}         -> Just $ aT (IM.delete k tys) ty'
         Just ty'             -> Just ty'
@@ -223,7 +217,7 @@ cloneTy i ty = flip runState (i, IM.empty) $ cloneTyM ty
           cloneTyM (TyArr tyϵ ty')               = TyArr <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (tyϵ:$ty')                    = (:$) <$> cloneTyM tyϵ <*> cloneTyM ty'
           cloneTyM (TyTup tys)                   = TyTup <$> traverse cloneTyM tys
-          cloneTyM (TyRec tys)                   = TyRec <$> traverse (secondM cloneTyM) tys
+          cloneTyM (TyRec tys)                   = TyRec <$> traverse cloneTyM tys
           cloneTyM (Rho n tys)                   = Rho n <$> traverse cloneTyM tys
           cloneTyM (Ρ n tys)                     = Ρ n <$> traverse cloneTyM tys
           cloneTyM tyϵ@TyB{}                     = pure tyϵ
@@ -240,7 +234,7 @@ checkType (TyB TyFloat) (IsEq, _)        = pure ()
 checkType (TyB TyBool) (IsEq, _)         = pure ()
 checkType (TyB TyStr) (IsEq, _)          = pure ()
 checkType (TyTup tys) (c@IsEq, l)        = traverse_ (`checkType` (c, l)) tys
-checkType (TyRec tys) (c@IsEq, l)        = traverse_ ((`checkType` (c, l)).snd) tys
+checkType (TyRec tys) (c@IsEq, l)        = traverse_ (`checkType` (c, l)) tys
 checkType (Rho _ rs) (c@IsEq, l)         = traverse_ (`checkType` (c, l)) (IM.elems rs)
 checkType (Ρ _ rs) (c@IsEq, l)           = traverse_ (`checkType` (c, l)) (Nm.elems rs)
 checkType (TyB TyVec:$ty) (c@IsEq, l)    = checkType ty (c, l)
@@ -264,7 +258,7 @@ checkType (TyB TyFloat) (IsPrintf, _)    = pure ()
 checkType (TyB TyI) (IsPrintf, _)        = pure ()
 checkType (TyB TyBool) (IsPrintf, _)     = pure ()
 checkType (TyTup tys) (c@IsPrintf, l)    | not$any nest tys = traverse_ (`checkType` (c, l)) tys
-checkType (TyRec tys) (c@IsPrintf, l)    | tys' <- snd<$>tys, not$any nest tys' = traverse_ (`checkType` (c, l)) tys'
+checkType (TyRec tys) (c@IsPrintf, l)    | tys' <- Nm.elems tys, not$any nest tys' = traverse_ (`checkType` (c, l)) tys'
 checkType (Rho _ rs) (c@IsPrintf, l)     | tys <- IM.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
 checkType (Ρ _ rs) (c@IsPrintf, l)       | tys <- Nm.elems rs, not$any nest tys = traverse_ (`checkType` (c, l)) tys
 checkType ty (c, l)                      = throwError $ Doesn'tSatisfy l ty c
@@ -311,7 +305,7 @@ isAmbiguous TyVar{}        = True
 isAmbiguous (TyArr ty ty') = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (ty:$ty')      = isAmbiguous ty || isAmbiguous ty'
 isAmbiguous (TyTup tys)    = any isAmbiguous tys
-isAmbiguous (TyRec tys)    = any (isAmbiguous.snd) tys
+isAmbiguous (TyRec tys)    = any isAmbiguous tys
 isAmbiguous TyB{}          = False
 isAmbiguous Rho{}          = True
 isAmbiguous Ρ{}            = True
@@ -540,7 +534,7 @@ tyES s (Tup _ es) = do {(es', s') <- tS tyES s es; pure (Tup (TyTup (fmap eLoc e
 tyES s (Rec _ es) = do
     (es', s') <- tS tyES s esϵ
     let ts=eLoc<$>es'; ns'=zipWith ($>) ns ts
-    pure (Rec (TyRec (zip (void<$>ns) ts)) (zip ns' es'), s')
+    pure (Rec (TyRec (Nm.fromList (zip (void<$>ns) ts))) (zip ns' es'), s')
   where
     (ns,esϵ) = unzip es
 tyES s (Var _ n) = do {t <- lookupVar n; pure (Var t (n$>t), s)}
