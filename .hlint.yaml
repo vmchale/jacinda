@@ -1,6 +1,7 @@
 - fixity: infixr 6 <#>
 - fixity: infixr 0 ~>
 - fixity: infixr 0 :$
+- fixity: infixl 9 !
 
 - ignore: {name: Use const}
 - ignore: {name: Replace case with fromMaybe}
