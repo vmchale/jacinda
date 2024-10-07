@@ -127,6 +127,7 @@ unit (EApp _ (EApp _ (BB _ Report) es) e) = do
     (iEnv, μ) <- ctx es t
     (rEnv, g) <- φ e r
     pure (Just r, [t], iEnv<>rEnv, μ@.g)
+unit e = error ("Internal error. '" ++ show e ++ "' assigned unit type?")
 
 pS p = if p then (*>fflush).pDocLn else pDocLn where fflush = hFlush stdout
 
