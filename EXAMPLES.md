@@ -283,3 +283,33 @@ maximum := [max|_1 x]
 futhark defs lib/github.com/vmchale/img-fut/img.fut | \
     ja -F'[\s+:]' "{|sprintf '%s\t%s\tcall cursor(%s,%s)' (\`2.\`3.\`4.(splitc \`5 '-').1)}"
 ```
+
+# Extract C Dependencies
+
+```
+@include 'prelude/fn.jac'
+
+fn dirname(x) :=
+  x ~* 1 /([^\/]*\/)*(.*)/;
+
+fn src(d) :=
+  d ~* 1 /^\s*#include\s*"([^"]*)"/;
+
+let
+  val dir := fromMaybe '.' (dirname fp) + '/'
+in [(dir +)"src x]:?$0 end
+```
+
+One would invoke like so (zsh):
+
+```zsh
+for d in $(ja run cdeps.jac -i src/frame.c); do realpath $d; done
+```
+
+This could be used for better dependency tracking in a Makefile, viz.
+
+```makefile
+C_SRC := $(shell for d in $$(ja run cdeps.jac -i src/main.c); do realpath $$d; done | ja "[x+' '+y]|> \$$0")
+
+src/main.c: $(C_SRC)
+```
