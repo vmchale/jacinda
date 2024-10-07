@@ -82,54 +82,9 @@ cabal -v0 build |& ja -R'\n\n' -F':' "{\`1='src/Ty.hs'}{\`0}"
 fd '\.hs$' . -x ja '.?{|`0 ~* 1 /LANGUAGE\s*([a-zA-Z]*)\s*#-/}' -i | ja '~.$0'
 ```
 
-One can make this more rigorous (allowing for `{-# LANGUAGE Xxx,Yyy #-}` with:
+This is not entirely rigorous; it does not account for `{-# LANGUAGE Xxx,Yyy #-}`.
 
-```
-@include'lib/string.jac'
-
-fn findExtensions(line) :=
-  let
-    val extStr ≔ line ~* 1 /\{-#\s*LANGUAGE\s*([^\s]*)\s*#-\}/
-    val extList ≔ (\s.split s /,\s*/)"extStr
-  in extList end;
-
-(\x.(intercalate'\n')"(findExtensions x)):?$0
-```
-
-Which we invoke with:
-
-```
-fd '\.hs$' . -x ja run hsExtensions.jac -i | ja '~.$0'
-```
-
-This can be used to populate the `other-extensions` field in a `.cabal` file.
-
-## Terse Style
-
-Suppose we have a Haskell file with several GHC pragmas and we wish to condense them to a single line.
-
-```haskell
-{-# LANGUAGE DeriveFoldable    #-}
-{-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE DeriveGeneric     #-}
-{-# LANGUAGE DeriveTraversable #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE TypeFamilies      #-}
-```
-
-Then we could use
-
-```
-let
-  val list := [x+', '+y]|>[x ~* 1 /\{-#\s*LANGUAGE\s*([^\s]*)\s*#-\}/]:?$0
-in sprintf '{-# LANGUAGE %s -#}' list end
-```
-
-We'd get:
-
-```haskell
-{-# LANGUAGE DeriveFoldable, DeriveFunctor, DeriveGeneric, DeriveTraversable, OverloadedStrings, TypeFamilies -#}
-```
+This could be used to populate the `other-extensions` field in a `.cabal` file.
 
 # NYC Vaccine Effectiveness
 
