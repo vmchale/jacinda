@@ -37,7 +37,7 @@ awk '{ total = total + NF }; END {print total}'
 ```
 
 ```
-ja '(+)|0 {|#*`$}
+ja '(+)|0 {|#*`$}'
 ```
 
 # Get Version
