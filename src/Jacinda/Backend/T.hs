@@ -46,6 +46,7 @@ data EvalErr = EmptyFold
              | InternalTmp Tmp
              | InternalNm (Nm T)
              | InternalArityOrEta Int (E T)
+             | InternalUnexpectedStream (E T)
              deriving (Show)
 
 instance Exception EvalErr where
@@ -170,6 +171,27 @@ collect (Cond t p e0 e1) = do
     (env0, f0, e0') <- collect e0
     (env1, f1, e1') <- collect e1
     pure (envp<>env0<>env1, pg@.f0@.f1, Cond t p' e0' e1')
+collect (Lam t n e) = do
+    (env,f,e') <- collect e
+    pure (env,f,Lam t n e')
+collect (OptionVal t (Just e)) = do
+    (env, f, e') <- collect e
+    pure (env, f, OptionVal t (Just e'))
+collect (OptionVal t Nothing) = pure (mempty, const id, OptionVal t Nothing)
+collect e@Column{} = throw $ InternalUnexpectedStream e
+collect e@IParseCol{} = throw $ InternalUnexpectedStream e
+collect e@FParseCol{} = throw $ InternalUnexpectedStream e
+collect e@ParseCol{} = throw $ InternalUnexpectedStream e
+collect e@AllColumn{} = throw $ InternalUnexpectedStream e
+collect e@ParseAllCol{} = throw $ InternalUnexpectedStream e
+collect e@IParseAllCol{} = throw $ InternalUnexpectedStream e
+collect e@FParseAllCol{} = throw $ InternalUnexpectedStream e
+collect e@Guarded{} = throw $ InternalUnexpectedStream e
+collect e@Implicit{} = throw $ InternalUnexpectedStream e
+collect Field{} = throw NakedField
+collect LastField{} = throw NakedField
+collect AllField{} = throw NakedField
+collect FieldList{} = throw NakedField
 
 f @. g = \l -> f l.g l
 
