@@ -15,6 +15,7 @@ import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first, second)
 import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as ASCII
 import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (void)
 import qualified Data.Text as T
@@ -24,6 +25,7 @@ import A
 import L
 import Nm hiding (loc)
 import qualified Nm
+import NumParse
 import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
 }
@@ -402,8 +404,14 @@ type Parse = ExceptT (ParseError AlexPosn) Alex
 parseThrow :: Parse a -> T.Text -> a
 parseThrow p = snd.either throw id.runParse p
 
+guess :: AlexPosn -> BS.ByteString -> E AlexPosn
+guess x b | BS.all (\c -> c>=48 && c<=57) b = Lit x (ILit$readDigits b)
+          | BS.all (\c -> c>=48 && c<=57 || c==46) b = Lit x (FLit$readFloat b)
+          | Just ('/',_) <- ASCII.uncons b, Just (_,'/') <- ASCII.unsnoc b = RegexLit x (BS.tail (BS.init b))
+          | otherwise = Lit x (StrLit b)
+
 df :: T.Text -> BS.ByteString -> Alex (E AlexPosn -> E AlexPosn)
-df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, Lit l (StrLit x)))}
+df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, guess l x))}
 
 parse :: T.Text -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
