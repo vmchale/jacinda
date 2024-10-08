@@ -369,6 +369,18 @@ Running this on its own will fail:
 ja: 22:36 'name' is not in scope.
 ```
 
+We can specify `name` per-invocation like so:
+
+```
+> ja run ris2bib.jac -i shannon.ris -Dname='shannon1948'
+@article{shannon1948,
+    author={Shannon, Claude E.},
+    year={1948},
+    title={A Mathematical Theory of Communication},
+    volume={27},
+}
+```
+
 # Examples
 
 ## Vim Tags
