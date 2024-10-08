@@ -47,7 +47,7 @@ ja - Jacinda: data filtering, processing, reporting
 **-\-csv**
 :   Process as CSV
 
-**-Dcount=1**
+**-Dfile=main.c**
 :   Define variable
 
 # LANGUAGE
