@@ -59,7 +59,7 @@ parseLib incls fp = do
         Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
         Right (st', (is, ds)) -> do {put st'; dss <- traverse (parseLib incls) is; pure (concat dss ++ fmap rwD ds)}
 
-parseP :: [FilePath] -> T.Text -> [(T.Text, BS.ByteString)] -> StateT AlexUserState IO (Program AlexPosn)
+parseP :: [FilePath] -> T.Text -> [(T.Text, Value)] -> StateT AlexUserState IO (Program AlexPosn)
 parseP incls src var = do
     st <- get
     case parseWithCtx src var st of
@@ -70,7 +70,7 @@ parseP incls src var = do
             pure $ Program (concat dss ++ fmap rwD ds) (rwE e)
 
 -- | Parse + rename
-parsePWithMax :: [FilePath] -> T.Text -> [(T.Text, BS.ByteString)] -> IO (Program AlexPosn, Int)
+parsePWithMax :: [FilePath] -> T.Text -> [(T.Text, T.Text)] -> IO (Program AlexPosn, Int)
 parsePWithMax incls src vars = uncurry rP.swap.second fst3 <$> runStateT (parseP incls src vars) alexInitUserState
     where fst3 (x,_,_) = x
 
@@ -139,7 +139,7 @@ compileFS = maybe defaultRurePtr tcompile
 runOnBytes :: [FilePath]
            -> FilePath -- ^ Data file name, for @nf@
            -> T.Text -- ^ Program
-           -> [(T.Text, BS.ByteString)]
+           -> [(T.Text, Value)]
            -> Mode
            -> BSL.ByteString
            -> IO ()
@@ -164,14 +164,14 @@ runOnBytes incls fp src vars mode contents = do
 
 runStdin :: [FilePath]
          -> T.Text -- ^ Program
-         -> [(T.Text, BS.ByteString)]
+         -> [(T.Text, Value)]
          -> Mode
          -> IO ()
 runStdin is src vars m = runOnBytes is "(stdin)" src vars m =<< BSL.hGetContents stdin
 
 runOnFile :: [FilePath]
           -> T.Text
-          -> [(T.Text, BS.ByteString)]
+          -> [(T.Text, Value)]
           -> Mode
           -> FilePath
           -> IO ()

@@ -8,15 +8,13 @@
                   -- * Type synonyms
                   , File
                   , Library
+                  , Value
                   ) where
 
 import Control.Exception (Exception, throw)
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first, second)
-import qualified Data.ByteString as BS
-import qualified Data.ByteString.Char8 as ASCII
-import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (void)
 import qualified Data.Text as T
 import Data.Text.Encoding (encodeUtf8)
@@ -25,13 +23,13 @@ import A
 import L
 import Nm hiding (loc)
 import qualified Nm
-import NumParse
 import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
 }
 
 %name parseF File
 %name parseLib Library
+%name pValue Value
 %tokentype { Token AlexPosn }
 %errorhandlertype explist
 %error { parseError }
@@ -227,6 +225,12 @@ BBin :: { BBin }
      | report { Report }
      | amp { Nier }
 
+Value :: { E AlexPosn }
+      : intLit { Lit (loc $1) (ILit (int $1)) }
+      | floatLit { Lit (loc $1) (FLit (float $1)) }
+      | boolLit { Lit (loc $1) (BLit (boolTok $1)) }
+      | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
+
 Bind :: { (Nm AlexPosn, E AlexPosn) }
      : val name defEq E { ($2, $4) }
 
@@ -377,8 +381,9 @@ E :: { E AlexPosn }
 {
 
 type File = ([FilePath], Program AlexPosn)
-
 type Library = ([FilePath], [D AlexPosn])
+
+type Value = T.Text
 
 parseError :: (Token AlexPosn, [String]) -> Parse a
 parseError = throwError . uncurry Unexpected
@@ -404,13 +409,12 @@ type Parse = ExceptT (ParseError AlexPosn) Alex
 parseThrow :: Parse a -> T.Text -> a
 parseThrow p = snd.either throw id.runParse p
 
-guess :: AlexPosn -> BS.ByteString -> E AlexPosn
-guess x b | BS.all (\c -> c>=48 && c<=57) b = Lit x (ILit$readDigits b)
-          | BS.all (\c -> c>=48 && c<=57 || c==46) b = Lit x (FLit$readFloat b)
-          | Just ('/',_) <- ASCII.uncons b, Just (_,'/') <- ASCII.unsnoc b = RegexLit x (BS.tail (BS.init b))
-          | otherwise = Lit x (StrLit b)
+guess :: AlexPosn -> T.Text -> E AlexPosn
+guess l v = case snd<$>runParse pValue v of
+    Right e -> e
+    Left {} -> Lit l (StrLit$encodeUtf8 v)
 
-df :: T.Text -> BS.ByteString -> Alex (E AlexPosn -> E AlexPosn)
+df :: T.Text -> Value -> Alex (E AlexPosn -> E AlexPosn)
 df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, guess l x))}
 
 parse :: T.Text -> Either (ParseError AlexPosn) File
@@ -420,13 +424,13 @@ parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
 
-binds :: [(T.Text, BS.ByteString)] -> Alex (E AlexPosn -> E AlexPosn)
+binds :: [(T.Text, Value)] -> Alex (E AlexPosn -> E AlexPosn)
 binds = fmap thread.traverse (uncurry df) where thread = foldr (.) id
 
-parseCli :: [(T.Text, BS.ByteString)] -> Parse File
+parseCli :: [(T.Text, Value)] -> Parse File
 parseCli vs = lift (fmap (second.mapExpr) (binds vs)) <*> parseF
 
-parseWithCtx :: T.Text -> [(T.Text, BS.ByteString)] -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithCtx :: T.Text -> [(T.Text, Value)] -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithCtx src vars = parseWithInitSt (parseCli vars) src
 
 parseLibWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)

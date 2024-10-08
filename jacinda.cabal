@@ -120,7 +120,6 @@ executable ja
     build-depends:
         base,
         jacinda-lib,
-        bytestring,
         optparse-applicative >=0.14.1.0,
         text
 

@@ -8,24 +8,23 @@ import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
 import           File
-import qualified Data.ByteString as BS
-import Data.Text.Encoding (encodeUtf8)
 import           Options.Applicative (HasCompleter, Mod, Parser, argument, bashCompleter, command, completer, execParser, fullDesc, header, help, helper, hsubparser, info,
                                       infoOption, long, many, metavar, option, optional, progDesc, short, str, strOption, switch)
+import           Parser              (Value)
 import qualified Paths_jacinda       as P
 
 data Cmd = TC !FilePath ![FilePath]
-         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, BS.ByteString)]
+         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, Value)]
          | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
          | Eval !T.Text
          | Install
 
-kv :: T.Text -> (T.Text, BS.ByteString)
+kv :: T.Text -> (T.Text, Value)
 kv inp = case T.splitOn "=" inp of
-    [k,v] -> (k, encodeUtf8 v)
+    [k,v] -> (k, v)
     _     -> error "Values specified on the command-line must be of the form -Dvar=value"
 
-defVar :: Parser [(T.Text, BS.ByteString)]
+defVar :: Parser [(T.Text, Value)]
 defVar = many $ fmap kv (option str
     (short 'D'
     <> metavar "VALUE"
