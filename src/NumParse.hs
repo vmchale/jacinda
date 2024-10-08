@@ -1,4 +1,4 @@
-module Jacinda.Backend.Parse ( readDigits, readFloat ) where
+module NumParse ( readDigits, readFloat ) where
 
 import qualified Data.ByteString       as BS
 import qualified Data.ByteString.Char8 as ASCII

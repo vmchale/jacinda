@@ -65,12 +65,12 @@ library jacinda-lib
         U
         R
         Jacinda.Check.Field
-        Jacinda.Backend.Parse
         Jacinda.Backend.Const
         Jacinda.Backend.T
         Jacinda.Backend.Printf
         Include
         Nm.Map
+        NumParse
         Data.Vector.Ext
         C
         Paths_jacinda

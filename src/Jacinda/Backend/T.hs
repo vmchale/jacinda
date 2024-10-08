@@ -25,10 +25,10 @@ import qualified Data.Vector                       as V
 import           Data.Vector.Ext                   (scanlM')
 import           Data.Word                         (Word8)
 import           Jacinda.Backend.Const
-import           Jacinda.Backend.Parse
 import           Jacinda.Backend.Printf
 import           Jacinda.Regex
 import           Nm
+import           NumParse
 import           Prettyprinter                     (hardline, pretty)
 import           Prettyprinter.Render.Text         (putDoc)
 import           Regex.Rure                        (RureMatch (RureMatch), RurePtr)
