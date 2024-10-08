@@ -2,29 +2,30 @@
 
 module Main (main) where
 
-import           A                   (L, Mode (..))
+import           A                   (Mode (..))
 import           Control.Applicative ((<|>))
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
 import           File
+import qualified Data.ByteString as BS
+import Data.Text.Encoding (encodeUtf8)
 import           Options.Applicative (HasCompleter, Mod, Parser, argument, bashCompleter, command, completer, execParser, fullDesc, header, help, helper, hsubparser, info,
                                       infoOption, long, many, metavar, option, optional, progDesc, short, str, strOption, switch)
-import           Parser              (pLit)
 import qualified Paths_jacinda       as P
 
 data Cmd = TC !FilePath ![FilePath]
-         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, L)]
+         | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, BS.ByteString)]
          | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath]
          | Eval !T.Text
          | Install
 
-kv :: T.Text -> (T.Text, L)
+kv :: T.Text -> (T.Text, BS.ByteString)
 kv inp = case T.splitOn "=" inp of
-    [k,v] -> (k, pLit v)
-    _     -> error "Values specified on the command-line must be of the form -Dcutoff=1"
+    [k,v] -> (k, encodeUtf8 v)
+    _     -> error "Values specified on the command-line must be of the form -Dvar=value"
 
-defVar :: Parser [(T.Text, L)]
+defVar :: Parser [(T.Text, BS.ByteString)]
 defVar = many $ fmap kv (option str
     (short 'D'
     <> metavar "VALUE"

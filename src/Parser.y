@@ -1,7 +1,6 @@
 {
     {-# LANGUAGE OverloadedStrings #-}
-    module Parser ( pLit
-                  , parse
+    module Parser ( parse
                   , parseWithMax
                   , parseWithCtx
                   , parseLibWithCtx
@@ -15,6 +14,7 @@ import Control.Exception (Exception, throw)
 import Control.Monad.Except (ExceptT, runExceptT, throwError)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first, second)
+import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (void)
 import qualified Data.Text as T
@@ -30,7 +30,6 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 
 %name parseF File
 %name parseLib Library
-%name parseL L
 %tokentype { Token AlexPosn }
 %errorhandlertype explist
 %error { parseError }
@@ -403,11 +402,8 @@ type Parse = ExceptT (ParseError AlexPosn) Alex
 parseThrow :: Parse a -> T.Text -> a
 parseThrow p = snd.either throw id.runParse p
 
-pLit :: T.Text -> L
-pLit = snd.parseThrow parseL
-
-df :: T.Text -> L -> Alex (E AlexPosn -> E AlexPosn)
-df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, Lit l x))}
+df :: T.Text -> BS.ByteString -> Alex (E AlexPosn -> E AlexPosn)
+df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, Lit l (StrLit x)))}
 
 parse :: T.Text -> Either (ParseError AlexPosn) File
 parse = fmap snd . runParse parseF
@@ -416,13 +412,13 @@ parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst3) . runParse parseF
     where fst3 (x, _, _) = x
 
-binds :: [(T.Text, L)] -> Alex (E AlexPosn -> E AlexPosn)
+binds :: [(T.Text, BS.ByteString)] -> Alex (E AlexPosn -> E AlexPosn)
 binds = fmap thread.traverse (uncurry df) where thread = foldr (.) id
 
-parseCli :: [(T.Text, L)] -> Parse File
+parseCli :: [(T.Text, BS.ByteString)] -> Parse File
 parseCli vs = lift (fmap (second.mapExpr) (binds vs)) <*> parseF
 
-parseWithCtx :: T.Text -> [(T.Text, L)] -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
+parseWithCtx :: T.Text -> [(T.Text, BS.ByteString)] -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, File)
 parseWithCtx src vars = parseWithInitSt (parseCli vars) src
 
 parseLibWithCtx :: T.Text -> AlexUserState -> Either (ParseError AlexPosn) (AlexUserState, Library)
