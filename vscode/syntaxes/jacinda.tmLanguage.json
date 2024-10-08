@@ -21,7 +21,7 @@
       "name": "keyword"
     },
     {
-      "match": "(splitc|sprintf|option|match|captures|fp|nf|rs|fs|ors|ofs|csv|asv|usv|ix|substr|split|min|max|Some|None|mapMaybe|dedup|filter|fold|fold1|scan|dedupOn|catMaybes|sub1|subs|(take|drop|head|tail|init|last)#)",
+      "match": "(splitc|sprintf|option|match|captures|fp|nf|rs|fs|ors|ofs|csv|asv|usv|ix|substr|split|min|max|Some|None|mapMaybe|dedup|filter|fold|fold1|scan|dedupOn|catMaybes|sub1|subs|ices|(take|drop|head|tail|init|last)#)",
       "name": "constant.language"
     },
     {
