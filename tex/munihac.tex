@@ -12,6 +12,7 @@
 \setmonofont{Jet Brains Mono}[Scale=MatchAveragecase]
 
 \newcommand{\underverb}[2] {$\underbrace{\verb+#1+}_{\textrm{#2}}$}
+\newcommand{\blue}[2] {\textcolor{blue}{#1}}
 
 \title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
 \author{Vanessa McHale}
@@ -29,12 +30,61 @@
     \item Implementation
       \begin{itemize}
         \item Haskell
-          % HOAS...
       \end{itemize}
   \end{enumerate}
 \end{frame}
 
 % printenv | ja -F= '{% /^PATH/}{`2}'
+% python3 --version | rg '(\d+\.\d+)\.\d+' -o -r '$$1'
+
+\begin{frame}[fragile]
+  \frametitle{Unix Command-Line}
+  \begin{itemize}
+    \item
+      \begin{verbatim}
+~ % ps
+  PID   TT  STAT      TIME COMMAND
+  ⋮
+22970 s002  S      0:00.07 -zsh
+22989 s002  S+     0:00.21 cabal repl lib:apple
+23031 s002  S+     0:00.03 /Users/vanessa/.ghcup/bin/cabal
+23033 s002  S+     0:10.46 /Users/vanessa/.ghcup/ghc/9.10.1/lib/
+      \end{verbatim}
+      \item
+        \begin{verbatim}
+~ % ps | rg cabal
+23613 s001  R+     0:00.00 rg cabal
+23400 s002  S+     0:00.16 cabal repl lib:apple
+23401 s002  S+     0:00.04 /Users/vanessa/.ghcup/bin/cabal
+23403 s002  S+     0:11.17 /Users/vanessa/.ghcup/ghc/9.10.1/lib
+        \end{verbatim}
+    % ps a | rg 'cabal' | rg -v 'rg' | cut -d' ' -f1
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Unix Command-Line}
+  \begin{itemize}
+      \item
+        \begin{verbatim}
+~ % ps | rg cabal | rg -v rg
+23400 s002  S+     0:00.16 cabal repl lib:apple
+23401 s002  S+     0:00.04 /Users/vanessa/.ghcup/bin/cabal
+23403 s002  S+     0:11.17 /Users/vanessa/.ghcup/ghc/9.10.1/lib
+        \end{verbatim}
+      \item
+        \begin{verbatim}
+~ % ps | rg 'cabal' | rg -v 'rg' | cut -d' ' -f1
+24144
+24196
+24198
+        \end{verbatim}
+      \item
+        \begin{verbatim}
+~ % kill $(ps | rg cabal | rg -v rg | cut -d' ' -f1)
+        \end{verbatim}
+    \end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Stuctured Text in Unix}
@@ -60,6 +110,28 @@ Load command 13
 \end{frame}
 
 \begin{frame}[fragile]
+  \frametitle{Stuctured Text in Unix}
+    \begin{Verbatim}[commandchars=\\\{\}]
+ % otool -l $(locate librure.dylib)
+⋮
+Load command 12
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         \blue{name}  /usr/lib/libiconv.2.dylib (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 7.0.0
+compatibility version 7.0.0
+Load command 13
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         \blue{name}  /usr/lib/libSystem.B.dylib (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 1351.0.0
+⋮
+    \end{Verbatim}
+\end{frame}
+
+\begin{frame}[fragile]
   \frametitle{Crash Course}
   \framesubtitle{Polymorphic Syntax Trees}
     \begin{itemize}
@@ -67,9 +139,33 @@ Load command 13
       \begin{verbatim}
 data Expr a = RealLit a !Double
             | Var a !Name
+            | Lam a Name (Expr a)
+            ⋮
 \end{verbatim}
+      \item \verb|parse :: String -> Expr Loc|
       \item Functorial!
+        \begin{itemize}
+          \item \verb|void :: Expr Loc -> Expr ()|
+          \item \verb|DeriveFunctor|
+        \end{itemize}
     \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Crash Course}
+  \framesubtitle{No Symbol Table}
+  \begin{itemize}
+      \item Annotate AST with types
+        \begin{verbatim}
+tyOf :: Expr Loc -> Either TyErr (Expr Type)
+        \end{verbatim}
+      \item
+        \begin{verbatim}
+applySubstE :: Subst -> Expr Type -> Expr Type
+applySubstE s = fmap (applySubst s)
+        \end{verbatim}
+      \item GHC approach
+  \end{itemize}
 \end{frame}
 
 % objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
