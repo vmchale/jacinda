@@ -1,5 +1,5 @@
-Jacinda is a functional pattern sifting language,
-a smaller [AWK](http://www.awklang.org).
+Jacinda is a functional pattern filtering language,
+inspired by [AWK](http://www.awklang.org).
 
 # Installation
 
@@ -32,7 +32,7 @@ Unix uses record separators in many places; we can display one entry in the
 echo $PATH | ja -F: "{|[x+'\n'+y]|>\`$}"
 ```
 
-Many Unix tools output much information separated with spaces. We use regular
+Many Unix tools output information separated with spaces. We use regular
 expressions to match relevant lines and then select the field with the data
 itself, viz.
 
@@ -48,12 +48,12 @@ printenv | ja -F= '{%/^PATH/}{`2}'
 
 # Documentation
 
-See the [guide](https://vmchale.github.io/jacinda/), which contains a tutorial
+See the [guide](https://vmchale.github.io/jacinda/) (archived on [Hackage](https://hackage.haskell.org/package/jacinda/src/doc/guide.pdf), which contains a tutorial
 on some of the features as well as examples.
 
-The manpages document the builtins and provide a syntax reference.
+The [manpages](https://hackage.haskell.org/package/jacinda/src/man/ja.1) document the builtins and provide a syntax reference.
 
-See the [rosetta](./ROSETTA.md) showing AWK alongside.
+See the [rosetta](./ROSETTA.md) showing AWK alongside, or the [examples][./EXAMPLES.md] for its own capabilities.
 
 # Status
 
