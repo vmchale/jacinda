@@ -1,6 +1,8 @@
+# 3.2.0.0
+
   * Add records and accessors (with row types)
-  * Fix bug: backslashes string literals
-  * Admit `\ESC` as escaped character
+  * Fix bug: backslashes in string literals
+  * Admit `\ESC` as escaped character (see `lib/color.jac`)
   * Allow values to be passed on the command-line
   * Fix heinous bug that caused conditional expressions to crash
 
