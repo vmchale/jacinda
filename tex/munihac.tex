@@ -2,8 +2,9 @@
 
 \documentclass{beamer}
 
-% \beamerdefaultoverlayspecification{<+->}
+\beamerdefaultoverlayspecification{<+->}
 
+\usepackage{amsmath}
 \usepackage{fontspec}
 \usepackage{fancyvrb}
 
@@ -11,8 +12,10 @@
 
 \setmonofont{Jet Brains Mono}[Scale=MatchAveragecase]
 
-\newcommand{\underverb}[2] {$\underbrace{\verb+#1+}_{\textrm{#2}}$}
+% \newcommand{\underverb}[2] {$\underbrace{\verb+#1+}_{\textrm{#2}}$}
 \newcommand{\blue}[2] {\textcolor{blue}{#1}}
+\newcommand{\green}[2] {\textcolor{green}{#1}}
+\newcommand{\intermezzo}[1]{\title{#1}\author{}\date{}\begin{frame}\titlepage\end{frame}}
 
 \title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
 \author{Vanessa McHale}
@@ -26,6 +29,10 @@
   \frametitle{Outline}
   \begin{enumerate}
     \item Unix and Functional Programming
+      \begin{itemize}
+        \item Regular Expressions
+      % Talk up awk? really popular!
+      \end{itemize}
     \item Show Off
     \item Implementation
       \begin{itemize}
@@ -33,9 +40,6 @@
       \end{itemize}
   \end{enumerate}
 \end{frame}
-
-% printenv | ja -F= '{% /^PATH/}{`2}'
-% python3 --version | rg '(\d+\.\d+)\.\d+' -o -r '$$1'
 
 \begin{frame}[fragile]
   \frametitle{Unix Command-Line}
@@ -52,26 +56,17 @@
       \end{verbatim}
       \item
         \begin{verbatim}
-~ % ps | rg cabal
-23613 s001  R+     0:00.00 rg cabal
+~ % ps | rg cabal | rg -v rg
 23400 s002  S+     0:00.16 cabal repl lib:apple
 23401 s002  S+     0:00.04 /Users/vanessa/.ghcup/bin/cabal
 23403 s002  S+     0:11.17 /Users/vanessa/.ghcup/ghc/9.10.1/lib
         \end{verbatim}
-    % ps a | rg 'cabal' | rg -v 'rg' | cut -d' ' -f1
   \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Unix Command-Line}
   \begin{itemize}
-      \item
-        \begin{verbatim}
-~ % ps | rg cabal | rg -v rg
-23400 s002  S+     0:00.16 cabal repl lib:apple
-23401 s002  S+     0:00.04 /Users/vanessa/.ghcup/bin/cabal
-23403 s002  S+     0:11.17 /Users/vanessa/.ghcup/ghc/9.10.1/lib
-        \end{verbatim}
       \item
         \begin{verbatim}
 ~ % ps | rg 'cabal' | rg -v 'rg' | cut -d' ' -f1
@@ -81,7 +76,8 @@
         \end{verbatim}
       \item
         \begin{verbatim}
-~ % kill $(ps | rg cabal | rg -v rg | cut -d' ' -f1)
+~ % ps | rg cabal | rg -v rg | \
+      cut -d' ' -f1 | xargs kill
         \end{verbatim}
     \end{itemize}
 \end{frame}
@@ -110,7 +106,7 @@ Load command 13
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Stuctured Text in Unix}
+  \frametitle{Structured Text in Unix}
     \begin{Verbatim}[commandchars=\\\{\}]
  % otool -l $(locate librure.dylib)
 ⋮
@@ -130,6 +126,56 @@ Load command 13
 ⋮
     \end{Verbatim}
 \end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Structured Text in Unix}
+    \begin{Verbatim}[commandchars=\\\{\}]
+ % otool -l $(locate librure.dylib)
+⋮
+Load command 12
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         \blue{name}  \green{/usr/lib/libiconv.2.dylib}  (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 7.0.0
+compatibility version 7.0.0
+Load command 13
+          cmd LC_LOAD_DYLIB
+      cmdsize 56
+         \blue{name}  \green{/usr/lib/libSystem.B.dylib}  (offset 24)
+   time stamp 2 Wed Dec 31 19:00:02 1969
+      current version 1351.0.0
+⋮
+    \end{Verbatim}
+\end{frame}
+
+% printenv | ja -F= '{% /^PATH/}{`2}'
+
+\begin{frame}[fragile]
+  \frametitle{Structured Text---Patterns}
+  \begin{itemize}
+    \item
+      \begin{verbatim}
+~ % otool -l $(locate librure.dylib) | \
+      awk '$1 ~ /^name/ {print $2}'
+      \end{verbatim}
+    \item $\underbrace{\mathtt{\$1 \~ /\^ name/}}_{\textrm{Execute on these lines}}$
+    % \item AWK: split into records (lines), split by fields
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Structured Text---Jacinda}
+  \begin{verbatim}
+~ % otool -l $(locate librure.dylib) | \
+      ja '{`1 ~ /^name/}{`2}'
+/usr/local/lib/librure.dylib
+/usr/lib/libiconv.2.dylib
+/usr/lib/libSystem.B.dylib
+  \end{verbatim}
+\end{frame}
+
+\intermezzo{Implementation}
 
 \begin{frame}[fragile]
   \frametitle{Crash Course}
@@ -170,7 +216,7 @@ applySubstE s = fmap (applySubst s)
 
 % objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
 % pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}'
-% https://github.com/vmchale/jacinda/blob/canon/GALLERY.md#extract-library-versions-unstripped
+% https://github.com/vmchale/jacinda/blob/canon/EXAMPLES.md#extract-library-versions-unstripped
 
 % Chess example?
 
