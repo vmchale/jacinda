@@ -12,7 +12,6 @@
 
 \setmonofont{Jet Brains Mono}[Scale=MatchAveragecase]
 
-% \newcommand{\underverb}[2] {$\underbrace{\verb+#1+}_{\textrm{#2}}$}
 \newcommand{\blue}[2] {\textcolor{blue}{#1}}
 \newcommand{\green}[2] {\textcolor{green}{#1}}
 \newcommand{\intermezzo}[1]{\title{#1}\author{}\date{}\begin{frame}\titlepage\end{frame}}
@@ -158,9 +157,13 @@ Load command 13
       \begin{verbatim}
 ~ % otool -l $(locate librure.dylib) | \
       awk '$1 ~ /^name/ {print $2}'
+
+/usr/local/lib/librure.dylib
+/usr/lib/libiconv.2.dylib
+/usr/lib/libSystem.B.dylib
       \end{verbatim}
-    % upbrace to first... hm
-    \item ~ \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \upbracefill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \crcr \noalign {\kern 3\dimen11\nointerlineskip} Execute on these lines \crcr\noalign{\kern 3\dimen11\nointerlineskip}}}
+      % fill second with spaces (enough for difference lol?)
+    \item ~ \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \upbracefill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \crcr \noalign {\kern 3\dimen11\nointerlineskip} \small{Execute on these lines} \crcr\noalign{\kern 3\dimen11\nointerlineskip}}}
     % \item AWK: split into records (lines), split by fields
   \end{itemize}
 \end{frame}
