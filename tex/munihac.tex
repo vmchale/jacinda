@@ -159,7 +159,8 @@ Load command 13
 ~ % otool -l $(locate librure.dylib) | \
       awk '$1 ~ /^name/ {print $2}'
       \end{verbatim}
-    \item {\halign {#\crcr \hfil \verb|$1 ~ /^name/| \hfil \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \upbracefill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \crcr \noalign {\kern 3\dimen11\nointerlineskip} Execute on these lines \crcr\noalign{\kern 3\dimen11\nointerlineskip}}}
+    % upbrace to first... hm
+    \item ~ \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \upbracefill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \crcr \noalign {\kern 3\dimen11\nointerlineskip} Execute on these lines \crcr\noalign{\kern 3\dimen11\nointerlineskip}}}
     % \item AWK: split into records (lines), split by fields
   \end{itemize}
 \end{frame}
