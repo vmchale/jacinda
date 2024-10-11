@@ -12,14 +12,24 @@
 
 \setmonofont{Jet Brains Mono}[Scale=MatchAveragecase]
 
+\renewcommand{\arraystretch}{0.8}
+
 \newcommand{\blue}[2] {\textcolor{blue}{#1}}
 \newcommand{\green}[2] {\textcolor{green}{#1}}
 
 \newcommand{\intermezzo}[1]{\title{#1}\author{}\date{}\begin{frame}\titlepage\end{frame}}
-\def\nil{\hspace{0pt}}
 \def\nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
-% TODO: shrink interline skip
 \def\bracel#1{\nl \upbracefill \nl\hfill \small{#1} \hfill\nl}
+
+\newcommand{\textbrace}[2]{
+  \begin{tabular}{c}
+    \begin{tabular}{c}
+      #1 \\
+      \upbracefill \hfill \\
+    \end{tabular} \\
+    #2
+  \end{tabular}
+}
 
 \title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
 \author{Vanessa McHale}
@@ -166,18 +176,23 @@ Load command 13
 /usr/lib/libiconv.2.dylib
 /usr/lib/libSystem.B.dylib
       \end{verbatim}
-      % \item
-        % \begin{tabular}{c}
-          % \begin{tabular}{c}
-            % \verb|$1 ~ /^name/| \\
-            % \upbracefill \hfill \\
-          % \end{tabular} \\
-          % \small{Execute on these lines}
-        % \end{tabular}
-      \item\nil\vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \bracel{Execute on these lines}}}
-      \item\nil\vtop{\halign {#\crcr \hfill \verb|{print $2}| \hfill \bracel{Do this}}}
+      \item
+        \begin{tabular}[t]{c}
+          \begin{tabular}[t]{c}
+            \verb|$1 ~ /^name/| \\
+            \upbracefill \hfill
+          \end{tabular} \\
+          \small{Execute on these lines}
+        \end{tabular}
+      \item
+        \begin{tabular}[t]{c}
+          \begin{tabular}[t]{c}
+            \verb|{print $2}| \\
+            \upbracefill \hfill \\
+          \end{tabular} \\
+          \small{Do this}
+        \end{tabular}
       \item \verb|<PATTERN> { <ACTION> }|
-    % \item AWK: split into records (lines), split by fields
   \end{itemize}
 \end{frame}
 
@@ -187,15 +202,29 @@ Load command 13
     \item
       % make output smaller?
       \begin{verbatim}
-    ~ % otool -l $(locate librure.dylib) | \
-          ja '{`1 ~ /^name/}{`2}'
+~ % otool -l $(locate librure.dylib) | \
+      ja '{`1 ~ /^name/}{`2}'
 
-    /usr/local/lib/librure.dylib
-    /usr/lib/libiconv.2.dylib
-    /usr/lib/libSystem.B.dylib
+/usr/local/lib/librure.dylib
+/usr/lib/libiconv.2.dylib
+/usr/lib/libSystem.B.dylib
       \end{verbatim}
-    \item\nil\vtop{\halign {#\crcr \hfill \verb+{`1 ~ /^name/}+ \hfill \bracel{Filter stream according to this}}}
-    \item\nil\vtop{\halign {#\crcr \hfill \verb|{`2}| \hfill \bracel{Stream contents}}}
+      \item
+        \begin{tabular}[t]{c}
+          \begin{tabular}[t]{c}
+            \verb|`1 ~ /^name/| \\
+            \upbracefill \hfill \\
+          \end{tabular} \\
+          \small{Filter stream according to this}
+        \end{tabular}
+      \item
+        \begin{tabular}[t]{c}
+          \begin{tabular}[t]{c}
+            \verb|{`2}|\\
+            \upbracefill \hfill \\
+          \end{tabular} \\
+          \small{Stream contents}
+        \end{tabular}
     \item \verb|{ <PROPOSITION> }{ <EXPR> }|
   \end{itemize}
 \end{frame}
@@ -228,7 +257,7 @@ Load command 13
     % \item Regular expressions are discovered
 
 \begin{frame}[fragile]
-  \frametitle{Shock and Awe}
+  \frametitle{Tour}
   \begin{itemize}
     \item Dump every assembly instruction used by your programs
       % objdump -d /usr/bin/* | cut -f3 | grep -oE "^[a-z]+" | sort | uniq -c
@@ -255,7 +284,7 @@ zip1.2s
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Shock and Awe}
+  \frametitle{Tour}
   \framesubtitle{Functional Approach}
   \begin{itemize}
     \item \verb|dedup : Ord a :=> Stream a -> Stream a|
@@ -265,7 +294,7 @@ zip1.2s
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Shock and Awe II}
+  \frametitle{Tour II}
   \begin{itemize}
     \item
       \begin{verbatim}
@@ -292,11 +321,15 @@ yaml-0.11.11.2
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Shock and Awe II}
+  \frametitle{Tour II}
   \framesubtitle{Functional Programming}
   \begin{itemize}
+    \item \verb,catMaybes {|`0 ~* 1 /<REGEX>/},
     \item \verb|catMaybes : Stream (Option a) -> Stream a|
     \item \verb|~* : Str -> Int -> Regex -> Option Str|
+    \item Regular expression captures (AWK not fluent)
+      % https://stackoverflow.com/a/4673336/11296354
+      % http://blog.vmchale.com/article/unix-ide-ii
   \end{itemize}
 \end{frame}
 
@@ -307,21 +340,40 @@ yaml-0.11.11.2
   \begin{itemize}
     \item
       \begin{verbatim}
-{ chars += length($0) + 1  # add one for the \n
-  words += NF
-}
-END{ print NR, words, chars }
-      \end{verbatim}
-      \item
-        \begin{verbatim}
+fn count(x) ≔
+  fold (+) 0 ([:1"x);
+
+fn isEven() :=
+  (~ /(0|2|4|6|8)$/);
+
+fn isOdd() :=
+  (~ /(1|3|5|7|9)$/);
+
 let
-  val sum := \x. (+)|0 x
-  val words := sum {|nf}
-  val lines := sum {|1}
-  val bytes := sum {|#`0+1}
-in sprintf '%i %i %i' (lines.words.bytes) end
-        \end{verbatim}
-      \item Passes over input three times!
+  val even := count (filter isEven $0)
+  val odd := count (filter isOdd $0)
+  val total := odd + even
+in (total . even . odd) end
+      \end{verbatim}
+    \item
+      \begin{verbatim}
+~ % seq 1000 | ja run evenOdd.jac
+(1000 . 500 . 500)
+      \end{verbatim}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \begin{itemize}
+    \item Passes over input multiple times!
+    \item AWK does better:
+      \begin{verbatim}
+/(0|2|4|6|8)$/ { even+=1 } 
+
+/(1|3|5|7|9)$/ { odd+=1 } 
+
+END { print even, odd, even + odd }
+      \end{verbatim}
   \end{itemize}
 \end{frame}
 
@@ -330,14 +382,21 @@ in sprintf '%i %i %i' (lines.words.bytes) end
   \framesubtitle{Problem}
   \begin{itemize}
     \item Less efficient
-    \item Rewrite expression involving folds
+    \item ...but folds are nicer
+    \item Rewrite expression with many folds
+      % action on environment
       \begin{itemize}
         \item \verb|Env -> Env|
         \item Read from \verb|Env| at end
         \item Two folds at once: \verb|(.)|
-          % environment updates
         \item No bytecode!
       \end{itemize}
+    \item
+      \begin{verbatim}
+type Env = Map Temp (Maybe Expr)
+      \end{verbatim}
+    \item \verb|Maybe Expr| for filter
+      % \verb|Env| each line
   \end{itemize}
 \end{frame}
 
@@ -375,16 +434,51 @@ applySubstE :: Subst -> Expr Type -> Expr Type
 applySubstE s = fmap (applySubst s)
         \end{verbatim}
       \item GHC approach
+      % \item Pattern match on type
   \end{itemize}
 \end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Compiler Machinery}
-  \begin{enumerate}
-    \item $\eta$-expand \verb|(+)| to \verb|\x.\y. x+y|
-    % Associate argument \verb|x| with some temporary when we enter the lambda's scope, then replace all subsequent \verb|x| with reads from the environment (generate temporary)
+  \begin{itemize}
+    \item Consider \verb|fold (+) 0 xs|
+    \begin{enumerate}
+      \item Place \verb|0| in the \verb|Env|
+      \item Turn \verb|+| into something that updates the \verb|Env|
+      \item Read from the \verb|Env|
+      \item Multiple folds: apply all \verb|Env| updates
+    \end{enumerate}
+    \item What about \verb|(+)|?
+    \begin{enumerate}
+      \item $\eta$-expand \verb|(+)| to \verb|\x.\y. x+y|
+      \item Associate \verb|x| with some key in \verb|Env|
+      \item Replace all \verb|x| in scope with reads from \verb|Env| % at the key
+        % write to some provided temporary
+    \end{enumerate}
     % pattern match on n0,n1
-  \end{enumerate}
+    % works with maps-of-filters etc.
+    % demo profiling?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Compiler Machinery II}
+  \begin{itemize}
+    \item Map---read from \verb|Env| at given temporary, write to some other temporary
+    \item Filter---read from \verb|Env| at given temp,
+    \item Stream functions all built-in
+      % only need to consider unary, binary, ternary
+      % (pattern-match, no big brain)
+  \end{itemize}
+\end{frame}
+
+% point: Jacinda has better regular expression support (captures)
+% https://github.com/vmchale/jacinda/blob/canon/EXAMPLES.md#trim-url
+% yt-dlp "$(pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}')"
+% https://github.com/vmchale/jacinda/blob/canon/ROSETTA.md#get-version-1
+
+\begin{frame}
+  \frametitle{Questions?}
 \end{frame}
 
 \end{document}
