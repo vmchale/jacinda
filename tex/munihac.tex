@@ -466,6 +466,9 @@ applySubstE s = fmap (applySubst s)
   \begin{itemize}
     \item Map---read from \verb|Env| at given temporary, write to some other temporary
     \item Filter---read from \verb|Env| at given temp,
+    \item Deduplicate---read at given temp, write to another temp if value hasn't been seen before
+    \item \verb|$0| write line contents to given temp every time
+      % stitch them together
     \item Stream functions all built-in
       % only need to consider unary, binary, ternary
       % (pattern-match, no big brain)
