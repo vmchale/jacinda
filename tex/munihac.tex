@@ -14,7 +14,11 @@
 
 \newcommand{\blue}[2] {\textcolor{blue}{#1}}
 \newcommand{\green}[2] {\textcolor{green}{#1}}
+
 \newcommand{\intermezzo}[1]{\title{#1}\author{}\date{}\begin{frame}\titlepage\end{frame}}
+\def \nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
+\def \hv#1{\vbox{\halign #1}}
+
 
 \title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
 \author{Vanessa McHale}
@@ -150,8 +154,6 @@ Load command 13
 
 % printenv | ja -F= '{% /^PATH/}{`2}'
 
-\def \nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
-
 \begin{frame}[fragile]
   \frametitle{Structured Text---Patterns}
   \begin{itemize}
@@ -164,7 +166,9 @@ Load command 13
 /usr/lib/libiconv.2.dylib
 /usr/lib/libSystem.B.dylib
       \end{verbatim}
-    \item\hspace{0pt} \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \nl \upbracefill \nl \small{Execute on these lines} \nl}}
+      \item\hspace{0pt}\vtop{
+        \halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \nl \upbracefill \nl \small{Execute on these lines} \nl}
+      }
     % \item AWK: split into records (lines), split by fields
   \end{itemize}
 \end{frame}
