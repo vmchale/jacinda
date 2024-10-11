@@ -99,6 +99,7 @@ pSF flush c@(_, tt) (e:es) = do
 pSF _ _ [] = pure ()
 
 run :: Bool -> Int -> E T -> [LineCtx] -> IO ()
+run _ _ e _ | ty@TyArr{} <- eLoc e = error ("Found function type: " ++ show ty)
 run flush j e ctxs | TyB TyUnit <- eLoc e =  (\(s, f, env) -> pSF flush (s,f) env) $ flip evalState j $ do
     (res, tt, iEnv, μ) <- unit e
     u <- nI
