@@ -150,6 +150,8 @@ Load command 13
 
 % printenv | ja -F= '{% /^PATH/}{`2}'
 
+\def \nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
+
 \begin{frame}[fragile]
   \frametitle{Structured Text---Patterns}
   \begin{itemize}
@@ -162,8 +164,7 @@ Load command 13
 /usr/lib/libiconv.2.dylib
 /usr/lib/libSystem.B.dylib
       \end{verbatim}
-      % fill second with spaces (enough for difference lol?)
-    \item \hspace{0pt} \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \upbracefill \crcr \noalign {\kern 3\dimen11 \nointerlineskip} \crcr \noalign {\kern 3\dimen11\nointerlineskip} \small{Execute on these lines} \crcr\noalign{\kern 3\dimen11\nointerlineskip}}}
+    \item\hspace{0pt} \vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \nl \upbracefill \nl \small{Execute on these lines} \nl}}
     % \item AWK: split into records (lines), split by fields
   \end{itemize}
 \end{frame}
