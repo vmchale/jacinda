@@ -333,6 +333,11 @@ yaml-0.11.11.2
   \end{itemize}
 \end{frame}
 
+% curl 'https://www.greenwoodsoftware.com/less/download.html' | rg 'less-(\d+)\.tar\.gz' -r '$1' -o | head -n1
+% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja '[:|>(catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
+% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja '[x]|>(catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
+% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja 'fold1 (\x.\y. x) (catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
+
 \intermezzo{Implementation}
 
 \begin{frame}[fragile]
