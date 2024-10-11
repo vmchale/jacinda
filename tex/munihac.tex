@@ -78,7 +78,7 @@
 24196
 24198
         \end{verbatim}
-      \item \verb|rg|---\verb|filter| \verb|cut|---\verb|map|
+      % \item \verb|rg|---\verb|filter| \verb|cut|---\verb|map|
       \item
         \begin{verbatim}
 ~ % ps | rg cabal | rg -v rg | \
@@ -166,6 +166,14 @@ Load command 13
 /usr/lib/libiconv.2.dylib
 /usr/lib/libSystem.B.dylib
       \end{verbatim}
+      % \item
+        % \begin{tabular}{c}
+          % \begin{tabular}{c}
+            % \verb|$1 ~ /^name/| \\
+            % \upbracefill \hfill \\
+          % \end{tabular} \\
+          % \small{Execute on these lines}
+        % \end{tabular}
       \item\nil\vtop{\halign {#\crcr \hfill \verb|$1 ~ /^name/| \hfill \bracel{Execute on these lines}}}
       \item\nil\vtop{\halign {#\crcr \hfill \verb|{print $2}| \hfill \bracel{Do this}}}
       \item \verb|<PATTERN> { <ACTION> }|
@@ -177,6 +185,7 @@ Load command 13
   \frametitle{Structured Text---Jacinda}
   \begin{itemize}
     \item
+      % make output smaller?
       \begin{verbatim}
     ~ % otool -l $(locate librure.dylib) | \
           ja '{`1 ~ /^name/}{`2}'
@@ -188,26 +197,6 @@ Load command 13
     \item\nil\vtop{\halign {#\crcr \hfill \verb+{`1 ~ /^name/}+ \hfill \bracel{Filter stream according to this}}}
     \item\nil\vtop{\halign {#\crcr \hfill \verb|{`2}| \hfill \bracel{Stream contents}}}
     \item \verb|{ <PROPOSITION> }{ <EXPR> }|
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Structured Text---Jacinda II}
-  \begin{itemize}
-    \item
-      \begin{verbatim}
-~ % printenv
-
-⋮
-LC_TERMINAL_VERSION=3.5.5
-COLORFGBG=11;15
-LANG=en_US.UTF-8
-SHELL=/bin/zsh
-COLORTERM=truecolor
-COMMAND_MODE=unix2003
-TERM=xterm-256color
-PATH=/Users/vanessa/.ghcup/bin:/Library/Frameworks/Python.framework/
-      \end{verbatim}
   \end{itemize}
 \end{frame}
 
@@ -234,35 +223,9 @@ PATH=/Users/vanessa/.ghcup/bin:/Library/Frameworks/Python.framework/
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]
-  \frametitle{Structured Text---Jacinda II}
-  \begin{itemize}
-    \item
-      \begin{verbatim}
-~ $ printenv | ja -F= '{`0 ~ /^PATH/}{`2}'
-
-/Users/vanessa/.ghcup/bin:/Library/Frameworks/Python.framework
-      \end{verbatim}
-    \item \verb|-F=| Split by \verb|=|
-    \item \verb|`0| Whole line
-    \item Split, scan for pattern
-    \item Regular expressions are discovered
-  \end{itemize}
-\end{frame}
-
-% \begin{frame}[fragile]
-  % \frametitle{Splitting, Filtering}
-  % \begin{itemize}
-    % \item 
-      % \begin{verbatim}
-% git tag "$(ja -F'\s*:\s*' '{%/^\s*version/}{`2}' -i jacinda.cabal)"
-      % \end{verbatim}
-    % \item
-      % \begin{verbatim}
-% awk -F'[:space:]*:[:space:]*' '/^\[:space:]*version/ {print $2}' jacinda.cabal
-      % \end{verbatim}
-  % \end{itemize}
-% \end{frame}
+    % \item \verb|-F=| Split by \verb|=|
+    % \item Split, scan for pattern
+    % \item Regular expressions are discovered
 
 \begin{frame}[fragile]
   \frametitle{Shock and Awe}
@@ -327,11 +290,56 @@ yaml-0.11.11.2
       \end{verbatim}
   \end{itemize}
 \end{frame}
-       % .? catMaybes : Stream (Option a) -> Stream a
-       % ~* Match, returning nth capture group
-              % Str -> Int -> Regex -> Option Str
+
+\begin{frame}[fragile]
+  \frametitle{Shock and Awe II}
+  \framesubtitle{Functional Programming}
+  \begin{itemize}
+    \item \verb|catMaybes : Stream (Option a) -> Stream a|
+    \item \verb|~* : Str -> Int -> Regex -> Option Str|
+  \end{itemize}
+\end{frame}
 
 \intermezzo{Implementation}
+
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \begin{itemize}
+    \item
+      \begin{verbatim}
+{ chars += length($0) + 1  # add one for the \n
+  words += NF
+}
+END{ print NR, words, chars }
+      \end{verbatim}
+      \item
+        \begin{verbatim}
+let
+  val sum := \x. (+)|0 x
+  val words := sum {|nf}
+  val lines := sum {|1}
+  val bytes := sum {|#`0+1}
+in sprintf '%i %i %i' (lines.words.bytes) end
+        \end{verbatim}
+      \item Passes over input three times!
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \framesubtitle{Problem}
+  \begin{itemize}
+    \item Less efficient
+    \item Rewrite expression involving folds
+      \begin{itemize}
+        \item \verb|Env -> Env|
+        \item Read from \verb|Env| at end
+        \item Two folds at once: \verb|(.)|
+          % environment updates
+        \item No bytecode!
+      \end{itemize}
+  \end{itemize}
+\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Crash Course}
@@ -370,10 +378,13 @@ applySubstE s = fmap (applySubst s)
   \end{itemize}
 \end{frame}
 
-% objdump -d /usr/bin/* | cut -f3 | ja '~.{%/^[a-z]+/}{`1}'
-% pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}'
-% https://github.com/vmchale/jacinda/blob/canon/EXAMPLES.md#extract-library-versions-unstripped
-
-% Chess example?
+\begin{frame}[fragile]
+  \frametitle{Compiler Machinery}
+  \begin{enumerate}
+    \item $\eta$-expand \verb|(+)| to \verb|\x.\y. x+y|
+    % Associate argument \verb|x| with some temporary when we enter the lambda's scope, then replace all subsequent \verb|x| with reads from the environment (generate temporary)
+    % pattern match on n0,n1
+  \end{enumerate}
+\end{frame}
 
 \end{document}
