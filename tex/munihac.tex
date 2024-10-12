@@ -18,18 +18,9 @@
 \newcommand{\green}[2] {\textcolor{green}{#1}}
 
 \newcommand{\intermezzo}[1]{\title{#1}\author{}\date{}\begin{frame}\titlepage\end{frame}}
+\def\nil{\hspace{0pt}}
 \def\nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
 \def\bracel#1{\nl \upbracefill \nl\hfill \small{#1} \hfill\nl}
-
-\newcommand{\textbrace}[2]{
-  \begin{tabular}{c}
-    \begin{tabular}{c}
-      #1 \\
-      \upbracefill \hfill \\
-    \end{tabular} \\
-    #2
-  \end{tabular}
-}
 
 \title{Jacinda---Implementing an Efficient Functional Stream Processing Language}
 \author{Vanessa McHale}
@@ -45,7 +36,6 @@
     \item Unix and Functional Programming
       \begin{itemize}
         \item Regular Expressions
-      % Talk up awk? really popular!
       \end{itemize}
     \item Show Off
     \item Implementation
@@ -88,7 +78,6 @@
 24196
 24198
         \end{verbatim}
-      % \item \verb|rg|---\verb|filter| \verb|cut|---\verb|map|
       \item
         \begin{verbatim}
 ~ % ps | rg cabal | rg -v rg | \
@@ -98,8 +87,10 @@
 \end{frame}
 
 \begin{frame}[fragile]
-  \frametitle{Stuctured Text in Unix}
-    \begin{verbatim}
+  \frametitle{Structured Text in Unix}
+  \begin{itemize}
+  \item
+    \begin{Verbatim}[fontsize=\footnotesize]
  % otool -l $(locate librure.dylib)
 ⋮
 Load command 12
@@ -116,30 +107,10 @@ Load command 13
    time stamp 2 Wed Dec 31 19:00:02 1969
       current version 1351.0.0
 ⋮
-    \end{verbatim}
-
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Structured Text in Unix}
-    \begin{Verbatim}[commandchars=\\\{\}]
- % otool -l $(locate librure.dylib)
-⋮
-Load command 12
-          cmd LC_LOAD_DYLIB
-      cmdsize 56
-         \blue{name}  /usr/lib/libiconv.2.dylib (offset 24)
-   time stamp 2 Wed Dec 31 19:00:02 1969
-      current version 7.0.0
-compatibility version 7.0.0
-Load command 13
-          cmd LC_LOAD_DYLIB
-      cmdsize 56
-         \blue{name}  /usr/lib/libSystem.B.dylib (offset 24)
-   time stamp 2 Wed Dec 31 19:00:02 1969
-      current version 1351.0.0
-⋮
     \end{Verbatim}
+    \item\nil\vtop{\halign {#\crcr \hfill \verb|$(locate librure.dylib)| \hfill \bracel{Command substitution}}}
+\end{itemize}
+
 \end{frame}
 
 \begin{frame}[fragile]
@@ -182,7 +153,7 @@ Load command 13
             \verb|$1 ~ /^name/| \\
             \upbracefill \hfill
           \end{tabular} \\
-          \small{Execute on these lines}
+          \small{Execute when this is true}
         \end{tabular}
       \item
         \begin{tabular}[t]{c}
@@ -193,6 +164,8 @@ Load command 13
           \small{Do this}
         \end{tabular}
       \item \verb|<PATTERN> { <ACTION> }|
+      \item Split, scan for pattern
+      \item Regular expressions are discovered
   \end{itemize}
 \end{frame}
 
@@ -200,7 +173,6 @@ Load command 13
   \frametitle{Structured Text---Jacinda}
   \begin{itemize}
     \item
-      % make output smaller?
       \begin{verbatim}
 ~ % otool -l $(locate librure.dylib) | \
       ja '{`1 ~ /^name/}{`2}'
@@ -215,7 +187,7 @@ Load command 13
             \verb|`1 ~ /^name/| \\
             \upbracefill \hfill \\
           \end{tabular} \\
-          \small{Filter stream according to this}
+          \small{Filter stream by this}
         \end{tabular}
       \item
         \begin{tabular}[t]{c}
@@ -252,21 +224,19 @@ Load command 13
   \end{itemize}
 \end{frame}
 
-    % \item \verb|-F=| Split by \verb|=|
     % \item Split, scan for pattern
-    % \item Regular expressions are discovered
 
 \begin{frame}[fragile]
   \frametitle{Tour}
   \begin{itemize}
-    \item Dump every assembly instruction used by your programs
-      % objdump -d /usr/bin/* | cut -f3 | grep -oE "^[a-z]+" | sort | uniq -c
-      % objdump -d /usr/bin/* | cut -f3 | rg -o "^[a-z]+" | sort | uniq -c
-      % http://pepijndevos.nl/2016/08/24/x86-instruction-distribution.html
+    \item Dump every assembly instruction (Pepijn de Vos)
+    \item 
+      \begin{verbatim}
+objdump -d /usr/bin/* | cut -f3 | \
+      ja 'dedup (filter (~ /^[a-z]+/) $0)'
+      \end{verbatim}
     \item
       \begin{verbatim}
- ~ % objdump -d /usr/bin/* | cut -f3 | \
-      ja 'dedup (filter (~ /^[a-z]+/) $0)'
 ⋮
 dup.2s
 add.2s
@@ -290,6 +260,7 @@ zip1.2s
     \item \verb|dedup : Ord a :=> Stream a -> Stream a|
     \item \verb|filter : (a -> Bool) -> Stream a -> Stream a|
     \item \verb|filter| \vtop{\halign {#\crcr \hfill \verb|(~ /^[a-z]+/)| \hfill \bracel{Curried}}}
+    \item Type signatures in manpage
   \end{itemize}
 \end{frame}
 
@@ -324,86 +295,57 @@ yaml-0.11.11.2
   \frametitle{Tour II}
   \framesubtitle{Functional Programming}
   \begin{itemize}
+    \item \verb|-R,| split into records by \verb|,| (not lines)
     \item \verb,catMaybes {|`0 ~* 1 /<REGEX>/},
-    \item \verb|catMaybes : Stream (Option a) -> Stream a|
     \item \verb|~* : Str -> Int -> Regex -> Option Str|
-    \item Regular expression captures (AWK not fluent)
-      % https://stackoverflow.com/a/4673336/11296354
-      % http://blog.vmchale.com/article/unix-ide-ii
+    \item \verb|catMaybes : Stream (Option a) -> Stream a|
+    \item Capture groups (AWK not fluent)
   \end{itemize}
 \end{frame}
 
-% curl 'https://www.greenwoodsoftware.com/less/download.html' | rg 'less-(\d+)\.tar\.gz' -r '$1' -o | head -n1
-% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja '[:|>(catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
-% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja '[x]|>(catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
-% curl 'https://www.greenwoodsoftware.com/less/download.html' | ja 'fold1 (\x.\y. x) (catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})'
+\begin{frame}[fragile]
+  \frametitle{Tour III}
+  \framesubtitle{Capture Groups}
+  \begin{itemize}
+    \item Get latest \verb|less| version
+    \item
+      \begin{verbatim}
+~ % curl -s 'https://www.greenwoodsoftware.com/less/download.html' | \
+      rg 'less-(\d+)\.tar\.gz' -r '$1' -o | \
+      head -n1
+661
+      \end{verbatim}
+    \item
+      \begin{verbatim}
+fold1 (\x.\y. x) 
+  (catMaybes {|`0 ~* 1 /less-(\d+)\.tar\.gz/})
+      \end{verbatim}
+    \item \verb|catMaybes| makes sense
+    \item \verb|fold1 (\x.\.y x)| for last in stream
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Tour IV}
+  \begin{itemize}
+    \item Libraries used to build but not present in final artifact
+      \begin{verbatim}
+diff \
+    <(readelf ... $(which ja) | ja -R, 'catMaybes {|`0 ~*
+    <(nm $(which ja) | sed ... | ja 'dedup (catMaybes {`2 ~ /^(T|t)$/}
+⋮
+< microlens-0.4.13.1
+< microlens-mtl-0.2.0.3
+23d12
+< pretty-1.1.3.6
+30d18
+⋮
+      \end{verbatim}
+    \item \verb|<( ...)| process substitution
+  \end{itemize}
+\end{frame}
 
 \intermezzo{Implementation}
-
-\begin{frame}[fragile]
-  \frametitle{Motivation}
-  \begin{itemize}
-    \item
-      \begin{verbatim}
-fn count(x) ≔
-  fold (+) 0 ([:1"x);
-
-fn isEven() :=
-  (~ /(0|2|4|6|8)$/);
-
-fn isOdd() :=
-  (~ /(1|3|5|7|9)$/);
-
-let
-  val even := count (filter isEven $0)
-  val odd := count (filter isOdd $0)
-  val total := odd + even
-in (total . even . odd) end
-      \end{verbatim}
-    \item
-      \begin{verbatim}
-~ % seq 1000 | ja run evenOdd.jac
-(1000 . 500 . 500)
-      \end{verbatim}
-  \end{itemize}
-\end{frame}
-\begin{frame}[fragile]
-  \frametitle{Motivation}
-  \begin{itemize}
-    \item Passes over input multiple times!
-    \item AWK does better:
-      \begin{verbatim}
-/(0|2|4|6|8)$/ { even+=1 } 
-
-/(1|3|5|7|9)$/ { odd+=1 } 
-
-END { print even, odd, even + odd }
-      \end{verbatim}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]
-  \frametitle{Motivation}
-  \framesubtitle{Problem}
-  \begin{itemize}
-    \item Less efficient
-    \item ...but folds are nicer
-    \item Rewrite expression with many folds
-      % action on environment
-      \begin{itemize}
-        \item \verb|Env -> Env|
-        \item Read from \verb|Env| at end
-        \item Two folds at once: \verb|(.)|
-        \item No bytecode!
-      \end{itemize}
-    \item
-      \begin{verbatim}
-type Env = Map Temp (Maybe Expr)
-      \end{verbatim}
-    \item \verb|Maybe Expr| for filter
-      % \verb|Env| each line
-  \end{itemize}
-\end{frame}
 
 \begin{frame}[fragile]
   \frametitle{Crash Course}
@@ -439,7 +381,74 @@ applySubstE :: Subst -> Expr Type -> Expr Type
 applySubstE s = fmap (applySubst s)
         \end{verbatim}
       \item GHC approach
-      % \item Pattern match on type
+      \item Pattern match on type
+        \begin{itemize}
+          \item \verb|(Dedup (Int :~> _) _)|
+        \end{itemize}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \begin{itemize}
+    \item
+      \begin{verbatim}
+fn count(x) ≔
+  fold (+) 0 ([:1"x);
+
+fn isEven() :=
+  (~ /(0|2|4|6|8)$/);
+
+fn isOdd() :=
+  (~ /(1|3|5|7|9)$/);
+
+let
+  val even := count (filter isEven $0)
+  val odd := count (filter isOdd $0)
+  val total := odd + even
+in (total . even . odd) end
+      \end{verbatim}
+    \item
+      \begin{verbatim}
+~ % seq 1000 | ja run evenOdd.jac
+(1000 . 500 . 500)
+      \end{verbatim}
+  \end{itemize}
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \begin{itemize}
+    \item Passes over input multiple times!
+    \item AWK does better:
+      \begin{verbatim}
+/(0|2|4|6|8)$/ { even += 1 } 
+
+/(1|3|5|7|9)$/ { odd += 1 } 
+
+END { print even, odd, even + odd }
+      \end{verbatim}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Motivation}
+  \framesubtitle{Problem}
+  \begin{itemize}
+    \item Less efficient
+    \item ...but folds are nicer
+    \item Rewrite many folds into something better
+      \begin{itemize}
+        \item \verb|Env -> Env|
+        \item Read from \verb|Env| at end
+        \item Two folds at once: \verb|(.)|
+        \item No bytecode!
+      \end{itemize}
+    \item
+      \begin{verbatim}
+type Env = Map Temp (Maybe Expr)
+      \end{verbatim}
+    \item Redefine the \verb|Maybe Expr|s for each line
+    \item \verb|Maybe Expr| for filter
   \end{itemize}
 \end{frame}
 
@@ -456,13 +465,9 @@ applySubstE s = fmap (applySubst s)
     \item What about \verb|(+)|?
     \begin{enumerate}
       \item $\eta$-expand \verb|(+)| to \verb|\x.\y. x+y|
-      \item Associate \verb|x| with some key in \verb|Env|
-      \item Replace all \verb|x| in scope with reads from \verb|Env| % at the key
-        % write to some provided temporary
+      \item Associate \verb|x| with some temporary in \verb|Env|
+      \item Replace all \verb|x| in scope with reads from \verb|Env| at temporary
     \end{enumerate}
-    % pattern match on n0,n1
-    % works with maps-of-filters etc.
-    % demo profiling?
   \end{itemize}
 \end{frame}
 
@@ -470,20 +475,23 @@ applySubstE s = fmap (applySubst s)
   \frametitle{Compiler Machinery II}
   \begin{itemize}
     \item Map---read from \verb|Env| at given temporary, write to some other temporary
-    \item Filter---read from \verb|Env| at given temp,
+    \item Filter---read from \verb|Env| at given temp, write \verb|Nothing| if need be
     \item Deduplicate---read at given temp, write to another temp if value hasn't been seen before
     \item \verb|$0| write line contents to given temp every time
-      % stitch them together
-    \item Stream functions all built-in
-      % only need to consider unary, binary, ternary
-      % (pattern-match, no big brain)
+    \item All stream functions built-in (take unary, binary, ternary)
   \end{itemize}
 \end{frame}
 
-% point: Jacinda has better regular expression support (captures)
-% https://github.com/vmchale/jacinda/blob/canon/EXAMPLES.md#trim-url
-% yt-dlp "$(pbpaste | ja '.?{|`1 ~* 1 /([^\?]*)/}')"
-% https://github.com/vmchale/jacinda/blob/canon/ROSETTA.md#get-version-1
+\begin{frame}[fragile]
+  \frametitle{Compiler Machinery III}
+  \framesubtitle{Stitching streams}
+  \begin{itemize}
+    \item Consider \verb|filter (='0') $0|
+    \item \verb|$0| writes to some \verb|Temp|
+    \item \verb|filter (='0')| reads from that \verb|Temp|
+    \item \verb|filter| is an update \verb|Env -> Env|, compose after \verb|$0|
+  \end{itemize}
+\end{frame}
 
 \begin{frame}
   \frametitle{Questions?}
