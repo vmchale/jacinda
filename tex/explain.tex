@@ -1,0 +1,30 @@
+\documentclass{article}
+
+\begin{document}
+
+\title{Jacinda Explained}
+\author{V. E. McHale}
+\maketitle
+
+\section{Show Library Dependencies}
+
+\begin{verbatim}
+otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
+\end{verbatim}
+
+\section{Extract Library Dependencies from Haskell Executable}
+
+\begin{verbatim}
+readelf -p '.debug-ghc-link-info' $(which pandoc) | \
+    ja -R, '.?{|`0 ~* 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}'
+\end{verbatim}
+
+\section{Show Unused Dependencies}
+
+\begin{verbatim}
+diff \
+    <(readelf -p '.debug-ghc-link-info' $(which ja) | ja -R, '.?{|`0 ~* 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}' | sort) \
+    <(nm $(which ja) | sed 's/\([^z]\)zi/\1./g ;s/\([^z]\)zm/\1-/g; s/\([^z]\)zd/\1$/g; s/ZC/:/g; s/zz/z/g' | ja '~..?{`2 ~ /^(T|t)$/}{`3 ~* 1 /([A-Za-z][A-Za-z0-9\-]*\-\d+(\.\d+)*)\-[0-9a-f]{4}/}' | sort)
+\end{verbatim}
+
+\end{document}
