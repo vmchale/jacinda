@@ -202,7 +202,6 @@ data E a = Column { eLoc :: a, col :: Int }
          | Guarded { eLoc :: a, eP, eGuarded :: E a }
          | Implicit { eLoc :: a, eImplicit :: E a }
          | Let { eLoc :: a, eBind :: (Nm a, E a), eE :: E a }
-         -- TODO: literals type (make pattern matching easier down the road)
          | Var { eLoc :: a, eVar :: !(Nm a) }
          | F { hole :: !(Nm a) }
          | Lit { eLoc :: a, lit :: !L }

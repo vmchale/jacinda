@@ -1,9 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 
 module A.I ( RM, UM, ISt (..)
-           , ib
-           , β, lβ
-           , runI
+           , ib, lβ
            ) where
 
 import           A
@@ -19,30 +17,25 @@ import           U
 
 data ISt a = ISt { renames :: !Renames, binds :: IM.IntMap (E a) }
 
-instance HasRenames (ISt a) where
-    rename f s = fmap (\x -> s { renames = x }) (f (renames s))
+instance HasRenames (ISt a) where rename f s = fmap (\x -> s { renames = x }) (f (renames s))
 
 type RM a = State (ISt a); type UM = State Int
 
-bind :: Nm a -> E a -> ISt a -> ISt a
-bind (Nm _ (U u) _) e (ISt r bs) = ISt r (IM.insert u e bs)
-
-bindM :: Nm a -> E a -> RM a ()
-bindM n e = modify (bind n e)
+bind :: Nm a -> E a -> RM a ()
+bind (Nm _ (U u) _) e = modify (\(ISt r bs) -> ISt r (IM.insert u e bs))
 
 runI i = second (max_.renames) . flip runState (ISt (Rs i mempty) mempty)
 
 ib :: Int -> Program T -> (E T, Int)
 ib i = uncurry (flip β).runI i.iP where iP (Program ds e) = traverse_ iD ds *> iE e
 
-β :: Int -> E a -> (E a, Int)
 β i = runI i.bM.(i `seq`)
 
 lβ :: E a -> UM (E a)
 lβ e = state (`β` e)
 
 iD :: D T -> RM T ()
-iD (FunDecl n [] e) = do {eI <- iE e; bindM n eI}
+iD (FunDecl n [] e) = do {eI <- iE e; bind n eI}
 iD SetFS{} = pure (); iD SetRS{} = pure (); iD SetAsv = pure (); iD SetUsv = pure (); iD SetCsv = pure ()
 iD SetORS{} = pure (); iD SetOFS{} = pure (); iD FlushDecl{} = pure ()
 iD FunDecl{} = desugar
@@ -51,15 +44,14 @@ desugar = error "Internal error. Should have been de-sugared in an earlier stage
 
 bM :: E a -> RM a (E a)
 bM (EApp _ (EApp _ (Lam _ n (Lam _ n' e')) e'') e) = do
-    eI <- bM e; bindM n' eI
-    eI'' <- bM e''; bindM n eI''
+    eI <- bM e; bind n' eI
+    eI'' <- bM e''; bind n eI''
     bM e'
 bM (EApp _ (Lam _ n e') e) = do
-    eI <- bM e
-    bindM n eI *> bM e'
+    eI <- bM e; bind n eI
+    bM e'
 bM (EApp l e0 e1) = do
-    e0' <- bM e0
-    e1' <- bM e1
+    e0' <- bM e0; e1' <- bM e1
     case e0' of
         Lam{} -> bM (EApp l e0' e1')
         _     -> pure (EApp l e0' e1')
@@ -69,8 +61,7 @@ bM e@(Var _ (Nm _ (U i) _)) = do
         Just e' -> rE e'
         Nothing -> pure e
 bM (Let l (n, e') e) = do
-    e'B <- bM e'
-    eB <- bM e
+    e'B <- bM e'; eB <- bM e
     pure $ Let l (n, e'B) eB
 bM (Tup l es) = Tup l <$> traverse bM es; bM (Arr l es) = Arr l <$> traverse bM es
 bM (Rec l es) = Rec l <$> traverse (secondM bM) es
@@ -105,8 +96,7 @@ iE (Anchor t es) = Anchor t <$> traverse iE es
 iE (OptionVal t es) = OptionVal t <$> traverse iE es
 iE (Cond t p e e') = Cond t <$> iE p <*> iE e <*> iE e'
 iE (Let _ (n, e') e) = do
-    eI <- iE e'
-    bindM n eI *> iE e
+    eI <- iE e'; bind n eI; iE e
 iE e@(Var t (Nm _ (U i) _)) = do
     st <- gets binds
     case IM.lookup i st of

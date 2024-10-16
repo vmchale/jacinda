@@ -141,8 +141,8 @@ mgu l s t t'@(TyVar (Nm _ (U k) _)) | k `IS.notMember` occ t = Right $ IM.insert
                                       | otherwise = Left $ Occ l t' t
 mgu l s t@(TyVar (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.insert k t' s
                                       | otherwise = Left $ Occ l t t'
-mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
-mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mguPrep l s t0 t0'; mguPrep l s0 t1 t1'}
+mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mgu l s t0 t0'; mguPrep l s0 t1 t1'}
+mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mgu l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
 mgu l s (Rho n rs) t'@(TyTup ts) | length ts >= fst (IM.findMax rs) && fst (IM.findMin rs) > 0
     = tS_ (\sϵ (i, tϵ) -> IM.insert (unU$unique n) t' <$> mguPrep l sϵ (ts!!(i-1)) tϵ) s (IM.toList rs)
