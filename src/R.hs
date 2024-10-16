@@ -23,8 +23,7 @@ data Renames = Rs { max_ :: Int, bound :: IM.IntMap Int }
 class HasRenames a where
     rename :: Lens' a Renames
 
-instance HasRenames Renames where
-    rename = id
+instance HasRenames Renames where rename=id
 
 boundLens :: Lens' Renames (IM.IntMap Int)
 boundLens f s = fmap (\x -> s { bound = x }) (f (bound s))
