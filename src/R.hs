@@ -1,8 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module R ( rE
-         , rP
-         , RenameM
+module R ( rE, rP
          , Renames (..)
          , HasRenames (..)
          ) where
