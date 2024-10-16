@@ -48,13 +48,13 @@ common warnings
 library jacinda-lib
     import:           warnings
     exposed-modules:
+        File
+        A
         Parser
         Parser.Rw
-        A
         Ty
         Ty.Const
         Jacinda.Regex
-        File
 
     hs-source-dirs:   src
     other-modules:
