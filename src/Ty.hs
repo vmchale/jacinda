@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveFunctor     #-}
 {-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
@@ -29,13 +30,13 @@ import           Prettyprinter              (Pretty (..), squotes, (<+>))
 import           Ty.Const
 import           U
 
-data Err a = UF a T T
+data Err a = UF a T T | MF T T
            | Doesn'tSatisfy a T C
            | IllScoped a (Nm a)
            | Ambiguous T (E ())
            | IllScopedTyVar (TyName ())
-           | MF T T
            | Occ a T T
+           deriving Functor
 
 instance Pretty a => Pretty (Err a) where
     pretty (UF l ty ty')           = pretty l <+> "could not unify type" <+> squotes (pretty ty) <+> "with" <+> squotes (pretty ty')

@@ -30,8 +30,8 @@ defVar = many $ fmap kv (option str
     <> metavar "VALUE"
     <> help "Pass a value on the command-line"))
 
-jacFile :: Parser FilePath
-jacFile = argument str
+j'File :: Parser FilePath
+j'File = argument str
     (metavar "JACFILE"
     <> help "Source code"
     <> jacCompletions)
@@ -84,13 +84,12 @@ commandP = hsubparser
     <> command "install-dir" (info (pure Install) (progDesc "Show directory for bundled libraries")))
     <|> exprP
     where
-        tcP = TC <$> jacFile <*> includes
-        runP = Run <$> jacFile <*> jacFs <*> jacRs <*> inpFile <*> includes <*> defVar
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> includes
-        eP = Eval <$> jacExpr
+        tcP = TC <$> j'File <*> incls; eP = Eval <$> jacExpr
+        runP = Run <$> j'File <*> jacFs <*> jacRs <*> inpFile <*> incls <*> defVar
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> incls
 
-includes :: Parser [FilePath]
-includes = many $ strOption
+incls :: Parser [FilePath]
+incls = many $ strOption
     (metavar "DIR"
     <> long "include"
     <> short 'I'
@@ -123,10 +122,10 @@ ap _ True _ Nothing Nothing = AWK (Just "␟") (Just "␞")
 ap _ _ _ fs rs              = AWK fs rs
 
 run :: Cmd -> IO ()
-run (TC fp is)                         = tcIO is =<< TIO.readFile fp
-run (Run fp fs rs Nothing is vs)       = do { contents <- TIO.readFile fp ; runStdin is contents vs (AWK fs rs) }
-run (Run fp fs rs (Just dat) is vs)    = do { contents <- TIO.readFile fp ; runOnFile is contents vs (AWK fs rs) dat }
-run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is eb [] m
-run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is eb [] m fp
+run (TC fp is)                         = tcIO is fp =<< TIO.readFile fp
+run (Run fp fs rs Nothing is vs)       = do { contents <- TIO.readFile fp ; runStdin is fp contents vs (AWK fs rs) }
+run (Run fp fs rs (Just dat) is vs)    = do { contents <- TIO.readFile fp ; runOnFile is fp contents vs (AWK fs rs) dat }
+run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is "(no file info)" eb [] m
+run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is "(no file info)" eb [] m fp
 run (Eval e)                           = print (exprEval e)
 run Install                            = putStrLn =<< P.getDataDir

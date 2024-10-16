@@ -1,4 +1,5 @@
 {
+    {-# LANGUAGE DeriveFunctor     #-}
     {-# LANGUAGE OverloadedStrings #-}
     module Parser ( parse
                   , parseWithMax
@@ -394,6 +395,7 @@ mkLet l (b:bs) e = Let l b (mkLet l bs e)
 
 data ParseError a = Unexpected !(Token a) [String]
                   | LexErr String
+                  deriving Functor
 
 instance Pretty a => Pretty (ParseError a) where
     pretty (Unexpected tok valid) = pretty (loc tok) <+> "Unexpected" <+> pretty tok <> "." <+> "Expected one of" <+> concatWith (\x y -> x <> "," <+> y) (squotes.pretty<$>valid)

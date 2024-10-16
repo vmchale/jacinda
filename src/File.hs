@@ -1,7 +1,7 @@
-module File ( tcIO
-            , tySrc
-            , runStdin
-            , runOnFile
+{-# LANGUAGE OverloadedStrings #-}
+
+module File ( tcIO, tySrc
+            , runStdin, runOnFile
             , exprEval
             ) where
 
@@ -31,6 +31,7 @@ import           Jacinda.Regex
 import           L
 import           Parser
 import           Parser.Rw
+import           Prettyprinter              (Pretty (pretty))
 import           R
 import           Regex.Rure                 (RurePtr)
 import           System.IO                  (stdin)
@@ -55,29 +56,33 @@ parseLib incls fp = do
     contents <- liftIO $ TIO.readFile =<< resolveImport incls fp
     st <- get
     case parseLibWithCtx contents st of
-        Left err              -> liftIO (throwIO err)
+        Left err              -> liftIO (throwIO (FPos fp<$>err))
         Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
         Right (st', (is, ds)) -> do {put st'; dss <- traverse (parseLib incls) is; pure (concat dss ++ fmap rwD ds)}
 
-parseP :: [FilePath] -> T.Text -> [(T.Text, Value)] -> StateT AlexUserState IO (Program AlexPosn)
-parseP incls src var = do
+parseP :: [FilePath] -> FilePath -> T.Text -> [(T.Text, Value)] -> StateT AlexUserState IO (Program AlexPosn)
+parseP incls fn src var = do
     st <- get
     case parseWithCtx src var st of
-        Left err -> liftIO $ throwIO err
+        Left err -> liftIO $ throwIO (FPos fn<$>err)
         Right (st', (is, Program ds e)) -> do
             put st'
             dss <- traverse (parseLib incls) is
             pure $ Program (concat dss ++ fmap rwD ds) (rwE e)
 
 -- | Parse + rename
-parsePWithMax :: [FilePath] -> T.Text -> [(T.Text, T.Text)] -> IO (Program AlexPosn, Int)
-parsePWithMax incls src vars = uncurry rP.swap.second fst3 <$> runStateT (parseP incls src vars) alexInitUserState
+parsePWithMax :: [FilePath] -> FilePath -> T.Text -> [(T.Text, T.Text)] -> IO (Program AlexPosn, Int)
+parsePWithMax incls fn src vars = uncurry rP.swap.second fst3 <$> runStateT (parseP incls fn src vars) alexInitUserState
     where fst3 (x,_,_) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
 parseWithMax' = fmap (uncurry rP . second (rwP.snd)) . parseWithMax
 
 type FileBS = BS.ByteString
+
+data FPos = FPos { filen :: String, pos :: !AlexPosn }
+
+instance Pretty FPos where pretty (FPos f l) = pretty f <> ":" <> pretty l
 
 tcompile=compileDefault.encodeUtf8
 
@@ -138,15 +143,16 @@ compileFS = maybe defaultRurePtr tcompile
 
 runOnBytes :: [FilePath]
            -> FilePath -- ^ Data file name, for @nf@
+           -> FilePath -- ^ For error locations
            -> T.Text -- ^ Program
            -> [(T.Text, Value)]
            -> Mode
            -> BSL.ByteString
            -> IO ()
-runOnBytes incls fp src vars mode contents = do
+runOnBytes incls fp fn src vars mode contents = do
     incls' <- defaultIncludes <*> pure incls
-    (ast, m) <- parsePWithMax incls' src vars
-    (typed, i) <- yIO $ runTyM m (tyP ast)
+    (ast, m) <- parsePWithMax incls' fn src vars
+    (typed, i) <- yIO fn $ runTyM m (tyP ast)
     let (eI, j) = ib i typed
     m'Throw $ cF eI
     let (e', k) = runState (eta eI) j
@@ -163,25 +169,27 @@ runOnBytes incls fp src vars mode contents = do
         (_, CSV) -> let ctxs = csvCtx contents in cont ctxs
 
 runStdin :: [FilePath]
+         -> FilePath -- ^ For error location
          -> T.Text -- ^ Program
          -> [(T.Text, Value)]
          -> Mode
          -> IO ()
-runStdin is src vars m = runOnBytes is "(stdin)" src vars m =<< BSL.hGetContents stdin
+runStdin is src fn vars m = runOnBytes is "(stdin)" src fn vars m =<< BSL.hGetContents stdin
 
 runOnFile :: [FilePath]
+          -> FilePath
           -> T.Text
           -> [(T.Text, Value)]
           -> Mode
           -> FilePath
           -> IO ()
-runOnFile is e vs m fp = runOnBytes is fp e vs m =<< BSL.readFile fp
+runOnFile is fn e vs m fp = runOnBytes is fp fn e vs m =<< BSL.readFile fp
 
-tcIO :: [FilePath] -> T.Text -> IO ()
-tcIO incls src = do
+tcIO :: [FilePath] -> FilePath -> T.Text -> IO ()
+tcIO incls fn src = do
     incls' <- defaultIncludes <*> pure incls
-    (ast, m) <- parsePWithMax incls' src []
-    (pT, i) <- yIO $ runTyM m (tyP ast)
+    (ast, m) <- parsePWithMax incls' fn src []
+    (pT, i) <- yIO fn $ runTyM m (tyP ast)
     let (eI, _) = ib i pT
     m'Throw $ cF eI
 
@@ -194,8 +202,7 @@ tySrc src =
 m'Throw :: Exception e => Maybe e -> IO ()
 m'Throw = traverse_ throwIO
 
-yIO :: Exception e => Either e a -> IO a
-yIO = either throwIO pure
+yIO fp = either (throwIO.(FPos fp<$>)) pure
 
 yeet :: Exception e => Either e a -> a
 yeet = either throw id

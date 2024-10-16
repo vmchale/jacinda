@@ -1,4 +1,5 @@
 {
+    {-# LANGUAGE DeriveFunctor     #-}
     {-# LANGUAGE OverloadedStrings #-}
     module L ( alexMonadScan
              , alexInitUserState
@@ -485,6 +486,7 @@ data Token a = EOF { loc :: a }
              | TokAccess { loc :: a, ix :: Int }
              | TokSelect { loc :: a, field :: Int }
              | TokR { loc :: a, nfield :: Nm a }
+             deriving Functor
 
 instance Pretty (Token a) where
     pretty EOF{}              = "(eof)"
