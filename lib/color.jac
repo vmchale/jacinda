@@ -18,3 +18,6 @@ fn cyan := code '36';
 fn white := code '37';
 
 fn boldred := code '31;1';
+fn boldyellow := code '33;1';
+fn boldblue := code '34;1';
+fn boldmagenta := code '37;1';
