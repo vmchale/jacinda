@@ -1,5 +1,4 @@
 {-# LANGUAGE DeriveFunctor     #-}
-{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module Ty ( Subst
@@ -9,23 +8,23 @@ module Ty ( Subst
           ) where
 
 import           A
-import           Control.Exception          (Exception, throw)
-import           Control.Monad              (zipWithM)
-import           Control.Monad.Except       (liftEither, throwError)
-import           Control.Monad.State.Strict (StateT, gets, modify, runState, runStateT, state)
-import           Data.Bifunctor             (first, second)
-import           Data.Foldable              (traverse_)
-import           Data.Function              (on)
-import           Data.Functor               (void, ($>))
-import qualified Data.IntMap                as IM
-import qualified Data.IntSet                as IS
-import qualified Data.Set                   as S
-import qualified Data.Text                  as T
-import           Data.Typeable              (Typeable)
-import qualified Data.Vector                as V
+import           Control.Exception                (Exception, throw)
+import           Control.Monad                    (zipWithM)
+import           Control.Monad.Except             (liftEither, throwError)
+import           Control.Monad.Trans.State.Strict (StateT, gets, modify, runState, runStateT, state)
+import           Data.Bifunctor                   (first, second)
+import           Data.Foldable                    (traverse_)
+import           Data.Function                    (on)
+import           Data.Functor                     (void, ($>))
+import qualified Data.IntMap                      as IM
+import qualified Data.IntSet                      as IS
+import qualified Data.Set                         as S
+import qualified Data.Text                        as T
+import           Data.Typeable                    (Typeable)
+import qualified Data.Vector                      as V
 import           Nm
-import qualified Nm.Map                     as Nm
-import           Prettyprinter              (Pretty (..), squotes, (<+>))
+import qualified Nm.Map                           as Nm
+import           Prettyprinter                    (Pretty (..), squotes, (<+>))
 import           Ty.Const
 import           U
 

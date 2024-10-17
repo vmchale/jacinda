@@ -4,9 +4,9 @@ module A.E ( M, nN, eta ) where
 
 import           A
 import           C
-import           Control.Monad              ((<=<))
-import           Control.Monad.State.Strict (State, state)
-import qualified Data.Text                  as T
+import           Control.Monad                    ((<=<))
+import           Control.Monad.Trans.State.Strict (State, state)
+import qualified Data.Text                        as T
 import           Nm
 import           U
 
@@ -35,6 +35,7 @@ mkLam :: [T] -> E T -> M (E T)
 mkLam ts e = do
     (lam, app) <- unseam ts
     pure $ lam (app e)
+-- fmap (($e).(uncurry (.))) (unseam ts)
 
 eta = eM <=< eO
 

@@ -7,7 +7,7 @@ import           A.I
 import           C
 import           Control.Exception                 (Exception, throw)
 import           Control.Monad                     (zipWithM, (<=<))
-import           Control.Monad.State.Strict        (State, evalState, runState, state)
+import           Control.Monad.Trans.State.Strict  (State, evalState, runState, state)
 import           Data.Bifunctor                    (first, second)
 import qualified Data.ByteString                   as BS
 import           Data.ByteString.Builder           (hPutBuilder)

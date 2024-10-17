@@ -8,21 +8,21 @@ module File ( tcIO, tySrc
 import           A
 import           A.E
 import           A.I
-import           Control.Applicative        ((<|>))
-import           Control.Exception          (Exception, throw, throwIO)
-import           Control.Monad.IO.Class     (liftIO)
-import           Control.Monad.State.Strict (StateT, get, put, runState, runStateT)
-import           Data.Bifunctor             (second)
-import qualified Data.ByteString            as BS
-import qualified Data.ByteString.Lazy       as BSL
-import qualified Data.ByteString.Lazy.Char8 as ASCIIL
-import           Data.Foldable              (fold, traverse_)
-import           Data.Functor               (($>))
-import qualified Data.Text                  as T
-import           Data.Text.Encoding         (encodeUtf8)
-import qualified Data.Text.IO               as TIO
-import           Data.Tuple                 (swap)
-import qualified Data.Vector                as V
+import           Control.Applicative              ((<|>))
+import           Control.Exception                (Exception, throw, throwIO)
+import           Control.Monad.IO.Class           (liftIO)
+import           Control.Monad.Trans.State.Strict (StateT, get, put, runState, runStateT)
+import           Data.Bifunctor                   (second)
+import qualified Data.ByteString                  as BS
+import qualified Data.ByteString.Lazy             as BSL
+import qualified Data.ByteString.Lazy.Char8       as ASCIIL
+import           Data.Foldable                    (fold, traverse_)
+import           Data.Functor                     (($>))
+import qualified Data.Text                        as T
+import           Data.Text.Encoding               (encodeUtf8)
+import qualified Data.Text.IO                     as TIO
+import           Data.Tuple                       (swap)
+import qualified Data.Vector                      as V
 import           Include
 import           Jacinda.Backend.Const
 import           Jacinda.Backend.T
@@ -31,11 +31,11 @@ import           Jacinda.Regex
 import           L
 import           Parser
 import           Parser.Rw
-import           Prettyprinter              (Pretty (pretty))
+import           Prettyprinter                    (Pretty (pretty))
 import           R
-import           Regex.Rure                 (RurePtr)
-import           System.IO                  (stdin)
-import           Text.CSV.Lazy.ByteString   (CSVField (..), parseCSV)
+import           Regex.Rure                       (RurePtr)
+import           System.IO                        (stdin)
+import           Text.CSV.Lazy.ByteString         (CSVField (..), parseCSV)
 import           Ty
 
 csvCtx :: BSL.ByteString -> [LineCtx]
