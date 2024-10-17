@@ -1,5 +1,3 @@
-{-# LANGUAGE FlexibleContexts #-}
-
 module A.I ( RM, UM, ISt (..)
            , ib, lβ
            ) where
