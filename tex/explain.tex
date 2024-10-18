@@ -8,9 +8,12 @@
 
 \section{Show Library Dependencies}
 
-\begin{verbatim}
-otool -l $(locate libpng.dylib) | ja '{`1 ~ /^name/}{`2}'
-\end{verbatim}
+\def\field#1{\textasciigrave#1}
+% small interline skip?
+\def\nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
+\newcommand{\textupbrace}[2]{\vtop{\halign {##\crcr\hfill{#1}\hfill\nl\upbracefill\nl\hfill\small{\rm #2}\hfill\nl}}}
+
+{\tt otool -l \textupbrace{\$(locate libpng.dylib)}{Command substitution} | ja \textquotesingle\{\field{1} \textasciitilde\thinspace/\textasciicircum name/\}\{\field{2}\}\textquotesingle}
 
 \section{Extract Library Dependencies from Haskell Executable}
 
