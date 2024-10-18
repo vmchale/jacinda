@@ -408,9 +408,6 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-parseThrow :: Parse a -> T.Text -> a
-parseThrow p = snd.either throw id.runParse p
-
 guess :: AlexPosn -> T.Text -> E AlexPosn
 guess l v = case snd<$>runParse pValue v of
     Right e -> e
