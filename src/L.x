@@ -222,9 +222,6 @@ tokens :-
 
 {
 
-dropQuotes :: BSL.ByteString -> BSL.ByteString
-dropQuotes = BSL.init . BSL.tail
-
 alex :: a -> Alex a
 alex = pure
 
