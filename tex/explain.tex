@@ -6,23 +6,23 @@
 \author{V. E. McHale}
 \maketitle
 
-\section{Show Library Dependencies}
-
 \def\field#1{\textasciigrave#1}
 % small interline skip?
 \def\nl{\crcr\noalign {\kern 3\dimen11\nointerlineskip}}
-\newcommand{\textupbrace}[2]{\vtop{\halign {##\crcr\hfill{#1}\hfill\nl\upbracefill\nl\hfill\small{\rm #2}\hfill\nl}}}
+% \show\downbracefill
+\newcommand{\textunderbrace}[2]{\vtop{\halign {##\crcr{#1}\nl\upbracefill\crcr\hfill\small{\rm #2}\hfill\nl}}}
+\newcommand{\textoverbrace}[2]{\vtop{\halign {##\crcr\hfill\small{\rm #2}\hfill\nl\downbracefill\crcr{#1}\hfill\nl}}}
 
-{\tt otool -l \textupbrace{\$(locate libpng.dylib)}{Command substitution} | ja \textquotesingle\{\field{1} \textasciitilde\thinspace/\textasciicircum name/\}\{\field{2}\}\textquotesingle}
+\section{Show Library Dependencies}
+
+{\tt \mbox{\textoverbrace{otool -l \textunderbrace{\$(locate libpng.dylib)}{Command substitution}}{Dump linker commands} | ja \textquotesingle\{\field{1} \textasciitilde\thinspace/\textasciicircum name/\}\{\field{2}\}\textquotesingle}}
 
 \section{Extract Library Dependencies from Haskell Executable}
 
-\begin{verbatim}
-readelf -p '.debug-ghc-link-info' $(which pandoc) | \
-    ja -R, '.?{|`0 ~* 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\d+(\.\d+)*)/}'
-\end{verbatim}
+{\tt readelf -p '.debug-ghc-link-info' \$(which pandoc) | \textbackslash\par
+ja \textunderbrace{-R,}{Split into records by `{\tt,}'} \textquotesingle.?\{|\field{0} \textasciitilde* 1 /-lHS([A-Aa-z][A-Za-z0-9\-]*\textbackslash d+(\textbackslash.\textbackslash d+)*)/\}\textquotesingle}
 
-\section{Show Unused Dependencies}
+\section{Unused Dependencies} 
 
 \begin{verbatim}
 diff \
