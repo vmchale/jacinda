@@ -32,7 +32,7 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
 %name parseLib Library
 %name pValue Value
 %tokentype { Token AlexPosn }
-%errorhandlertype explist
+%error.expected
 %error { parseError }
 %monad { Parse } { (>>=) } { pure }
 %lexer { lift alexMonadScan >>= } { EOF _ }
@@ -386,8 +386,8 @@ type Library = ([FilePath], [D AlexPosn])
 
 type Value = T.Text
 
-parseError :: (Token AlexPosn, [String]) -> Parse a
-parseError = throwError . uncurry Unexpected
+parseError :: Token AlexPosn -> [String] -> Parse a
+parseError tok = throwError . Unexpected tok
 
 mkLet :: a -> [(Nm a, E a)] -> E a -> E a
 mkLet _ [] e     = e
