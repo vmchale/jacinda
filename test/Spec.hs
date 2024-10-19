@@ -102,7 +102,7 @@ sumBytesAST =
             (IParseCol () 5)
 
 tyFile :: FilePath -> Assertion
-tyFile = tcIO [] <=< TIO.readFile
+tyFile fp = tcIO [] fp =<< TIO.readFile fp
 
 tyRight :: T.Text -> Assertion
 tyRight src = assertBool (T.unpack src) (tySrc src `seq` True)
