@@ -7,7 +7,7 @@ import           Control.Monad      (filterM)
 import           Data.List.Split    (splitWhen)
 import           Data.Maybe         (listToMaybe)
 import           Paths_jacinda      (getDataDir)
-import           System.Directory   (doesFileExist, getCurrentDirectory)
+import           System.Directory   (doesFileExist, getCurrentDirectory,doesDirectoryExist)
 import           System.Environment (lookupEnv)
 import           System.FilePath    ((</>))
 
@@ -20,7 +20,10 @@ defaultIncludes = do
     path <- jacPath
     d <- getDataDir
     dot <- getCurrentDirectory
-    pure $ (dot:).(d:).(++path)
+    share <- doesDirectoryExist shareDir
+    pure $ (if share then (shareDir:) else id).(dot:).(d:).(++path)
+  where
+    shareDir = "/usr/local/share/jac"
 
 jacPath :: IO [FilePath]
 jacPath = maybe [] splitEnv <$> lookupEnv "JAC_PATH"

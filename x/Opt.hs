@@ -4,6 +4,7 @@ module Main (main) where
 
 import           A                   (Mode (..))
 import           Control.Applicative ((<|>))
+import System.Directory (doesDirectoryExist)
 import qualified Data.Text           as T
 import qualified Data.Text.IO        as TIO
 import qualified Data.Version        as V
@@ -128,4 +129,9 @@ run (Run fp fs rs (Just dat) is vs)    = do { contents <- TIO.readFile fp ; runO
 run (Expr eb Nothing fs a u c rs is)   = let m = ap a u c fs rs in runStdin is "(no file info)" eb [] m
 run (Expr eb (Just fp) fs a u c rs is) = let m = ap a u c fs rs in runOnFile is "(no file info)" eb [] m fp
 run (Eval e)                           = print (exprEval e)
-run Install                            = putStrLn =<< P.getDataDir
+run Install                            = putStrLn =<< getDataDir
+
+getDataDir = do
+    cabal <- P.getDataDir
+    b <- doesDirectoryExist cabal
+    pure $ if b then cabal else "/usr/local/share/jac"

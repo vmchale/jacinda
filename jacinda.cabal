@@ -120,6 +120,7 @@ executable ja
     ghc-options:      -rtsopts "-with-rtsopts=-A200k -k32k"
     build-depends:
         base,
+        directory,
         jacinda-lib,
         optparse-applicative >=0.14.1.0,
         text
