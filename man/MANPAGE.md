@@ -146,7 +146,7 @@ Regular expressions follow Rust's regex library: https://docs.rs/regex/
 **-.** Unary negate
 
 **sprintf** Convert an expression to a string using the format string
-:   **%f** float **%i** integer **%s** string
+:   **%f** float **%i** integer **%s** string **%b** boolean
 
 **option** Option eliminator
 :   b -> (a -> b) -> Option a -> b
@@ -245,7 +245,7 @@ a boolean expression.
 
 # INFLUENTIAL ENVIRONMENT VARIABLES
 
-`JAC_PATH` - colon-separated list of directories to search
+`JAC_PATH` - colon-separated list of directories to search for imports
 
 # EXAMPLES
 
