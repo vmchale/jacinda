@@ -24,6 +24,16 @@ This is simpler than:
 cabal list --simple | cut -d' ' -f1 | sort -u
 ```
 
+# Create SQL Table From CSV
+
+```bash
+ja --csv "{ix=1}{sprintf'CREATE TABLE c (%s);'([x+', '+y]|>[sprintf '%s TEXT' x]¨\`$)}" -i data.csv
+```
+
+```sql
+CREATE TABLE c (Series_reference TEXT, Period TEXT, Data_value TEXT, STATUS TEXT, UNITS TEXT);
+```
+
 # Extract [Fixity Declarations for HLint](https://github.com/ndmitchell/hlint?tab=readme-ov-file#why-doesnt-hlint-know-the-fixity-for-my-custom--operator)
 
 ```
