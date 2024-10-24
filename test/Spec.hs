@@ -3,7 +3,6 @@
 module Main (main) where
 
 import           A
-import           Control.Monad    ((<=<))
 import qualified Data.ByteString  as BS
 import           Data.Foldable    (toList)
 import           Data.Functor     (void)
