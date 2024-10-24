@@ -272,6 +272,7 @@ Command-Line</a></li>
 </ul></li>
 <li><a href="#examples" id="toc-examples">Examples</a>
 <ul>
+<li><a href="#file-sizes" id="toc-file-sizes">File Sizes</a></li>
 <li><a href="#vim-tags" id="toc-vim-tags">Vim Tags</a></li>
 <li><a href="#error-span" id="toc-error-span">Error Span</a></li>
 <li><a href="#unix-command-line-tools"
@@ -538,6 +539,24 @@ fn field(r) :=
     volume={27},
 }</code></pre>
 <h1 id="examples">Examples</h1>
+<h2 id="file-sizes">File Sizes</h2>
+<p>To find the total size of files in a directory:</p>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> <span class="kw">|</span> <span class="ex">ja</span> <span class="st">&#39;(+)|0 {ix&gt;1}{`5:}&#39;</span></span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a><span class="ex">79769</span></span></code></pre></div>
+<p>We can define <code>prettyMem</code> as a library function, viz.</p>
+<pre><code>fn prettyMem(x) :=
+  ?x&gt;=1073741824.0
+  ;sprintf&#39;%f GB&#39; (x%1073741824.0)
+  ;?x&gt;=1048576.0
+   ;sprintf&#39;%f MB&#39; (x%1048576.0)
+   ;?x&gt;=1024.0
+    ;sprintf&#39;%f kB&#39; (x%1024.0)
+    ;sprintf&#39;%f b&#39; x;</code></pre>
+<p>Then:</p>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> <span class="kw">|</span> <span class="ex">ja</span> <span class="st">&quot;@include&#39;lib/prefixSizes.jac&#39; prettyMem((+)|0.0 {ix&gt;1}{</span><span class="dt">\`</span><span class="st">5:})&quot;</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a><span class="ex">77.892</span> kB</span></code></pre></div>
 <h2 id="vim-tags">Vim Tags</h2>
 <p>Suppose we wish to generate vim tag files for our Jacinda programs.
 According to <code>:help tags-file-format</code> the desired format
@@ -674,25 +693,25 @@ process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 executables, test suites, &amp;c.</p>
 <p>This can be combined with <code>fd</code> to search for all Haskell
 source files defined by a <code>.cabal</code> file, viz.</p>
-<div class="sourceCode" id="cb59"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="ex">fd</span> <span class="st">&#39;\.(cpphs|hs)$&#39;</span> <span class="va">$(</span><span class="ex">ja</span> <span class="at">-F</span><span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> <span class="at">-i</span> jacinda.cabal<span class="va">)</span></span></code></pre></div>
+<div class="sourceCode" id="cb62"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="ex">fd</span> <span class="st">&#39;\.(cpphs|hs)$&#39;</span> <span class="va">$(</span><span class="ex">ja</span> <span class="at">-F</span><span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> <span class="at">-i</span> jacinda.cabal<span class="va">)</span></span></code></pre></div>
 <h3 id="make-recipe-format">Make Recipe: Format</h3>
 <p>We can define a make recipe <code>fmt</code> to format all Haskell
 files:</p>
-<div class="sourceCode" id="cb60"><pre
-class="sourceCode mk"><code class="sourceCode makefile"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fmt:</span></span>
-<span id="cb60-2"><a href="#cb60-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x stylish-haskell -i</span></code></pre></div>
+<div class="sourceCode" id="cb63"><pre
+class="sourceCode mk"><code class="sourceCode makefile"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fmt:</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x stylish-haskell -i</span></code></pre></div>
 <h3 id="fixity-declarations-for-hlint">Fixity Declarations for
 HLint</h3>
 <p>To extract fixity declarations and present them in a format suitable
 for HLint:</p>
-<div class="sourceCode" id="cb61"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ja</span> <span class="st">&quot;{%/infix(r|l)? \d+/}{sprintf &#39;- fixity: %s&#39; </span><span class="dt">\`</span><span class="st">0}&quot;</span> <span class="at">-i</span> src/FILE.hs</span></code></pre></div>
+<div class="sourceCode" id="cb64"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb64-1"><a href="#cb64-1" aria-hidden="true" tabindex="-1"></a><span class="ex">ja</span> <span class="st">&quot;{%/infix(r|l)? \d+/}{sprintf &#39;- fixity: %s&#39; </span><span class="dt">\`</span><span class="st">0}&quot;</span> <span class="at">-i</span> src/FILE.hs</span></code></pre></div>
 <p>We can define a recipe <code>fix</code> to extract all fixity
 definitions:</p>
-<div class="sourceCode" id="cb62"><pre
-class="sourceCode mk"><code class="sourceCode makefile"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fix:</span></span>
-<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs|x|y|hsc)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x ja <span class="st">&quot;~.{%/^\s*infix(r|l)?\s+\d+/}{\`0}&quot;</span> -i | ja <span class="st">&#39;~.</span><span class="ch">$$</span><span class="st">0&#39;</span></span></code></pre></div>
+<div class="sourceCode" id="cb65"><pre
+class="sourceCode mk"><code class="sourceCode makefile"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a><span class="dv">fix:</span></span>
+<span id="cb65-2"><a href="#cb65-2" aria-hidden="true" tabindex="-1"></a><span class="er">        </span>fd <span class="st">&#39;\.(cpphs|hs|x|y|hsc)</span><span class="ch">$$</span><span class="st">&#39;</span> <span class="ch">$$</span>(ja -F<span class="st">&#39;\s*:\s*&#39;</span> <span class="st">&#39;{%/hs-source-dirs/}{`2}&#39;</span> -i apple.cabal) -x ja <span class="st">&quot;~.{%/^\s*infix(r|l)?\s+\d+/}{\`0}&quot;</span> -i | ja <span class="st">&#39;~.</span><span class="ch">$$</span><span class="st">0&#39;</span></span></code></pre></div>
 <p>Note that this works on Happy, Alex, etc. source files.</p>
 <h2 id="data-processing">Data Processing</h2>
 <h3 id="csv-processing">CSV Processing</h3>

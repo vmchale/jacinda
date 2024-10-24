@@ -383,6 +383,35 @@ We can specify `name` per-invocation like so:
 
 # Examples
 
+## File Sizes
+
+To find the total size of files in a directory:
+
+```bash
+ls -l | ja '(+)|0 {ix>1}{`5:}'
+79769
+```
+
+We can define `prettyMem` as a library function, viz.
+
+```
+fn prettyMem(x) :=
+  ?x>=1073741824.0
+  ;sprintf'%f GB' (x%1073741824.0)
+  ;?x>=1048576.0
+   ;sprintf'%f MB' (x%1048576.0)
+   ;?x>=1024.0
+    ;sprintf'%f kB' (x%1024.0)
+    ;sprintf'%f b' x;
+```
+
+Then:
+
+```bash
+ls -l | ja "@include'lib/prefixSizes.jac' prettyMem((+)|0.0 {ix>1}{\`5:})"
+77.892 kB
+```
+
 ## Vim Tags
 
 Suppose we wish to generate vim tag files for our Jacinda programs.
