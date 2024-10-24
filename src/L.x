@@ -240,7 +240,7 @@ mkBuiltin = constructor TokBuiltin
 -- this is inefficient but w/e
 escReplace :: T.Text -> T.Text
 escReplace =
-      T.replace "\\\"" "\""
+      T.replace "\\\'" "\'"
     . T.replace "\\\\" "\\"
     . T.replace "\\ESC" "\ESC"
     . T.replace "\\n" "\n"

@@ -1,3 +1,7 @@
+  * Include file in errors
+  * Performance improvements
+  * Fix string escaping; `\'` is allowed inside string literals
+
 # 3.2.0.0
 
   * Add records and accessors (with row types)
