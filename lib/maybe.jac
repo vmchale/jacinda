@@ -7,3 +7,6 @@ fn isNothing(x) :=
 {. Haskell's (<|>)
 fn alternative(a, b) :=
   option a Some b;
+
+fn lift(f,x,y) :=
+  option None (λz.f z"y) x;
