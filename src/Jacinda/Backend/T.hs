@@ -405,7 +405,7 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
     x0e <- asM<$>(x0@>b); x1e <- asM<$>(x1@>b)
     case (x0e,x1e) of
         (Nothing, Nothing)   -> pure (mkB True)
-        (Just e0b, Just e1b) -> (EApp tyB (EApp (t~>tyB) (BB (TyArr t (t~>t~>tyB)) Eq) e0b) e1b) @> b
+        (Just e0b, Just e1b) -> EApp tyB (EApp (t~>tyB) (BB (TyArr t (t~>t~>tyB)) Eq) e0b) e1b @> b
         _                    -> pure (mkB False)
 (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @> b = do
     x0e <- x0@>b; x1e <- x1@>b
