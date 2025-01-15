@@ -109,3 +109,4 @@ rwE (Paren l e) = Paren l (rwE e)
 rwE (Cond l p e e') = Cond l (rwE p) (rwE e) (rwE e')
 rwE (RwB l b) = BB l b
 rwE (RwT l b) = TB l b
+rwE (Anchor l es) = Anchor l (rwE<$>es)
