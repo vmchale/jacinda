@@ -101,6 +101,10 @@
   - [ ] mach syscalls (print+summarize)
 # Bugs
 ```
+vanessa@MacBookAir jacinda % ja -F: "reintercalate '\n' \$0" -i <(echo $PATH)
+ja: InternalUnexpectedStream $0
+```
+```
 vanessa@Vanessas-Air jacinda % seq 100001 | cabal run ja -- run test/examples/evenOdd.jac
 (50000 . 50001)
 vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/evenOdd.jac
@@ -140,6 +144,7 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
 - [ ] https://datatracker.ietf.org/doc/html/rfc4180
 - [ ] checksum?
 - [½] `basename`, `pathchk` (lol)
+- [ ] `man join` `man jot` `man rs`
 - [ ] https://github.com/curl/trurl
 - [ ] https://github.com/pharmbio/ptp-project/blob/master/exp/20180426-wo-drugbank/wo_drugbank_wf.go
 - [ ] https://github.com/epogrebnyak/justpath
@@ -151,6 +156,7 @@ vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/e
 - [ ] JQ_COLORS="0;90:0;37:0;37:0;37:0;32:1;37:1;37:1;34"
 - [ ] https://github.com/rcoh/angle-grinder?tab=readme-ov-file#query-syntax
   - [ ] https://www.brandur.org/logfmt
+- [ ] https://wiki.haskell.org/index.php?title=Literate_programming/Bird_conversion_via_awk
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/
