@@ -363,3 +363,9 @@ We could use this to pass flags to a C compiler like so:
 % python3 -m site | ja "[x+' '+y]|>(sprintf'-L%s')¨.?{|\`1 ~* 1 /([^']*site-packages)/}"
 -L/Users/vanessa/Library/Python/3.13/lib/python/site-packages -L/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages
 ```
+
+# Count Matches in Repo
+
+```
+rg 'traverse' -c | ja -F: '(+)|>$2:i'
+```
