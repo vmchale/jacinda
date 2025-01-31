@@ -1,6 +1,7 @@
 module File ( tcIO
             , runStdin, runOnFile
             , exprEval
+            , tcompile
             ) where
 
 import           A

@@ -177,6 +177,7 @@ benchmark jacinda-bench
     ghc-options:      -rtsopts "-with-rtsopts=-A200k -k32k"
     build-depends:
         base,
+        bytestring,
         criterion,
         jacinda-lib,
         deepseq,

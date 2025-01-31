@@ -103,6 +103,7 @@ lazySplit rp = go Nothing . BSL.toChunks where
             Just (iss,lss) -> iss++go (Just lss) cs
             Nothing        -> go Nothing cs
 
+{-# SCC unsnoc #-}
 unsnoc :: [a] -> Maybe ([a], a)
 unsnoc = foldr (\x acc -> Just $ case acc of {Nothing -> ([], x); Just ~(a, b) -> (x:a, b)}) Nothing
 

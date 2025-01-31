@@ -40,7 +40,7 @@ install: $(HS_SRC) man/ja.1
 clean:
 	make -C vscode clean
 	make -C tex clean
-	rm -rf tags tags.mtime dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data/*.txt bin
+	rm -rf tags tags.mtime dist-newstyle moddeps.svg doc/guide.html *.hp *.prof bench/data/*.txt bench/data/ghc bin
 
 moddeps.svg: $(HS_SRC)
 	graphmod -i src | dot -Tsvg -o $@
@@ -104,10 +104,13 @@ tags: $(JAC_SRC) $(HS_SRC)
 	fd '.jac$$' prelude lib -x ja run examples/tags.jac -i >> $@
 	ctags --append=yes --languages=ALEX,HAPPY -R src
 
-bench: bench/data/lines.txt bench/data/span.txt bench/data/ulysses.txt
+bench: bench/data/lines.txt bench/data/span.txt bench/data/ulysses.txt bench/data/ghc
 
 bench/data/lines.txt: test/examples/data/1.txt
 	perl -0777pe '$$_=$$_ x 10' $^ > $@
+
+bench/data/ghc: test/data/ghc
+	perl -0777pe '$$_=$$_ x 100' $^ > $@
 
 bench/data/span.txt: examples/span.txt
 	perl -0777pe '$$_=$$_ x 10000' $^ > $@

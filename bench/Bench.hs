@@ -3,8 +3,10 @@
 module Main (main) where
 
 import           A
+import qualified Data.ByteString.Lazy as BSL
 import           Control.DeepSeq (NFData (..))
 import           Criterion.Main
+import           Jacinda.Regex
 import qualified Data.Text.IO    as TIO
 import           File
 import           System.IO       (IOMode (WriteMode), withFile)
@@ -23,6 +25,9 @@ main =
                       [ bench "dedup" $ runs "~.{ix>1}{`8}" CSV "bench/data/food-prices.csv"
                       , bench "succdiff" $ runs "(%)\\. {%/Apple/}{`3:}" CSV "bench/data/food-prices.csv"
                       ]
+                , let rp=tcompile "\n\n"
+                  in bgroup "rure"
+                      [ bench "RS" $ nfIO (do {contents <- BSL.readFile "bench/data/ghc"; pure (lazySplit rp contents)}) ]
                 , bgroup "report"
                       [ bench "ghc-filt" $ fruns "test/examples/ghc-filt.jac" awk "test/data/ghc" ]
                 , bgroup "stream"
