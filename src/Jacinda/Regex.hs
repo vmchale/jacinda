@@ -80,16 +80,17 @@ find' :: RurePtr -> BS.ByteString -> Maybe RureMatch
 find' re str = unsafeDupablePerformIO $ find re str 0
 
 lazySplitH :: RurePtr -> BSL.ByteString -> [BS.ByteString]
-lazySplitH rp = go Nothing . BSL.toChunks where
+lazySplitH rp = DL.toList . go Nothing . BSL.toChunks where
     go Nothing [] = []
     go Nothing (c:cs) =
-        case unsnoc (splitH rp c) of
-            Just (iss,lss) -> iss++go (Just lss) cs
+        case splitH rp c of
+            Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
-    go (Just c) [] = splitByA rp c
+            -- FIXME: splitByL discards header?
+    go (Just c) [] = splitByL rp c
     go (Just e) (c:cs) =
-        case unsnoc (splitByA rp (e<>c)) of
-            Just (iss,lss) -> iss++go (Just lss) cs
+        case splitH rp (e<>c) of
+            Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
 
 lazySplit :: RurePtr -> BSL.ByteString -> [BS.ByteString]
@@ -156,13 +157,13 @@ splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitH #-}
-splitH :: RurePtr -> BS.ByteString -> [BS.ByteString]
-splitH _ "" = []
-splitH re haystack@(BS.BS fp l) =
-    [BS.BS (fp `plusForeignPtr` s) (e-s) | (s,e) <- chopAt 0 ixes]
+splitH :: RurePtr -> BS.ByteString -> Maybe (DL.DList BS.ByteString, BS.ByteString)
+splitH _ "" = Nothing
+splitH re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> chopAt 0 ixes
     where ixes = unsafeDupablePerformIO $ matches' re haystack
-          chopAt begin []                  = [(begin, l)]
-          chopAt begin (RureMatch b _:rms) = (begin, fromIntegral b) : chopAt (fromIntegral b) rms
+          chopAt begin []                  = Just (DL.empty, (begin, l))
+          chopAt begin (RureMatch b _:rms) = first ((begin, fromIntegral b) `DL.cons`) <$> chopAt (fromIntegral b) rms
+          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 isMatch' :: RurePtr
          -> BS.ByteString
