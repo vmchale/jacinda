@@ -318,40 +318,6 @@ instance Pretty (E a) where pretty=ps 0
 
 instance Show (E a) where show=show.pretty
 
--- for tests
-instance Eq (E a) where
-    (==) (Column _ i) (Column _ j)              = i == j
-    (==) (IParseCol _ i) (IParseCol _ j)        = i == j
-    (==) (FParseCol _ i) (FParseCol _ j)        = i == j
-    (==) (Field _ i) (Field _ j)                = i == j
-    (==) LastField{} LastField{}                = True
-    (==) FieldList{} FieldList{}                = True
-    (==) AllColumn{} AllColumn{}                = True
-    (==) AllField{} AllField{}                  = True
-    (==) (EApp _ e0 e1) (EApp _ e0' e1')        = e0 == e0' && e1 == e1'
-    (==) (Guarded _ p e) (Guarded _ p' e')      = p == p' && e == e'
-    (==) (Implicit _ e) (Implicit _ e')         = e == e'
-    (==) (Let _ (n, eϵ) e) (Let _ (n', eϵ') e') = eqName n n' && e == e' && eϵ == eϵ'
-    (==) (Var _ n) (Var _ n')                   = eqName n n'
-    (==) (Lam _ n e) (Lam _ n' e')              = eqName n n' && e == e'
-    (==) (Lit _ l) (Lit _ l')                   = l == l'
-    (==) (RegexLit _ rr) (RegexLit _ rr')       = rr == rr'
-    (==) (BB _ b) (BB _ b')                     = b == b'
-    (==) (TB _ b) (TB _ b')                     = b == b'
-    (==) (UB _ unOp) (UB _ unOp')               = unOp == unOp'
-    (==) (NB _ x) (NB _ y)                      = x == y
-    (==) (Tup _ es) (Tup _ es')                 = es == es'
-    (==) (Rec _ es) (Rec _ es')                 = es == es'
-    (==) (ResVar _ x) (ResVar _ y)              = x == y
-    (==) (Dfn _ f) (Dfn _ g)                    = f == g -- we're testing for lexical equivalence
-    (==) RC{} _                                 = error "Cannot compare compiled regex!"
-    (==) _ RC{}                                 = error "Cannot compare compiled regex!"
-    (==) (Paren _ e) e'                         = e == e'
-    (==) e (Paren _ e')                         = e == e'
-    (==) (RwB _ b) (RwB _ b')                   = b == b'
-    (==) (RwT _ b) (RwT _ b')                   = b == b'
-    (==) _ _                                    = False
-
 data C = IsNum | IsEq | IsOrd
        | IsParse | IsPrintf
        | IsSemigroup | IsMonoid
