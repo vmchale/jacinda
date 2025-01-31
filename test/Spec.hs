@@ -51,6 +51,8 @@ main = defaultMain $
         testGroup "stream"
           [ harness "examples/otool/rpath.jac" awk "test/data/otool" "test/golden/rpath.out"
           , harness "examples/otool/dllibs.jac" awk "test/data/otool" "test/golden/ldlib.out"
+          , harness "examples/pubmed2tex.jac" awk "test/data/3221331.nbib" "test/golden/holland1988.bib"
+          , harness "examples/pubmed2tex.jac" awk "test/data/22078126.nbib" "test/golden/gonadalsex.bib"
           , harness "test/examples/ghc-filt.jac" awk "test/data/ghc" "test/golden/ghc.out"
           , ep "[x ~* 1 /(\\d+(\\.\\d+)*)/]:?{%/Versions available:/}{[y]|>`$}"
                 (AWK (Just "\\s*,\\s*") (Just "\\n[^:\\n]*:") True)
