@@ -27,7 +27,9 @@ main =
                       ]
                 , let rp=tcompile "\n\n"
                   in bgroup "rure"
-                      [ bench "RS" $ nfIO (do {contents <- BSL.readFile "bench/data/ghc"; pure (lazySplit rp contents)}) ]
+                      [ bench "RS" $ nfIO (do {contents <- BSL.readFile "bench/data/ghc"; pure (lazySplit rp contents)})
+                      , bench "header" $ nfIO (do {contents <- BSL.readFile "bench/data/ghc"; pure (lazySplitH rp contents)})
+                      ]
                 , bgroup "report"
                       [ bench "ghc-filt" $ fruns "test/examples/ghc-filt.jac" awk "test/data/ghc" ]
                 , bgroup "stream"
