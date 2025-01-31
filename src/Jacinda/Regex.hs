@@ -21,6 +21,7 @@ import           Data.Bifunctor           (bimap, first)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
+import qualified Data.DList               as DL
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
@@ -92,15 +93,15 @@ lazySplitH rp = go Nothing . BSL.toChunks where
             Nothing        -> go Nothing cs
 
 lazySplit :: RurePtr -> BSL.ByteString -> [BS.ByteString]
-lazySplit rp = go Nothing . BSL.toChunks where
-    go Nothing []      = []
+lazySplit rp = DL.toList . go Nothing . BSL.toChunks where
+    go Nothing []      = DL.empty
     go Nothing (c:cs)  =
-        case splitByR rp c of
-            Just (iss,lss) -> iss++go (Just lss) cs
+        case splitByDL rp c of
+            Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
-    go (Just c) []     = splitByA rp c
+    go (Just c) []     = splitByL rp c
     go (Just e) (c:cs) =
-        case splitByR rp (e<>c) of
+        case splitByDL rp (e<>c) of
             Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
 
@@ -110,6 +111,20 @@ unsnoc = foldr (\x acc -> Just $ case acc of {Nothing -> ([], x); Just ~(a, b) -
 
 splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
 splitBy = (V.fromList .) . splitByA
+
+{-# NOINLINE splitByL #-}
+splitByL :: RurePtr
+         -> BS.ByteString
+         -> DL.DList BS.ByteString
+splitByL _ "" = DL.empty
+splitByL re haystack@(BS.BS fp l) = pp<$>slicePairs
+    where ixes = unsafeDupablePerformIO $ matches' re haystack
+          slicePairs = case ixes of
+                (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
+                rms                 -> mkMiddle 0 rms
+          mkMiddle begin' []        = DL.singleton (begin', l)
+          mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) `DL.cons` mkMiddle (fromIntegral $ end rm0) rms
+          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitByA #-}
 splitByA :: RurePtr
@@ -125,19 +140,19 @@ splitByA re haystack@(BS.BS fp l) =
           mkMiddle begin' []        = [(begin', l)]
           mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) : mkMiddle (fromIntegral $ end rm0) rms
 
-{-# SCC splitByR #-}
-{-# NOINLINE splitByR #-}
-splitByR :: RurePtr
-         -> BS.ByteString
-         -> Maybe ([BS.ByteString], BS.ByteString)
-splitByR _ "" = Nothing
-splitByR re haystack@(BS.BS fp l) = bimap (map pp) pp <$> slicePairs
+{-# SCC splitByDL #-}
+{-# NOINLINE splitByDL #-}
+splitByDL :: RurePtr
+          -> BS.ByteString
+          -> Maybe (DL.DList (BS.ByteString), BS.ByteString)
+splitByDL _ "" = Nothing
+splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
                 rms                 -> mkMiddle 0 rms
-          mkMiddle begin' []        = Just ([], (begin', l))
-          mkMiddle begin' (rm0:rms) = first ((begin', fromIntegral (start rm0)) :) <$> mkMiddle (fromIntegral $ end rm0) rms
+          mkMiddle begin' []        = Just (DL.empty, (begin', l))
+          mkMiddle begin' (rm0:rms) = first ((begin', fromIntegral (start rm0)) `DL.cons`) <$> mkMiddle (fromIntegral $ end rm0) rms
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitH #-}
