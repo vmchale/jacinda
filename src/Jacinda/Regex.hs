@@ -17,6 +17,7 @@ module Jacinda.Regex ( lazySplit
 
 import           Control.Exception        (Exception, throwIO)
 import           Control.Monad            ((<=<))
+import           Data.Bifunctor           (bimap, first)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
@@ -94,13 +95,13 @@ lazySplit :: RurePtr -> BSL.ByteString -> [BS.ByteString]
 lazySplit rp = go Nothing . BSL.toChunks where
     go Nothing []      = []
     go Nothing (c:cs)  =
-        case unsnoc (splitByA rp c) of
+        case splitByR rp c of
             Just (iss,lss) -> iss++go (Just lss) cs
             Nothing        -> go Nothing cs
     go (Just c) []     = splitByA rp c
     go (Just e) (c:cs) =
-        case unsnoc (splitByA rp (e<>c)) of
-            Just (iss,lss) -> iss++go (Just lss) cs
+        case splitByR rp (e<>c) of
+            Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
 
 {-# SCC unsnoc #-}
@@ -123,6 +124,21 @@ splitByA re haystack@(BS.BS fp l) =
                 rms                 -> mkMiddle 0 rms
           mkMiddle begin' []        = [(begin', l)]
           mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) : mkMiddle (fromIntegral $ end rm0) rms
+
+{-# SCC splitByR #-}
+{-# NOINLINE splitByR #-}
+splitByR :: RurePtr
+         -> BS.ByteString
+         -> Maybe ([BS.ByteString], BS.ByteString)
+splitByR _ "" = Nothing
+splitByR re haystack@(BS.BS fp l) = bimap (map pp) pp <$> slicePairs
+    where ixes = unsafeDupablePerformIO $ matches' re haystack
+          slicePairs = case ixes of
+                (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
+                rms                 -> mkMiddle 0 rms
+          mkMiddle begin' []        = Just ([], (begin', l))
+          mkMiddle begin' (rm0:rms) = first ((begin', fromIntegral (start rm0)) :) <$> mkMiddle (fromIntegral $ end rm0) rms
+          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitH #-}
 splitH :: RurePtr -> BS.ByteString -> [BS.ByteString]
