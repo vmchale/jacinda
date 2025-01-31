@@ -1,3 +1,5 @@
+  * Fix pathological performance using custom record separator on large inputs
+
 # 3.3.0.1
 
   * Equality on optional values no longer crashes
