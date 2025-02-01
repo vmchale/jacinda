@@ -106,15 +106,7 @@ lazySplit rp = DL.toList . go Nothing . BSL.toChunks where
 
 {-# NOINLINE splitByL #-}
 splitByL :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
-splitByL _ "" = DL.empty
-splitByL re haystack@(BS.BS fp l) = pp<$>slicePairs
-    where ixes = unsafeDupablePerformIO $ matches' re haystack
-          slicePairs = case ixes of
-                (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
-                rms                 -> mkMiddle 0 rms
-          mkMiddle begin' []        = DL.singleton (begin', l)
-          mkMiddle begin' (rm0:rms) = (begin', fromIntegral (start rm0)) `DL.cons` mkMiddle (fromIntegral $ end rm0) rms
-          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
+splitByL rp b = case splitByDL rp b of {Nothing -> DL.empty; Just (as,a) -> as `DL.snoc` a}
 
 {-# NOINLINE splitBy #-}
 splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
@@ -144,12 +136,7 @@ splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
 
 {-# NOINLINE splitHLast #-}
 splitHLast :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
-splitHLast _ "" = DL.empty
-splitHLast re haystack@(BS.BS fp l) = pp <$> chopAt 0 ixes
-    where ixes = unsafeDupablePerformIO $ matches' re haystack
-          chopAt begin []                  = DL.singleton (begin, l)
-          chopAt begin (RureMatch b _:rms) = let b'=fromIntegral b in (begin, b') `DL.cons` (chopAt b' rms)
-          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
+splitHLast rp b = case splitH rp b of {Nothing -> DL.empty; Just (as,a) -> as `DL.snoc` a}
 
 {-# NOINLINE splitH #-}
 splitH :: RurePtr -> BS.ByteString -> Maybe (DL.DList BS.ByteString, BS.ByteString)
