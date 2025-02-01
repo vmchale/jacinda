@@ -1,0 +1,9 @@
+packages: ./
+
+package jacinda
+  ghc-options: -fwrite-ide-info
+
+tests: True
+benchmarks: True
+
+with-compiler: ghc-9.8
