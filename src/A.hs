@@ -35,7 +35,7 @@ infixr 6 <##>
 data TB = TyI | TyFloat | TyStr
         | TyStream | TyVec | TyOption
         | TyR | TyBool | TyUnit
-        deriving (Eq, Ord)
+        deriving Eq
 
 tupledByFunky :: Doc ann -> [Doc ann] -> Doc ann
 tupledByFunky sep = group . encloseSep (flatAlt "⟨ " "⟨") (flatAlt " ⟩" "⟩") sep
@@ -100,7 +100,6 @@ data BUn = Tally -- length of string field
          | Negate
          | TallyList -- length of vector
          | Head | Tail | Init | Last
-         deriving (Eq)
 
 instance Pretty BUn where
     pretty Tally      = "#"
@@ -130,7 +129,6 @@ data BTer = ZipW
           | Option
           | Captures | AllCaptures | Ixes
           | Bookend
-          deriving (Eq)
 
 instance Pretty BTer where
     pretty ZipW        = ","
@@ -162,7 +160,6 @@ data BBin = Plus | Times | Div
           | Report
           | Take | Drop
           | Rein | Nier
-          deriving (Eq)
 
 instance Pretty BBin where
     pretty Plus = "+"; pretty Times = "*"; pretty Div = "%"; pretty Minus = "-"
@@ -176,14 +173,14 @@ instance Pretty BBin where
     pretty Take = "take#"; pretty Drop = "drop#"; pretty Rein = "reintercalate"
     pretty Nier = "@@"
 
-data DfnVar = X | Y deriving (Eq)
+data DfnVar = X | Y
 
 instance Pretty DfnVar where pretty X="x"; pretty Y="y"
 
 -- 0-ary
-data N = Ix | Nf | None | Fp | MZ deriving (Eq)
+data N = Ix | Nf | None | Fp | MZ
 
-data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData, Eq)
+data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData)
 
 class PS a where ps :: Int -> a -> Doc ann
 
