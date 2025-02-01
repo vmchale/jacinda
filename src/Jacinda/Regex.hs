@@ -120,7 +120,7 @@ splitByL re haystack@(BS.BS fp l) = pp<$>slicePairs
 splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
 splitBy _ "" = []
 splitBy re haystack@(BS.BS fp l) =
-    V.fromList $ map (\(s,e) -> BS.BS (fp `plusForeignPtr` s) (e-s)) slicePairs
+    V.fromList [ BS.BS (fp `plusForeignPtr` s) (e-s) | (s,e) <- slicePairs ]
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           slicePairs = case ixes of
                 (RureMatch 0 i:rms) -> mkMiddle (fromIntegral i) rms
