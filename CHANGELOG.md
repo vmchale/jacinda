@@ -1,3 +1,5 @@
+# 3.3.0.2
+
   * Fix pathological performance using custom record separator on large inputs
 
 # 3.3.0.1
