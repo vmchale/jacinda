@@ -59,7 +59,7 @@ darwin-release: bin/aarch64-darwin-ja
 bin/aarch64-darwin-ja: $(HS_SRC)
 	mkdir -p $(dir $@)
 	cabal build exe:ja -w $(HC)
-	export BIN=$$(cabal-plan list-bins | awk '/ja$$/ {print $$2}'); \
+	export BIN=$$(cabal list-bin ja -v0); \
 	    cp $$BIN $@ ; \
 	    strip $@
 
