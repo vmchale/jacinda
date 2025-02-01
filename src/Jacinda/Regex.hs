@@ -37,7 +37,7 @@ defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
 
 genFlags :: RureFlags
-genFlags = rureDefaultFlags <> rureFlagDotNL -- in case they want to use a custom record separator
+genFlags = rureDefaultFlags <> rureFlagDotNL
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ-begin)
@@ -46,9 +46,8 @@ substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` be
 captures' :: RurePtr -> BS.ByteString -> CSize -> [BS.ByteString]
 captures' re haystack@(BS.BS fp _) ix = unsafeDupablePerformIO $ fmap go <$> captures re haystack ix
     where go (RureMatch s e) =
-            let e' = fromIntegral e
-                s' = fromIntegral s
-                in BS.BS (fp `plusForeignPtr` s') (e'-s')
+            let e' = fromIntegral e; s' = fromIntegral s
+            in BS.BS (fp `plusForeignPtr` s') (e'-s')
 
 {-# NOINLINE capturesIx #-}
 capturesIx :: RurePtr -> BS.ByteString -> CSize -> [RureMatch]
@@ -86,8 +85,7 @@ lazySplitH rp = DL.toList . go Nothing . BSL.toChunks where
         case splitH rp c of
             Just (iss,lss) -> iss<>go (Just lss) cs
             Nothing        -> go Nothing cs
-            -- FIXME: splitByL discards header?
-    go (Just c) [] = splitByL rp c
+    go (Just c) [] = splitHLast rp c
     go (Just e) (c:cs) =
         case splitH rp (e<>c) of
             Just (iss,lss) -> iss<>go (Just lss) cs
@@ -107,9 +105,7 @@ lazySplit rp = DL.toList . go Nothing . BSL.toChunks where
             Nothing        -> go Nothing cs
 
 {-# NOINLINE splitByL #-}
-splitByL :: RurePtr
-         -> BS.ByteString
-         -> DL.DList BS.ByteString
+splitByL :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
 splitByL _ "" = DL.empty
 splitByL re haystack@(BS.BS fp l) = pp<$>slicePairs
     where ixes = unsafeDupablePerformIO $ matches' re haystack
@@ -121,9 +117,7 @@ splitByL re haystack@(BS.BS fp l) = pp<$>slicePairs
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitBy #-}
-splitBy :: RurePtr
-        -> BS.ByteString
-        -> V.Vector BS.ByteString
+splitBy :: RurePtr -> BS.ByteString -> V.Vector BS.ByteString
 splitBy _ "" = []
 splitBy re haystack@(BS.BS fp l) =
     V.fromList $ map (\(s,e) -> BS.BS (fp `plusForeignPtr` s) (e-s)) slicePairs
@@ -136,8 +130,7 @@ splitBy re haystack@(BS.BS fp l) =
 
 {-# SCC splitByDL #-}
 {-# NOINLINE splitByDL #-}
-splitByDL :: RurePtr
-          -> BS.ByteString
+splitByDL :: RurePtr -> BS.ByteString
           -> Maybe (DL.DList (BS.ByteString), BS.ByteString)
 splitByDL _ "" = Nothing
 splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
@@ -149,18 +142,25 @@ splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
           mkMiddle begin' (rm0:rms) = first ((begin', fromIntegral (start rm0)) `DL.cons`) <$> mkMiddle (fromIntegral $ end rm0) rms
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
+{-# NOINLINE splitHLast #-}
+splitHLast :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
+splitHLast _ "" = DL.empty
+splitHLast re haystack@(BS.BS fp l) = pp <$> chopAt 0 ixes
+    where ixes = unsafeDupablePerformIO $ matches' re haystack
+          chopAt begin []                  = DL.singleton (begin, l)
+          chopAt begin (RureMatch b _:rms) = let b'=fromIntegral b in (begin, b') `DL.cons` (chopAt b' rms)
+          pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
+
 {-# NOINLINE splitH #-}
 splitH :: RurePtr -> BS.ByteString -> Maybe (DL.DList BS.ByteString, BS.ByteString)
 splitH _ "" = Nothing
 splitH re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> chopAt 0 ixes
     where ixes = unsafeDupablePerformIO $ matches' re haystack
           chopAt begin []                  = Just (DL.empty, (begin, l))
-          chopAt begin (RureMatch b _:rms) = first ((begin, fromIntegral b) `DL.cons`) <$> chopAt (fromIntegral b) rms
+          chopAt begin (RureMatch b _:rms) = let b'=fromIntegral b in first ((begin, b') `DL.cons`) <$> chopAt b' rms
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
-isMatch' :: RurePtr
-         -> BS.ByteString
-         -> Bool
+isMatch' :: RurePtr -> BS.ByteString -> Bool
 isMatch' re haystack = unsafeDupablePerformIO $ isMatch re haystack 0
 
 compileDefault :: BS.ByteString -> RurePtr
@@ -169,7 +169,6 @@ compileDefault = unsafeDupablePerformIO . (yIO <=< compile genFlags)
 newtype RureExe = RegexCompile String
 
 instance Show RureExe where show (RegexCompile str) = str
-
 instance Exception RureExe where
 
 yIO :: Either String a -> IO a
