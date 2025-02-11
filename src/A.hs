@@ -55,14 +55,14 @@ infixr 0 ~>
 
 infixr 0 :$
 
-data T = TyB { tyBuiltin :: TB }
+data T = TyB { tyBuiltin :: !TB }
        | (:$) { tyApp0, tyApp1 :: T }
        | TyArr { tyArr0, tyArr1 :: T }
-       | TyVar { tyVar :: Nm () }
+       | TyVar { tyVar :: !(Nm ()) }
        | TyTup { tyTups :: [T] }
        | TyRec { tyres :: NmMap T }
-       | Rho { tyRho :: Nm (), tyArms :: IM.IntMap T }
-       | Ρ { tyΡ :: Nm (), tyρs :: NmMap T }
+       | Rho { tyRho :: !(Nm ()), tyArms :: IM.IntMap T }
+       | Ρ { tyΡ :: !(Nm ()), tyρs :: NmMap T }
        deriving Eq
 
 instance Pretty TB where
@@ -185,9 +185,9 @@ data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString derivi
 class PS a where ps :: Int -> a -> Doc ann
 
 -- expression
-data E a = Column { eLoc :: a, col :: Int }
-         | IParseCol { eLoc :: a, col :: Int } | FParseCol { eLoc :: a, col :: Int } | ParseCol { eLoc :: a, col :: Int }
-         | Field { eLoc :: a, eField :: Int } | LastField { eLoc :: a } | FieldList { eLoc :: a }
+data E a = Column { eLoc :: a, col :: !Int }
+         | IParseCol { eLoc :: a, col :: !Int } | FParseCol { eLoc :: a, col :: !Int } | ParseCol { eLoc :: a, col :: Int }
+         | Field { eLoc :: a, eField :: !Int } | LastField { eLoc :: a } | FieldList { eLoc :: a }
          | AllField { eLoc :: a } -- ^ Think @$0@ in awk.
          | AllColumn { eLoc :: a } -- ^ Think @$0@ in awk.
          | IParseAllCol { eLoc :: a } -- ^ @$0@, parsed as an integer
@@ -203,18 +203,18 @@ data E a = Column { eLoc :: a, col :: Int }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
          | Dfn { eLoc :: a, eDfn :: E a }
-         | BB { eLoc :: a, eBin :: BBin } | TB { eLoc :: a, eTer :: BTer } | UB { eLoc :: a, eUn :: BUn }
-         | NB { eLoc :: a, eNil :: N }
+         | BB { eLoc :: a, eBin :: !BBin } | TB { eLoc :: a, eTer :: !BTer } | UB { eLoc :: a, eUn :: !BUn }
+         | NB { eLoc :: a, eNil :: !N }
          | Tup { eLoc :: a, esTup :: [E a] }
          | Rec { eLoc :: a, esR :: [(Nm a, E a)] }
-         | ResVar { eLoc :: a, dfnVar :: DfnVar }
+         | ResVar { eLoc :: a, dfnVar :: !DfnVar }
          | RC RurePtr -- compiled regex after normalization
          | Arr { eLoc :: a, elems :: !(V.Vector (E a)) }
          | Anchor { eLoc :: a, eAnchored :: [E a] }
-         | Paren { eLoc :: a, eExpr :: E a }
+         | Paren { eLoc :: a, eExpr :: !(E a) }
          | OptionVal { eLoc :: a, eMaybe :: Maybe (E a) }
          | Cond { eLoc :: a, eIf, eThen, eElse :: E a }
-         | RwB { eLoc :: a, eBin :: BBin } | RwT { eLoc :: a, eTer :: BTer }
+         | RwB { eLoc :: a, eBin :: !BBin } | RwT { eLoc :: a, eTer :: !BTer }
          deriving (Functor)
 
 instance Pretty N where
@@ -332,11 +332,11 @@ instance Pretty C where
 instance Show C where show=show.pretty
 
 -- decl
-data D a = SetFS T.Text | SetRS T.Text
+data D a = SetFS !T.Text | SetRS !T.Text
          | FunDecl (Nm a) [Nm a] (E a)
          | FlushDecl | SetH
          | SetAsv | SetUsv | SetCsv
-         | SetOFS T.Text | SetORS T.Text
+         | SetOFS !T.Text | SetORS !T.Text
          deriving (Functor)
 
 instance Pretty (D a) where
@@ -363,7 +363,7 @@ flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
 
 awk = AWK Nothing Nothing False
 
-data Mode = CSV | AWK (Maybe T.Text) (Maybe T.Text) Bool -- field, record, include header in record split
+data Mode = CSV | AWK !(Maybe T.Text) !(Maybe T.Text) !Bool -- field, record, include header in record split
 
 getS :: Program a -> Mode
 getS (Program ds _) = foldl' go awk ds where
