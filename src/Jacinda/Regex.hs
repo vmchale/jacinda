@@ -123,7 +123,7 @@ splitBy re haystack@(BS.BS fp l) =
 {-# SCC splitByDL #-}
 {-# NOINLINE splitByDL #-}
 splitByDL :: RurePtr -> BS.ByteString
-          -> Maybe (DL.DList (BS.ByteString), BS.ByteString)
+          -> Maybe (DL.DList BS.ByteString, BS.ByteString)
 splitByDL _ "" = Nothing
 splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
     where ixes = unsafeDupablePerformIO $ matches' re haystack
