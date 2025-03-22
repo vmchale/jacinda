@@ -112,7 +112,7 @@ library jacinda-lib
         array,
         mtl,
         transformers,
-        regex-rure >=0.1.2.0,
+        regex-rure >=1.0.0.0,
         microlens,
         directory,
         filepath,

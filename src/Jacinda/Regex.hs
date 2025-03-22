@@ -25,7 +25,7 @@ import qualified Data.DList               as DL
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
-import           Regex.Rure               (RureFlags, RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
+import           Regex.Rure               (RureFlags (RureFlagDotNL), RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags)
 import           System.IO.Unsafe         (unsafeDupablePerformIO, unsafePerformIO)
 
 -- https://docs.rs/regex/latest/regex/#perl-character-classes-unicode-friendly
@@ -37,7 +37,7 @@ defaultRurePtr :: RurePtr
 defaultRurePtr = unsafePerformIO $ yIO =<< compile genFlags defaultFs
 
 genFlags :: RureFlags
-genFlags = rureDefaultFlags <> rureFlagDotNL
+genFlags = rureDefaultFlags <> RureFlagDotNL
 
 substr :: BS.ByteString -> Int -> Int -> BS.ByteString
 substr (BS.BS fp l) begin endϵ | endϵ >= begin = BS.BS (fp `plusForeignPtr` begin) (min l endϵ-begin)
