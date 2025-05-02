@@ -129,13 +129,15 @@ occ (TyArr t t')            = occ t <> occ t'
 occ (Rho (Nm _ (U i) _) rs) = IS.insert i (foldMap occ (IM.elems rs))
 occ (Ρ (Nm _ (U i) _) rs)   = IS.insert i (foldMap occ (Nm.elems rs))
 
+bc :: a -> U -> T -> T -> Subst -> Either (Err a) Subst
+bc x (U u) t t' s | u `IS.member` occ t = Left $ Occ x t t'
+                  | otherwise = Right $ IM.insert u t s
+
 mgu :: l -> Subst -> T -> T -> Either (Err l) Subst
 mgu _ s (TyB b) (TyB b') | b == b' = Right s
 mgu _ s (TyVar n) (TyVar n') | n == n' = Right s
-mgu l s t t'@(TyVar (Nm _ (U k) _)) | k `IS.notMember` occ t = Right $ IM.insert k t s
-                                      | otherwise = Left $ Occ l t' t
-mgu l s t@(TyVar (Nm _ (U k) _)) t' | k `IS.notMember` occ t' = Right $ IM.insert k t' s
-                                      | otherwise = Left $ Occ l t t'
+mgu l s t t'@(TyVar (Nm _ u _)) = bc l u t t' s
+mgu l s t@(TyVar (Nm _ u _)) t' = bc l u t' t s
 mgu l s (TyArr t0 t1) (TyArr t0' t1')  = do {s0 <- mgu l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (t0:$t1) (t0':$t1')            = do {s0 <- mgu l s t0 t0'; mguPrep l s0 t1 t1'}
 mgu l s (TyTup ts) (TyTup ts') | length ts == length ts' = zS (mguPrep l) s ts ts'
