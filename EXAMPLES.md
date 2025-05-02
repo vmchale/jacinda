@@ -71,8 +71,19 @@ Equivalently:
 [sprintf '- fixity: %s' x]¨(~/infix(r|l)?\s+\d+/)#.$0
 ```
 
-This is equivalent to `hlint --find src/FILE.hs | rg '^- fixity:'`, except it
+This is like `hlint --find src/FILE.hs | rg '^- fixity:'`, except it
 works on Happy, Alex, etc. preprocessor files.
+
+To be completely rigorous, we should escape lines ending with `:`, viz.
+
+```
+fn yamlEsc(str):
+  if str ~ /:$/
+    then '"' + str + '"'
+    else str;
+
+{%/infix(r|l)?\s+\d+/}{sprintf '- fixity: %s' (yamlEsc `0)}
+```
 
 # Trim URL
 
