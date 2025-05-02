@@ -1,5 +1,6 @@
 {. ja run pubmed2tex.jac -i citation.nbib
-:set rs:=/\r\n/;
+:set header;
+:set rs:=/\r\n[A-Z]{2,4}/;
 
 {. 10.1016/j.tig.2011.10.004 [doi]
 fn doi(record) :=
@@ -12,7 +13,7 @@ fn pfield(label,r) :=
   '    ' + label + '={' + r + '},';
 
 fn collateAu(r) :=
-  r ~* 1 /^FAU - (.*)$/;
+  r ~* 1 /FAU - (.*)$/;
 
 fn bind(f,x) :=
   option None f x;
@@ -21,8 +22,8 @@ fn texpaginate() := sub1 /-/ '--';
 
 fn field(r) :=
   let 
-    val key := r ~* 1 /^([A-Z ]{4})-/
-    val value := r ~* 2 /^([A-Z ]{4})-\s*(.*)/
+    val key := r ~* 1 /([A-Z ]{4})-/
+    val value := r ~* 2 /([A-Z ]{4})-\s*(.*)/
   in
      ?key=Some 'TI  ';(pfield 'title')¨value
     ;?key=Some 'AID ';(pfield 'doi')¨bind doi value
