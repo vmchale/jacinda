@@ -68,6 +68,7 @@ common warnings
         -Wredundant-constraints -Widentities -Wcpp-undef
         -Wmissing-export-lists -Wunused-packages -Wno-x-partial
         -Wno-missing-signatures -Wredundant-bang-patterns
+        -Wno-operator-whitespace-ext-conflict
 
 library jacinda-lib
     import:           warnings
