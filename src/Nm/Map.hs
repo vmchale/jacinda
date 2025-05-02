@@ -21,7 +21,10 @@ import           U
 infixl 9 !
 
 data NmMap a = NmMap { xx :: !(IM.IntMap a), context :: IM.IntMap T.Text }
-             deriving (Eq, Functor, Foldable, Traversable)
+             deriving (Functor, Foldable, Traversable)
+
+instance Eq a => Eq (NmMap a) where
+    (==) (NmMap xx₀ _) (NmMap xx₁ _) = xx₀==xx₁
 
 instance Semigroup (NmMap a) where
     (<>) (NmMap x y) (NmMap x' y') = NmMap (x<>x') (y<>y')
