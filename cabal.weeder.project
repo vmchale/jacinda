@@ -3,6 +3,9 @@ packages: ./
 package jacinda
   ghc-options: -fwrite-ide-info
 
+package lazy-csv
+  ghc-options: -fregs-graph
+
 tests: True
 benchmarks: True
 
