@@ -228,13 +228,8 @@ tok f (p,_,_,s) len = f p (T.take len s)
 
 constructor c t = tok (\p _ -> alex $ c p t)
 
-res = constructor TokResVar
-
-mkKw = constructor TokKeyword
-
-sym = constructor TokSym
-
-mkBuiltin = constructor TokBuiltin
+res = constructor TokResVar; mkKw      = constructor TokKeyword
+sym = constructor TokSym;    mkBuiltin = constructor TokBuiltin
 
 -- this is inefficient but w/e
 escReplace :: T.Text -> T.Text
@@ -251,7 +246,6 @@ escRr = T.replace "\\/" "/"
 instance Pretty AlexPosn where
     pretty (AlexPn _ line col) = pretty line <> colon <> pretty col
 
--- functional bimap?
 type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn))
 
 alexInitUserState :: AlexUserState
