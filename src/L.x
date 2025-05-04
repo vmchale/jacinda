@@ -231,14 +231,15 @@ constructor c t = tok (\p _ -> alex $ c p t)
 res = constructor TokResVar; mkKw      = constructor TokKeyword
 sym = constructor TokSym;    mkBuiltin = constructor TokBuiltin
 
--- this is inefficient but w/e
+data R = Z | B
+
 escReplace :: T.Text -> T.Text
-escReplace =
-      T.replace "\\\'" "\'"
-    . T.replace "\\\\" "\\"
-    . T.replace "\\ESC" "\ESC"
-    . T.replace "\\n" "\n"
-    . T.replace "\\t" "\t"
+escReplace = fst . T.foldl' g (T.empty, Z) where
+    g (accum, _) '\\' = (accum, B)
+    g (accum, B) '\'' = (accum `T.snoc` '\'', Z)
+    g (accum, B) 'n'  = (accum `T.snoc` '\n', Z)
+    g (accum, B) 't'  = (accum `T.snoc` '\t', Z)
+    g (accum, _) c    = (accum `T.snoc` c, Z)
 
 escRr :: T.Text -> T.Text
 escRr = T.replace "\\/" "/"
