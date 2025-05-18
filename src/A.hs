@@ -180,9 +180,23 @@ instance Pretty DfnVar where pretty X="x"; pretty Y="y"
 -- 0-ary
 data N = Ix | Nf | None | Fp | MZ
 
-data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, NFData)
+data L = ILit !Integer | FLit !Double | BLit !Bool | StrLit BS.ByteString deriving (Generic, Eq, Ord, NFData)
 
 class PS a where ps :: Int -> a -> Doc ann
+
+instance Eq (E a) where
+    (==) (Lit _ l₀) (Lit _ l₁)             = l₀==l₁
+    (==) (Tup _ es₀) (Tup _ es₁)           = es₀==es₁
+    (==) (Rec _ a₀) (Rec _ a₁)             = a₀==a₁
+    (==) (OptionVal _ e₀) (OptionVal _ e₁) = e₀==e₁
+    (==) _ _                               = undefined
+
+instance Ord (E a) where
+    compare (Lit _ l₀) (Lit _ l₁)             = compare l₀ l₁
+    compare (Tup _ es₀) (Tup _ es₁)           = compare es₀ es₁
+    compare (Rec _ a₀) (Rec _ a₁)             = compare a₀ a₁
+    compare (OptionVal _ e₀) (OptionVal _ e₁) = compare e₀ e₁
+    compare _ _                               = undefined
 
 -- expression
 data E a = Column { eLoc :: a, col :: !Int }

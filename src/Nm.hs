@@ -12,6 +12,9 @@ data Nm a = Nm { name   :: T.Text
 instance Eq (Nm a) where
     (==) (Nm _ u _) (Nm _ u' _) = u == u'
 
+instance Ord (Nm a) where
+    compare (Nm _ u _) (Nm _ u' _) = compare u u'
+
 instance Pretty (Nm a) where
     pretty (Nm t _ _) = pretty t
 
