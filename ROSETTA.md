@@ -383,12 +383,22 @@ ja -F'[/:]+' "{|sub1 /^www\./ '' \`2}"
 
 # OpenSSL Directory
 
-```
+```zsh
 openssl version -d | cut -f2 -d\"
 /usr/local/ssl
 ```
 
-```
+```zsh
 openssl version -d | ja -F\" '$2'
 /usr/local/ssl
+```
+
+# [Last 10 Git Branch Checkouts](https://x.com/effectfully/status/1923885552467624189)
+
+```zsh
+git reflog | egrep -io 'moving from ([^[:space:]]+)' | awk '{ print $3 }' | awk ' !x[$0]++' | head -n10
+```
+
+```zsh
+git reflog | ja '~.{%/moving from ([^[:space:]]+)/}{`6}' | head -n10
 ```
