@@ -1,3 +1,5 @@
+  * Don't crash when deduplicating tuples, arrays, optional values
+
 # 3.3.0.3
 
   * Fix splitting with `--header` on large inputs
