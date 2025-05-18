@@ -63,6 +63,7 @@ main = defaultMain $
                 awk
                 "test/data/python-site"
                 "-L/Users/vanessa/Library/Python/3.13/lib/python/site-packages -L/Library/Frameworks/Python.framework/Versions/3.13/lib/python3.13/site-packages"
+          , ep "[x]~.*{ix>1}{(`4 . `5)}" CSV "test/data/food-prices.csv" "(FINAL . Dollars)"
           , harnessF "{%/hs-source-dirs/}{`2}" (AWK (Just "\\s*:\\s*") Nothing False) "jacinda.cabal" "test/golden/src-dirs.out"
           , harnessF ".?{|`0 ~* 1 /^\\s*hs-source-dirs:\\s*(.*)/}" awk "jacinda.cabal" "test/golden/src-dirs.out"
           -- , harnessF "[x+' '+y]|>$0" (AWK Nothing (Just "\\n\\s*") False) "vscode/syntaxes/jacinda.tmLanguage.json" "test/golden/minify.out"

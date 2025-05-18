@@ -104,12 +104,6 @@
 vanessa@MacBookAir jacinda % ja -F: "reintercalate '\n' \$0" -i <(echo $PATH)
 ja: InternalUnexpectedStream $0
 ```
-```
-vanessa@Vanessas-Air jacinda % seq 100001 | cabal run ja -- run test/examples/evenOdd.jac
-(50000 . 50001)
-vanessa@Vanessas-Air jacinda % seq 1000001 | cabal run ja -- run test/examples/evenOdd.jac
-(500002 . 500000)
-```
 - [ ] Scoping pass so that ix outside of `{|...}` would be caught
 - [ ] `ix` (line number) on filtered streams?
 # Performance
