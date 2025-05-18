@@ -605,6 +605,7 @@ wG (p, e) tgt line (Σ j env d di df b de) =
         then let e'=e `κ` line; (e'',u) =e'$@k in Σ u (env&tgt~!e'')
         else Σ k (tgt\~env)) d di df b de
 
+-- TODO: TyBool
 wDOp :: E T -> Int -> Tmp -> Tmp -> Σ -> Σ
 wDOp (Lam (TyArr _ (TyB TyStr)) n e) key src tgt (Σ i env d di df b de) =
     case env!src of
@@ -640,6 +641,15 @@ wDOp (Lam (TyArr _ (TyB TyFloat)) n e) key src tgt (Σ i env d di df b de) =
               where
                 (y,k)=e@!(i,be); be=ms n xϵ
                 e'=asF y
+wDOp (Lam _ n e) key src tgt (Σ i env d di df b de) =
+    case env!src of
+        Nothing -> Σ i (tgt\~env) d di df b de
+        Just xϵ ->
+            case IM.lookup key de of
+                Nothing -> Σ k (env&tgt~!y) d di df b (IM.insert key (S.singleton y) de)
+                Just ds -> (if y `S.member` ds then Σ k (tgt\~env) d di df b de else Σ k (env&tgt~!y) d di df b (key!:y$de))
+              where
+                (y,k)=e@!(i,be); be=ms n xϵ
 wDOp e _ _ _ _ = throw $ InternalArityOrEta 1 e
 
 (\~) k = IM.insert k Nothing
@@ -656,8 +666,6 @@ wB (e0, e1) key src tgt (Σ i env d di df b de) =
             else (if isMatch' r0 xS then Σ i (env&tgt~!xϵ) d di df (IS.insert key b) else Σ i (tgt\~env) d di df b)) de
   where
     r0=asR e0; r1=asR e1
-
--- TODO: TyArr TyTup TyRec TyOption
 
 wDE :: Int -> Tmp -> Tmp -> Σ -> Σ
 wDE key src tgt (Σ i env d di df b de) =
