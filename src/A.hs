@@ -189,6 +189,7 @@ instance Eq (E a) where
     (==) (Tup _ es₀) (Tup _ es₁)           = es₀==es₁
     (==) (Rec _ a₀) (Rec _ a₁)             = a₀==a₁
     (==) (OptionVal _ e₀) (OptionVal _ e₁) = e₀==e₁
+    (==) (Arr _ e₀) (Arr _ e₁)             = e₀==e₁
     (==) _ _                               = undefined
 
 instance Ord (E a) where
@@ -196,6 +197,7 @@ instance Ord (E a) where
     compare (Tup _ es₀) (Tup _ es₁)           = compare es₀ es₁
     compare (Rec _ a₀) (Rec _ a₁)             = compare a₀ a₁
     compare (OptionVal _ e₀) (OptionVal _ e₁) = compare e₀ e₁
+    compare (Arr _ e₀) (Arr _ e₁)             = compare e₀ e₁
     compare _ _                               = undefined
 
 -- expression
