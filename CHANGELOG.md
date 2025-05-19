@@ -1,3 +1,5 @@
+# 3.3.0.4
+
   * Don't crash when deduplicating tuples, arrays, optional values
 
 # 3.3.0.3
