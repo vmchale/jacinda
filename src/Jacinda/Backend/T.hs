@@ -366,24 +366,12 @@ e@Lit{} @> _     = pure e
 e@RC{} @> _      = pure e
 (F n) @> b       = pure $ b!>n
 e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothing -> e}
-(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) Max) x0) x1) @> b = do
-    x0' <- asI<$>(x0@>b); x1' <- asI<$>(x1@>b)
-    pure $ mkI (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) Min) x0) x1) @> b = do
-    x0' <- asI <$> (x0@>b); x1' <- asI <$> (x1@>b)
-    pure $ mkI (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Max) x0) x1) @> b = do
-    x0' <- asF<$>(x0@>b); x1' <- asF<$>(x1@>b)
-    pure $ mkF (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) Min) x0) x1) @> b = do
-    x0' <- asF<$>(x0@>b); x1' <- asF<$>(x1@>b)
-    pure $ mkF (min x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Max) x0) x1) @> b = do
-    x0' <- asS<$>(x0@>b); x1' <- asS<$>(x1@>b)
-    pure $ mkStr (max x0' x1')
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Min) x0) x1) @> b = do
-    x0' <- asS<$>(x0@>b); x1'<-asS<$>(x1@>b)
-    pure $ mkStr (min x0' x1')
+(EApp _ (EApp _ (BB _ Max) x0) x1) @> b = do
+    x0' <- x0@>b; x1' <- x1@>b
+    pure $ max x0' x1'
+(EApp _ (EApp _ (BB _ Min) x0) x1) @> b = do
+    x0' <- x0@>b; x1' <- x1@>b
+    pure $ min x0' x1'
 (EApp _ (EApp _ (BB (TyArr (TyB TyI) _) op) x0) x1) @> b | Just op' <- num op = do
     x0e <- asI<$>(x0@>b); x1e <- asI<$>(x1@>b)
     pure $ mkI (op' x0e x1e)
@@ -393,21 +381,9 @@ e@(Var _ n) @> b = pure $ case IM.lookup (unU$unique n) b of {Just y -> y; Nothi
 (EApp _ (EApp _ (BB _ Div) x0) x1) @> b = do
     x0e <- x0@>b; x1e <- x1@>b
     pure (mkF (asF x0e/asF x1e))
-(EApp _ (EApp _ (BB (TyArr (TyB TyI) _) op) x0) x1) @> b | Just rel <- binRel op = do
-    x0e<-asI<$>(x0@>b); x1e<-asI<$>(x1@>b)
-    pure (mkB (rel x0e x1e))
-(EApp _ (EApp _ (BB (TyArr (TyB TyFloat) _) op) x0) x1) @> b | Just rel <- binRel op = do
-    x0e <- asF<$>(x0@>b); x1e <- asF<$>(x1@>b)
-    pure (mkB (rel x0e x1e))
-(EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) op) x0) x1) @> b | Just rel <- binRel op = do
-    x0e <- asS<$>(x0@>b); x1e <- asS<$>(x1@>b)
-    pure (mkB (rel x0e x1e))
-(EApp _ (EApp _ (BB (TyArr (TyB TyOption:$t@(TyB TyStr)) _) Eq) x0) x1) @> b = do
-    x0e <- asM<$>(x0@>b); x1e <- asM<$>(x1@>b)
-    case (x0e,x1e) of
-        (Nothing, Nothing)   -> pure (mkB True)
-        (Just e0b, Just e1b) -> EApp tyB (EApp (t~>tyB) (BB (TyArr t (t~>t~>tyB)) Eq) e0b) e1b @> b
-        _                    -> pure (mkB False)
+(EApp _ (EApp _ (BB _ op) x0) x1) @> b | Just rel <- binRel op = do
+    x0' <- x0@>b; x1' <- x1@>b
+    pure (mkB (rel x0' x1'))
 (EApp _ (EApp _ (BB (TyArr (TyB TyStr) _) Plus) x0) x1) @> b = do
     x0e <- x0@>b; x1e <- x1@>b
     pure (mkStr (asS x0e<>asS x1e))
