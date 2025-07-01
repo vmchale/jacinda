@@ -24,17 +24,17 @@
 # Features
 - [x] keep `rs`?
 - [ ] properly handle right-associative operations (for one)
-- [ ] set variables on the command-line?
-  - [ ] `fd` has `{}`, `{/}`, etc. so one could use it to pass in filenames
-    while invoking...
+- [x] set variables on the command-line?
+  - [ ] `fd` has `{}`, `{/}`, etc. maybe that could be a special variable
 - [ ] named columns (e.g. ``Ndx` for output of `readelf -Ws`)
   - [ ] a bunch of records in Unix are blocks-of-record-of... (split on header,
     then find field, then sep by space to get value)
 - [ ] scan1
 - [ ] "mod"
-- [ ] `$>` operator like awk's `END`, allow stream to print and then present
+- [x] `$>` operator like awk's `END`, allow stream to print and then present
       summary
-- [ ] `Ord` for tuples, vectors
+- [x] `Ord` for tuples
+  - [ ] vectors
 - [x] occurs check
 - [ ] `drop` builtin/syntax?
 - [x] `$(` `anchor`: evaluate multiple streams at once
@@ -58,7 +58,6 @@
 - [ ] ~~parse dates~~
 - [½] map, filter, scan, prior for vectors &c.?
 - [ ] lint for duplicate names at top-level
-- [ ] list comprehensions or w/e
 - [x] `\`$` as "all fields, as list" or something
 - [x] `dedupBy` builtin
 - [ ] Infix operators
@@ -79,7 +78,9 @@
   - [ ] OFS
   - [ ] ORS
 ## Instances
-- [ ] `Ord` instance for option?
+- [x] `Ord` instance
+  - [x] vector
+  - [x] tuple
 ## Syntax
 - [ ] `$$` synonym for newline?
 - [ ] `.[ ... ]` dfn where you specify that it's binary?
@@ -100,6 +101,9 @@
 - [ ] Awk scripts for building glibc
   - [ ] mach syscalls (print+summarize)
 # Bugs
+```
+jq 'map(.tweet.full_text)|.[]' data/tweets.js -r | ja '[x !~ /(e|E|https:|^@)/] #. $0'
+```
 ```
 vanessa@MacBookAir jacinda % ja -F: "reintercalate '\n' \$0" -i <(echo $PATH)
 ja: InternalUnexpectedStream $0
