@@ -331,7 +331,7 @@ instance Pretty (E a) where pretty=ps 0
 
 instance Show (E a) where show=show.pretty
 
-data C = IsNum | IsEq | IsOrd
+data C = IsNum | IsOrd
        | IsParse | IsPrintf
        | IsSemigroup | IsMonoid
        | Functor -- ^ For map (@"@)
@@ -339,7 +339,7 @@ data C = IsNum | IsEq | IsOrd
        deriving (Eq, Ord)
 
 instance Pretty C where
-    pretty IsNum = "Num"; pretty IsEq = "Eq"; pretty IsOrd = "Ord"
+    pretty IsNum = "Num"; pretty IsOrd = "Ord"
     pretty IsParse = "Parseable"; pretty IsSemigroup = "Semigroup"
     pretty Functor = "Functor"; pretty Foldable = "Foldable"
     pretty IsPrintf = "Printf"; pretty Witherable = "Witherable"

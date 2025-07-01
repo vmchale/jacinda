@@ -226,16 +226,12 @@ checkType (TyB TyI) (IsSemigroup, _)     = pure ()
 checkType (TyB TyFloat) (IsSemigroup, _) = pure ()
 checkType (TyB TyI) (IsNum, _)           = pure ()
 checkType (TyB TyFloat) (IsNum, _)       = pure ()
-checkType (TyB TyI) (IsEq, _)            = pure ()
-checkType (TyB TyFloat) (IsEq, _)        = pure ()
-checkType (TyB TyBool) (IsEq, _)         = pure ()
-checkType (TyB TyStr) (IsEq, _)          = pure ()
-checkType (TyTup tys) (c@IsEq, l)        = traverse_ (`checkType` (c, l)) tys
-checkType (TyRec tys) (c@IsEq, l)        = traverse_ (`checkType` (c, l)) tys
-checkType (Rho _ rs) (c@IsEq, l)         = traverse_ (`checkType` (c, l)) (IM.elems rs)
-checkType (Ρ _ rs) (c@IsEq, l)           = traverse_ (`checkType` (c, l)) (Nm.elems rs)
-checkType (TyB TyVec:$ty) (c@IsEq, l)    = checkType ty (c, l)
-checkType (TyB TyOption:$ty) (c@IsEq, l) = checkType ty (c, l)
+checkType (TyRec tys) (c@IsOrd, l)        = traverse_ (`checkType` (c, l)) tys
+checkType (Rho _ rs) (c@IsOrd, l)         = traverse_ (`checkType` (c, l)) (IM.elems rs)
+checkType (Ρ _ rs) (c@IsOrd, l)           = traverse_ (`checkType` (c, l)) (Nm.elems rs)
+checkType (TyB TyVec:$ty) (c@IsOrd, l)    = checkType ty (c, l)
+checkType (TyB TyOption:$ty) (c@IsOrd, l) = checkType ty (c, l)
+checkType (TyTup tys) (c@IsOrd, l)       = traverse_ (`checkType` (c, l)) tys
 checkType (TyB TyI) (IsParse, _)         = pure ()
 checkType (TyB TyFloat) (IsParse, _)     = pure ()
 checkType (TyB TyFloat) (IsOrd, _)       = pure ()
@@ -355,13 +351,6 @@ tyOrd l = do
     let a' = var a
     pure $ a' ~> a' ~> tyB
 
-tyEq :: Ord a => a -> TyM a T
-tyEq l = do
-    a <- freshN "a"
-    addCM a (IsEq, l)
-    let a' = var a
-    pure $ a' ~> a' ~> tyB
-
 -- min/max
 tyM :: Ord a => a -> TyM a T
 tyM l = do
@@ -403,8 +392,8 @@ tyES s (BB l Gt)    = do {t <- tyOrd l; pure (BB t Gt, s)}
 tyES s (BB l Lt)    = do {t <- tyOrd l; pure (BB t Lt, s)}
 tyES s (BB l Geq)   = do {t <- tyOrd l; pure (BB t Geq, s)}
 tyES s (BB l Leq)   = do {t <- tyOrd l; pure (BB t Leq, s)}
-tyES s (BB l Eq)    = do {t <- tyEq l; pure (BB t Eq, s)}
-tyES s (BB l Neq)   = do {t <- tyEq l; pure (BB t Neq, s)}
+tyES s (BB l Eq)    = do {t <- tyOrd l; pure (BB t Eq, s)}
+tyES s (BB l Neq)   = do {t <- tyOrd l; pure (BB t Neq, s)}
 tyES s (BB l Min)   = do {t <- tyM l; pure (BB t Min, s)}
 tyES s (BB l Max)   = do {t <- tyM l; pure (BB t Max, s)}
 tyES s (BB _ Split) = pure (BB (tyStr ~> tyR ~> tyV tyStr) Split, s)
@@ -441,9 +430,9 @@ tyES s (UB l Parse) = do {a <- freshN "a"; addCM a (IsParse, l); pure (UB (tyStr
 tyES s (BB l Sprintf) = do {a <- freshN "a"; addCM a (IsPrintf, l); pure (BB (tyStr ~> var a ~> tyStr) Sprintf, s)}
 tyES s (BB l Rein) = do {f <- freshN "f"; addCM f (Foldable, l); pure (BB (tyStr ~> (var f:$tyStr) ~> tyStr) Rein, s)}
 tyES s (BB l Nier) = do {f <- freshN "f"; addCM f (Foldable, l); pure (BB ((var f:$tyStr) ~> tyStr ~> tyStr) Nier, s)}
-tyES s (BB l DedupOn) = do {a <- freshTV "a"; b <- freshN "b"; addCM b (IsEq, l); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
+tyES s (BB l DedupOn) = do {a <- freshTV "a"; b <- freshN "b"; addCM b (IsOrd, l); let b'=var b in pure (BB (tyArr (a ~> b') (tyArr (tyStream a) (tyStream b'))) DedupOn, s)}
 tyES s (UB _ (At i)) = do {a <- freshTV "a"; pure (UB (tyV a ~> a) (At i), s)}
-tyES s (UB l Dedup) = do {a <- freshN "a"; addCM a (IsEq, l); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
+tyES s (UB l Dedup) = do {a <- freshN "a"; addCM a (IsOrd, l); let sA=tyStream (var a) in pure (UB (sA ~> sA) Dedup, s)}
 tyES s (UB _ Const) = do {a <- freshTV "a"; b <- freshTV "b"; pure (UB (a ~> b ~> a) Const, s)}
 tyES s (UB l CatMaybes) = do {a <- freshN "a"; f <- freshN "f"; addCM f (Witherable, l); let a'=var a; f'=var f in pure (UB (tyArr (f':$tyOpt a') (f':$a')) CatMaybes, s)}
 tyES s (BB l Filter) = do {a <- freshN "a"; f <- freshN "f"; addCM f (Witherable, l); let a'=var a; f'=var f; w=f':$a' in pure (BB ((a' ~> tyB) ~> w ~> w) Filter, s)}
