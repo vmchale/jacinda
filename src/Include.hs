@@ -35,4 +35,4 @@ resolveImport incl fp = ($incl) $
     (\case [] -> throwIO $ FileNotFound fp incl; [src] -> pure (src</>fp); fs -> throwIO $ AmbiguousInclude fs)
     . nubOrd
         <=< traverse canonicalizePath
-        <=< (filterM (doesFileExist . (</> fp)))
+        <=< filterM (doesFileExist . (</> fp))
