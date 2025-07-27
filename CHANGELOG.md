@@ -1,3 +1,7 @@
+# 3.3.0.5
+
+  * Add `Ord` instance for tuples, etc.
+
 # 3.3.0.4
 
   * Don't crash when deduplicating tuples, arrays, optional values
