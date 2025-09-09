@@ -1,3 +1,5 @@
+  * Remove dependency on `dlist`
+
 # 3.3.0.5
 
   * Add `Ord` instance for tuples, etc.

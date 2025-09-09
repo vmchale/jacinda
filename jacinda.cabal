@@ -84,6 +84,7 @@ library jacinda-lib
         Nm
         U
         R
+        DL
         Parser.Rw
         Ty.Const
         Jacinda.Check.Field
@@ -103,7 +104,6 @@ library jacinda-lib
     build-depends:
         base >=4.11.0.0 && <5,
         bytestring >=0.11.2.0,
-        dlist,
         text >=2.0.1,
         prettyprinter >=1.7.0,
         containers >=0.6.0.1,

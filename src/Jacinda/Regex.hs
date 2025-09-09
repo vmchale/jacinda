@@ -21,7 +21,7 @@ import           Data.Bifunctor           (bimap, first)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
-import qualified Data.DList               as DL
+import qualified DL
 import qualified Data.Vector              as V
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
@@ -80,7 +80,7 @@ find' re str = unsafeDupablePerformIO $ find re str 0
 
 lazySplitH :: RurePtr -> BSL.ByteString -> [BS.ByteString]
 lazySplitH rp = DL.toList . go Nothing . BSL.toChunks where
-    go Nothing [] = []
+    go Nothing [] = DL.empty
     go Nothing (c:cs) =
         case splitH rp c of
             Just (iss,lss) -> iss<>go (Just lss) cs
@@ -105,7 +105,7 @@ lazySplit rp = DL.toList . go Nothing . BSL.toChunks where
             Nothing        -> go Nothing cs
 
 {-# NOINLINE splitByL #-}
-splitByL :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
+splitByL :: RurePtr -> BS.ByteString -> DL.DL BS.ByteString
 splitByL rp b = case splitByDL rp b of {Nothing -> DL.empty; Just (as,a) -> as `DL.snoc` a}
 
 {-# NOINLINE splitBy #-}
@@ -123,7 +123,7 @@ splitBy re haystack@(BS.BS fp l) =
 {-# SCC splitByDL #-}
 {-# NOINLINE splitByDL #-}
 splitByDL :: RurePtr -> BS.ByteString
-          -> Maybe (DL.DList BS.ByteString, BS.ByteString)
+          -> Maybe (DL.DL BS.ByteString, BS.ByteString)
 splitByDL _ "" = Nothing
 splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
     where ixes = unsafeDupablePerformIO $ matches' re haystack
@@ -135,11 +135,11 @@ splitByDL re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> slicePairs
           pp (s,e) = BS.BS (fp `plusForeignPtr` s) (e-s)
 
 {-# NOINLINE splitHLast #-}
-splitHLast :: RurePtr -> BS.ByteString -> DL.DList BS.ByteString
+splitHLast :: RurePtr -> BS.ByteString -> DL.DL BS.ByteString
 splitHLast rp b = case splitH rp b of {Nothing -> DL.empty; Just (as,a) -> as `DL.snoc` a}
 
 {-# NOINLINE splitH #-}
-splitH :: RurePtr -> BS.ByteString -> Maybe (DL.DList BS.ByteString, BS.ByteString)
+splitH :: RurePtr -> BS.ByteString -> Maybe (DL.DL BS.ByteString, BS.ByteString)
 splitH _ "" = Nothing
 splitH re haystack@(BS.BS fp l) = bimap (fmap pp) pp <$> chopAt 0 ixes
     where ixes = unsafeDupablePerformIO $ matches' re haystack
