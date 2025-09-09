@@ -8,5 +8,3 @@ package lazy-csv
 
 tests: True
 benchmarks: True
-
-with-compiler: ghc-9.8
