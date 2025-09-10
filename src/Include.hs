@@ -9,7 +9,7 @@ import           Data.List.Split           (splitWhen)
 import           Paths_jacinda             (getDataDir)
 import           System.Directory          (canonicalizePath, doesDirectoryExist, doesFileExist, getCurrentDirectory)
 import           System.Environment        (lookupEnv)
-import           System.FilePath           ((</>))
+import           System.Info               (os)
 
 data ImportError = FileNotFound !FilePath ![FilePath] | AmbiguousInclude ![FilePath] deriving (Show)
 
@@ -36,3 +36,5 @@ resolveImport incl fp = ($incl) $
     . nubOrd
         <=< traverse canonicalizePath
         <=< filterM (doesFileExist . (</> fp))
+  where
+    x </> y = x <> d <> y where d = case os of {"windows" -> "\\"; _ -> "/"}
