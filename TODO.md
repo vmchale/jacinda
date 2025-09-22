@@ -155,6 +155,8 @@ ja: InternalUnexpectedStream $0
 - [ ] https://github.com/rcoh/angle-grinder?tab=readme-ov-file#query-syntax
   - [ ] https://www.brandur.org/logfmt
 - [ ] https://wiki.haskell.org/index.php?title=Literate_programming/Bird_conversion_via_awk
+- [ ] https://github.com/kbensh/koala.git
+- [ ] https://bin.arnastofnun.is/DMII/LTdata/k-format/
 ## sed
 - [ ] https://sed.sourceforge.io/grabbag/
 - [ ] https://sed.sourceforge.io/

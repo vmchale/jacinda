@@ -16,8 +16,7 @@ snoc (DL xs) x = DL (xs.(x:))
 
 empty = DL id
 
-instance Functor DL where
-    fmap f = foldr (cons.f) empty . toList
+instance Functor DL where fmap f = foldr (cons.f) empty . toList
 
 instance Semigroup (DL a) where
     (<>) (DL xs) (DL ys) = DL (xs.ys)
