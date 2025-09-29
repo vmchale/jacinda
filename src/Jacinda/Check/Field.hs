@@ -1,8 +1,9 @@
 module Jacinda.Check.Field ( cF, LErr (..) ) where
 
 import           A
-import           Control.Applicative (Alternative (empty, (<|>)))
+import           Control.Applicative (Alternative (..))
 import           Control.Exception   (Exception)
+import           Data.Foldable       (asum)
 import           Prettyprinter       (Pretty (..), squotes, (<+>))
 
 data LErr = NF (E T) | TS (E T) | RS (E T)
@@ -36,7 +37,7 @@ cF RwB{} = desugar; cF RwT{} = desugar
 isS :: T -> Bool
 isS (TyB TyStream:$_) = True; isS _ = False
 
-(||>) :: (Foldable t, Alternative f) => (a -> f b) -> t a -> f b
-f ||> xs = foldr (\x acc -> f x <|> acc) empty xs
+(||>) :: (Traversable t, Alternative f) => (a -> f b) -> t a -> f b
+f ||> xs = asum (f <$> xs)
 
 desugar = error "Internal error. Should have been desugared by now."
