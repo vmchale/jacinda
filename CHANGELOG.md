@@ -1,5 +1,4 @@
   * Remove dependency on `dlist`
-  * Remove dependency on `filepath`
 
 # 3.3.0.5
 

@@ -113,6 +113,7 @@ library jacinda-lib
         regex-rure >=0.1.2.0 && <1.0.0.0,
         microlens,
         directory,
+        filepath,
         microlens-mtl >=0.1.8.0,
         vector >=0.12.2.0,
         split,
