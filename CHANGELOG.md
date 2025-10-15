@@ -1,4 +1,5 @@
   * Remove dependency on `dlist`
+  * Fix `\ESC` escaping
 
 # 3.3.0.5
 
