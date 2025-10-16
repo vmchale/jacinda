@@ -7,6 +7,9 @@
   <meta name="author" content="Vanessa McHale" />
   <title>Jacinda - Functional Stream Processing Language</title>
   <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
     html {
       color: #1a1a1a;
       background-color: #fdfdfd;
@@ -108,8 +111,8 @@
      overflow: visible;
     }
     hr {
-      background-color: #1a1a1a;
       border: none;
+      border-top: 1px solid #1a1a1a;
       height: 1px;
       margin: 1em 0;
     }
@@ -168,8 +171,9 @@
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
     /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
     pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { line-height: 1.25; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
     pre > code.sourceCode > span:empty { height: 1.2em; }
     .sourceCode { overflow: visible; }
     code.sourceCode > span { color: inherit; text-decoration: inherit; }
@@ -180,7 +184,7 @@
     }
     @media print {
     pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
     }
     pre.numberSource code
       { counter-reset: source-line 0; }
@@ -338,7 +342,8 @@ directory.</p>
 <pre><code>{&lt;expr&gt;}{&lt;expr&gt;}</code></pre>
 <p>where the initial expression is of boolean type, possibly involving
 the line context. An example:</p>
-<pre><code>{#`0&gt;110}{`0}</code></pre>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>{#<span class="cn">`0</span>&gt;110}{<span class="cn">`0</span>}</span></code></pre></div>
 <p>This defines a stream of lines that are more than 110 bytes
 (<code>#</code> is ‘tally’, it returns the length of a string).</p>
 <p>There is also a syntax that defines a stream on all lines,</p>
@@ -363,12 +368,14 @@ expression.</p>
 <code>PATH</code>.</p>
 <h3 id="map">Map</h3>
 <p>Suppose we wish to count the lines in a file.</p>
-<pre><code>(+)|0 {|1}</code></pre>
+<div class="sourceCode" id="cb10"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>(+)|0 {|1}</span></code></pre></div>
 <p>This uses aforementioned <code>{|&lt;expr&gt;}</code> syntax. It this
 defines a stream of <code>1</code>s for each line, and takes its
 sum.</p>
 <p>We could also do the following:</p>
-<pre><code>(+)|0 [:1&quot;$0</code></pre>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>(+)|0 [:1&quot;<span class="cn">$0</span></span></code></pre></div>
 <p><code>$0</code> is the stream of all lines. <code>[:</code> is the
 constant operator, <code>a -&gt; b -&gt; a</code>, so <code>[:1</code>
 sends anything to <code>1</code>.</p>
@@ -377,9 +384,10 @@ over every line and takes the sum.</p>
 <h3 id="functions">Functions</h3>
 <p>We could abstract away <code>sum</code> in the above example like
 so:</p>
-<pre><code>let val
-  sum := [(+)|0 x]
-in sum {% /Bloom/}{1} end</code></pre>
+<div class="sourceCode" id="cb12"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span> <span class="kw">val</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sum</span> := [(+)|0 <span class="fu">x</span>]</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="kw">in</span> <span class="fu">sum</span> {% /Bloom/}{1} <span class="kw">end</span></span></code></pre></div>
 <p>In Jacinda, one can define functions with a <a
 href="https://help.dyalog.com/latest/#Language/Defined%20Functions%20and%20Operators/DynamicFunctions/Dynamic%20Functions%20and%20Operators.htm">dfn</a>
 syntax in, like in APL. We do not need to bind <code>x</code>; the
@@ -393,13 +401,15 @@ syntax is</p>
 <pre><code>let (val &lt;name&gt; := &lt;expr&gt;)* in &lt;expr&gt; end</code></pre>
 <h4 id="lambdas">Lambdas</h4>
 <p>There is syntactical support for lambdas;</p>
-<pre><code>\x. (+)|0 x</code></pre>
+<div class="sourceCode" id="cb14"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>\<span class="fu">x</span>. (+)|0 <span class="fu">x</span></span></code></pre></div>
 <p>would be equivalent to <code>[(+)|0 x]</code>.</p>
 <h3 id="zips">Zips</h3>
 <p>The syntax is:</p>
 <pre><code>, &lt;expr&gt; &lt;expr&gt; &lt;expr&gt;</code></pre>
 <p>One could (for instance) calculate population density:</p>
-<pre><code>, (%) $5: $6:</code></pre>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>, (%) <span class="cn">$5</span>: <span class="cn">$6</span>:</span></code></pre></div>
 <p>The postfix <code>:</code> parses the column based on inferred type;
 here it parses as a float.</p>
 <h3 id="scans">Scans</h3>
@@ -408,7 +418,8 @@ here it parses as a float.</p>
 <p>Scans are like folds, except that the intermediate value is tracked
 at each step. One could define a stream containing line numbers for a
 file with:</p>
-<pre><code>(+)^0 [:1&quot;$0</code></pre>
+<div class="sourceCode" id="cb18"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>(+)^0 [:1&quot;<span class="cn">$0</span></span></code></pre></div>
 <p>(this is the same as <code>{|ix}</code>)</p>
 <h3 id="prior">Prior</h3>
 <p>Jacinda has a binary operator, <code>\.</code>, like q’s <a
@@ -416,136 +427,151 @@ href="https://code.kx.com/q/ref/maps/#each-prior">each prior</a> or J’s
 <a
 href="https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic">dyadic
 infix</a>. One could write:</p>
-<pre><code>succDiff := [(-) \. x]</code></pre>
+<div class="sourceCode" id="cb19"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">succDiff</span> := [(-) \. <span class="fu">x</span>]</span></code></pre></div>
 <p>to track successive differences.</p>
 <h4 id="currying">Currying</h4>
 <p>Jacinda allows partially applied (curried) functions; one could
 write</p>
-<pre><code>succDiff := ((-)\.)</code></pre>
+<div class="sourceCode" id="cb20"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">succDiff</span> := ((-)\.)</span></code></pre></div>
 <h3 id="deduplicate">Deduplicate</h3>
 <p>Jacinda has stream deduplication built in with the <code>~.</code>
 operator.</p>
-<pre><code>~.$0</code></pre>
+<div class="sourceCode" id="cb21"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>~.<span class="cn">$0</span></span></code></pre></div>
 <p>This is far better than <code>sort | uniq</code> as it preserves
 order; it is equivalent to <code>!a[$0]++</code> in AWK.</p>
 <h3 id="filter">Filter</h3>
 <p>We can filter an extant stream with <code>#.</code>, viz.</p>
-<pre><code>(&gt;110) #. $1:i</code></pre>
+<div class="sourceCode" id="cb22"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>(&gt;110) #. <span class="cn">$1</span>:<span class="fu">i</span></span></code></pre></div>
 <p><code>#.</code> takes as its left argument a unary function returning
 a boolean.</p>
-<pre><code>[#x&gt;110] #. $0</code></pre>
+<div class="sourceCode" id="cb23"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>[#<span class="fu">x</span>&gt;110] #. <span class="cn">$0</span></span></code></pre></div>
 <p>would filter to those lines &gt;110 bytes wide.</p>
 <h3 id="formatting-output">Formatting Output</h3>
 <p>One can format output with <code>sprintf</code>, which works like
 <code>printf</code> in AWK or C.</p>
 <p>As an example,</p>
-<pre><code>{|sprintf &#39;%i: %s&#39; (ix.`0)}</code></pre>
+<div class="sourceCode" id="cb24"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>{|<span class="bu">sprintf</span> &#39;%<span class="fu">i</span>: %<span class="fu">s</span>&#39; (<span class="bu">ix</span>.<span class="cn">`0</span>)}</span></code></pre></div>
 <p>would display a file annotated with line numbers. Note the atypical
 syntax for tuples, we use <code>.</code> as a separator rather than
 <code>,</code>.</p>
 <h3 id="reporting">Reporting</h3>
 <p>One can print a stream and a summary value (usually the result of a
 fold):</p>
-<pre><code>$1 $&gt; (+)|0 $1:</code></pre>
+<div class="sourceCode" id="cb25"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a><span class="cn">$1</span> $&gt; (+)|0 <span class="cn">$1</span>:</span></code></pre></div>
 <p>Try:</p>
 <pre><code>seq 10000 | ja &#39;$1 $&gt; (+)|0 $1:&#39;</code></pre>
 <h3 id="libraries">Libraries</h3>
 <p>There is a syntax for functions:</p>
-<pre><code>fn sum(x) :=
-  (+)|0 x;
-
-fn drop(n, str) :=
-  let val l := #str
-    in substr str n l end;</code></pre>
+<div class="sourceCode" id="cb27"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">sum</span>(<span class="fu">x</span>) :=</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  (+)|0 <span class="fu">x</span>;</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">drop</span>(<span class="fu">n</span>, <span class="fu">str</span>) :=</span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span> <span class="kw">val</span> <span class="fu">l</span> := #<span class="fu">str</span></span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">in</span> <span class="bu">substr</span> <span class="fu">str</span> <span class="fu">n</span> <span class="fu">l</span> <span class="kw">end</span>;</span></code></pre></div>
 <p>Note the <code>:=</code> and also the semicolon at the end of the
 expression that is the function body.</p>
 <p>Since Jacinda has support for higher-order functions, one could
 write:</p>
-<pre><code>fn any(p, xs) :=
-  (||)|#f p&quot;xs;
-
-fn all(p, xs) :=
-  (&amp;)|#t p&quot;xs;</code></pre>
+<div class="sourceCode" id="cb28"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">any</span>(<span class="fu">p</span>, <span class="fu">xs</span>) :=</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a>  (||)|<span class="cn">#f</span> <span class="fu">p</span>&quot;<span class="fu">xs</span>;</span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">all</span>(<span class="fu">p</span>, <span class="fu">xs</span>) :=</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>  (&amp;)|<span class="cn">#t</span> <span class="fu">p</span>&quot;<span class="fu">xs</span>;</span></code></pre></div>
 <h4 id="file-includes">File Includes</h4>
 <p>One can <code>@include</code> files.</p>
 <p>As an example, one could write:</p>
-<pre><code>@include&#39;lib/string.jac&#39;
-
-fn path(x) :=
-  intercalate &#39;\n&#39; (splitc x &#39;:&#39;);
-
-path&quot;$0</code></pre>
+<div class="sourceCode" id="cb29"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="kw">@include</span>&#39;<span class="fu">lib</span>/<span class="fu">string</span>.<span class="fu">jac</span>&#39;</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">path</span>(<span class="fu">x</span>) :=</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span><span class="fu">tercalate</span> &#39;\<span class="fu">n</span>&#39; (<span class="bu">splitc</span> <span class="fu">x</span> &#39;:&#39;);</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span>&quot;<span class="cn">$0</span></span></code></pre></div>
 <p><code>intercalate</code> is defined in
 <code>lib/string.jac</code>.</p>
 <h4 id="in-place-file-modification">In-Place File Modification</h4>
 <p>We could trim whitespace from lines with:</p>
-<pre><code>(sub1 /\s+$/ ⍬)&quot;$0</code></pre>
+<div class="sourceCode" id="cb30"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>(<span class="bu">sub1</span> /\<span class="fu">s</span>+$/ ⍬)&quot;<span class="cn">$0</span></span></code></pre></div>
 <p><code>sub1</code> is like AWK’s <code>sub</code> and only substitutes
 the first occurrence. <code>⍬</code> is zilde, and can be used to
 represent an empty string or vector.</p>
 <p>Jacinda does not modify files in-place so one would need to use <a
 href="https://joeyh.name/code/moreutils/">sponge</a>, viz.</p>
-<pre><code>ja &#39;(sub1 /\s+$/ ⍬)¨$0&#39; -i FILE | sponge FILE</code></pre>
+<div class="sourceCode" id="cb31"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ja</span> &#39;(<span class="bu">sub1</span> /\<span class="fu">s</span>+$/ ⍬)¨<span class="cn">$0</span>&#39; -<span class="fu">i</span> FILE | <span class="fu">sponge</span> FILE</span></code></pre></div>
 <h4 id="prelude">Prelude</h4>
-<pre><code>or := [(||)|#f x]
-
-and := [(&amp;)|#t x]
-
-count := [(+)|0 [:1&quot;x]</code></pre>
+<div class="sourceCode" id="cb32"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">or</span> := [(||)|<span class="cn">#f</span> <span class="fu">x</span>]</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a><span class="fu">and</span> := [(&amp;)|<span class="cn">#t</span> <span class="fu">x</span>]</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">count</span> := [(+)|0 [:1&quot;<span class="fu">x</span>]</span></code></pre></div>
 <p><code>#t</code> and <code>#f</code> are boolean literals.</p>
 <h2 id="system-interaction">System Interaction</h2>
 <p>Jacinda ignores any line beginning with <code>#!</code>, thus one
 could write a script like so:</p>
-<pre><code>#!/usr/bin/env -S ja run
-
-fn path(x) :=
-  ([x+&#39;\n&#39;+y])|&gt; (splitc x &#39;:&#39;);
-
-path&quot;$0</code></pre>
+<div class="sourceCode" id="cb33"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>#!/<span class="fu">usr</span>/<span class="fu">bin</span>/<span class="fu">env</span> -S <span class="fu">ja</span> <span class="fu">run</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">path</span>(<span class="fu">x</span>) :=</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  ([<span class="fu">x</span>+&#39;\<span class="fu">n</span>&#39;+<span class="fu">y</span>])|&gt; (<span class="bu">splitc</span> <span class="fu">x</span> &#39;:&#39;);</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a><span class="fu">path</span>&quot;<span class="cn">$0</span></span></code></pre></div>
 <h3 id="define-values-on-the-command-line">Define Values on the
 Command-Line</h3>
 <p>We can jerry-rig a <a
 href="https://support.nlm.nih.gov/kbArticle/?pn=KA-05477">PubMed</a> to
 <a href="https://en.wikipedia.org/wiki/BibTeX#Database_files">.bib</a>
 converter:</p>
-<pre><code>:set rs:=/\r\n/;
-
-fn doi(record) :=
-  record ~* 1 /([^ ]*) \[doi/;
-
-fn year(dd) :=
-  dd ~* 1 /(\d{4})/;
-
-fn pfield(label,r) :=
-  &#39;    &#39; + label + &#39;={&#39; + r + &#39;},&#39;;
-
-fn collateAu(r) :=
-  r ~* 1 /^FAU - (.*)$/;
-
-fn bind(f,x) :=
-  option None f x;
-
-fn texpaginate() := sub1 /-/ &#39;--&#39;;
-
-fn field(r) :=
-  let
-    val key := r ~* 1 /^([A-Z ]{4})-/
-    val value := r ~* 2 /^([A-Z ]{4})-\s*(.*)/
-  in
-     ?key=Some &#39;TI  &#39;;(pfield &#39;title&#39;)¨value
-    ;?key=Some &#39;AID &#39;;(pfield &#39;doi&#39;)¨bind doi value
-    ;?key=Some &#39;DP  &#39;;(pfield &#39;year&#39;)¨bind year value
-    ;?key=Some &#39;JT  &#39;;(pfield &#39;journal&#39;)¨value
-    ;?key=Some &#39;VI  &#39;;(pfield &#39;volume&#39;)¨value
-    ;?key=Some &#39;IP  &#39;;(pfield &#39;number&#39;)¨value
-    ;?key=Some &#39;PG  &#39;;(λr. pfield &#39;pages&#39; (texpaginate r))¨value
-    ;None
-  end;
-
-let
-  val au := &#39;,\n    author={&#39;+([x+&#39; and &#39;+y]|&gt;(collateAu:?$0))+&#39;},\n&#39;
-  val rec := [x+&#39;\n&#39;+y]|&gt;(field:?$0)
-in &#39;@article{&#39;+name+au+rec+&#39;\n}&#39; end</code></pre>
+<div class="sourceCode" id="cb34"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="kw">:set</span> <span class="kw">rs</span>:=/\<span class="fu">r</span>\<span class="fu">n</span>/;</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">doi</span>(<span class="fu">record</span>) :=</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">record</span> ~* 1 /([^ ]*) \[<span class="fu">doi</span>/;</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">year</span>(<span class="fu">dd</span>) :=</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">dd</span> ~* 1 /(\<span class="fu">d</span>{4})/;</span>
+<span id="cb34-8"><a href="#cb34-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-9"><a href="#cb34-9" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">pfield</span>(<span class="fu">label</span>,<span class="fu">r</span>) :=</span>
+<span id="cb34-10"><a href="#cb34-10" aria-hidden="true" tabindex="-1"></a>  &#39;    &#39; + <span class="fu">label</span> + &#39;={&#39; + <span class="fu">r</span> + &#39;},&#39;;</span>
+<span id="cb34-11"><a href="#cb34-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-12"><a href="#cb34-12" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">collateAu</span>(<span class="fu">r</span>) :=</span>
+<span id="cb34-13"><a href="#cb34-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">r</span> ~* 1 /^FAU - (.*)$/;</span>
+<span id="cb34-14"><a href="#cb34-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-15"><a href="#cb34-15" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">bind</span>(<span class="fu">f</span>,<span class="fu">x</span>) :=</span>
+<span id="cb34-16"><a href="#cb34-16" aria-hidden="true" tabindex="-1"></a>  <span class="bu">option</span> None <span class="fu">f</span> <span class="fu">x</span>;</span>
+<span id="cb34-17"><a href="#cb34-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-18"><a href="#cb34-18" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">texpaginate</span>() := <span class="bu">sub1</span> /-/ &#39;--&#39;;</span>
+<span id="cb34-19"><a href="#cb34-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-20"><a href="#cb34-20" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">field</span>(<span class="fu">r</span>) :=</span>
+<span id="cb34-21"><a href="#cb34-21" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span></span>
+<span id="cb34-22"><a href="#cb34-22" aria-hidden="true" tabindex="-1"></a>    <span class="kw">val</span> <span class="fu">key</span> := <span class="fu">r</span> ~* 1 /^([A-Z ]{4})-/</span>
+<span id="cb34-23"><a href="#cb34-23" aria-hidden="true" tabindex="-1"></a>    <span class="kw">val</span> <span class="kw">val</span><span class="fu">ue</span> := <span class="fu">r</span> ~* 2 /^([A-Z ]{4})-\<span class="fu">s</span>*(.*)/</span>
+<span id="cb34-24"><a href="#cb34-24" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span></span>
+<span id="cb34-25"><a href="#cb34-25" aria-hidden="true" tabindex="-1"></a>     ?<span class="fu">key</span>=Some &#39;TI  &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">title</span>&#39;)¨<span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-26"><a href="#cb34-26" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;AID &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">doi</span>&#39;)¨<span class="fu">bind</span> <span class="fu">doi</span> <span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-27"><a href="#cb34-27" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;DP  &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">year</span>&#39;)¨<span class="fu">bind</span> <span class="fu">year</span> <span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-28"><a href="#cb34-28" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;JT  &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">journal</span>&#39;)¨<span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-29"><a href="#cb34-29" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;VI  &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">volume</span>&#39;)¨<span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-30"><a href="#cb34-30" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;IP  &#39;;(<span class="fu">pfield</span> &#39;<span class="fu">number</span>&#39;)¨<span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-31"><a href="#cb34-31" aria-hidden="true" tabindex="-1"></a>    ;?<span class="fu">key</span>=Some &#39;PG  &#39;;(<span class="fu">λr</span>. <span class="fu">pfield</span> &#39;<span class="fu">pages</span>&#39; (<span class="fu">texpaginate</span> <span class="fu">r</span>))¨<span class="kw">val</span><span class="fu">ue</span></span>
+<span id="cb34-32"><a href="#cb34-32" aria-hidden="true" tabindex="-1"></a>    ;None</span>
+<span id="cb34-33"><a href="#cb34-33" aria-hidden="true" tabindex="-1"></a>  <span class="kw">end</span>;</span>
+<span id="cb34-34"><a href="#cb34-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-35"><a href="#cb34-35" aria-hidden="true" tabindex="-1"></a><span class="kw">let</span></span>
+<span id="cb34-36"><a href="#cb34-36" aria-hidden="true" tabindex="-1"></a>  <span class="kw">val</span> <span class="fu">au</span> := &#39;,\<span class="fu">n</span>    <span class="fu">author</span>={&#39;+([<span class="fu">x</span>+&#39; <span class="fu">and</span> &#39;+<span class="fu">y</span>]|&gt;(<span class="fu">collateAu</span>:?<span class="cn">$0</span>))+&#39;},\<span class="fu">n</span>&#39;</span>
+<span id="cb34-37"><a href="#cb34-37" aria-hidden="true" tabindex="-1"></a>  <span class="kw">val</span> <span class="fu">rec</span> := [<span class="fu">x</span>+&#39;\<span class="fu">n</span>&#39;+<span class="fu">y</span>]|&gt;(<span class="fu">field</span>:?<span class="cn">$0</span>)</span>
+<span id="cb34-38"><a href="#cb34-38" aria-hidden="true" tabindex="-1"></a><span class="kw">in</span> &#39;@<span class="fu">article</span>{&#39;+<span class="fu">name</span>+<span class="fu">au</span>+<span class="fu">rec</span>+&#39;\<span class="fu">n</span>}&#39; <span class="kw">end</span></span></code></pre></div>
 <p>Running this on its own will fail:</p>
 <pre><code>ja: 22:36 &#39;name&#39; is not in scope.</code></pre>
 <p>We can specify <code>name</code> per-invocation like so:</p>
@@ -565,19 +591,25 @@ in &#39;@article{&#39;+name+au+rec+&#39;\n}&#39; end</code></pre>
 familiar tools:</p>
 <h2 id="wc">wc</h2>
 <p>To count lines:</p>
-<pre><code>(+)|0 [:1&quot;$0</code></pre>
+<div class="sourceCode" id="cb37"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>(+)|0 [:1&quot;<span class="cn">$0</span></span></code></pre></div>
 <p>or</p>
-<pre><code>[y]|0 {|ix}</code></pre>
+<div class="sourceCode" id="cb38"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>[<span class="fu">y</span>]|0 {|<span class="bu">ix</span>}</span></code></pre></div>
 <p>To count bytes in a file:</p>
-<pre><code>(+)|0 [#x+1]&quot;$0</code></pre>
+<div class="sourceCode" id="cb39"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>(+)|0 [#<span class="fu">x</span>+1]&quot;<span class="cn">$0</span></span></code></pre></div>
 <p>or</p>
-<pre><code>(+)|0 {|#`0+1}</code></pre>
+<div class="sourceCode" id="cb40"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>(+)|0 {|#<span class="cn">`0</span>+1}</span></code></pre></div>
 <h2 id="head">head</h2>
 <p>To emulate <code>head -n60</code>, for instance:</p>
-<pre><code>{ix&lt;=60}{`0}</code></pre>
+<div class="sourceCode" id="cb41"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>{<span class="bu">ix</span>&lt;=60}{<span class="cn">`0</span>}</span></code></pre></div>
 <h2 id="basename">basename</h2>
-<pre><code>fn fileName(x) :=
-  x ~* 2 /([^\/]*\/)*(.*)/;</code></pre>
+<div class="sourceCode" id="cb42"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">fileName</span>(<span class="fu">x</span>) :=</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">x</span> ~* 2 /([^\/]*\/)*(.*)/;</span></code></pre></div>
 <p>will remove the directory part of a filename. It has type
 <code>Str -&gt; Option Str</code>.</p>
 <h2 id="tr">tr</h2>
@@ -588,35 +620,39 @@ viz.</p>
 <pre><code>echo $PATH | ja -F: &quot;{|[x+&#39;\n&#39;+y]|&gt;\`$}&quot;</code></pre>
 <p>`<code>$</code> is all fields in a line, as a list.</p>
 <h2 id="uniq">uniq</h2>
-<pre><code>fn step(acc, this) :=
-  if this = acc-&gt;1
-    then (this . None)
-    else (this . Some this);
-
-(-&gt;2):?step^(&#39;&#39;.None) $0</code></pre>
+<div class="sourceCode" id="cb45"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">step</span>(<span class="fu">acc</span>, <span class="fu">this</span>) :=</span>
+<span id="cb45-2"><a href="#cb45-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> <span class="fu">this</span> = <span class="fu">acc</span>-&gt;1</span>
+<span id="cb45-3"><a href="#cb45-3" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> (<span class="fu">this</span> . None)</span>
+<span id="cb45-4"><a href="#cb45-4" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> (<span class="fu">this</span> . Some <span class="fu">this</span>);</span>
+<span id="cb45-5"><a href="#cb45-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb45-6"><a href="#cb45-6" aria-hidden="true" tabindex="-1"></a>(-&gt;2):?<span class="fu">step</span>^(&#39;&#39;.None) <span class="cn">$0</span></span></code></pre></div>
 <p>This tracks the previous line and only adds the current line to the
 stream if it is different.</p>
 <h2 id="nl">nl</h2>
 <p>We can emulate <code>nl -b a</code> with:</p>
-<pre><code>{|sprintf &#39;    %i  %s&#39; (ix.`0)}</code></pre>
+<div class="sourceCode" id="cb46"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>{|<span class="bu">sprintf</span> &#39;    %<span class="fu">i</span>  %<span class="fu">s</span>&#39; (<span class="bu">ix</span>.<span class="cn">`0</span>)}</span></code></pre></div>
 <p>To count only non-blank lines:</p>
-<pre><code>fn empty(str) :=
-  #str = 0;
-
-fn step(acc, line) :=
-  if empty line
-    then (acc-&gt;1 . &#39;&#39;)
-    else (acc-&gt;1 + 1 . line);
-
-fn process(x) :=
-  if !empty (x-&gt;2)
-    then sprintf &#39;    %i\t%s&#39; x
-    else &#39;&#39;;
-
-process&quot;step^(0 . &#39;&#39;) $0</code></pre>
+<div class="sourceCode" id="cb47"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">empty</span>(<span class="fu">str</span>) :=</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  #<span class="fu">str</span> = 0;</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">step</span>(<span class="fu">acc</span>, <span class="fu">line</span>) :=</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> <span class="fu">empty</span> <span class="fu">line</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> (<span class="fu">acc</span>-&gt;1 . &#39;&#39;)</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> (<span class="fu">acc</span>-&gt;1 + 1 . <span class="fu">line</span>);</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">process</span>(<span class="fu">x</span>) :=</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>  <span class="kw">if</span> !<span class="fu">empty</span> (<span class="fu">x</span>-&gt;2)</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a>    <span class="kw">then</span> <span class="bu">sprintf</span> &#39;    %<span class="fu">i</span>\<span class="fu">t</span>%<span class="fu">s</span>&#39; <span class="fu">x</span></span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a>    <span class="kw">else</span> &#39;&#39;;</span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-14"><a href="#cb47-14" aria-hidden="true" tabindex="-1"></a><span class="fu">process</span>&quot;<span class="fu">step</span>^(0 . &#39;&#39;) <span class="cn">$0</span></span></code></pre></div>
 <p>We could write <code>process</code> as</p>
-<pre><code>fn process(x) :=
-  ?!empty (x-&gt;2); sprintf &#39;    %i\t%s&#39; x; &#39;&#39;;</code></pre>
+<div class="sourceCode" id="cb48"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">process</span>(<span class="fu">x</span>) :=</span>
+<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a>  ?!<span class="fu">empty</span> (<span class="fu">x</span>-&gt;2); <span class="bu">sprintf</span> &#39;    %<span class="fu">i</span>\<span class="fu">t</span>%<span class="fu">s</span>&#39; <span class="fu">x</span>; &#39;&#39;;</span></code></pre></div>
 <p>using the laconic syntax for conditionals,
 <code>?&lt;bool&gt;;&lt;expr&gt;;&lt;expr&gt;</code></p>
 <h1 id="practical-examples">Practical Examples</h1>
@@ -626,14 +662,15 @@ process&quot;step^(0 . &#39;&#39;) $0</code></pre>
 class="sourceCode bash"><code class="sourceCode bash"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> <span class="at">-l</span> <span class="kw">|</span> <span class="ex">ja</span> <span class="st">&#39;(+)|0 {ix&gt;1}{`5:}&#39;</span></span>
 <span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="ex">79769</span></span></code></pre></div>
 <p>We can define <code>prettyMem</code> as a library function, viz.</p>
-<pre><code>fn prettyMem(x) :=
-  ?x&gt;=1073741824.0
-  ;sprintf&#39;%f.2 GB&#39; (x%1073741824.0)
-  ;?x&gt;=1048576.0
-   ;sprintf&#39;%f.2 MB&#39; (x%1048576.0)
-   ;?x&gt;=1024.0
-    ;sprintf&#39;%f.2 kB&#39; (x%1024.0)
-    ;sprintf&#39;%f.0 b&#39; x;</code></pre>
+<div class="sourceCode" id="cb50"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">prettyMem</span>(<span class="fu">x</span>) :=</span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  ?<span class="fu">x</span>&gt;=1073741824.0</span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  ;<span class="bu">sprintf</span>&#39;%<span class="fu">f</span>.2 GB&#39; (<span class="fu">x</span>%1073741824.0)</span>
+<span id="cb50-4"><a href="#cb50-4" aria-hidden="true" tabindex="-1"></a>  ;?<span class="fu">x</span>&gt;=1048576.0</span>
+<span id="cb50-5"><a href="#cb50-5" aria-hidden="true" tabindex="-1"></a>   ;<span class="bu">sprintf</span>&#39;%<span class="fu">f</span>.2 MB&#39; (<span class="fu">x</span>%1048576.0)</span>
+<span id="cb50-6"><a href="#cb50-6" aria-hidden="true" tabindex="-1"></a>   ;?<span class="fu">x</span>&gt;=1024.0</span>
+<span id="cb50-7"><a href="#cb50-7" aria-hidden="true" tabindex="-1"></a>    ;<span class="bu">sprintf</span>&#39;%<span class="fu">f</span>.2 <span class="fu">kB</span>&#39; (<span class="fu">x</span>%1024.0)</span>
+<span id="cb50-8"><a href="#cb50-8" aria-hidden="true" tabindex="-1"></a>    ;<span class="bu">sprintf</span>&#39;%<span class="fu">f</span>.0 <span class="fu">b</span>&#39; <span class="fu">x</span>;</span></code></pre></div>
 <p>The <code>%f.2</code> format specifier limits output to two digits
 after the decimal point.</p>
 <p>Then:</p>
@@ -649,21 +686,23 @@ is</p>
 defined by regular expressions are preferable as they become outdated
 less quickly.</p>
 <p>As an example, suppose we have the function declaration</p>
-<pre><code>fn sum(x) :=
-  (+)|0 x;</code></pre>
+<div class="sourceCode" id="cb53"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">sum</span>(<span class="fu">x</span>) :=</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  (+)|0 <span class="fu">x</span>;</span></code></pre></div>
 <p>Then we need to extract <code>sum</code> and give a regex that points
 to where it is defined.</p>
 <p>To do so:</p>
-<pre><code>fn mkEx(s) :=
-  &#39;/^&#39; + s + &#39;$/;&#39;;
-
-fn processStr(s) :=
-  let
-    val line := split s /[ \(]+/
-    val outLine := sprintf &#39;%s\t%s\t%s&#39; (line.2 . fp . mkEx s)
-  in outLine end;
-
-processStr&quot;{%/fn +[[:lower:]][[:latin:]]*.*:=/}{`0}</code></pre>
+<div class="sourceCode" id="cb54"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">mkEx</span>(<span class="fu">s</span>) :=</span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  &#39;/^&#39; + <span class="fu">s</span> + &#39;$/;&#39;;</span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">processStr</span>(<span class="fu">s</span>) :=</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a>  <span class="kw">let</span></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a>    <span class="kw">val</span> <span class="fu">line</span> := <span class="bu">split</span> <span class="fu">s</span> /[ \(]+/</span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a>    <span class="kw">val</span> <span class="fu">outLine</span> := <span class="bu">sprintf</span> &#39;%<span class="fu">s</span>\<span class="fu">t</span>%<span class="fu">s</span>\<span class="fu">t</span>%<span class="fu">s</span>&#39; (<span class="fu">line</span>.2 . <span class="bu">fp</span> . <span class="fu">mkEx</span> <span class="fu">s</span>)</span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>  <span class="kw">in</span> <span class="fu">outLine</span> <span class="kw">end</span>;</span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a><span class="fu">processStr</span>&quot;{%/<span class="kw">fn</span> +[[:<span class="fu">lower</span>:]][[:<span class="fu">latin</span>:]]*.*:=/}{<span class="cn">`0</span>}</span></code></pre></div>
 <p>Note the builtin <code>split</code>; according to the manpages it has
 type</p>
 <pre><code>split : Str -&gt; Regex -&gt; List Str</code></pre>
@@ -692,12 +731,13 @@ that match a regex - in our case, <code>/\^+/</code>, which spans the
 error location.</p>
 <p>From the manpages, we see it has type</p>
 <pre><code>match : Str -&gt; Regex -&gt; Option (Int . Int)</code></pre>
-<pre><code>:set fs:=/\|/;
-
-fn printSpan(str) :=
-  (sprintf &#39;%i-%i&#39;)&quot;(match str /\^+/);
-
-printSpan:?{% /\|/}{`2}</code></pre>
+<div class="sourceCode" id="cb58"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="kw">:set</span> <span class="kw">fs</span>:=/\|/;</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a><span class="kw">fn</span> <span class="fu">printSpan</span>(<span class="fu">str</span>) :=</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  (<span class="bu">sprintf</span> &#39;%<span class="fu">i</span>-%<span class="fu">i</span>&#39;)&quot;(<span class="bu">match</span> <span class="fu">str</span> /\^+/);</span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a><span class="fu">printSpan</span>:?{% /\|/}{<span class="cn">`2</span>}</span></code></pre></div>
 <p>Our program uses <code>|</code> as a field separator, thus
 `<code>2</code> will present us with:</p>
 <pre><code>                                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^</code></pre>
@@ -708,7 +748,8 @@ because <code>match</code> returns an <code>Option</code>, which is a
 functor. The builtin <code>:?</code> is <a
 href="https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe"><code>mapMaybe</code></a>.
 Thus, we define a stream</p>
-<pre><code>printSpan:?{% /\|/}{`2}</code></pre>
+<div class="sourceCode" id="cb60"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb60-1"><a href="#cb60-1" aria-hidden="true" tabindex="-1"></a><span class="fu">printSpan</span>:?{% /\|/}{<span class="cn">`2</span>}</span></code></pre></div>
 <p>which only collects when <code>printSpan</code> returns a
 <code>Some</code>.</p>
 <h2 id="extract-source-from-cabal">Extract Source from Cabal</h2>
@@ -792,19 +833,24 @@ are instances.</p>
 <p>The <code>IsPrintf</code> typeclass is used to type
 <code>sprintf</code>; strings, integers, floats, booleans, and tuples of
 such are members.</p>
-<pre><code>sprintf &#39;%i&#39; 3</code></pre>
+<div class="sourceCode" id="cb71"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a><span class="bu">sprintf</span> &#39;%<span class="fu">i</span>&#39; 3</span></code></pre></div>
 <p>and</p>
-<pre><code>sprintf &#39;%s-%i&#39; (&#39;str&#39; . 2)</code></pre>
+<div class="sourceCode" id="cb72"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb72-1"><a href="#cb72-1" aria-hidden="true" tabindex="-1"></a><span class="bu">sprintf</span> &#39;%<span class="fu">s</span>-%<span class="fu">i</span>&#39; (&#39;<span class="fu">str</span>&#39; . 2)</span></code></pre></div>
 <p>are both valid.</p>
 <h2 id="row-types">Row Types</h2>
 <p>The <code>-&gt;n</code> accessors work on all applicable tuples,
 so</p>
-<pre><code>(a.b.c)-&gt;2</code></pre>
+<div class="sourceCode" id="cb73"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">a</span>.<span class="fu">b</span>.<span class="fu">c</span>)-&gt;2</span></code></pre></div>
 <p>and</p>
-<pre><code>(a.b)-&gt;2</code></pre>
+<div class="sourceCode" id="cb74"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb74-1"><a href="#cb74-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">a</span>.<span class="fu">b</span>)-&gt;2</span></code></pre></div>
 <p>are both valid.</p>
 <p>Moreover,</p>
-<pre><code>(a.b)-&gt;3</code></pre>
+<div class="sourceCode" id="cb75"><pre
+class="sourceCode jac"><code class="sourceCode jac"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a>(<span class="fu">a</span>.<span class="fu">b</span>)-&gt;3</span></code></pre></div>
 <p>will be caught during typechecking.</p>
 </body>
 </html>

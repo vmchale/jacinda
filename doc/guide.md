@@ -46,7 +46,7 @@ There is another form,
 where the initial expression is of boolean type, possibly involving the line
 context. An example:
 
-```
+```jac
 {#`0>110}{`0}
 ```
 
@@ -93,7 +93,7 @@ This splits on `=` and matches lines beginning with `PATH`, returning the second
 
 Suppose we wish to count the lines in a file.
 
-```
+```jac
 (+)|0 {|1}
 ```
 
@@ -102,7 +102,7 @@ this defines a stream of `1`s for each line, and takes its sum.
 
 We could also do the following:
 
-```
+```jac
 (+)|0 [:1"$0
 ```
 
@@ -115,7 +115,7 @@ so `[:1` sends anything to `1`.
 
 We could abstract away `sum` in the above example like so:
 
-```
+```jac
 let val
   sum := [(+)|0 x]
 in sum {% /Bloom/}{1} end
@@ -137,7 +137,7 @@ let (val <name> := <expr>)* in <expr> end
 
 There is syntactical support for lambdas;
 
-```
+```jac
 \x. (+)|0 x
 ```
 
@@ -153,7 +153,7 @@ The syntax is:
 
 One could (for instance) calculate population density:
 
-```
+```jac
 , (%) $5: $6:
 ```
 
@@ -171,7 +171,7 @@ The syntax is:
 Scans are like folds, except that the intermediate value is tracked at each
 step. One could define a stream containing line numbers for a file with:
 
-```
+```jac
 (+)^0 [:1"$0
 ```
 
@@ -181,7 +181,7 @@ step. One could define a stream containing line numbers for a file with:
 
 Jacinda has a binary operator, `\.`, like q's [each prior](https://code.kx.com/q/ref/maps/#each-prior) or J's [dyadic infix](https://code.jsoftware.com/wiki/Vocabulary/bslash#dyadic). One could write:
 
-```
+```jac
 succDiff := [(-) \. x]
 ```
 
@@ -191,7 +191,7 @@ to track successive differences.
 
 Jacinda allows partially applied (curried) functions; one could write
 
-```
+```jac
 succDiff := ((-)\.)
 ```
 
@@ -199,7 +199,7 @@ succDiff := ((-)\.)
 
 Jacinda has stream deduplication built in with the `~.` operator.
 
-```
+```jac
 ~.$0
 ```
 
@@ -210,13 +210,13 @@ in AWK.
 
 We can filter an extant stream with `#.`, viz.
 
-```
+```jac
 (>110) #. $1:i
 ```
 
 `#.` takes as its left argument a unary function returning a boolean.
 
-```
+```jac
 [#x>110] #. $0
 ```
 
@@ -228,7 +228,7 @@ One can format output with `sprintf`, which works like `printf` in AWK or C.
 
 As an example,
 
-```
+```jac
 {|sprintf '%i: %s' (ix.`0)}
 ```
 
@@ -239,7 +239,7 @@ tuples, we use `.` as a separator rather than `,`.
 
 One can print a stream and a summary value (usually the result of a fold):
 
-```
+```jac
 $1 $> (+)|0 $1:
 ```
 
@@ -253,7 +253,7 @@ seq 10000 | ja '$1 $> (+)|0 $1:'
 
 There is a syntax for functions:
 
-```
+```jac
 fn sum(x) :=
   (+)|0 x;
 
@@ -267,7 +267,7 @@ function body.
 
 Since Jacinda has support for higher-order functions, one could write:
 
-```
+```jac
 fn any(p, xs) :=
   (||)|#f p"xs;
 
@@ -281,7 +281,7 @@ One can `@include` files.
 
 As an example, one could write:
 
-```
+```jac
 @include'lib/string.jac'
 
 fn path(x) :=
@@ -296,7 +296,7 @@ path"$0
 
 We could trim whitespace from lines with:
 
-```
+```jac
 (sub1 /\s+$/ ⍬)"$0
 ```
 
@@ -305,13 +305,13 @@ zilde, and can be used to represent an empty string or vector.
 
 Jacinda does not modify files in-place so one would need to use [sponge](https://joeyh.name/code/moreutils/), viz.
 
-```
+```jac
 ja '(sub1 /\s+$/ ⍬)¨$0' -i FILE | sponge FILE
 ```
 
 #### Prelude
 
-```
+```jac
 or := [(||)|#f x]
 
 and := [(&)|#t x]
@@ -326,7 +326,7 @@ count := [(+)|0 [:1"x]
 Jacinda ignores any line beginning with `#!`, thus one could write a script like
 so:
 
-```
+```jac
 #!/usr/bin/env -S ja run
 
 fn path(x) :=
@@ -339,7 +339,7 @@ path"$0
 
 We can jerry-rig a [PubMed](https://support.nlm.nih.gov/kbArticle/?pn=KA-05477) to [.bib](https://en.wikipedia.org/wiki/BibTeX#Database_files) converter:
 
-```
+```jac
 :set rs:=/\r\n/;
 
 fn doi(record) :=
@@ -410,25 +410,25 @@ To get a flavor of Jacinda, see how it can be used in place of familiar tools:
 
 To count lines:
 
-```
+```jac
 (+)|0 [:1"$0
 ```
 
 or
 
-```
+```jac
 [y]|0 {|ix}
 ```
 
 To count bytes in a file:
 
-```
+```jac
 (+)|0 [#x+1]"$0
 ```
 
 or
 
-```
+```jac
 (+)|0 {|#`0+1}
 ```
 
@@ -436,13 +436,13 @@ or
 
 To emulate `head -n60`, for instance:
 
-```
+```jac
 {ix<=60}{`0}
 ```
 
 ## basename
 
-```
+```jac
 fn fileName(x) :=
   x ~* 2 /([^\/]*\/)*(.*)/;
 ```
@@ -467,7 +467,7 @@ echo $PATH | ja -F: "{|[x+'\n'+y]|>\`$}"
 
 ## uniq
 
-```
+```jac
 fn step(acc, this) :=
   if this = acc->1
     then (this . None)
@@ -483,13 +483,13 @@ is different.
 
 We can emulate `nl -b a` with:
 
-```
+```jac
 {|sprintf '    %i  %s' (ix.`0)}
 ```
 
 To count only non-blank lines:
 
-```
+```jac
 fn empty(str) :=
   #str = 0;
 
@@ -508,7 +508,7 @@ process"step^(0 . '') $0
 
 We could write `process` as
 
-```
+```jac
 fn process(x) :=
   ?!empty (x->2); sprintf '    %i\t%s' x; '';
 ```
@@ -528,7 +528,7 @@ ls -l | ja '(+)|0 {ix>1}{`5:}'
 
 We can define `prettyMem` as a library function, viz.
 
-```
+```jac
 fn prettyMem(x) :=
   ?x>=1073741824.0
   ;sprintf'%f.2 GB' (x%1073741824.0)
@@ -562,7 +562,7 @@ as they become outdated less quickly.
 
 As an example, suppose we have the function declaration
 
-```
+```jac
 fn sum(x) :=
   (+)|0 x;
 ```
@@ -572,7 +572,7 @@ defined.
 
 To do so:
 
-```
+```jac
 fn mkEx(s) :=
   '/^' + s + '$/;';
 
@@ -623,7 +623,7 @@ From the manpages, we see it has type
 match : Str -> Regex -> Option (Int . Int)
 ```
 
-```
+```jac
 :set fs:=/\|/;
 
 fn printSpan(str) :=
@@ -644,7 +644,7 @@ First, note that `"` is used to map `(sprintf '%i-%i')` over `(match ...)`. This
 works because `match` returns an `Option`, which is a functor. The builtin `:?`
 is [`mapMaybe`](https://hackage.haskell.org/package/witherable-0.4.2/docs/Witherable.html#v:mapMaybe). Thus, we define a stream
 
-```
+```jac
 printSpan:?{% /\|/}{`2}
 ```
 
@@ -777,13 +777,13 @@ The map operator `"` works on all functors, not just streams. `Stream`,
 The `IsPrintf` typeclass is used to type `sprintf`; strings, integers, floats, booleans, and
 tuples of such are members.
 
-```
+```jac
 sprintf '%i' 3
 ```
 
 and
 
-```
+```jac
 sprintf '%s-%i' ('str' . 2)
 ```
 
@@ -793,13 +793,13 @@ are both valid.
 
 The `->n` accessors work on all applicable tuples, so
 
-```
+```jac
 (a.b.c)->2
 ```
 
 and
 
-```
+```jac
 (a.b)->2
 ```
 
@@ -807,7 +807,7 @@ are both valid.
 
 Moreover,
 
-```
+```jac
 (a.b)->3
 ```
 

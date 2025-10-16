@@ -28,10 +28,10 @@ docs/index.html: doc/guide.html
 	cp $^ $@
 
 doc/guide.pdf: doc/guide.md
-	pandoc $^ -o $@ --toc --pdf-engine=lualatex -V 'monofont:JetBrains Mono'
+	pandoc $^ -o $@ --toc --syntax-definition=syn/jac.xml --pdf-engine=lualatex -V 'monofont:JetBrains Mono'
 
 doc/guide.html: doc/guide.md
-	pandoc -s $^ -o $@ --toc
+	pandoc --syntax-definition=syn/jac.xml -s $^ -o $@ --toc
 
 install: $(HS_SRC) man/ja.1
 	cabal install -w $(HC)

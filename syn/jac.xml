@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language name="jac" section="Sources" version="1.0" extensions="*.jac" kateversion="2.4">
+    <highlighting>
+        <!-- TODO: x, y res var  -->
+        <!-- TODO: strings, string interpolation/special characters -->
+      <contexts>
+          <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
+              <RegExpr String="(:set|@include|let|in|val|end|fn|if|then|else|asv|usv|fs|rs|header)" attribute="kw"/>
+              <RegExpr String="(max|min|substr|ix|subs|sub1|split|splitc|sprintf|option|match|captures|fp|nf)" attribute="b"/>
+              <RegExpr String="(#(t|f)|((\$|`)[0-9]))" attribute="c"/>
+              <RegExpr String="[[:lower:]]\w*" attribute="i"/>
+          </context>
+      </contexts>
+        <itemDatas>
+          <itemData name="kw" defStyleNum="dsKeyword"/>
+          <itemData name="c" defStyleNum="dsConstant"/>
+          <itemData name="b" defStyleNum="dsBuiltIn"/>
+          <itemData name="i" defStyleNum="dsFunction"/>
+      </itemDatas>
+  </highlighting>
+    <general>
+        <keywords casesensitive="1"/>
+        <comment name="singleLine" start="{."/>
+    </general>
+</language>
