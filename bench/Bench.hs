@@ -3,13 +3,13 @@
 module Main (main) where
 
 import           A
-import qualified Data.ByteString.Lazy as BSL
-import           Control.DeepSeq (NFData (..))
+import           Control.DeepSeq      (NFData (..))
 import           Criterion.Main
-import           Jacinda.Regex
-import qualified Data.Text.IO    as TIO
+import qualified Data.ByteString.Lazy as BSL
+import qualified Data.Text.IO         as TIO
 import           File
-import           System.IO       (IOMode (WriteMode), withFile)
+import           Jacinda.Regex
+import           System.IO            (IOMode (WriteMode), withFile)
 
 hrun ifp e m fp = withFile "/dev/null" WriteMode $ \h -> runOnFile [] Nothing e [] m fp h
 runs e m fp = nfIO $ hrun "(bench)" e m fp
