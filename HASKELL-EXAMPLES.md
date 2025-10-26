@@ -16,3 +16,9 @@ ja --header -R'[a-z\-]+:' "{%/default-extensions/}{[x+'\n'+y]|>(drop# 1 \`$)}" -
 ```
 cabal info zlib | ja -F'[\s,]+' "{%/Flags:/}{[x+'\n'+y]|>drop# 1 \`\$}"
 ```
+
+# Format Fixity Declarations for HLint
+
+```console
+echo 'import Control.Monad\nimport Data.Functor\n:info ($>)\n:info (<=<)' | ghci | ja "{%/infix/}{sprintf '- %s' \`0}"
+```
