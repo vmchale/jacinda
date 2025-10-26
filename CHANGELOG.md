@@ -1,9 +1,9 @@
-  * Remove dependency on `dlist`
-  * Fix `\ESC` escaping
-
 # 3.3.0.5
 
   * Add `Ord` instance for tuples, etc.
+  * Fix `\ESC` escaping
+
+  * Remove dependency on `dlist`
 
 # 3.3.0.4
 
