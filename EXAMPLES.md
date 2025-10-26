@@ -132,13 +132,6 @@ This is not entirely rigorous; it does not account for `{-# LANGUAGE Xxx,Yyy #-}
 
 This could be used to populate the `other-extensions` field in a `.cabal` file.
 
-# NYC Vaccine Effectiveness
-
-```
-curl -sL https://raw.githubusercontent.com/nychealth/coronavirus-data/master/latest/now-weekly-breakthrough.csv | \
-    ja ',[1.0-x%y] {ix>1}{`5:} {ix>1}{`17:}' -F,
-```
-
 # Ctags
 
 ```
@@ -379,4 +372,13 @@ We could use this to pass flags to a C compiler like so:
 
 ```
 rg 'traverse' -c | ja -F: '(+)|>$2:i'
+```
+
+# Rename Web/P Files with `.jpg` Extension
+
+```zsh
+#!/usr/bin/env zsh
+
+l=$(fd '\.jpg$' "$1" -x file | ja -F: '{%/Web\/P/}{`1}')
+for r in ${(f)l}; do mv "$r" "${r//.jpg/.webp}" done
 ```
