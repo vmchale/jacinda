@@ -21,8 +21,8 @@ import           Data.Bifunctor           (bimap, first)
 import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Internal as BS
 import qualified Data.ByteString.Lazy     as BSL
-import qualified DL
 import qualified Data.Vector              as V
+import qualified DL
 import           Foreign.C.Types          (CSize)
 import           Foreign.ForeignPtr       (plusForeignPtr)
 import           Regex.Rure               (RureFlags, RureMatch (..), RurePtr, captures, compile, find, findCaptures, isMatch, matches', rureDefaultFlags, rureFlagDotNL)
