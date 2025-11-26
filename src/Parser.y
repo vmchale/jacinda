@@ -10,7 +10,7 @@
                   ) where
 
 import Control.Exception (Exception, throw)
-import Control.Monad.Except (ExceptT, runExceptT, throwError)
+import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Control.Monad.Trans.Class (lift)
 import Data.Bifunctor (first, second)
 import Data.Functor (void)
@@ -386,7 +386,7 @@ type Library = ([FilePath], [D AlexPosn])
 type Value = T.Text
 
 parseError :: Token AlexPosn -> [String] -> Parse a
-parseError tok = throwError . Unexpected tok
+parseError tok = throwE.Unexpected tok
 
 mkLet :: a -> [(Nm a, E a)] -> E a -> E a
 mkLet _ [] e     = e
