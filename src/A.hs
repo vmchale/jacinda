@@ -173,9 +173,9 @@ instance Pretty BBin where
     pretty Take = "take#"; pretty Drop = "drop#"; pretty Rein = "reintercalate"
     pretty Nier = "@@"
 
-data DfnVar = X !Int | Y !Int
+data DfnVar = X | Y
 
-instance Pretty DfnVar where pretty X{}="x"; pretty Y{}="y"
+instance Pretty DfnVar where pretty X="x"; pretty Y="y"
 
 -- 0-ary
 data N = Ix | Nf | None | Fp | MZ
@@ -218,7 +218,7 @@ data E a = Column { eLoc :: a, col :: !Int }
          | Lit { eLoc :: a, lit :: !L }
          | RegexLit { eLoc :: a, eRr :: BS.ByteString }
          | Lam { eLoc :: a, eBound :: Nm a, lamE :: E a }
-         | Dfn { eLoc :: a, eDfn :: E a }
+         | Dfn { eLoc :: a, eDfn :: E a, eDepth :: Int }
          | BB { eLoc :: a, eBin :: !BBin } | TB { eLoc :: a, eTer :: !BTer } | UB { eLoc :: a, eUn :: !BUn }
          | NB { eLoc :: a, eNil :: !N }
          | Tup { eLoc :: a, esTup :: [E a] }
@@ -306,7 +306,7 @@ instance PS (E a) where
     ps _ (RegexLit _ rr)   = "/" <> pretty (decodeUtf8 rr) <> "/"
     ps _ (UB _ u)          = pretty u
     ps _ (ResVar _ x)      = pretty x
-    ps _ (Dfn _ e)         = brackets (pretty e)
+    ps _ (Dfn _ _ e)       = brackets (pretty e)
     ps _ (NB _ n)          = pretty n
     ps _ RC{}              = "(compiled regex)"
     ps _ (Guarded _ p e)   = braces (pretty p) <> braces (pretty e)

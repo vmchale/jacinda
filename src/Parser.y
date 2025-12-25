@@ -135,8 +135,8 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     ofs { TokKeyword $$ KwOfs }
     ors { TokKeyword $$ KwOrs }
 
-    x { $$@(TokVar _ VarX _) }
-    y { $$@(TokVar _ VarY _) }
+    x { TokVar $$ VarX }
+    y { TokVar $$ VarY }
 
     min { TokBuiltin $$ BMin }
     max { TokBuiltin $$ BMax }
@@ -292,12 +292,12 @@ E :: { E AlexPosn }
   | allField fParse { EApp $1 (UB $2 FParse) (AllField $1) }
   | allField iParse { EApp $1 (UB $2 IParse) (AllField $1) }
   | allField colon { EApp $1 (UB $2 Parse) (AllField $1) }
-  | x colon { let pos=loc $1 in EApp pos (UB $2 Parse) (ResVar pos (X (depth $1))) }
-  | y colon { let pos=loc $1 in EApp pos (UB $2 Parse) (ResVar pos (Y (depth $1))) }
-  | x iParse { let pos=loc $1 in EApp pos (UB $2 IParse) (ResVar pos (X (depth $1))) }
-  | x fParse { let pos=loc $1 in EApp pos (UB $2 FParse) (ResVar pos (X (depth $1))) }
-  | y iParse { let pos=loc $1 in EApp pos (UB $2 IParse) (ResVar pos (Y (depth $1))) }
-  | y fParse { let pos=loc $1 in EApp pos (UB $2 FParse) (ResVar pos (Y (depth $1))) }
+  | x colon { EApp $1 (UB $2 Parse) (ResVar $1 X) }
+  | y colon { EApp $1 (UB $2 Parse) (ResVar $1 Y) }
+  | x iParse { EApp $1 (UB $2 IParse) (ResVar $1 X) }
+  | x fParse { EApp $1 (UB $2 FParse) (ResVar $1 X) }
+  | y iParse { EApp $1 (UB $2 IParse) (ResVar $1 Y) }
+  | y fParse { EApp $1 (UB $2 FParse) (ResVar $1 Y) }
   | column iParse { IParseCol (loc $1) (ix $1) }
   | column fParse { FParseCol (loc $1) (ix $1) }
   | column colon { ParseCol (loc $1) (ix $1) }
@@ -329,9 +329,9 @@ E :: { E AlexPosn }
   | tallyL { UB $1 TallyList }
   | const { UB $1 Const }
   | exclamation { UB $1 Not }
-  | lsqbracket E rsqbracket { Dfn $1 $2 }
-  | x { ResVar (loc $1) (X (depth $1)) }
-  | y { ResVar (loc $1) (Y (depth $1)) }
+  | lsqbracket E rsqbracket {% fmap (Dfn $1 $2) (lift alexDepth) }
+  | x { ResVar $1 X }
+  | y { ResVar $1 Y }
   | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
   | min { BB $1 Min } | max { BB $1 Max }
   | drop { BB $1 Drop } | take { BB $1 Take }

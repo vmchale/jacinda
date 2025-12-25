@@ -5,6 +5,7 @@
              , withAlexSt
              , freshName
              , newVarAlex
+             , alexDepth
              , AlexPosn (..)
              , Alex (..)
              , Token (..)
@@ -229,8 +230,7 @@ tok f (p,_,_,s) len = f p (T.take len s)
 
 constructor c t = tok (\p _ -> alex $ c p t)
 
-res c = tok (\p _ -> TokVar p c <$> alexDepth)
-
+res = constructor TokVar
 mkKw = constructor TokKeyword
 sym = constructor TokSym
 mkBuiltin = constructor TokBuiltin
@@ -293,10 +293,9 @@ data Sym = PlusTok | MinusTok | PercentTok
          | DefEq
          | Colon
          | LBrace | RBrace
-         | LParen
+         | LParen | RParen
          | LAnchor
          | DotEq
-         | RParen
          | LSqBracket | RSqBracket
          | Semicolon
          | Underscore
@@ -493,7 +492,7 @@ data Token a = EOF { loc :: a }
              | TokTyName { loc :: a, _tyName :: TyName a }
              | TokBuiltin { loc :: a, _builtin :: Builtin }
              | TokKeyword { loc :: a, _kw :: Keyword }
-             | TokVar { loc :: a, _var :: Var, depth :: !Int }
+             | TokVar { loc :: a, _var :: Var }
              | TokInt { loc :: a, int :: Integer }
              | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
@@ -518,7 +517,7 @@ instance Pretty (Token a) where
     pretty (TokStreamLit _ i) = "$" <> pretty i
     pretty (TokFieldLit _ i)  = "`" <> pretty i
     pretty (TokRR _ rr')      = "/" <> pretty rr' <> "/"
-    pretty (TokVar _ v _)     = "implicit variable" <+> squotes (pretty v)
+    pretty (TokVar _ v)       = "implicit variable" <+> squotes (pretty v)
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
