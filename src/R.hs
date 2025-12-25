@@ -83,7 +83,7 @@ mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
 hasY :: E a -> Bool
 hasY = g where
-    g (ResVar _ Y)           = True
+    g (ResVar _ Y{})         = True
     g (Tup _ es)             = g!|es
     g (Rec _ es)             = (g.snd)!|es
     g (OptionVal _ (Just e)) = g e
@@ -109,8 +109,8 @@ replaceXY :: (a -> Nm a) -- ^ @x@
           -> E a
           -> E a
 replaceXY nX nY = r where
-    r (ResVar l Y)      = Var l (nY l)
-    r (ResVar l X)      = Var l (nX l)
+    r (ResVar l Y{})    = Var l (nY l)
+    r (ResVar l X{})    = Var l (nX l)
     r e@Lit{}           = e
     r e@RegexLit{}      = e
     r e@RC{}            = e

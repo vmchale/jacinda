@@ -71,8 +71,8 @@ parseP incls fn src var = do
 
 -- | Parse + rename
 parsePWithMax :: [FilePath] -> Maybe FilePath -> T.Text -> [(T.Text, T.Text)] -> IO (Program AlexPosn, Int)
-parsePWithMax incls fn src vars = uncurry rP.swap.second fst3 <$> runStateT (parseP incls fn src vars) alexInitUserState
-    where fst3 (x,_,_) = x
+parsePWithMax incls fn src vars = uncurry rP.swap.second fst4 <$> runStateT (parseP incls fn src vars) alexInitUserState
+    where fst4 (x,_,_,_) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
 parseWithMax' = fmap (uncurry rP . second (rwP.snd)) . parseWithMax

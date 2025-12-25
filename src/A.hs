@@ -173,9 +173,9 @@ instance Pretty BBin where
     pretty Take = "take#"; pretty Drop = "drop#"; pretty Rein = "reintercalate"
     pretty Nier = "@@"
 
-data DfnVar = X | Y
+data DfnVar = X !Int | Y !Int
 
-instance Pretty DfnVar where pretty X="x"; pretty Y="y"
+instance Pretty DfnVar where pretty X{}="x"; pretty Y{}="y"
 
 -- 0-ary
 data N = Ix | Nf | None | Fp | MZ

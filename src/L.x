@@ -57,14 +57,28 @@ tokens :-
         y                        { res VarY }
     }
 
-    <0> "["                      { sym LSqBracket `andBegin` dfn } -- FIXME: this doesn't allow nested
+    <0> {
+        "#!".*                   ; -- shebang
+
+        asv                      { mkKw KwAsv }
+        usv                      { mkKw KwUsv }
+        csv                      { mkKw KwCsv }
+        header                   { mkKw KwHeader }
+        fs                       { mkKw KwFs }
+        rs                       { mkKw KwRs }
+        :set                     { mkKw KwSet }
+        :flush                   { mkKw KwFlush }
+        "@include"               { mkKw KwInclude }
+        fn                       { mkKw KwFn }
+
+        "["                      { tok (\p _ -> inc (TokSym p LSqBracket)) }
+    }
 
     <0,dfn> {
 
         $white+                  ;
 
         "{.".*                   ;
-        "#!".*                   ; -- shebang
 
         ":="                     { sym DefEq }
         "≔"                      { sym DefEq }
@@ -102,7 +116,7 @@ tokens :-
         "{%"                     { sym LBracePercent }
         "#{"                     { sym LBraceOctothorpe }
         "{|"                     { sym LBraceBar }
-        "]"                      { sym RSqBracket `andBegin` 0 }
+        "]"                      { tok (\p _ -> dec (TokSym p RSqBracket)) }
         ".="                     { sym DotEq }
         "~"                      { sym Tilde }
         "!~"                     { sym NotMatchTok }
@@ -135,32 +149,21 @@ tokens :-
         "`$"                     { sym FieldListTok }
         \?                       { sym QuestionMark }
         "@@"                     { sym AmpAmp }
+        ¨                        { sym Quot }
 
-        in                       { mkKw KwIn }
         let                      { mkKw KwLet }
         val                      { mkKw KwVal }
+        in                       { mkKw KwIn }
         end                      { mkKw KwEnd }
-        :set                     { mkKw KwSet }
-        :flush                   { mkKw KwFlush }
-        fn                       { mkKw KwFn }
-        "@include"               { mkKw KwInclude }
         if                       { mkKw KwIf }
         then                     { mkKw KwThen }
         else                     { mkKw KwElse }
-        asv                      { mkKw KwAsv }
-        usv                      { mkKw KwUsv }
-        csv                      { mkKw KwCsv }
-        header                   { mkKw KwHeader }
 
-        fs                       { res VarFs }
-        rs                       { res VarRs }
-        ix                       { res VarIx }
-        ⍳                        { res VarIx }
-        nf                       { res VarNf }
-        ¨                        { sym Quot }
-        min                      { res VarMin }
-        max                      { res VarMax }
-
+        ix                       { mkBuiltin BIx }
+        ⍳                        { mkBuiltin BIx }
+        nf                       { mkBuiltin BNf }
+        min                      { mkBuiltin BMin }
+        max                      { mkBuiltin BMax }
         substr                   { mkBuiltin BSubstr }
         split                    { mkBuiltin BSplit }
         splitc                   { mkBuiltin BSplitc }
@@ -210,7 +213,6 @@ tokens :-
 
         @string                  { tok (\p s -> alex $ TokStr p (escReplace $ T.init $ T.tail s)) }
 
-        -- TODO: allow chars to be escaped
         @rr                      { tok (\p s -> alex $ TokRR p (escRr $ T.init $ T.tail s)) }
 
         @name                    { tok (\p s -> TokName p <$> newIdentAlex p s) }
@@ -227,8 +229,11 @@ tok f (p,_,_,s) len = f p (T.take len s)
 
 constructor c t = tok (\p _ -> alex $ c p t)
 
-res = constructor TokResVar; mkKw      = constructor TokKeyword
-sym = constructor TokSym;    mkBuiltin = constructor TokBuiltin
+res c = tok (\p _ -> TokVar p c <$> alexDepth)
+
+mkKw = constructor TokKeyword
+sym = constructor TokSym
+mkBuiltin = constructor TokBuiltin
 
 data R = Z | B | EE | ES
 
@@ -251,10 +256,27 @@ escRr = T.replace "\\/" "/"
 instance Pretty AlexPosn where
     pretty (AlexPn _ line col) = pretty line <> colon <> pretty col
 
-type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn))
+type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn), Int)
 
 alexInitUserState :: AlexUserState
-alexInitUserState = (0, mempty, mempty)
+alexInitUserState = (0, mempty, mempty, 0)
+
+alexDepth :: Alex Int
+alexDepth = Alex $ \st -> Right (st, fth (alex_ust st))
+  where
+    fth (_,_,_,z) = z
+
+alexModifyUserState f = Alex $ \st -> Right (st { alex_ust = f (alex_ust st) }, ())
+
+inc, dec :: a -> Alex a
+inc ret = Alex $ \st ->
+    let (max', names, uniqs, db) = alex_ust st
+        db' = db+1
+    in Right (st { alex_ust = (max', names, uniqs, db'), alex_scd = dfn }, ret)
+dec ret = Alex $ \st ->
+    let (max', names, uniqs, db) = alex_ust st
+        db' = db-1
+    in Right (st { alex_ust = (max', names, uniqs, db'), alex_scd = if db'==0 then 0 else dfn }, ret)
 
 get_pos :: Alex AlexPosn
 get_pos = Alex $ \st -> Right (st, alex_pos st)
@@ -377,20 +399,13 @@ data Keyword = KwLet
              | KwInclude
              | KwIf | KwThen | KwElse
              | KwAsv | KwUsv | KwCsv
+             | KwFs | KwRs
+             | KwOfs | KwOrs
 
--- | Reserved/special variables
 data Var = VarX | VarY
-         | VarFs | VarRs
-         | VarOfs | VarOrs
-         | VarIx | VarNf
-         | VarMin | VarMax
 
 instance Pretty Var where
     pretty VarX = "x"; pretty VarY = "y"
-    pretty VarFs = "fs"; pretty VarRs = "rs"
-    pretty VarOrs = "ors"; pretty VarOfs = "ofs"
-    pretty VarMin = "min"; pretty VarMax = "max"
-    pretty VarIx = "⍳"; pretty VarNf = "nf"
 
 instance Pretty Keyword where
     pretty KwLet     = "let"
@@ -407,7 +422,11 @@ instance Pretty Keyword where
     pretty KwUsv     = "usv"
     pretty KwAsv     = "asv"
     pretty KwCsv     = "csv"
-    pretty KwHeader = "header"
+    pretty KwHeader  = "header"
+    pretty KwFs      = "fs"
+    pretty KwRs      = "rs"
+    pretty KwOrs     = "ors"
+    pretty KwOfs     = "ofs"
 
 data Builtin = BIParse | BFParse
              | BSubstr
@@ -429,6 +448,8 @@ data Builtin = BIParse | BFParse
              | BInit | BLast
              | BDrop | BTake
              | BRein
+             | BMin | BMax
+             | BIx | BNf
 
 instance Pretty Builtin where
     pretty BIParse   = ":i"
@@ -461,6 +482,10 @@ instance Pretty Builtin where
     pretty BTake     = "take#"
     pretty BDrop     = "drop#"
     pretty BRein     = "reintercalate"
+    pretty BMin      = "min"
+    pretty BMax      = "max"
+    pretty BIx       = "⍳"
+    pretty BNf       = "nf"
 
 data Token a = EOF { loc :: a }
              | TokSym { loc :: a, _sym :: Sym }
@@ -468,7 +493,7 @@ data Token a = EOF { loc :: a }
              | TokTyName { loc :: a, _tyName :: TyName a }
              | TokBuiltin { loc :: a, _builtin :: Builtin }
              | TokKeyword { loc :: a, _kw :: Keyword }
-             | TokResVar { loc :: a, _var :: Var }
+             | TokVar { loc :: a, _var :: Var, depth :: !Int }
              | TokInt { loc :: a, int :: Integer }
              | TokFloat { loc :: a, float :: Double }
              | TokBool { loc :: a, boolTok :: Bool }
@@ -493,7 +518,7 @@ instance Pretty (Token a) where
     pretty (TokStreamLit _ i) = "$" <> pretty i
     pretty (TokFieldLit _ i)  = "`" <> pretty i
     pretty (TokRR _ rr')      = "/" <> pretty rr' <> "/"
-    pretty (TokResVar _ v)    = "reserved variable" <+> squotes (pretty v)
+    pretty (TokVar _ v _)     = "implicit variable" <+> squotes (pretty v)
     pretty (TokBool _ True)   = "#t"
     pretty (TokBool _ False)  = "#f"
     pretty (TokAccess _ i)    = "." <> pretty i
@@ -504,9 +529,9 @@ instance Pretty (Token a) where
 freshName :: T.Text -> Alex (Nm AlexPosn)
 freshName t = do
     pos <- get_pos
-    (i, ns, us) <- alexGetUserState
+    (i, ns, us, db) <- alexGetUserState
     let (j, n) = freshIdent pos t i
-    alexSetUserState (j, ns, us) $> n
+    alexSetUserState (j, ns, us, db) $> n
 
 newVarAlex :: T.Text -> Alex (Nm AlexPosn)
 newVarAlex t = do {pos <- get_pos; newIdentAlex pos t}
@@ -518,17 +543,15 @@ newIdentAlex pos t = do
     alexSetUserState st' $> n
 
 freshIdent :: AlexPosn -> T.Text -> Int -> (Int, Nm AlexPosn)
-freshIdent pos t max' =
-    let i=max'+1; nm=Nm t (U i) pos
-        in (i, nm)
+freshIdent pos t max' = let i=max'+1 in (i, Nm t (U i) pos)
 
 newIdent :: AlexPosn -> T.Text -> AlexUserState -> (AlexUserState, Nm AlexPosn)
-newIdent pos t pre@(max', names, uniqs) =
+newIdent pos t pre@(max', names, uniqs, depth') =
     case M.lookup t names of
         Just i -> (pre, Nm t (U i) pos)
         Nothing -> let i = max' + 1
             in let newName = Nm t (U i) pos
-                in ((i, M.insert t i names, IM.insert i newName uniqs), newName)
+                in ((i, M.insert t i names, IM.insert i newName uniqs, depth'), newName)
 
 runAlexSt :: T.Text -> Alex a -> Either String (AlexUserState, a)
 runAlexSt inp = withAlexSt inp alexInitUserState
