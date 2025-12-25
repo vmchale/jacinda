@@ -15,7 +15,6 @@
              , AlexUserState
              ) where
 
-import Control.Arrow ((&&&))
 import Data.Bifunctor (first)
 import qualified Data.ByteString.Lazy as BSL
 import Data.Functor (($>))
@@ -257,11 +256,8 @@ type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn))
 alexInitUserState :: AlexUserState
 alexInitUserState = (0, mempty, mempty)
 
-gets_alex :: (AlexState -> a) -> Alex a
-gets_alex f = Alex (Right . (id &&& f))
-
 get_pos :: Alex AlexPosn
-get_pos = gets_alex alex_pos
+get_pos = Alex $ \st -> Right (st, alex_pos st)
 
 alexEOF = EOF <$> get_pos
 
