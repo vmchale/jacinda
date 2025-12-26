@@ -9,6 +9,7 @@ import           Control.Monad.State.Strict (MonadState, State, runState)
 import           Data.Bifunctor             (second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
+import qualified Data.Vector                as V
 import           Lens.Micro                 (Lens', over)
 import           Lens.Micro.Mtl             (use, (%=), (.=))
 import           Nm
@@ -81,74 +82,10 @@ setMax i (Rs _ b) = Rs i b
 mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
-hasY :: E a -> Bool
-hasY = g where
-    g (ResVar _ Y)           = True
-    g (Tup _ es)             = g!|es
-    g (Rec _ es)             = (g.snd)!|es
-    g (OptionVal _ (Just e)) = g e
-    g (EApp _ e0 e1)         = g e0 || g e1
-    g (Let _ (_, be) e)      = g e || g be
-    g (Lam _ _ e)            = g e
-    g (Paren _ e)            = g e
-    g (Guarded _ p e)        = g p || g e
-    g (Implicit _ e)         = g e
-    g (Arr _ es)             = g!|es
-    g (Anchor _ es)          = g!|es
-    g (Cond _ p e0 e1)       = g e0 || g e1 || g p
-    g _                      = False
+--     infixr 6 !|
 
-    infixr 6 !|
-
-    (!|) :: Foldable t => (a -> Bool) -> t a -> Bool
-    (!|) = any
-
-replaceXY :: (a -> Nm a) -- ^ @x@
-          -> (a -> Nm a) -- ^ @y@
-          -> E a
-          -> E a
-replaceXY nX nY = r where
-    r (ResVar l Y)      = Var l (nY l)
-    r (ResVar l X)      = Var l (nX l)
-    r e@Lit{}           = e
-    r e@RegexLit{}      = e
-    r e@RC{}            = e
-    r e@Var{}           = e
-    r e@NB{}            = e
-    r e@UB{}            = e
-    r e@BB{}            = e
-    r e@RwB{}           = e
-    r e@RwT{}           = e
-    r e@TB{}            = e
-    r (EApp l e0 e1)    = EApp l (r e0) (r e1)
-    r (Implicit l e)    = Implicit l (r e)
-    r (Guarded l p e)   = Guarded l (r p) (r e)
-    r (Let l (n, be) e) = Let l (n, r be) (r e)
-    r (Lam l n e)       = Lam l n (r e)
-    r (Cond l p e0 e1)  = Cond l (r p) (r e0) (r e1)
-    r (OptionVal l e)   = OptionVal l (r<$>e)
-    r (Tup l es)        = Tup l (r<$>es)
-    r (Rec l es)        = Rec l (second r<$>es)
-    r (Arr l es)        = Arr l (r<$>es)
-    r (Anchor l es)     = Anchor l (r<$>es)
-    r e@Column{}        = e
-    r e@AllColumn{}     = e
-    r e@Field{}         = e
-    r e@AllField{}      = e
-    r e@LastField{}     = e
-    r e@FieldList{}     = e
-    r e@FParseAllCol{}  = e
-    r e@IParseAllCol{}  = e
-    r e@ParseAllCol{}   = e
-    r e@FParseCol{}     = e
-    r e@IParseCol{}     = e
-    r e@ParseCol{}      = e
-    r (Paren l e)       = Paren l (r e)
-    r Dfn{}             = error "nested dfns not yet implemented"
-    r F{}               = error "Internal error."
-
-replaceX :: (a -> Nm a) -> E a -> E a
-replaceX n = replaceXY n (error "Internal error: 'y' not expected.")
+--     (!|) :: Foldable t => (a -> Bool) -> t a -> Bool
+--    (!|) = any
 
 renameD :: D a -> RenameM (D a)
 renameD (FunDecl n ns e) = FunDecl n [] <$> rE (mkLam ns e)
@@ -166,16 +103,51 @@ rE (Var l n)       = Var l <$> replaceVar n
 rE (Lam l n e)     = doLocal $ do
     n' <- freshen n
     Lam l n' <$> rE e
-rE (Dfn l e _) | {-# SCC "hasY" #-} hasY e = do
+rE (Dfn l e) = do
     x@(Nm nX uX _) <- dummyName l "x"
     y@(Nm nY uY _) <- dummyName l "y"
-    Lam l x . Lam l y <$> rE ({-# SCC "replaceXY" #-} replaceXY (Nm nX uX) (Nm nY uY) e)
-                  | otherwise = do
-    x@(Nm n u _) <- dummyName l "x"
-    Lam l x <$> rE ({-# SCC "replaceX" #-} replaceX (Nm n u) e)
+    (e', hasY) <- r (Nm nX uX) (Nm nY uY) e
+    pure $ if hasY
+        then Lam l x (Lam l y e')
+        else Lam l x e'
+  where
+    r x _ (ResVar lϵ X)   = pure (Var lϵ (x lϵ), False)
+    r _ y (ResVar lϵ Y)   = pure (Var lϵ (y lϵ), True)
+    r _ _ (Var lϵ n)      = do {n' <- replaceVar n; pure (Var lϵ n', False)}
+    r x y (EApp lϵ e0 e1) = do
+        (e0',b0) <- r x y e0
+        (e1',b1) <- r x y e1
+        pure (EApp lϵ e0' e1', b0||b1)
+    r x y (Tup lϵ es) = do
+        (es',b) <- unzip <$> traverse (r x y) es
+        pure (Tup lϵ es', or b)
+    r x y (Arr lϵ es) = do
+        (es',b) <- V.unzip <$> traverse (r x y) es
+        pure (Arr lϵ es', or b)
+    r x y (Paren _ e') = r x y e'
+    r x y (Cond lϵ p e0 e1) = do
+        (p',b0) <- r x y p
+        (e0',b1) <- r x y e0
+        (e1',b2) <- r x y e1
+        pure (Cond lϵ p' e0' e1', b0||b1||b2)
+    r x y (Implicit lϵ eϵ) = do
+        (e',b) <- r x y eϵ
+        pure (Implicit lϵ e', b)
+    r x y (Guarded lϵ p eϵ) = do
+        (p',b0) <- r x y p
+        (e',b1) <- r x y eϵ
+        pure (Guarded lϵ p' e', b0||b1)
+    r _ _ e'@Lit{} = pure (e', False)
+    r _ _ e'@RegexLit{} = pure (e', False)
+    r _ _ e'@AllField{} = pure (e', False)
+    r _ _ e'@TB{} = pure (e', False)
+    r _ _ e'@BB{} = pure (e', False)
+    r _ _ e'@UB{} = pure (e', False)
+    r _ _ e'@NB{} = pure (e', False)
+    r _ _ F{} = error "Internal error."
 rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
 rE (Implicit l e) = Implicit l <$> rE e
-rE ResVar{} = error "Bare reserved variable."
+rE ResVar{} = error "Bare implicit variable"
 rE (Let l (n, eϵ) e') = doLocal $ do
     eϵ' <- rE eϵ
     n' <- freshen n
