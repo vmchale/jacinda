@@ -5,7 +5,6 @@
              , withAlexSt
              , freshName
              , newVarAlex
-             , alexDepth
              , AlexPosn (..)
              , Alex (..)
              , Token (..)
@@ -260,11 +259,6 @@ type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn), Int)
 
 alexInitUserState :: AlexUserState
 alexInitUserState = (0, mempty, mempty, 0)
-
-alexDepth :: Alex Int
-alexDepth = Alex $ \st -> Right (st, fth (alex_ust st))
-  where
-    fth (_,_,_,z) = z
 
 alexModifyUserState f = Alex $ \st -> Right (st { alex_ust = f (alex_ust st) }, ())
 

@@ -88,7 +88,6 @@ hasY = g where
     g (Rec _ es)             = (g.snd)!|es
     g (OptionVal _ (Just e)) = g e
     g (EApp _ e0 e1)         = g e0 || g e1
-    g Dfn{}                  = error "nested dfns not yet implemented"
     g (Let _ (_, be) e)      = g e || g be
     g (Lam _ _ e)            = g e
     g (Paren _ e)            = g e

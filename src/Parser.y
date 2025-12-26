@@ -329,7 +329,7 @@ E :: { E AlexPosn }
   | tallyL { UB $1 TallyList }
   | const { UB $1 Const }
   | exclamation { UB $1 Not }
-  | lsqbracket E rsqbracket {% fmap (Dfn $1 $2) (lift alexDepth) }
+  | lsqbracket E rsqbracket { Dfn $1 $2 }
   | x { ResVar $1 X }
   | y { ResVar $1 Y }
   | rr { RegexLit (loc $1) (encodeUtf8 $ rr $1) }
