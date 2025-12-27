@@ -1,3 +1,5 @@
+  * Fix to allow nested dfns
+
 # 3.3.0.5
 
   * Add `Ord` instance for tuples, etc.
