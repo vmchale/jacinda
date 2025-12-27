@@ -115,7 +115,7 @@ tokens :-
         "{%"                     { sym LBracePercent }
         "#{"                     { sym LBraceOctothorpe }
         "{|"                     { sym LBraceBar }
-        "]"                      { tok (\p _ -> dec (TokSym p RSqBracket)) }
+        "]"                      { tok (\p _ -> rsq (TokSym p RSqBracket)) }
         ".="                     { sym DotEq }
         "~"                      { sym Tilde }
         "!~"                     { sym NotMatchTok }
@@ -150,7 +150,7 @@ tokens :-
         "@@"                     { sym AmpAmp }
         ¨                        { sym Quot }
 
-        "["                      { tok (\p _ -> inc (TokSym p LSqBracket)) }
+        "["                      { tok (\p _ -> lsq (TokSym p LSqBracket)) }
 
         let                      { mkKw KwLet }
         val                      { mkKw KwVal }
@@ -261,14 +261,12 @@ type AlexUserState = (Int, M.Map T.Text Int, IM.IntMap (Nm AlexPosn), Int)
 alexInitUserState :: AlexUserState
 alexInitUserState = (0, mempty, mempty, 0)
 
-alexModifyUserState f = Alex $ \st -> Right (st { alex_ust = f (alex_ust st) }, ())
-
-inc, dec :: a -> Alex a
-inc ret = Alex $ \st ->
+lsq, rsq :: a -> Alex a
+lsq ret = Alex $ \st ->
     let (max', names, uniqs, db) = alex_ust st
         db' = db+1
     in Right (st { alex_ust = (max', names, uniqs, db'), alex_scd = dfn }, ret)
-dec ret = Alex $ \st ->
+rsq ret = Alex $ \st ->
     let (max', names, uniqs, db) = alex_ust st
         db' = db-1
     in Right (st { alex_ust = (max', names, uniqs, db'), alex_scd = if db'==0 then 0 else dfn }, ret)
