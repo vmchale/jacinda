@@ -6,7 +6,7 @@ module R ( rE, rP
 import           A
 import           C
 import           Control.Monad.State.Strict (MonadState, State, runState)
-import           Data.Bifunctor             (second)
+import           Data.Bifunctor             (bimap, first, second)
 import qualified Data.IntMap                as IM
 import qualified Data.Text                  as T
 import qualified Data.Vector                as V
@@ -113,17 +113,42 @@ rE (Dfn l e) = do
   where
     r x _ (ResVar lϵ X)   = pure (Var lϵ (x lϵ), False)
     r _ y (ResVar lϵ Y)   = pure (Var lϵ (y lϵ), True)
-    r _ _ (Var lϵ n)      = do {n' <- replaceVar n; pure (Var lϵ n', False)}
+    r _ _ (Var lϵ n)      = (\n' -> (Var lϵ n', False)) <$> replaceVar n
+    r x y (Lam lϵ n eϵ)   = doLocal $ do
+        n' <- freshen n
+        first (Lam lϵ n') <$> r x y eϵ
+    r x y (Let lϵ (n, eb) eϵ) = doLocal $ do
+        (eb', b) <- r x y eb
+        n' <- freshen n
+        bimap (Let lϵ (n', eb')) (b||) <$> r x y eϵ
+    r _ _ (Dfn lϵ eϵ) = do
+        x@(Nm nX uX _) <- dummyName l "x"
+        y@(Nm nY uY _) <- dummyName l "y"
+        (e',hasY) <- r (Nm nX uX) (Nm nY uY) eϵ
+        pure $ if hasY
+            then (Lam lϵ x (Lam lϵ y e'), False)
+            else (Lam lϵ x e', False)
+    r x y (Tup lϵ es) = do
+        (es',b) <- unzip <$> traverse (r x y) es
+        pure (Tup lϵ es', or b)
+    r x y (OptionVal lϵ eϵ) = do
+        v <- traverse (r x y) eϵ
+        case v of
+            Nothing     -> pure (OptionVal lϵ Nothing, False)
+            Just (e',b) -> pure (OptionVal lϵ (Just e'), b)
+    r x y (Rec lϵ es) = do
+        (es',b) <- unzip . map (\(n,(eϵ,b)) -> ((n,eϵ),b)) <$> traverse (secondM (r x y)) es
+        pure (Rec lϵ es', or b)
+    r x y (Anchor lϵ es) = do
+        (es',b) <- unzip <$> traverse (r x y) es
+        pure (Anchor lϵ es', or b)
+    r x y (Arr lϵ es) = do
+        (es',b) <- V.unzip <$> traverse (r x y) es
+        pure (Arr lϵ es', or b)
     r x y (EApp lϵ e0 e1) = do
         (e0',b0) <- r x y e0
         (e1',b1) <- r x y e1
         pure (EApp lϵ e0' e1', b0||b1)
-    r x y (Tup lϵ es) = do
-        (es',b) <- unzip <$> traverse (r x y) es
-        pure (Tup lϵ es', or b)
-    r x y (Arr lϵ es) = do
-        (es',b) <- V.unzip <$> traverse (r x y) es
-        pure (Arr lϵ es', or b)
     r x y (Paren _ e') = r x y e'
     r x y (Cond lϵ p e0 e1) = do
         (p',b0) <- r x y p
@@ -137,14 +162,7 @@ rE (Dfn l e) = do
         (p',b0) <- r x y p
         (e',b1) <- r x y eϵ
         pure (Guarded lϵ p' e', b0||b1)
-    r _ _ e'@Lit{} = pure (e', False)
-    r _ _ e'@RegexLit{} = pure (e', False)
-    r _ _ e'@AllField{} = pure (e', False)
-    r _ _ e'@TB{} = pure (e', False)
-    r _ _ e'@BB{} = pure (e', False)
-    r _ _ e'@UB{} = pure (e', False)
-    r _ _ e'@NB{} = pure (e', False)
-    r _ _ F{} = error "Internal error."
+    r _ _ e' = pure (e', False)
 rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
 rE (Implicit l e) = Implicit l <$> rE e
 rE ResVar{} = error "Bare implicit variable"
