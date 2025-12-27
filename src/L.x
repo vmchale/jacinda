@@ -71,7 +71,6 @@ tokens :-
         "@include"               { mkKw KwInclude }
         fn                       { mkKw KwFn }
 
-        "["                      { tok (\p _ -> inc (TokSym p LSqBracket)) }
     }
 
     <0,dfn> {
@@ -150,6 +149,8 @@ tokens :-
         \?                       { sym QuestionMark }
         "@@"                     { sym AmpAmp }
         ¨                        { sym Quot }
+
+        "["                      { tok (\p _ -> inc (TokSym p LSqBracket)) }
 
         let                      { mkKw KwLet }
         val                      { mkKw KwVal }
