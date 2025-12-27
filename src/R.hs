@@ -82,11 +82,6 @@ setMax i (Rs _ b) = Rs i b
 mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
---     infixr 6 !|
-
---     (!|) :: Foldable t => (a -> Bool) -> t a -> Bool
---    (!|) = any
-
 renameD :: D a -> RenameM (D a)
 renameD (FunDecl n ns e) = FunDecl n [] <$> rE (mkLam ns e)
 renameD d                = pure d
@@ -96,83 +91,59 @@ renameProgram (Program ds e) = Program <$> traverse renameD ds <*> rE e
 
 {-# INLINABLE rE #-}
 rE :: (HasRenames s, MonadState s m) => E a -> m (E a)
-rE (EApp l e e')   = EApp l <$> rE e <*> rE e'
-rE (Tup l es)      = Tup l <$> traverse rE es
-rE (Rec l es)      = Rec l <$> traverse (secondM rE) es
-rE (Var l n)       = Var l <$> replaceVar n
-rE (Lam l n e)     = doLocal $ do
+rE = fmap fst.r undefined undefined
+
+{-# INLINABLE r #-}
+r :: (HasRenames s, MonadState s m) => (a -> Nm a) -> (a -> Nm a) -> E a -> m (E a, Bool)
+r x _ (ResVar l X)   = pure (Var l (x l), False)
+r _ y (ResVar l Y)   = pure (Var l (y l), True)
+r _ _ (Var l n)      = (\n' -> (Var l n', False)) <$> replaceVar n
+r x y (Lam l n e)   = doLocal $ do
     n' <- freshen n
-    Lam l n' <$> rE e
-rE (Dfn l e) = do
+    first (Lam l n') <$> r x y e
+r x y (Let l (n, eb) e) = doLocal $ do
+    (eb', b) <- r x y eb
+    n' <- freshen n
+    bimap (Let l (n', eb')) (b||) <$> r x y e
+r _ _ (Dfn l e) = do
     x@(Nm nX uX _) <- dummyName l "x"
     y@(Nm nY uY _) <- dummyName l "y"
-    (e', hasY) <- r (Nm nX uX) (Nm nY uY) e
+    (e',hasY) <- r (Nm nX uX) (Nm nY uY) e
     pure $ if hasY
-        then Lam l x (Lam l y e')
-        else Lam l x e'
-  where
-    r x _ (ResVar lϵ X)   = pure (Var lϵ (x lϵ), False)
-    r _ y (ResVar lϵ Y)   = pure (Var lϵ (y lϵ), True)
-    r _ _ (Var lϵ n)      = (\n' -> (Var lϵ n', False)) <$> replaceVar n
-    r x y (Lam lϵ n eϵ)   = doLocal $ do
-        n' <- freshen n
-        first (Lam lϵ n') <$> r x y eϵ
-    r x y (Let lϵ (n, eb) eϵ) = doLocal $ do
-        (eb', b) <- r x y eb
-        n' <- freshen n
-        bimap (Let lϵ (n', eb')) (b||) <$> r x y eϵ
-    r _ _ (Dfn lϵ eϵ) = do
-        x@(Nm nX uX _) <- dummyName l "x"
-        y@(Nm nY uY _) <- dummyName l "y"
-        (e',hasY) <- r (Nm nX uX) (Nm nY uY) eϵ
-        pure $ if hasY
-            then (Lam lϵ x (Lam lϵ y e'), False)
-            else (Lam lϵ x e', False)
-    r x y (Tup lϵ es) = do
-        (es',b) <- unzip <$> traverse (r x y) es
-        pure (Tup lϵ es', or b)
-    r x y (OptionVal lϵ eϵ) = do
-        v <- traverse (r x y) eϵ
-        case v of
-            Nothing     -> pure (OptionVal lϵ Nothing, False)
-            Just (e',b) -> pure (OptionVal lϵ (Just e'), b)
-    r x y (Rec lϵ es) = do
-        (es',b) <- unzip . map (\(n,(eϵ,b)) -> ((n,eϵ),b)) <$> traverse (secondM (r x y)) es
-        pure (Rec lϵ es', or b)
-    r x y (Anchor lϵ es) = do
-        (es',b) <- unzip <$> traverse (r x y) es
-        pure (Anchor lϵ es', or b)
-    r x y (Arr lϵ es) = do
-        (es',b) <- V.unzip <$> traverse (r x y) es
-        pure (Arr lϵ es', or b)
-    r x y (EApp lϵ e0 e1) = do
-        (e0',b0) <- r x y e0
-        (e1',b1) <- r x y e1
-        pure (EApp lϵ e0' e1', b0||b1)
-    r x y (Paren _ e') = r x y e'
-    r x y (Cond lϵ p e0 e1) = do
-        (p',b0) <- r x y p
-        (e0',b1) <- r x y e0
-        (e1',b2) <- r x y e1
-        pure (Cond lϵ p' e0' e1', b0||b1||b2)
-    r x y (Implicit lϵ eϵ) = do
-        (e',b) <- r x y eϵ
-        pure (Implicit lϵ e', b)
-    r x y (Guarded lϵ p eϵ) = do
-        (p',b0) <- r x y p
-        (e',b1) <- r x y eϵ
-        pure (Guarded lϵ p' e', b0||b1)
-    r _ _ e' = pure (e', False)
-rE (Guarded l p e) = Guarded l <$> rE p <*> rE e
-rE (Implicit l e) = Implicit l <$> rE e
-rE ResVar{} = error "Bare implicit variable"
-rE (Let l (n, eϵ) e') = doLocal $ do
-    eϵ' <- rE eϵ
-    n' <- freshen n
-    Let l (n', eϵ') <$> rE e'
-rE (Paren _ e) = rE e
-rE (Arr l es) = Arr l <$> traverse rE es
-rE (Anchor l es) = Anchor l <$> traverse rE es
-rE (OptionVal l e) = OptionVal l <$> traverse rE e
-rE (Cond l p e e') = Cond l <$> rE p <*> rE e <*> rE e'
-rE e = pure e
+        then (Lam l x (Lam l y e'), False)
+        else (Lam l x e', False)
+r x y (Tup l es) = do
+    (es',b) <- unzip <$> traverse (r x y) es
+    pure (Tup l es', or b)
+r x y (OptionVal l e) = do
+    v <- traverse (r x y) e
+    case v of
+        Nothing     -> pure (OptionVal l Nothing, False)
+        Just (e',b) -> pure (OptionVal l (Just e'), b)
+r x y (Rec l es) = do
+    (es',b) <- unzip . map (\(n,(eϵ,b)) -> ((n,eϵ),b)) <$> traverse (secondM (r x y)) es
+    pure (Rec l es', or b)
+r x y (Anchor l es) = do
+    (es',b) <- unzip <$> traverse (r x y) es
+    pure (Anchor l es', or b)
+r x y (Arr l es) = do
+    (es',b) <- V.unzip <$> traverse (r x y) es
+    pure (Arr l es', or b)
+r x y (EApp l e0 e1) = do
+    (e0',b0) <- r x y e0
+    (e1',b1) <- r x y e1
+    pure (EApp l e0' e1', b0||b1)
+r x y (Paren _ e') = r x y e'
+r x y (Cond l p e0 e1) = do
+    (p',b0) <- r x y p
+    (e0',b1) <- r x y e0
+    (e1',b2) <- r x y e1
+    pure (Cond l p' e0' e1', b0||b1||b2)
+r x y (Implicit l e) = do
+    (e',b) <- r x y e
+    pure (Implicit l e', b)
+r x y (Guarded l p e) = do
+    (p',b0) <- r x y p
+    (e',b1) <- r x y e
+    pure (Guarded l p' e', b0||b1)
+r _ _ e' = pure (e', False)
