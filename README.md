@@ -63,7 +63,6 @@ See the [rosetta](./ROSETTA.md) showing AWK alongside, or the [examples](./EXAMP
 
 ## Missing Features & Bugs
 
-  * No nested dfns
   * No list literal syntax
   * Postfix `:f` and `:i` are handled poorly
   * Streams of functions don't work
