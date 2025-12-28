@@ -95,9 +95,16 @@ rE = fmap fst.r undefined undefined
 
 {-# INLINABLE r #-}
 r :: (HasRenames s, MonadState s m) => (a -> Nm a) -> (a -> Nm a) -> E a -> m (E a, Bool)
-r x _ (ResVar l X)   = pure (Var l (x l), False)
-r _ y (ResVar l Y)   = pure (Var l (y l), True)
 r _ _ (Var l n)      = (\n' -> (Var l n', False)) <$> replaceVar n
+r x y (EApp l e0 e1) = do
+    (e0',b0) <- r x y e0
+    (e1',b1) <- r x y e1
+    pure (EApp l e0' e1', b0||b1)
+r x y (Cond l p e0 e1) = do
+    (p',b0) <- r x y p
+    (e0',b1) <- r x y e0
+    (e1',b2) <- r x y e1
+    pure (Cond l p' e0' e1', b0||b1||b2)
 r x y (Lam l n e)   = doLocal $ do
     n' <- freshen n
     first (Lam l n') <$> r x y e
@@ -112,6 +119,15 @@ r _ _ (Dfn l e) = do
     pure $ if hasY
         then (Lam l x (Lam l y e'), False)
         else (Lam l x e', False)
+r x y (Implicit l e) = do
+    (e',b) <- r x y e
+    pure (Implicit l e', b)
+r x y (Guarded l p e) = do
+    (p',b0) <- r x y p
+    (e',b1) <- r x y e
+    pure (Guarded l p' e', b0||b1)
+r x _ (ResVar l X)   = pure (Var l (x l), False)
+r _ y (ResVar l Y)   = pure (Var l (y l), True)
 r x y (Tup l es) = do
     (es',b) <- unzip <$> traverse (r x y) es
     pure (Tup l es', or b)
@@ -129,21 +145,5 @@ r x y (Anchor l es) = do
 r x y (Arr l es) = do
     (es',b) <- V.unzip <$> traverse (r x y) es
     pure (Arr l es', or b)
-r x y (EApp l e0 e1) = do
-    (e0',b0) <- r x y e0
-    (e1',b1) <- r x y e1
-    pure (EApp l e0' e1', b0||b1)
 r x y (Paren _ e') = r x y e'
-r x y (Cond l p e0 e1) = do
-    (p',b0) <- r x y p
-    (e0',b1) <- r x y e0
-    (e1',b2) <- r x y e1
-    pure (Cond l p' e0' e1', b0||b1||b2)
-r x y (Implicit l e) = do
-    (e',b) <- r x y e
-    pure (Implicit l e', b)
-r x y (Guarded l p e) = do
-    (p',b0) <- r x y p
-    (e',b1) <- r x y e
-    pure (Guarded l p' e', b0||b1)
 r _ _ e' = pure (e', False)
