@@ -17,7 +17,7 @@ import           System.IO           (stdout)
 
 data Cmd = TC !FilePath ![FilePath]
          | Run !FilePath !(Maybe T.Text) !(Maybe T.Text) !(Maybe FilePath) ![FilePath] ![(T.Text, Value)] Bool
-         | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath] Bool
+         | Expr !T.Text !(Maybe FilePath) !(Maybe T.Text) !Bool !Bool !Bool !(Maybe T.Text) ![FilePath] ![(T.Text, Value)] Bool
          | Eval !T.Text
          | Install
 
@@ -93,7 +93,7 @@ commandP = hsubparser
     where
         tcP = TC <$> j'File <*> incls; eP = Eval <$> jacExpr
         runP = Run <$> j'File <*> jacFs <*> jacRs <*> inpFile <*> incls <*> defVar <*> begin
-        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> incls <*> begin
+        exprP = Expr <$> jacExpr <*> inpFile <*> jacFs <*> asv <*> usv <*> csv <*> jacRs <*> incls <*> defVar <*> begin
 
 incls :: Parser [FilePath]
 incls = many $ strOption
@@ -130,12 +130,12 @@ ap _ _ _ fs rs              = AWK fs rs
 
 run :: Cmd -> IO ()
 run (TC fp is)                         = tcIO is fp =<< TIO.readFile fp
-run (Run fp fs rs Nothing is vs h)    = do { contents <- TIO.readFile fp ; runStdin is (Just fp) contents vs (AWK fs rs h) }
-run (Run fp fs rs (Just dat) is vs h) = do { contents <- TIO.readFile fp ; runOnFile is (Just fp) contents vs (AWK fs rs h) dat stdout }
-run (Expr eb f fs a u c rs is h)      =
+run (Run fp fs rs Nothing is vs h)    = do {contents <- TIO.readFile fp ; runStdin is (Just fp) contents vs (AWK fs rs h)}
+run (Run fp fs rs (Just dat) is vs h) = do {contents <- TIO.readFile fp ; runOnFile is (Just fp) contents vs (AWK fs rs h) dat stdout}
+run (Expr eb f fs a u c rs is vs h)      =
     case f of
-        Nothing -> runStdin is Nothing eb [] (m h)
-        Just fp -> runOnFile is Nothing eb [] (m h) fp stdout
+        Nothing -> runStdin is Nothing eb vs (m h)
+        Just fp -> runOnFile is Nothing eb vs (m h) fp stdout
   where
     m = ap a u c fs rs
 run (Eval e)                          = print (exprEval e)
