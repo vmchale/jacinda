@@ -3,6 +3,8 @@
                   , parseWithCtx
                   , parseLibWithCtx
                   , ParseError (..)
+                  -- * Comments
+                  , Ann (..)
                   -- * Type synonyms
                   , File
                   , Library
@@ -135,6 +137,8 @@ import Prettyprinter (Pretty (pretty), (<+>), concatWith, squotes)
     ofs { TokKeyword $$ KwOfs }
     ors { TokKeyword $$ KwOrs }
 
+    com { $$@(TokCom _ _) }
+
     x { TokVar $$ VarX }
     y { TokVar $$ VarY }
 
@@ -240,6 +244,9 @@ Args :: { [(Nm AlexPosn)] }
      | parens(name) { [$1] }
      | parens(sepBy(name, comma)) { reverse $1 }
 
+DC :: { D Ann }
+   : D { unc $1 }
+
 D :: { D AlexPosn }
   : set fs defEq rr semicolon { SetFS (rr $4) }
   | set rs defEq rr semicolon { SetRS (rr $4) }
@@ -256,20 +263,23 @@ D :: { D AlexPosn }
 Include :: { FilePath }
         : include strLit { T.unpack (strTok $2) }
 
-File :: { ([FilePath], Program AlexPosn) }
+File :: { ([FilePath], Program Ann) }
      : many(Include) Program { (reverse $1, $2) }
 
 Library :: { Library }
-        : many(Include) many(D) { (reverse $1, reverse $2) }
+        : many(Include) many(DC) { (reverse $1, reverse $2) }
 
-Program :: { Program AlexPosn }
-        : many(D) E { Program (reverse $1) $2 }
+Program :: { Program Ann }
+        : many(DC) EC { Program (reverse $1) $2 }
 
 L :: { (AlexPosn, L) }
   : intLit { (loc $1, ILit (int $1)) }
   | floatLit { (loc $1, FLit (float $1)) }
   | boolLit { (loc $1, BLit (boolTok $1)) }
   | strLit { (loc $1, StrLit (encodeUtf8 $ strTok $1)) }
+
+EC :: { E Ann }
+   : E { unc $1 }
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }
@@ -379,8 +389,10 @@ E :: { E AlexPosn }
 
 {
 
-type File = ([FilePath], Program AlexPosn)
-type Library = ([FilePath], [D AlexPosn])
+type File = ([FilePath], Program Ann)
+type Library = ([FilePath], [D Ann])
+
+data Ann = Ann !AlexPosn (Maybe T.Text)
 
 type Value = T.Text
 
@@ -406,19 +418,22 @@ instance (Pretty a, Typeable a) => Exception (ParseError a)
 
 type Parse = ExceptT (ParseError AlexPosn) Alex
 
-guess :: AlexPosn -> T.Text -> E AlexPosn
+unc :: Functor f => f AlexPosn -> f Ann
+unc = fmap (\loc -> Ann loc Nothing)
+
+guess :: Ann -> T.Text -> E Ann
 guess l v = case snd<$>runParse pValue v of
-    Right e -> e
+    Right e -> unc e
     Left {} -> Lit l (StrLit$encodeUtf8 v)
 
-df :: T.Text -> Value -> Alex (E AlexPosn -> E AlexPosn)
-df t x = do {nm <- newVarAlex t; let l=Nm.loc nm in pure (Let l (nm, guess l x))}
+df :: T.Text -> Value -> Alex (E Ann -> E Ann)
+df t x = do {nm <- newVarAlex t; let l=Ann (Nm.loc nm) Nothing in pure (Let l (unc nm, guess l x))}
 
 parseWithMax :: T.Text -> Either (ParseError AlexPosn) (Int, File)
 parseWithMax = fmap (first fst4) . runParse parseF
     where fst4 (x, _, _, _) = x
 
-binds :: [(T.Text, Value)] -> Alex (E AlexPosn -> E AlexPosn)
+binds :: [(T.Text, Value)] -> Alex (E Ann -> E Ann)
 binds = fmap thread.traverse (uncurry df) where thread = foldr (.) id
 
 parseCli :: [(T.Text, Value)] -> Parse File

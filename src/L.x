@@ -58,7 +58,7 @@ tokens :-
     }
 
     <0> {
-        "#!".*                   ; -- shebang
+        "#!".*                   { tok (\p s -> alex $ TokSh p s) }
 
         asv                      { mkKw KwAsv }
         usv                      { mkKw KwUsv }
@@ -77,7 +77,7 @@ tokens :-
 
         $white+                  ;
 
-        "{.".*                   ;
+        "{.".*                   { tok (\p s -> alex $ TokCom p s) }
 
         ":="                     { sym DefEq }
         "≔"                      { sym DefEq }
@@ -496,6 +496,7 @@ data Token a = EOF { loc :: a }
              | TokAccess { loc :: a, ix :: Int }
              | TokSelect { loc :: a, field :: Int }
              | TokR { loc :: a, nfield :: Nm a }
+             | TokSh { loc :: a, she :: T.Text } | TokCom { loc :: a, com :: T.Text }
              deriving Functor
 
 instance Pretty (Token a) where
@@ -517,6 +518,8 @@ instance Pretty (Token a) where
     pretty (TokFloat _ f)     = pretty f
     pretty (TokSelect _ i)    = "->" <> pretty i
     pretty (TokR _ r)         = "->" <> pretty r
+    pretty (TokSh _ sh)       = pretty sh
+    pretty (TokCom _ t)       = pretty t
 
 freshName :: T.Text -> Alex (Nm AlexPosn)
 freshName t = do

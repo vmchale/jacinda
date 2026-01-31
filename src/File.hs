@@ -54,7 +54,7 @@ parseLib :: [FilePath] -> FilePath -> StateT AlexUserState IO [D AlexPosn]
 parseLib incls fp = do
     contents <- liftIO $ TIO.readFile =<< resolveImport incls fp
     st <- get
-    case parseLibWithCtx contents st of
+    case second (second (map stripComments)) <$> parseLibWithCtx contents st of
         Left err              -> liftIO (throwIO (FPos fp<$>err))
         Right (st', ([], ds)) -> put st' $> (rwD <$> ds)
         Right (st', (is, ds)) -> do {put st'; dss <- traverse (parseLib incls) is; pure (concat dss ++ fmap rwD ds)}
@@ -62,7 +62,7 @@ parseLib incls fp = do
 parseP :: [FilePath] -> Maybe FilePath -> T.Text -> [(T.Text, Value)] -> StateT AlexUserState IO (Program AlexPosn)
 parseP incls fn src var = do
     st <- get
-    case parseWithCtx src var st of
+    case second (second stripComments) <$> parseWithCtx src var st of
         Left err -> liftIO $ throwIO (srcErr fn err)
         Right (st', (is, Program ds e)) -> do
             put st'
@@ -75,7 +75,10 @@ parsePWithMax incls fn src vars = uncurry rP.swap.second fst4 <$> runStateT (par
     where fst4 (x,_,_,_) = x
 
 parseWithMax' :: T.Text -> Either (ParseError AlexPosn) (Program AlexPosn, Int)
-parseWithMax' = fmap (uncurry rP . second (rwP.snd)) . parseWithMax
+parseWithMax' = fmap (uncurry rP . second (rwP.stripComments.snd)) . parseWithMax
+
+stripComments :: Functor f => f Ann -> f AlexPosn
+stripComments = fmap (\(Ann l _) -> l)
 
 type FileBS = BS.ByteString
 
