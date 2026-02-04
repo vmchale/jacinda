@@ -83,8 +83,8 @@ mkLam :: [Nm a] -> E a -> E a
 mkLam ns e = foldr (\n -> Lam (loc n) n) e ns
 
 renameD :: D a -> RenameM (D a)
-renameD (FunDecl n ns e) = FunDecl n [] <$> rE (mkLam ns e)
-renameD d                = pure d
+renameD (FunDecl l n ns e) = FunDecl l n [] <$> rE (mkLam ns e)
+renameD d                  = pure d
 
 renameProgram :: Program a -> RenameM (Program a)
 renameProgram (Program ds e) = Program <$> traverse renameD ds <*> rE e

@@ -8,7 +8,7 @@ rwP :: Program a -> Program a
 rwP (Program ds e) = Program (rwD <$> ds) (rwE e)
 
 rwD :: D a -> D a
-rwD (FunDecl n bs e) = FunDecl n bs (rwE e); rwD d = d
+rwD (FunDecl x n bs e) = FunDecl x n bs (rwE e); rwD d = d
 
 mFi :: BBin -> Maybe Int
 mFi And        = Just 3

@@ -246,19 +246,20 @@ Args :: { [(Nm AlexPosn)] }
 
 DC :: { D Ann }
    : D { unc $1 }
+   | com D { (unc $2) { dA = Ann (dA $2) (Just (com $1)) } }
 
 D :: { D AlexPosn }
-  : set fs defEq rr semicolon { SetFS (rr $4) }
-  | set rs defEq rr semicolon { SetRS (rr $4) }
-  | set ofs defEq strLit semicolon { SetOFS (strTok $4) }
-  | set ors defEq strLit semicolon { SetORS (strTok $4) }
-  | set asv semicolon { SetAsv }
-  | set usv semicolon { SetUsv }
-  | set csv semicolon { SetCsv }
-  | flush semicolon { FlushDecl }
-  | set header semicolon { SetH }
-  | fn name Args defEq E semicolon { FunDecl $2 $3 $5 }
-  | fn name defEq E semicolon { FunDecl $2 [] $4 }
+  : set fs defEq rr semicolon { SetFS $2 (rr $4) }
+  | set rs defEq rr semicolon { SetRS $2 (rr $4) }
+  | set ofs defEq strLit semicolon { SetOFS $2 (strTok $4) }
+  | set ors defEq strLit semicolon { SetORS $2 (strTok $4) }
+  | set asv semicolon { SetAsv $2 }
+  | set usv semicolon { SetUsv $2 }
+  | set csv semicolon { SetCsv $2 }
+  | flush semicolon { FlushDecl $1 }
+  | set header semicolon { SetH $2 }
+  | fn name Args defEq E semicolon { FunDecl $1 $2 $3 $5 }
+  | fn name defEq E semicolon { FunDecl $1 $2 [] $4 }
 
 Include :: { FilePath }
         : include strLit { T.unpack (strTok $2) }
@@ -280,6 +281,7 @@ L :: { (AlexPosn, L) }
 
 EC :: { E Ann }
    : E { unc $1 }
+   | com E { (unc $2) { eLoc = Ann (eLoc $2) (Just (com $1)) } }
 
 E :: { E AlexPosn }
   : name { Var (Nm.loc $1) $1 }

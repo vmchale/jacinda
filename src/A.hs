@@ -8,6 +8,8 @@ module A ( E (..), T (..), (~>), TB (..), C (..)
          , Mode (..), awk
          , mapExpr
          , getS, flushD
+         , (<#>)
+         , (<##>)
          ) where
 
 import           Control.DeepSeq    (NFData)
@@ -348,24 +350,24 @@ instance Pretty C where
 instance Show C where show=show.pretty
 
 -- decl
-data D a = SetFS !T.Text | SetRS !T.Text
-         | FunDecl (Nm a) [Nm a] (E a)
-         | FlushDecl | SetH
-         | SetAsv | SetUsv | SetCsv
-         | SetOFS !T.Text | SetORS !T.Text
+data D a = SetFS { dA :: a, fsD :: !T.Text } | SetRS { dA :: a, rsD ::  !T.Text }
+         | FunDecl { dA :: a, fnD :: Nm a, argdsD :: [Nm a], bodyD :: E a }
+         | FlushDecl { dA :: a } | SetH { dA :: a }
+         | SetAsv { dA :: a } | SetUsv { dA :: a } | SetCsv { dA :: a }
+         | SetOFS { dA :: a, ofsD :: !T.Text } | SetORS { dA :: a, orsD :: !T.Text }
          deriving (Functor)
 
 instance Pretty (D a) where
-    pretty (SetFS bs)       = ":set fs :=" <+> "/" <> pretty bs <> "/;"
-    pretty (SetRS rs)       = ":set rs :=" <+> "/" <> pretty rs <> "/;"
-    pretty (FunDecl n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
-    pretty FlushDecl        = ":flush;"
-    pretty SetH             = ":set header;"
-    pretty SetAsv           = ":set asv;"
-    pretty SetUsv           = ":set usv;"
-    pretty SetCsv           = ":set csv;"
-    pretty (SetOFS sep)     = ":set ofs :=" <+> "'" <> pretty sep <> "';"
-    pretty (SetORS sep)     = ":set ors :=" <+> "'" <> pretty sep <> "';"
+    pretty (SetFS _ bs)       = ":set fs :=" <+> "/" <> pretty bs <> "/;"
+    pretty (SetRS _ rs)       = ":set rs :=" <+> "/" <> pretty rs <> "/;"
+    pretty (FunDecl _ n ns e) = "fn" <+> pretty n <> tupled (pretty <$> ns) <+> ":=" <#> indent 2 (pretty e <> ";")
+    pretty FlushDecl{}        = ":flush;"
+    pretty SetH{}             = ":set header;"
+    pretty SetAsv{}           = ":set asv;"
+    pretty SetUsv{}           = ":set usv;"
+    pretty SetCsv{}           = ":set csv;"
+    pretty (SetOFS _ sep)     = ":set ofs :=" <+> "'" <> pretty sep <> "';"
+    pretty (SetORS _ sep)     = ":set ors :=" <+> "'" <> pretty sep <> "';"
 
 data Program a = Program { decls :: [D a], expr :: E a } deriving (Functor)
 
@@ -375,7 +377,7 @@ instance Pretty (Program a) where
 instance Show (Program a) where show=show.pretty
 
 flushD :: Program a -> Bool
-flushD (Program ds _) = any p ds where p FlushDecl = True; p _ = False
+flushD (Program ds _) = any p ds where p FlushDecl{} = True; p _ = False
 
 awk = AWK Nothing Nothing False
 
@@ -383,13 +385,13 @@ data Mode = CSV | AWK !(Maybe T.Text) !(Maybe T.Text) !Bool -- field, record, in
 
 getS :: Program a -> Mode
 getS (Program ds _) = foldl' go awk ds where
-    go (AWK _ rs b) (SetFS bs) = AWK (Just bs) rs b
-    go _ SetAsv                = AWK (Just "\\x1f") (Just "\\x1e") False
-    go _ SetUsv                = AWK (Just "␞") (Just "␟") False
-    go _ SetCsv                = CSV
-    go (AWK fs _ b) (SetRS bs) = AWK fs (Just bs) b
-    go (AWK fs rs _) SetH      = AWK fs rs True
-    go next _                  = next
+    go (AWK _ rs b) (SetFS _ bs) = AWK (Just bs) rs b
+    go _ SetAsv{}                = AWK (Just "\\x1f") (Just "\\x1e") False
+    go _ SetUsv{}                = AWK (Just "␞") (Just "␟") False
+    go _ SetCsv{}                = CSV
+    go (AWK fs _ b) (SetRS _ bs) = AWK fs (Just bs) b
+    go (AWK fs rs _) SetH{}      = AWK fs rs True
+    go next _                    = next
 
 mapExpr :: (E a -> E a) -> Program a -> Program a
 mapExpr f (Program ds e) = Program ds (f e)

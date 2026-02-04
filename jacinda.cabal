@@ -73,6 +73,7 @@ library jacinda-lib
         File
         A
         Ty
+        Fmt
         Parser
         Jacinda.Regex
 

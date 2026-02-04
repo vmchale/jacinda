@@ -276,19 +276,19 @@ lookupVar n@(Nm _ (U i) l) = do
         Nothing -> throwError $ IllScoped l n
 
 tyDS :: Ord a => Subst -> D a -> TyM a (D T, Subst)
-tyDS s (SetFS bs)  = pure (SetFS bs, s)
-tyDS s (SetRS bs)  = pure (SetRS bs, s)
-tyDS s (SetOFS bs) = pure (SetOFS bs, s)
-tyDS s (SetORS bs) = pure (SetORS bs, s)
-tyDS s SetCsv      = pure (SetCsv, s)
-tyDS s SetAsv      = pure (SetAsv, s)
-tyDS s SetUsv      = pure (SetUsv, s)
-tyDS s SetH        = pure (SetH, s)
-tyDS s FlushDecl   = pure (FlushDecl, s)
-tyDS s (FunDecl n@(Nm _ (U i) _) [] e) = do
+tyDS s (SetFS _ bs)  = pure (SetFS undefined bs, s)
+tyDS s (SetRS _ bs)  = pure (SetRS undefined bs, s)
+tyDS s (SetOFS _ bs) = pure (SetOFS undefined bs, s)
+tyDS s (SetORS _ bs) = pure (SetORS undefined bs, s)
+tyDS s SetCsv{}    = pure (SetCsv undefined, s)
+tyDS s SetAsv{}    = pure (SetAsv undefined, s)
+tyDS s SetUsv{}    = pure (SetUsv undefined, s)
+tyDS s SetH{}      = pure (SetH undefined, s)
+tyDS s FlushDecl{} = pure (FlushDecl undefined, s)
+tyDS s (FunDecl _ n@(Nm _ (U i) _) [] e) = do
     (e', s') <- tyES s e
     let t=eLoc e'
-    addVarM i t $> (FunDecl (n$>t) [] e', s')
+    addVarM i t $> (FunDecl undefined (n$>t) [] e', s')
 tyDS _ FunDecl{}   = error "Internal error. Should have been desugared by now."
 
 isAmbiguous :: T -> Bool
