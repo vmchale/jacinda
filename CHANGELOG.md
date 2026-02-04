@@ -1,4 +1,5 @@
   * Fix to allow nested dfns
+  * Allow `-Dval=VAR` on command-line
 
 # 3.3.0.5
 
